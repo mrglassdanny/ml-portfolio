@@ -11,7 +11,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <CudaCompile Include="src\layer.cu" />
     <CudaCompile Include="src\main.cu" />
+    <CudaCompile Include="src\model.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\layer.cuh" />
+    <ClInclude Include="src\model.cuh" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\core\core.vcxproj">
@@ -19,8 +25,8 @@
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F9A7EA87-5710-45A2-AA37-338640892D5A}</ProjectGuid>
-    <RootNamespace>mlp</RootNamespace>
+    <ProjectGuid>{57C536F8-E697-4DA4-A696-D1C55BA77CF9}</ProjectGuid>
+    <RootNamespace>nn</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
