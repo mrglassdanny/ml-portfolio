@@ -1,51 +1,51 @@
 #include "tensor.cuh"
 
-Shape::Shape()
+Dimensions::Dimensions()
 {
 }
 
-Shape::Shape(int dim_1)
+Dimensions::Dimensions(int dim_1)
 {
-    this->dims.push_back(dim_1);
+    this->dim_list.push_back(dim_1);
 }
 
-Shape::Shape(int dim_1, int dim_2)
+Dimensions::Dimensions(int dim_1, int dim_2)
 {
-    this->dims.push_back(dim_1);
-    this->dims.push_back(dim_2);
+    this->dim_list.push_back(dim_1);
+    this->dim_list.push_back(dim_2);
 }
 
-Shape::Shape(int dim_1, int dim_2, int dim_3)
+Dimensions::Dimensions(int dim_1, int dim_2, int dim_3)
 {
-    this->dims.push_back(dim_1);
-    this->dims.push_back(dim_2);
-    this->dims.push_back(dim_3);
+    this->dim_list.push_back(dim_1);
+    this->dim_list.push_back(dim_2);
+    this->dim_list.push_back(dim_3);
 }
 
-Shape::Shape(int dim_1, int dim_2, int dim_3, int dim_4)
+Dimensions::Dimensions(int dim_1, int dim_2, int dim_3, int dim_4)
 {
-    this->dims.push_back(dim_1);
-    this->dims.push_back(dim_2);
-    this->dims.push_back(dim_3);
-    this->dims.push_back(dim_4);
+    this->dim_list.push_back(dim_1);
+    this->dim_list.push_back(dim_2);
+    this->dim_list.push_back(dim_3);
+    this->dim_list.push_back(dim_4);
 }
 
-Shape::Shape(std::vector<int> dims)
+Dimensions::Dimensions(std::vector<int> dim_list)
 {
-    this->dims = dims;
+    this->dim_list = dim_list;
 }
 
-Shape::~Shape()
+Dimensions::~Dimensions()
 {
 }
 
-void Shape::print()
+void Dimensions::print()
 {
-    int dims_cnt = this->get_dims_cnt();
+    int dims_cnt = this->get_cnt();
 
     for (int i = 0; i < dims_cnt; i++)
     {
-        printf("%d", this->dims[i]);
+        printf("%d", this->dim_list[i]);
 
         if (i < dims_cnt - 1)
         {
@@ -56,23 +56,23 @@ void Shape::print()
     printf("\n");
 }
 
-int Shape::get_dim(int dim_idx)
+int Dimensions::get_dim(int dim_idx)
 {
-    return this->dims[dim_idx];
+    return this->dim_list[dim_idx];
 }
 
-int Shape::get_dims_cnt()
+int Dimensions::get_cnt()
 {
-    return this->dims.size();
+    return this->dim_list.size();
 }
 
-int Shape::get_dims_size()
+int Dimensions::get_size()
 {
     int dims_size = 1;
 
-    for (int i = 0; i < this->get_dims_cnt(); i++)
+    for (int i = 0; i < this->get_cnt(); i++)
     {
-        dims_size *= this->dims[i];
+        dims_size *= this->dim_list[i];
     }
 
     return dims_size;
@@ -81,9 +81,9 @@ int Shape::get_dims_size()
 Tensor::Tensor(Tensor &src)
 {
     this->cuda_flg = src.cuda_flg;
-    this->shape = src.shape;
+    this->dims = src.dims;
 
-    size_t size = sizeof(float) * this->shape.get_dims_size();
+    size_t size = this->get_data_size();
 
     if (src.cuda_flg)
     {
@@ -97,12 +97,12 @@ Tensor::Tensor(Tensor &src)
     }
 }
 
-Tensor::Tensor(bool cuda_flg, Shape shape)
+Tensor::Tensor(bool cuda_flg, Dimensions dims)
 {
     this->cuda_flg = cuda_flg;
-    this->shape = shape;
+    this->dims = dims;
 
-    size_t size = sizeof(float) * this->shape.get_dims_size();
+    size_t size = this->get_data_size();
 
     if (cuda_flg)
     {
@@ -132,11 +132,11 @@ void Tensor::print()
 
     this->to_cpu();
 
-    switch (this->shape.get_dims_cnt())
+    switch (this->dims.get_cnt())
     {
     case 1:
     {
-        int dim_1 = this->shape.get_dim(0);
+        int dim_1 = this->dims.get_dim(0);
         printf("[ ");
         for (int i = 0; i < dim_1; i++)
         {
@@ -155,8 +155,8 @@ void Tensor::print()
     break;
     case 2:
     {
-        int dim_1 = this->shape.get_dim(0);
-        int dim_2 = this->shape.get_dim(1);
+        int dim_1 = this->dims.get_dim(0);
+        int dim_2 = this->dims.get_dim(1);
 
         printf("[");
         for (int i = 0; i < dim_1; i++)
@@ -197,9 +197,9 @@ void Tensor::print()
     break;
     case 3:
     {
-        int dim_1 = this->shape.get_dim(0);
-        int dim_2 = this->shape.get_dim(1);
-        int dim_3 = this->shape.get_dim(2);
+        int dim_1 = this->dims.get_dim(0);
+        int dim_2 = this->dims.get_dim(1);
+        int dim_3 = this->dims.get_dim(2);
 
         printf("[");
         for (int i = 0; i < dim_1; i++)
@@ -261,7 +261,7 @@ void Tensor::print()
     }
     break;
     default:
-        for (int i = 0; i < this->shape.get_dims_size(); i++)
+        for (int i = 0; i < this->dims.get_size(); i++)
         {
             printf("%d: %f\n", i, this->data[i]);
         }
@@ -276,16 +276,31 @@ void Tensor::print()
     }
 }
 
-Shape Tensor::get_shape()
+size_t Tensor::get_data_size()
 {
-    return this->shape;
+    return sizeof(float) * this->dims.get_size();
+}
+
+bool Tensor::is_cuda()
+{
+    return this->cuda_flg;
+}
+
+Dimensions Tensor::get_dims()
+{
+    return this->dims;
+}
+
+float *Tensor::get_data()
+{
+    return this->data;
 }
 
 void Tensor::to_cpu()
 {
     if (this->cuda_flg)
     {
-        size_t size = sizeof(float) * this->shape.get_dims_size();
+        size_t size = this->get_data_size();
         float *dst = (float *)malloc(size);
         cudaMemcpy(dst, this->data, size, cudaMemcpyDeviceToHost);
         cudaFree(this->data);
@@ -298,7 +313,7 @@ void Tensor::to_cuda()
 {
     if (!this->cuda_flg)
     {
-        size_t size = sizeof(float) * this->shape.get_dims_size();
+        size_t size = this->get_data_size();
         float *dst;
         cudaMalloc(&dst, size);
         cudaMemcpy(dst, this->data, size, cudaMemcpyHostToDevice);
@@ -310,7 +325,7 @@ void Tensor::to_cuda()
 
 void Tensor::zeros()
 {
-    size_t size = sizeof(float) * this->shape.get_dims_size();
+    size_t size = this->get_data_size();
 
     if (this->cuda_flg)
     {
@@ -332,7 +347,7 @@ void Tensor::rands(float mean, float stddev)
         std::random_device rd;
         std::mt19937 gen(rd());
 
-        for (int i = 0; i < this->shape.get_dims_size(); i++)
+        for (int i = 0; i < this->dims.get_size(); i++)
         {
             std::normal_distribution<float> d(mean, stddev);
             this->data[i] = d(gen);

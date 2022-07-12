@@ -13,42 +13,46 @@
 #include <device_launch_parameters.h>
 #include <device_atomic_functions.h>
 
-class Shape
+class Dimensions
 {
 private:
-	std::vector<int> dims;
+	std::vector<int> dim_list;
 
 public:
-	Shape();
-	Shape(int dim_1);
-	Shape(int dim_1, int dim_2);
-	Shape(int dim_1, int dim_2, int dim_3);
-	Shape(int dim_1, int dim_2, int dim_3, int dim_4);
-	Shape(std::vector<int> dims);
-	~Shape();
+	Dimensions();
+	Dimensions(int dim_1);
+	Dimensions(int dim_1, int dim_2);
+	Dimensions(int dim_1, int dim_2, int dim_3);
+	Dimensions(int dim_1, int dim_2, int dim_3, int dim_4);
+	Dimensions(std::vector<int> dim_list);
+	~Dimensions();
 
 	void print();
 
 	int get_dim(int dim_idx);
-	int get_dims_cnt();
-	int get_dims_size();
+	int get_cnt();
+	int get_size();
 };
 
 class Tensor
 {
 private:
 	bool cuda_flg;
-	Shape shape;
+	Dimensions dims;
 	float *data;
+
+	size_t get_data_size();
 
 public:
 	Tensor(Tensor &src);
-	Tensor(bool cuda_flg, Shape shape);
+	Tensor(bool cuda_flg, Dimensions dims);
 	~Tensor();
 
 	void print();
 
-	Shape get_shape();
+	bool is_cuda();
+	Dimensions get_dims();
+	float *get_data();
 
 	void to_cpu();
 	void to_cuda();
