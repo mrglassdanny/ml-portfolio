@@ -140,13 +140,29 @@ void Tensor::print()
         printf("[ ");
         for (int i = 0; i < dim_1; i++)
         {
+            float val = this->data[i];
+
             if (i == dim_1 - 1)
             {
-                printf("%f", this->data[i]);
+                if (val >= 0.0f)
+                {
+                    printf(" %f", val);
+                }
+                else
+                {
+                    printf("%f", val);
+                }
             }
             else
             {
-                printf("%f, ", this->data[i]);
+                if (val >= 0.0f)
+                {
+                    printf(" %f\t", val);
+                }
+                else
+                {
+                    printf("%f\t", val);
+                }
             }
         }
         printf(" ]");
@@ -173,13 +189,29 @@ void Tensor::print()
 
             for (int j = 0; j < dim_2; j++)
             {
+                float val = this->data[i * dim_2 + j];
+
                 if (j == dim_2 - 1)
                 {
-                    printf("%f", this->data[i * dim_2 + j]);
+                    if (val >= 0.0f)
+                    {
+                        printf(" %f", val);
+                    }
+                    else
+                    {
+                        printf("%f", val);
+                    }
                 }
                 else
                 {
-                    printf("%f, ", this->data[i * dim_2 + j]);
+                    if (val >= 0.0f)
+                    {
+                        printf(" %f\t", val);
+                    }
+                    else
+                    {
+                        printf("%f\t", val);
+                    }
                 }
             }
 
@@ -228,13 +260,29 @@ void Tensor::print()
 
                 for (int k = 0; k < dim_3; k++)
                 {
+                    float val = this->data[(i * dim_2 * dim_3) + (j * dim_3) + k];
+
                     if (k == dim_3 - 1)
                     {
-                        printf("%f", this->data[(i * dim_2 * dim_3) + (j * dim_3) + k]);
+                        if (val >= 0.0f)
+                        {
+                            printf(" %f", val);
+                        }
+                        else
+                        {
+                            printf("%f", val);
+                        }
                     }
                     else
                     {
-                        printf("%f, ", this->data[(i * dim_2 * dim_3) + (j * dim_3) + k]);
+                        if (val >= 0.0f)
+                        {
+                            printf(" %f\t", val);
+                        }
+                        else
+                        {
+                            printf("%f\t", val);
+                        }
                     }
                 }
 
@@ -289,6 +337,16 @@ bool Tensor::is_cuda()
 Dimensions Tensor::get_dims()
 {
     return this->dims;
+}
+
+int Tensor::num_dims()
+{
+    return this->dims.get_cnt();
+}
+
+int Tensor::dims_size()
+{
+    return this->dims.get_size();
 }
 
 float *Tensor::get_data()

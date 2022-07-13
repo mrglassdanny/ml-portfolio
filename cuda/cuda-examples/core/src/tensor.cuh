@@ -52,6 +52,9 @@ public:
 
 	bool is_cuda();
 	Dimensions get_dims();
+	int num_dims();
+	int dims_size();
+
 	float *get_data();
 
 	void to_cpu();

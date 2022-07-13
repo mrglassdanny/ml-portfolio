@@ -12,9 +12,11 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="src\tensor.cu" />
+    <CudaCompile Include="src\util.cu" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\tensor.cuh" />
+    <ClInclude Include="src\util.cuh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8569ABB8-638D-416A-A6D8-2F3F0307188D}</ProjectGuid>
