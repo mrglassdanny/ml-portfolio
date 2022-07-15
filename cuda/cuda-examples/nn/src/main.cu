@@ -3,9 +3,11 @@
 
 #define THREADS_PER_BLOCK 32
 
-#define BATCH_SIZE 16
-#define INPUT_SIZE 48
-#define OUTPUT_SIZE 12
+#define BATCH_SIZE 512
+#define INPUT_SIZE 2048
+#define OUTPUT_SIZE 1024
+
+#define EPOCHS 10
 
 /*
 	Example matrix multiplication:
@@ -27,7 +29,7 @@
 			[ 10 15  ]
 */
 
-void set_vals(float *A, float *B)
+void set_test_vals(float *A, float *B)
 {
 	A[0] = 1;
 	A[1] = 2;
@@ -151,6 +153,22 @@ __global__ void k_matmul_2(float *A, float *B, float *C)
 	}
 }
 
+void compare_matricies(Tensor *C1, Tensor *C2, Tensor *C3)
+{
+	C2->to_cpu();
+	C3->to_cpu();
+
+	/*C1->print();
+	C2->print();
+	C3->print();*/
+
+	for (int i = 0; i < 100; i++)
+	{
+		int idx = rand() % (BATCH_SIZE * OUTPUT_SIZE);
+		printf("%d\t%f\t%f\t%f\n", idx, C1->get_data()[idx], C2->get_data()[idx], C3->get_data()[idx]);
+	}
+}
+
 int main(int argc, char **argv)
 {
 	StopWatch sw;
@@ -165,19 +183,20 @@ int main(int argc, char **argv)
 	A->rands(0.0f, 1.0f);
 	B->rands(0.0f, 1.0f);
 
-	// set_vals(A->get_data(), B->get_data());
-
-	// A->print();
-	// B->print();
-
 	{
 		C1->zeros();
 
 		sw.start();
 
-		matmul(A->get_data(), B->get_data(), C1->get_data());
+		for (int i = 0; i < EPOCHS; i++)
+		{
+			C1->zeros();
+			matmul(A->get_data(), B->get_data(), C1->get_data());
+		}
 
-		printf("\n");
+		float a;
+		memcpy(&a, &C1->get_data()[0], sizeof(float));
+		printf("%f\n", a);
 
 		sw.stop();
 		sw.print_elapsed_seconds();
@@ -191,9 +210,15 @@ int main(int argc, char **argv)
 
 		sw.start();
 
-		k_matmul_1<<<((BATCH_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK>>>(A->get_data(), B->get_data(), C2->get_data());
+		for (int i = 0; i < EPOCHS; i++)
+		{
+			C2->zeros();
+			k_matmul_1<<<((BATCH_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK>>>(A->get_data(), B->get_data(), C2->get_data());
+		}
 
-		printf("\n");
+		float a;
+		cudaMemcpy(&a, &C2->get_data()[0], sizeof(float), cudaMemcpyDeviceToHost);
+		printf("%f\n", a);
 
 		sw.stop();
 		sw.print_elapsed_seconds();
@@ -207,9 +232,15 @@ int main(int argc, char **argv)
 
 		sw.start();
 
-		k_matmul_2<<<((BATCH_SIZE * INPUT_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK>>>(A->get_data(), B->get_data(), C3->get_data());
+		for (int i = 0; i < EPOCHS; i++)
+		{
+			C3->zeros();
+			k_matmul_2<<<((BATCH_SIZE * INPUT_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK>>>(A->get_data(), B->get_data(), C3->get_data());
+		}
 
-		printf("\n");
+		float a;
+		cudaMemcpy(&a, &C3->get_data()[0], sizeof(float), cudaMemcpyDeviceToHost);
+		printf("%f\n", a);
 
 		sw.stop();
 		sw.print_elapsed_seconds();
@@ -217,12 +248,7 @@ int main(int argc, char **argv)
 
 	printf("\n");
 
-	C2->to_cpu();
-	C3->to_cpu();
-
-	C1->print();
-	C2->print();
-	C3->print();
+	compare_matricies(C1, C2, C3);
 
 	delete C1;
 	delete C2;
