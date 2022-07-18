@@ -72,6 +72,7 @@ __global__ void k_matmul_1(float *A, float *B, float *C)
 		int A_idx = tid / OUTPUT_SIZE;
 		int B_idx = tid % OUTPUT_SIZE;
 
+#pragma unroll
 		for (int i = 0; i < INPUT_SIZE; i++)
 		{
 			C[tid] += (A[A_idx * INPUT_SIZE + i] * B[B_idx + (i * OUTPUT_SIZE)]);
@@ -184,7 +185,6 @@ int main(int argc, char **argv)
 	B->rands(0.0f, 1.0f);
 
 	{
-		C1->zeros();
 
 		sw.start();
 
@@ -203,7 +203,6 @@ int main(int argc, char **argv)
 	}
 
 	{
-		C2->zeros();
 
 		A->to_cuda();
 		B->to_cuda();
@@ -225,7 +224,6 @@ int main(int argc, char **argv)
 	}
 
 	{
-		C3->zeros();
 
 		A->to_cuda();
 		B->to_cuda();
