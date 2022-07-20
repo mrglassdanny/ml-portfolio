@@ -63,20 +63,24 @@ void matmul(float *A, float *B, float *C)
 	}
 }
 
-__global__ void k_matmul_1(float *A, float *B, float *C)
+__global__ void k_matmul_1(float *in_mtx, float *w_mtx, float *out_mtx, float *b_vec,
+						   int in_col_cnt, int out_col_cnt, int out_elem_cnt)
 {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
-	if (tid < (BATCH_SIZE * OUTPUT_SIZE))
-	{
-		int A_idx = tid / OUTPUT_SIZE;
-		int B_idx = tid % OUTPUT_SIZE;
+	int out_elem_idx = tid;
 
-#pragma unroll
-		for (int i = 0; i < INPUT_SIZE; i++)
+	if (out_elem_idx < out_elem_cnt)
+	{
+		int in_row_idx = out_elem_idx / out_col_cnt;
+		int w_col_idx = out_elem_idx % out_col_cnt;
+
+		for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
 		{
-			C[tid] += (A[A_idx * INPUT_SIZE + i] * B[B_idx + (i * OUTPUT_SIZE)]);
+			out_mtx[out_elem_idx] += (in_mtx[in_row_idx * in_col_cnt + in_col_idx] * w_mtx[w_col_idx + (in_col_idx * out_col_cnt)]);
 		}
+
+		out_mtx[out_elem_idx] += b_vec[w_col_idx];
 	}
 }
 
@@ -181,6 +185,15 @@ int main(int argc, char **argv)
 	Tensor *A = new Tensor(false, Dimensions(BATCH_SIZE, INPUT_SIZE));
 	Tensor *B = new Tensor(false, Dimensions(INPUT_SIZE, OUTPUT_SIZE));
 
+	Tensor *bias = new Tensor(false, Dimensions(OUTPUT_SIZE));
+	bias->zeros();
+	for (int i = 0; i < OUTPUT_SIZE; i++)
+	{
+		bias->get_data()[i] = 1.0f;;
+	}
+	bias->to_cuda();
+
+
 	A->rands(0.0f, 1.0f);
 	B->rands(0.0f, 1.0f);
 
@@ -212,7 +225,8 @@ int main(int argc, char **argv)
 		for (int i = 0; i < EPOCHS; i++)
 		{
 			C2->zeros();
-			k_matmul_1<<<((BATCH_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK>>>(A->get_data(), B->get_data(), C2->get_data());
+			k_matmul_1<<<((BATCH_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK>>>(A->get_data(), B->get_data(), C2->get_data(), bias->get_data(),
+																									INPUT_SIZE, OUTPUT_SIZE, (BATCH_SIZE * OUTPUT_SIZE));
 		}
 
 		float a;

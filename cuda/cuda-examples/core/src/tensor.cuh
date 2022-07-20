@@ -36,7 +36,7 @@ public:
 
 class Tensor
 {
-private:
+protected:
 	bool cuda_flg;
 	Dimensions dims;
 	float *data;
@@ -62,4 +62,12 @@ public:
 
 	void zeros();
 	void rands(float mean, float stddev);
+};
+
+class Matrix : public Tensor
+{
+public:
+	int get_batch_size();
+	int get_row_cnt();
+	int get_col_cnt();
 };

@@ -11,8 +11,8 @@ public:
     Layer();
     ~Layer();
 
-    virtual void evaluate(Tensor *out) = 0;
-    virtual Tensor *derive(Tensor *d_l) = 0;
+    virtual void forward(Tensor *out) = 0;
+    virtual Tensor *backward(Tensor *d_l) = 0;
 };
 
 class LinearLayer : public Layer
@@ -22,9 +22,9 @@ private:
     Tensor *b;
 
 public:
-    LinearLayer();
+    LinearLayer(int in_cnt, int out_cnt);
     ~LinearLayer();
 
-    void evaluate(Tensor *out);
-    Tensor *derive(Tensor *d_l);
+    void forward(Tensor *out);
+    Tensor *backward(Tensor *d_l);
 };
