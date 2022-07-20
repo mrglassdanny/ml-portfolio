@@ -189,7 +189,7 @@ int main(int argc, char **argv)
 	bias->zeros();
 	for (int i = 0; i < OUTPUT_SIZE; i++)
 	{
-		bias->get_data()[i] = 1.0f;;
+		bias->get_data()[i] = 1.0f;
 	}
 	bias->to_cuda();
 
