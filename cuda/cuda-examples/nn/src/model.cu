@@ -8,7 +8,7 @@ Model::~Model()
 {
 }
 
-Tensor *Model::forward(Tensor *x)
+ArrayNd *Model::forward(ArrayNd *x)
 {
     return NULL;
 }

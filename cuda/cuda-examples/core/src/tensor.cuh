@@ -34,7 +34,7 @@ public:
 	int get_size();
 };
 
-class Tensor
+class ArrayNd
 {
 protected:
 	bool cuda_flg;
@@ -44,30 +44,73 @@ protected:
 	size_t get_data_size();
 
 public:
-	Tensor(Tensor &src);
-	Tensor(bool cuda_flg, Dimensions dims);
-	~Tensor();
+	ArrayNd(ArrayNd &src);
+	ArrayNd(bool cuda_flg, Dimensions dims);
+	~ArrayNd();
 
-	void print();
+	virtual void print() = 0;
 
 	bool is_cuda();
-	Dimensions get_dims();
-	int num_dims();
-	int dims_size();
-
-	float *get_data();
-
 	void to_cpu();
 	void to_cuda();
 
+	float* get_data();
 	void zeros();
 	void rands(float mean, float stddev);
 };
 
-class Matrix : public Tensor
+class Array1d : public ArrayNd
 {
 public:
-	int get_batch_size();
+
+	Array1d(bool cuda_flg, int cnt);
+	~Array1d();
+
+	virtual void print();
+
+	int get_cnt();
+};
+
+class Array2d : public ArrayNd
+{
+public:
+
+	Array2d(Array2d& src);
+	Array2d(bool cuda_flg, int row_cnt, int col_cnt);
+	~Array2d();
+
+	virtual void print();
+
 	int get_row_cnt();
 	int get_col_cnt();
+};
+
+class Array3d : public ArrayNd
+{
+public:
+
+	Array3d(Array3d& src);
+	Array3d(bool cuda_flg, int x, int y, int z);
+	~Array3d();
+
+	virtual void print();
+
+	int get_x();
+	int get_y();
+	int get_z();
+};
+
+class Tensor : public ArrayNd
+{
+public:
+
+	Tensor(Tensor& src);
+	Tensor(bool cuda_flg, Dimensions dims);
+	~Tensor();
+
+	virtual void print();
+
+	Dimensions get_dims();
+	int num_dims();
+	int dims_size();
 };

@@ -9,7 +9,7 @@ public:
     Model();
     ~Model();
 
-    Tensor *forward(Tensor *x);
+    ArrayNd *forward(ArrayNd *x);
 };
 
 class Loss
@@ -21,8 +21,8 @@ public:
     Loss(Model &model);
     ~Loss();
 
-    virtual float compute(Tensor *p, Tensor *y) = 0;
-    virtual void backward(Tensor *p, Tensor *y) = 0;
+    virtual float compute(ArrayNd *p, ArrayNd *y) = 0;
+    virtual void backward(ArrayNd *p, ArrayNd *y) = 0;
 };
 
 class Optimizer

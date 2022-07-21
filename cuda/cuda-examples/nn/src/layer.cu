@@ -39,8 +39,10 @@ Layer::~Layer()
 
 LinearLayer::LinearLayer(int in_cnt, int out_cnt)
 {
-    this->w = new Tensor(false, Dimensions(in_cnt, out_cnt));
-    this->b = new Tensor(false, Dimensions(out_cnt));
+    this->n = new Array2d(false, in_cnt, 5);
+
+    this->w = new Array2d(false, in_cnt, out_cnt);
+    this->b = new Array1d(false, out_cnt);
 
     this->w->rands(0.0f, sqrt(1.0f / in_cnt));
     this->b->zeros();
@@ -52,13 +54,15 @@ LinearLayer::~LinearLayer()
     delete this->b;
 }
 
-void LinearLayer::forward(Tensor *out)
+void LinearLayer::forward(Array2d *out)
 {
     out->zeros();
 
-    int batch_size = this->n->get_dims().get_dim(0);
-    int in_cnt = this->n->get_dims().get_dim(1);
-    int out_cnt = out->get_dims().get_dim(1);
+    Array2d* n = (Array2d*)this->n;
+
+    int batch_size = n->get_row_cnt();
+    int in_cnt = n->get_col_cnt();
+    int out_cnt = out->get_col_cnt();
 
     {
         int num_blocks = ((batch_size * out_cnt) / THREADS_PER_BLOCK) + 1;
@@ -66,7 +70,7 @@ void LinearLayer::forward(Tensor *out)
     }
 }
 
-Tensor *LinearLayer::backward(Tensor *d_l)
+Array2d *LinearLayer::backward(Array2d *d_l)
 {
     return NULL;
 }

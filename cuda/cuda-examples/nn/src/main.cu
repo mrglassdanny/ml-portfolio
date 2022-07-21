@@ -158,7 +158,7 @@ __global__ void k_matmul_2(float *A, float *B, float *C)
 	}
 }
 
-void compare_matricies(Tensor *C1, Tensor *C2, Tensor *C3)
+void compare_matricies(ArrayNd *C1, ArrayNd *C2, ArrayNd *C3)
 {
 	C2->to_cpu();
 	C3->to_cpu();
@@ -174,22 +174,22 @@ void compare_matricies(Tensor *C1, Tensor *C2, Tensor *C3)
 	}
 }
 
-int main(int argc, char **argv)
+void perf_test()
 {
 	StopWatch sw;
 
-	Tensor *C1 = new Tensor(false, Dimensions(BATCH_SIZE, OUTPUT_SIZE));
-	Tensor *C2 = new Tensor(true, Dimensions(BATCH_SIZE, OUTPUT_SIZE));
-	Tensor *C3 = new Tensor(true, Dimensions(BATCH_SIZE, OUTPUT_SIZE));
+	Array2d* C1 = new Array2d(false, BATCH_SIZE, OUTPUT_SIZE);
+	Array2d* C2 = new Array2d(true, BATCH_SIZE, OUTPUT_SIZE);
+	Array2d* C3 = new Array2d(true, BATCH_SIZE, OUTPUT_SIZE);
 
-	Tensor *A = new Tensor(false, Dimensions(BATCH_SIZE, INPUT_SIZE));
-	Tensor *B = new Tensor(false, Dimensions(INPUT_SIZE, OUTPUT_SIZE));
+	Array2d* A = new Array2d(false, BATCH_SIZE, INPUT_SIZE);
+	Array2d* B = new Array2d(false, INPUT_SIZE, OUTPUT_SIZE);
 
-	Tensor *bias = new Tensor(false, Dimensions(OUTPUT_SIZE));
+	Array1d* bias = new Array1d(false, OUTPUT_SIZE);
 	bias->zeros();
 	for (int i = 0; i < OUTPUT_SIZE; i++)
 	{
-		bias->get_data()[i] = 1.0f;
+		bias->get_data()[i] = 0.0f;
 	}
 	bias->to_cuda();
 
@@ -225,8 +225,8 @@ int main(int argc, char **argv)
 		for (int i = 0; i < EPOCHS; i++)
 		{
 			C2->zeros();
-			k_matmul_1<<<((BATCH_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK>>>(A->get_data(), B->get_data(), C2->get_data(), bias->get_data(),
-																									INPUT_SIZE, OUTPUT_SIZE, (BATCH_SIZE * OUTPUT_SIZE));
+			k_matmul_1 << <((BATCH_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK >> > (A->get_data(), B->get_data(), C2->get_data(), bias->get_data(),
+				INPUT_SIZE, OUTPUT_SIZE, (BATCH_SIZE * OUTPUT_SIZE));
 		}
 
 		float a;
@@ -247,7 +247,7 @@ int main(int argc, char **argv)
 		for (int i = 0; i < EPOCHS; i++)
 		{
 			C3->zeros();
-			k_matmul_2<<<((BATCH_SIZE * INPUT_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK>>>(A->get_data(), B->get_data(), C3->get_data());
+			k_matmul_2 << <((BATCH_SIZE * INPUT_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK >> > (A->get_data(), B->get_data(), C3->get_data());
 		}
 
 		float a;
@@ -268,6 +268,11 @@ int main(int argc, char **argv)
 
 	delete A;
 	delete B;
+}
+
+int main(int argc, char **argv)
+{
+	perf_test();
 
 	return 0;
 }

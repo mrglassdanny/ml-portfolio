@@ -5,26 +5,26 @@
 class Layer
 {
 protected:
-    Tensor *n;
+    ArrayNd *n;
 
 public:
     Layer();
     ~Layer();
 
-    virtual void forward(Tensor *out) = 0;
-    virtual Tensor *backward(Tensor *d_l) = 0;
+    virtual void forward(ArrayNd *out) = 0;
+    virtual ArrayNd *backward(ArrayNd *d_l) = 0;
 };
 
 class LinearLayer : public Layer
 {
 private:
-    Tensor *w;
-    Tensor *b;
+    Array2d *w;
+    Array1d *b;
 
 public:
     LinearLayer(int in_cnt, int out_cnt);
     ~LinearLayer();
 
-    void forward(Tensor *out);
-    Tensor *backward(Tensor *d_l);
+    void forward(Array2d *out);
+    Array2d *backward(Array2d *d_l);
 };
