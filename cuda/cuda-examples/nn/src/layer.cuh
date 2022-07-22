@@ -45,7 +45,7 @@ private:
     Activation *a_;
 
 public:
-    ActivationLayer(int in_cnt);
+    ActivationLayer(Activation *a, int in_cnt);
     ~ActivationLayer();
 
     virtual void forward(Array2d *out);

@@ -2,6 +2,16 @@
 
 // Device functions:
 
+__device__ float d_sigmoid(float val)
+{
+    return (1.0f / (1.0f + exp(-val)));
+}
+
+__device__ float d_derive_sigmoid(float sigmoid_val)
+{
+    return (sigmoid_val) * (1.0f - sigmoid_val);
+}
+
 // Kernel functions:
 
 __global__ void k_linear_matmul_w_bias(float *in, float *w, float *out, float *b,
@@ -22,6 +32,26 @@ __global__ void k_linear_matmul_w_bias(float *in, float *w, float *out, float *b
         }
 
         out[out_elem_idx] += b[w_col_idx];
+    }
+}
+
+__global__ void k_activation_sigmoid_evaluate(float *in, float *out, int in_cnt)
+{
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (tid < in_cnt)
+    {
+        out[tid] = d_sigmoid(in[tid]);
+    }
+}
+
+__global__ void k_activation_sigmoid_derive(float *in, float *out, int in_cnt)
+{
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (tid < in_cnt)
+    {
+        out[tid] = d_derive_sigmoid(in[tid]);
     }
 }
 
@@ -61,8 +91,26 @@ Array2d *LinearLayer::backward(Array2d *d_l)
     return NULL;
 }
 
-ActivationLayer::ActivationLayer(int in_cnt)
+void SigmoidActivation::evaluate(Array2d *in, Array2d *out)
 {
+    {
+        int num_blocks = (in->count() / THREADS_PER_BLOCK) + 1;
+        k_activation_sigmoid_evaluate<<<num_blocks, THREADS_PER_BLOCK>>>(in->data(), out->data(), in->count());
+    }
+}
+
+void SigmoidActivation::derive(Array2d *in, Array2d *out)
+{
+    {
+        int num_blocks = (in->count() / THREADS_PER_BLOCK) + 1;
+        k_activation_sigmoid_derive<<<num_blocks, THREADS_PER_BLOCK>>>(in->data(), out->data(), in->count());
+    }
+}
+
+ActivationLayer::ActivationLayer(Activation *a, int in_cnt)
+{
+    this->n_ = new Array2d(false, 1, in_cnt);
+    this->a_ = a;
 }
 
 ActivationLayer::~ActivationLayer()
@@ -71,10 +119,10 @@ ActivationLayer::~ActivationLayer()
 
 void ActivationLayer::forward(Array2d *out)
 {
-
+    this->a_->evaluate(this->n_, out);
 }
 
-Array2d* ActivationLayer::backward(Array2d *d_l)
+Array2d *ActivationLayer::backward(Array2d *d_l)
 {
     return NULL;
 }
