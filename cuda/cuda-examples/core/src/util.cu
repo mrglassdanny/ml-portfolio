@@ -1,33 +1,69 @@
 #include "util.cuh"
 
-StopWatch::StopWatch()
+CpuStopWatch::CpuStopWatch()
 {
-	this->beg = 0;
-	this->end = 0;
+	this->beg_ = 0;
+	this->end_ = 0;
 }
 
-StopWatch::~StopWatch()
+CpuStopWatch::~CpuStopWatch()
 {
 
 }
 
-void StopWatch::start()
+void CpuStopWatch::start()
 {
-	this->beg = clock();
-	this->end = this->beg;
+	this->beg_ = clock();
+	this->end_ = this->beg_;
 }
 
-void StopWatch::stop()
+void CpuStopWatch::stop()
 {
-	this->end = clock();
+	this->end_ = clock();
 }
 
-double StopWatch::get_elapsed_seconds()
+double CpuStopWatch::get_elapsed_seconds()
 {
-	return ((double)(this->end - this->beg)) / CLOCKS_PER_SEC;
+	return ((double)(this->end_ - this->beg_)) / CLOCKS_PER_SEC;
 }
 
-void StopWatch::print_elapsed_seconds()
+void CpuStopWatch::print_elapsed_seconds()
+{
+	printf("ELAPSED SECONDS: %f\n", this->get_elapsed_seconds());
+}
+
+CudaStopWatch::CudaStopWatch()
+{
+	cudaEventCreate(&this->beg_);
+	cudaEventCreate(&this->end_);
+}
+
+CudaStopWatch::~CudaStopWatch()
+{
+
+}
+
+void CudaStopWatch::start()
+{
+	cudaEventRecord(this->beg_, 0);
+}
+
+void CudaStopWatch::stop()
+{
+    cudaThreadSynchronize();
+    cudaEventRecord(this->end_, 0);
+    cudaEventSynchronize(this->end_);
+}
+
+double CudaStopWatch::get_elapsed_seconds()
+{
+	float elapsed_ms;
+    cudaEventElapsedTime(&elapsed_ms, this->beg_, this->end_);
+
+	return ((double)elapsed_ms / 1000.0);
+}
+
+void CudaStopWatch::print_elapsed_seconds()
 {
 	printf("ELAPSED SECONDS: %f\n", this->get_elapsed_seconds());
 }

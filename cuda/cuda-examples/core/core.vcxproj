@@ -11,11 +11,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="src\tensor.cu" />
+    <CudaCompile Include="src\ndarray.cu" />
     <CudaCompile Include="src\util.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\tensor.cuh" />
+    <ClInclude Include="src\ndarray.cuh" />
     <ClInclude Include="src\util.cuh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

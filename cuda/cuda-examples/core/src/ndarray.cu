@@ -1,4 +1,4 @@
-#include "tensor.cuh"
+#include "ndarray.cuh"
 
 Dimensions::Dimensions()
 {

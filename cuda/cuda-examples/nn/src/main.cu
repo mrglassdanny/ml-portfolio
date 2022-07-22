@@ -1,11 +1,11 @@
 #include <util.cuh>
-#include <tensor.cuh>
+#include <ndarray.cuh>
 
 #define THREADS_PER_BLOCK 32
 
 #define BATCH_SIZE 512
 #define INPUT_SIZE 512
-#define OUTPUT_SIZE 512
+#define OUTPUT_SIZE 2048
 
 #define EPOCHS 10
 
@@ -63,8 +63,8 @@ void matmul(float *A, float *B, float *C)
 	}
 }
 
-__global__ void k_matmul_1(float* in, float* w, float* out, float* b,
-	int in_col_cnt, int out_col_cnt, int out_elem_cnt)
+__global__ void k_matmul_1(float *in, float *w, float *out,
+						   int in_col_cnt, int out_col_cnt, int out_elem_cnt)
 {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -79,8 +79,6 @@ __global__ void k_matmul_1(float* in, float* w, float* out, float* b,
 		{
 			out[out_elem_idx] += (in[in_row_idx * in_col_cnt + in_col_idx] * w[w_col_idx + (in_col_idx * out_col_cnt)]);
 		}
-
-		out[out_elem_idx] += b[w_col_idx];
 	}
 }
 
@@ -158,121 +156,181 @@ __global__ void k_matmul_2(float *A, float *B, float *C)
 	}
 }
 
-void compare_matricies(ArrayNd *C1, ArrayNd *C2, ArrayNd *C3)
+__global__ void k_matmul_3(float *in, float *w, float *out,
+						   int in_col_cnt, int out_row_cnt, int out_col_cnt)
 {
-	C2->to_cpu();
-	C3->to_cpu();
+	int out_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
+	int out_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
-	/*C1->print();
-	C2->print();
-	C3->print();*/
+	int out_elem_idx = out_row_idx * out_col_cnt + out_col_idx;
 
-	for (int i = 0; i < 100; i++)
+	if (out_col_idx < out_col_cnt && out_row_idx < out_row_cnt)
 	{
-		int idx = rand() % (BATCH_SIZE * OUTPUT_SIZE);
-		printf("%d\t%f\t%f\t%f\n", idx, C1->data()[idx], C2->data()[idx], C3->data()[idx]);
+		int in_row_idx = out_row_idx;
+		int w_col_idx = out_col_idx;
+
+		for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
+		{
+			int w_row_idx = in_col_idx;
+			out[out_elem_idx] += (in[in_row_idx * in_col_cnt + in_col_idx] * w[w_row_idx * out_col_cnt + w_col_idx]);
+		}
 	}
 }
 
-void perf_test()
+__global__ void k_activate_1(float *out)
 {
-	StopWatch sw;
+	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
-	Array2d* C1 = new Array2d(false, BATCH_SIZE, OUTPUT_SIZE);
-	Array2d* C2 = new Array2d(true, BATCH_SIZE, OUTPUT_SIZE);
-	Array2d* C3 = new Array2d(true, BATCH_SIZE, OUTPUT_SIZE);
+	int out_elem_idx = tid;
 
-	Array2d* A = new Array2d(false, BATCH_SIZE, INPUT_SIZE);
-	Array2d* B = new Array2d(false, INPUT_SIZE, OUTPUT_SIZE);
-
-	Array1d* bias = new Array1d(false, OUTPUT_SIZE);
-	bias->zeros();
-	for (int i = 0; i < OUTPUT_SIZE; i++)
+	if (tid < (BATCH_SIZE * OUTPUT_SIZE))
 	{
-		bias->data()[i] = 0.0f;
+		out[out_elem_idx] = (12.0f * 89.0f - 666);
 	}
-	bias->to_cuda();
+}
 
+__global__ void k_activate_2(float *out)
+{
+	int col_idx = blockIdx.x * blockDim.x + threadIdx.x;
+	int row_idx = blockIdx.y * blockDim.y + threadIdx.y;
+
+	int out_elem_idx = row_idx * OUTPUT_SIZE + col_idx;
+
+	if (col_idx < OUTPUT_SIZE && row_idx < BATCH_SIZE)
+	{
+		out[out_elem_idx] = (12.0f * 89.0f - 666);
+	}
+}
+
+void compare_matricies(ArrayNd *A, ArrayNd *B)
+{
+	A->to_cpu();
+	B->to_cpu();
+
+	for (int i = 0; i < 10; i++)
+	{
+		int idx = rand() % (BATCH_SIZE * OUTPUT_SIZE);
+		printf("%d\t%f\t%f\n", idx, A->data()[idx], B->data()[idx]);
+	}
+
+	float diff = 0.0f;
+
+	for (int i = 0; i < A->count(); i++)
+	{
+		diff += abs(A->data()[i] - B->data()[i]);
+	}
+
+	printf("\nDIFF: %f\n", diff);
+}
+
+void matmul_perf_test()
+{
+	CudaStopWatch gsw;
+
+	Array2d *C2 = new Array2d(true, BATCH_SIZE, OUTPUT_SIZE);
+	Array2d *C4 = new Array2d(true, BATCH_SIZE, OUTPUT_SIZE);
+
+	Array2d *A = new Array2d(false, BATCH_SIZE, INPUT_SIZE);
+	Array2d *B = new Array2d(false, INPUT_SIZE, OUTPUT_SIZE);
 
 	A->rands(0.0f, 1.0f);
 	B->rands(0.0f, 1.0f);
 
-	{
+	// set_test_vals(A->data(), B->data());
 
-		sw.start();
-
-		for (int i = 0; i < EPOCHS; i++)
-		{
-			C1->zeros();
-			matmul(A->data(), B->data(), C1->data());
-		}
-
-		float a;
-		memcpy(&a, &C1->data()[0], sizeof(float));
-		printf("%f\n", a);
-
-		sw.stop();
-		sw.print_elapsed_seconds();
-	}
+	A->to_cuda();
+	B->to_cuda();
 
 	{
-
-		A->to_cuda();
-		B->to_cuda();
-
-		sw.start();
+		gsw.start();
 
 		for (int i = 0; i < EPOCHS; i++)
 		{
 			C2->zeros();
-			k_matmul_1<<<((BATCH_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK>>>(A->data(), B->data(), C2->data(), bias->data(),
+			k_matmul_1<<<((BATCH_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK>>>(A->data(), B->data(), C2->data(),
 																									INPUT_SIZE, OUTPUT_SIZE, (BATCH_SIZE * OUTPUT_SIZE));
 		}
 
-		float a;
-		cudaMemcpy(&a, &C2->data()[0], sizeof(float), cudaMemcpyDeviceToHost);
-		printf("%f\n", a);
-
-		sw.stop();
-		sw.print_elapsed_seconds();
+		gsw.stop();
+		gsw.print_elapsed_seconds();
 	}
 
 	{
-
-		A->to_cuda();
-		B->to_cuda();
-
-		sw.start();
+		gsw.start();
 
 		for (int i = 0; i < EPOCHS; i++)
 		{
-			C3->zeros();
-			k_matmul_2<<<((BATCH_SIZE * INPUT_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK>>>(A->data(), B->data(), C3->data());
+			C4->zeros();
+			unsigned int grid_rows = (BATCH_SIZE / THREADS_PER_BLOCK) + 1;
+			unsigned int grid_cols = (OUTPUT_SIZE / THREADS_PER_BLOCK) + 1;
+			dim3 dimGrid(grid_cols, grid_rows);
+			dim3 dimBlock(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+			k_matmul_3<<<dimGrid, dimBlock>>>(A->data(), B->data(), C4->data(),
+											  INPUT_SIZE, BATCH_SIZE, OUTPUT_SIZE);
 		}
 
-		float a;
-		cudaMemcpy(&a, &C3->data()[0], sizeof(float), cudaMemcpyDeviceToHost);
-		printf("%f\n", a);
-
-		sw.stop();
-		sw.print_elapsed_seconds();
+		gsw.stop();
+		gsw.print_elapsed_seconds();
 	}
 
 	printf("\n");
 
-	compare_matricies(C1, C2, C3);
-
-	delete C1;
+	compare_matricies(C2, C4);
 	delete C2;
-	delete C3;
+	delete C4;
 
 	delete A;
 	delete B;
 }
 
+void activate_perf_test()
+{
+
+	CudaStopWatch gsw;
+
+	Array2d *C2 = new Array2d(true, BATCH_SIZE, OUTPUT_SIZE);
+	Array2d *C4 = new Array2d(true, BATCH_SIZE, OUTPUT_SIZE);
+
+	{
+		gsw.start();
+
+		for (int i = 0; i < EPOCHS; i++)
+		{
+			C2->zeros();
+			k_activate_1<<<((BATCH_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK>>>(C2->data());
+		}
+
+		gsw.stop();
+		gsw.print_elapsed_seconds();
+	}
+
+	{
+		gsw.start();
+
+		for (int i = 0; i < EPOCHS; i++)
+		{
+			C4->zeros();
+			unsigned int grid_rows = (BATCH_SIZE / THREADS_PER_BLOCK) + 1;
+			unsigned int grid_cols = (OUTPUT_SIZE / THREADS_PER_BLOCK) + 1;
+			dim3 dimGrid(grid_cols, grid_rows);
+			dim3 dimBlock(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+			k_activate_2<<<dimGrid, dimBlock>>>(C4->data());
+		}
+
+		gsw.stop();
+		gsw.print_elapsed_seconds();
+	}
+
+	delete C2;
+	delete C4;
+	
+}
+
 int main(int argc, char **argv)
 {
-	perf_test();
+	matmul_perf_test();
+
+	activate_perf_test();
 
 	return 0;
 }

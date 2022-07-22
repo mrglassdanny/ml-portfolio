@@ -7,19 +7,51 @@
 #include <vector>
 #include <random>
 
+#include <cuda_runtime.h>
+#include <curand.h>
+#include <curand_kernel.h>
+#include <device_launch_parameters.h>
+#include <device_atomic_functions.h>
 
 class StopWatch
 {
-private:
-	clock_t beg;
-	clock_t end;
 public:
-	StopWatch();
-	~StopWatch();
+	virtual void start() = 0;
+	virtual void stop() = 0;
 
-	void start();
-	void stop();
+	virtual double get_elapsed_seconds() = 0;
+	virtual void print_elapsed_seconds() = 0;
+};
 
-	double get_elapsed_seconds();
-	void print_elapsed_seconds();
+
+class CpuStopWatch : public StopWatch
+{
+private:
+	clock_t beg_;
+	clock_t end_;
+public:
+	CpuStopWatch();
+	~CpuStopWatch();
+
+	virtual void start();
+	virtual void stop();
+
+	virtual double get_elapsed_seconds();
+	virtual void print_elapsed_seconds();
+};
+
+class CudaStopWatch : public StopWatch
+{
+private:
+	cudaEvent_t beg_;
+	cudaEvent_t end_;
+public:
+	CudaStopWatch();
+	~CudaStopWatch();
+
+	virtual void start();
+	virtual void stop();
+
+	virtual double get_elapsed_seconds();
+	virtual void print_elapsed_seconds();
 };
