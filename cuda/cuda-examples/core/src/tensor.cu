@@ -224,7 +224,7 @@ void Array1d::print()
     bool orig_cuda = this->cuda_;
     this->to_cpu();
 
-    int cnt = this->cnt();
+    int cnt = this->count();
     printf("[ ");
     for (int i = 0; i < cnt; i++)
     {
@@ -259,11 +259,6 @@ void Array1d::print()
     {
         this->to_cuda();
     }
-}
-
-int Array1d::cnt()
-{
-    return this->dims_.dim(0);
 }
 
 Array2d::Array2d(bool cuda, int row_cnt, int col_cnt)

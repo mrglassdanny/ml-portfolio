@@ -68,3 +68,13 @@ ActivationLayer::ActivationLayer(int in_cnt)
 ActivationLayer::~ActivationLayer()
 {
 }
+
+void ActivationLayer::forward(Array2d *out)
+{
+
+}
+
+Array2d* ActivationLayer::backward(Array2d *d_l)
+{
+    return NULL;
+}

@@ -4,8 +4,8 @@
 #define THREADS_PER_BLOCK 32
 
 #define BATCH_SIZE 512
-#define INPUT_SIZE 2048
-#define OUTPUT_SIZE 1024
+#define INPUT_SIZE 512
+#define OUTPUT_SIZE 512
 
 #define EPOCHS 10
 
@@ -63,8 +63,8 @@ void matmul(float *A, float *B, float *C)
 	}
 }
 
-__global__ void k_matmul_1(float *in_mtx, float *w_mtx, float *out_mtx, float *b_vec,
-						   int in_col_cnt, int out_col_cnt, int out_elem_cnt)
+__global__ void k_matmul_1(float* in, float* w, float* out, float* b,
+	int in_col_cnt, int out_col_cnt, int out_elem_cnt)
 {
 	int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -77,10 +77,10 @@ __global__ void k_matmul_1(float *in_mtx, float *w_mtx, float *out_mtx, float *b
 
 		for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
 		{
-			out_mtx[out_elem_idx] += (in_mtx[in_row_idx * in_col_cnt + in_col_idx] * w_mtx[w_col_idx + (in_col_idx * out_col_cnt)]);
+			out[out_elem_idx] += (in[in_row_idx * in_col_cnt + in_col_idx] * w[w_col_idx + (in_col_idx * out_col_cnt)]);
 		}
 
-		out_mtx[out_elem_idx] += b_vec[w_col_idx];
+		out[out_elem_idx] += b[w_col_idx];
 	}
 }
 
@@ -272,7 +272,7 @@ void perf_test()
 
 int main(int argc, char **argv)
 {
-	//perf_test();
+	perf_test();
 
 	return 0;
 }
