@@ -6,33 +6,33 @@ Dimensions::Dimensions()
 
 Dimensions::Dimensions(int dim_1)
 {
-    this->dim_list.push_back(dim_1);
+    this->dims_vec_.push_back(dim_1);
 }
 
 Dimensions::Dimensions(int dim_1, int dim_2)
 {
-    this->dim_list.push_back(dim_1);
-    this->dim_list.push_back(dim_2);
+    this->dims_vec_.push_back(dim_1);
+    this->dims_vec_.push_back(dim_2);
 }
 
 Dimensions::Dimensions(int dim_1, int dim_2, int dim_3)
 {
-    this->dim_list.push_back(dim_1);
-    this->dim_list.push_back(dim_2);
-    this->dim_list.push_back(dim_3);
+    this->dims_vec_.push_back(dim_1);
+    this->dims_vec_.push_back(dim_2);
+    this->dims_vec_.push_back(dim_3);
 }
 
 Dimensions::Dimensions(int dim_1, int dim_2, int dim_3, int dim_4)
 {
-    this->dim_list.push_back(dim_1);
-    this->dim_list.push_back(dim_2);
-    this->dim_list.push_back(dim_3);
-    this->dim_list.push_back(dim_4);
+    this->dims_vec_.push_back(dim_1);
+    this->dims_vec_.push_back(dim_2);
+    this->dims_vec_.push_back(dim_3);
+    this->dims_vec_.push_back(dim_4);
 }
 
-Dimensions::Dimensions(std::vector<int> dim_list)
+Dimensions::Dimensions(std::vector<int> dims_vec)
 {
-    this->dim_list = dim_list;
+    this->dims_vec_ = dims_vec;
 }
 
 Dimensions::~Dimensions()
@@ -41,13 +41,13 @@ Dimensions::~Dimensions()
 
 void Dimensions::print()
 {
-    int dims_cnt = this->get_cnt();
+    int cnt = this->count();
 
-    for (int i = 0; i < dims_cnt; i++)
+    for (int i = 0; i < cnt; i++)
     {
-        printf("%d", this->dim_list[i]);
+        printf("%d", this->dims_vec_[i]);
 
-        if (i < dims_cnt - 1)
+        if (i < cnt - 1)
         {
             printf("x");
         }
@@ -56,135 +56,140 @@ void Dimensions::print()
     printf("\n");
 }
 
-int Dimensions::get_dim(int dim_idx)
+int Dimensions::dim(int dim_idx)
 {
-    return this->dim_list[dim_idx];
+    return this->dims_vec_[dim_idx];
 }
 
-int Dimensions::get_cnt()
+int Dimensions::count()
 {
-    return this->dim_list.size();
+    return this->dims_vec_.size();
 }
 
-int Dimensions::get_size()
+int Dimensions::size()
 {
-    int dims_size = 1;
+    int size = 1;
 
-    for (int i = 0; i < this->get_cnt(); i++)
+    for (int i = 0; i < this->count(); i++)
     {
-        dims_size *= this->dim_list[i];
+        size *= this->dims_vec_[i];
     }
 
-    return dims_size;
+    return size;
 }
 
 ArrayNd::ArrayNd(ArrayNd &src)
 {
-    this->cuda_flg = src.cuda_flg;
-    this->dims = src.dims;
+    this->cuda_ = src.cuda_;
+    this->dims_ = src.dims_;
 
-    size_t size = this->get_data_size();
+    size_t size = this->size();
 
-    if (src.cuda_flg)
+    if (src.cuda_)
     {
-        cudaMalloc(&this->data, size);
-        cudaMemcpy(this->data, src.data, size, cudaMemcpyDeviceToDevice);
+        cudaMalloc(&this->data_, size);
+        cudaMemcpy(this->data_, src.data_, size, cudaMemcpyDeviceToDevice);
     }
     else
     {
-        this->data = (float *)malloc(size);
-        memcpy(this->data, src.data, size);
+        this->data_ = (float *)malloc(size);
+        memcpy(this->data_, src.data_, size);
     }
 }
 
-ArrayNd::ArrayNd(bool cuda_flg, Dimensions dims)
+ArrayNd::ArrayNd(bool cuda, Dimensions dims)
 {
-    this->cuda_flg = cuda_flg;
-    this->dims = dims;
+    this->cuda_ = cuda;
+    this->dims_ = dims;
 
-    size_t size = this->get_data_size();
+    size_t size = this->size();
 
-    if (cuda_flg)
+    if (cuda)
     {
-        cudaMalloc(&this->data, size);
+        cudaMalloc(&this->data_, size);
     }
     else
     {
-        this->data = (float *)malloc(size);
+        this->data_ = (float *)malloc(size);
     }
 }
 
 ArrayNd::~ArrayNd()
 {
-    if (this->cuda_flg)
+    if (this->cuda_)
     {
-        cudaFree(this->data);
+        cudaFree(this->data_);
     }
     else
     {
-        free(this->data);
+        free(this->data_);
     }
-}
-
-size_t ArrayNd::get_data_size()
-{
-    return sizeof(float) * this->dims.get_size();
 }
 
 bool ArrayNd::is_cuda()
 {
-    return this->cuda_flg;
-}
-
-float *ArrayNd::get_data()
-{
-    return this->data;
+    return this->cuda_;
 }
 
 void ArrayNd::to_cpu()
 {
-    if (this->cuda_flg)
+    if (this->cuda_)
     {
-        size_t size = this->get_data_size();
+        size_t size = this->size();
         float *dst = (float *)malloc(size);
-        cudaMemcpy(dst, this->data, size, cudaMemcpyDeviceToHost);
-        cudaFree(this->data);
-        this->data = dst;
-        this->cuda_flg = false;
+        cudaMemcpy(dst, this->data_, size, cudaMemcpyDeviceToHost);
+        cudaFree(this->data_);
+        this->data_ = dst;
+        this->cuda_ = false;
     }
 }
 
 void ArrayNd::to_cuda()
 {
-    if (!this->cuda_flg)
+    if (!this->cuda_)
     {
-        size_t size = this->get_data_size();
+        size_t size = this->size();
         float *dst;
         cudaMalloc(&dst, size);
-        cudaMemcpy(dst, this->data, size, cudaMemcpyHostToDevice);
-        free(this->data);
-        this->data = dst;
-        this->cuda_flg = true;
+        cudaMemcpy(dst, this->data_, size, cudaMemcpyHostToDevice);
+        free(this->data_);
+        this->data_ = dst;
+        this->cuda_ = true;
     }
+}
+
+float *ArrayNd::data()
+{
+    return this->data_;
+}
+
+int ArrayNd::count()
+{
+    return this->dims_.size();
+}
+
+size_t ArrayNd::size()
+{
+    return sizeof(float) * this->dims_.size();
 }
 
 void ArrayNd::zeros()
 {
-    size_t size = this->get_data_size();
+    size_t size = this->size();
 
-    if (this->cuda_flg)
+    if (this->cuda_)
     {
-        cudaMemset(this->data, 0, size);
+        cudaMemset(this->data_, 0, size);
     }
     else
     {
-        memset(this->data, 0, size);
+        memset(this->data_, 0, size);
     }
 }
 
 void ArrayNd::rands(float mean, float stddev)
 {
-    bool orig_cuda_flg = this->cuda_flg;
+    bool orig_cuda = this->cuda_;
 
     this->to_cpu();
 
@@ -192,42 +197,109 @@ void ArrayNd::rands(float mean, float stddev)
         std::random_device rd;
         std::mt19937 gen(rd());
 
-        for (int i = 0; i < this->dims.get_size(); i++)
+        for (int i = 0; i < this->dims_.size(); i++)
         {
             std::normal_distribution<float> d(mean, stddev);
-            this->data[i] = d(gen);
+            this->data_[i] = d(gen);
         }
     }
 
-    if (orig_cuda_flg)
+    if (orig_cuda)
     {
         this->to_cuda();
     }
 }
 
-Array1d::Array1d(bool cuda_flg, int cnt)
-    : ArrayNd(cuda_flg, Dimensions(cnt))
+Array1d::Array1d(bool cuda, int cnt)
+    : ArrayNd(cuda, Dimensions(cnt))
 {
-
 }
 
 Array1d::~Array1d()
 {
-
 }
 
 void Array1d::print()
 {
-    bool orig_cuda_flg = this->cuda_flg;
+    bool orig_cuda = this->cuda_;
     this->to_cpu();
 
-    int cnt = this->get_cnt();
-        printf("[ ");
-        for (int i = 0; i < cnt; i++)
-        {
-            float val = this->data[i];
+    int cnt = this->cnt();
+    printf("[ ");
+    for (int i = 0; i < cnt; i++)
+    {
+        float val = this->data_[i];
 
-            if (i == cnt - 1)
+        if (i == cnt - 1)
+        {
+            if (val >= 0.0f)
+            {
+                printf(" %f", val);
+            }
+            else
+            {
+                printf("%f", val);
+            }
+        }
+        else
+        {
+            if (val >= 0.0f)
+            {
+                printf(" %f\t", val);
+            }
+            else
+            {
+                printf("%f\t", val);
+            }
+        }
+    }
+    printf(" ]");
+
+    if (orig_cuda)
+    {
+        this->to_cuda();
+    }
+}
+
+int Array1d::cnt()
+{
+    return this->dims_.dim(0);
+}
+
+Array2d::Array2d(bool cuda, int row_cnt, int col_cnt)
+    : ArrayNd(cuda, Dimensions(row_cnt, col_cnt))
+{
+}
+
+Array2d::~Array2d()
+{
+}
+
+void Array2d::print()
+{
+    bool orig_cuda = this->cuda_;
+    this->to_cpu();
+
+    int row_cnt = this->rows();
+    int col_cnt = this->cols();
+
+    printf("[");
+    for (int i = 0; i < row_cnt; i++)
+    {
+        if (i == 0)
+        {
+            printf(" [ ");
+        }
+        else
+        {
+            printf("  [ ");
+        }
+
+        for (int j = 0; j < col_cnt; j++)
+        {
+            float val = this->data_[i * col_cnt + j];
+
+            if (j == col_cnt - 1)
             {
                 if (val >= 0.0f)
                 {
@@ -250,130 +322,55 @@ void Array1d::print()
                 }
             }
         }
-        printf(" ]");
 
-        if (orig_cuda_flg)
+        if (i == row_cnt - 1)
         {
-            this->to_cuda();
+            printf(" ] ");
         }
-    
-}
-
-int Array1d::get_cnt()
-{
-    return this->dims.get_dim(0);
-}
-
-Array2d::Array2d(bool cuda_flg, int row_cnt, int col_cnt)
-    : ArrayNd(cuda_flg, Dimensions(row_cnt, col_cnt))
-{
-
-}
-
-Array2d::~Array2d()
-{
-
-}
-
-void Array2d::print()
-{
-    bool orig_cuda_flg = this->cuda_flg;
-    this->to_cpu();
-
-    int row_cnt = this->get_row_cnt();
-    int col_cnt = this->get_col_cnt();
-
-        printf("[");
-        for (int i = 0; i < row_cnt; i++)
+        else
         {
-            if (i == 0)
-            {
-                printf(" [ ");
-            }
-            else
-            {
-                printf("  [ ");
-            }
-
-            for (int j = 0; j < col_cnt; j++)
-            {
-                float val = this->data[i * col_cnt + j];
-
-                if (j == col_cnt - 1)
-                {
-                    if (val >= 0.0f)
-                    {
-                        printf(" %f", val);
-                    }
-                    else
-                    {
-                        printf("%f", val);
-                    }
-                }
-                else
-                {
-                    if (val >= 0.0f)
-                    {
-                        printf(" %f\t", val);
-                    }
-                    else
-                    {
-                        printf("%f\t", val);
-                    }
-                }
-            }
-
-            if (i == row_cnt - 1)
-            {
-                printf(" ] ");
-            }
-            else
-            {
-                printf(" ],\n");
-            }
+            printf(" ],\n");
         }
-        printf("]\n");
+    }
+    printf("]\n");
 
-        if (orig_cuda_flg)
-        {
-            this->to_cuda();
-        }
+    if (orig_cuda)
+    {
+        this->to_cuda();
+    }
 }
 
-int Array2d::get_row_cnt()
+int Array2d::rows()
 {
-    return this->dims.get_dim(0);
+    return this->dims_.dim(0);
 }
 
-int Array2d::get_col_cnt()
+int Array2d::cols()
 {
-    return this->dims.get_dim(1);
+    return this->dims_.dim(1);
 }
 
-Array3d::Array3d(bool cuda_flg, int x, int y, int z)
-    : ArrayNd(cuda_flg, Dimensions(x, y, z))
+Array3d::Array3d(bool cuda, int x_cnt, int y_cnt, int z_cnt)
+    : ArrayNd(cuda, Dimensions(x_cnt, y_cnt, z_cnt))
 {
-
 }
 
 Array3d::~Array3d()
 {
-
 }
 
 void Array3d::print()
 {
-    bool orig_cuda_flg = this->cuda_flg;
+    bool orig_cuda = this->cuda_;
     this->to_cpu();
 
-    int x = this->get_x();
-    int y = this->get_y();
-    int z = this->get_z();
+    int x_cnt = this->xs();
+    int y_cnt = this->ys();
+    int z_cnt = this->zs();
 
     printf("[");
-    for (int i = 0; i < x; i++)
+    for (int i = 0; i < x_cnt; i++)
     {
-
         if (i == 0)
         {
             printf(" [ ");
@@ -383,7 +380,7 @@ void Array3d::print()
             printf("  [ ");
         }
 
-        for (int j = 0; j < y; j++)
+        for (int j = 0; j < y_cnt; j++)
         {
 
             if (j == 0)
@@ -395,11 +392,11 @@ void Array3d::print()
                 printf("  [ ");
             }
 
-            for (int k = 0; k < z; k++)
+            for (int k = 0; k < z_cnt; k++)
             {
-                float val = this->data[(i * y * z) + (j * z) + k];
+                float val = this->data_[(i * y_cnt * z_cnt) + (j * z_cnt) + k];
 
-                if (k == z - 1)
+                if (k == z_cnt - 1)
                 {
                     if (val >= 0.0f)
                     {
@@ -423,7 +420,7 @@ void Array3d::print()
                 }
             }
 
-            if (j == y - 1)
+            if (j == y_cnt - 1)
             {
                 printf(" ] ");
             }
@@ -433,7 +430,7 @@ void Array3d::print()
             }
         }
 
-        if (i == x - 1)
+        if (i == x_cnt - 1)
         {
             printf(" ] ");
         }
@@ -444,69 +441,67 @@ void Array3d::print()
     }
     printf("]\n");
 
-    if (orig_cuda_flg)
+    if (orig_cuda)
     {
         this->to_cuda();
     }
 }
 
-int Array3d::get_x()
+int Array3d::xs()
 {
-    return this->dims.get_dim(0);
+    return this->dims_.dim(0);
 }
 
-int Array3d::get_y()
+int Array3d::ys()
 {
-    return this->dims.get_dim(1);
+    return this->dims_.dim(1);
 }
 
-int Array3d::get_z()
+int Array3d::zs()
 {
-    return this->dims.get_dim(2);
+    return this->dims_.dim(2);
 }
 
-Tensor::Tensor(bool cuda_flg, Dimensions dims)
-    : ArrayNd(cuda_flg, dims)
+Tensor::Tensor(bool cuda, Dimensions dims)
+    : ArrayNd(cuda, dims)
 {
-
 }
 
 Tensor::~Tensor()
 {
-
 }
 
 void Tensor::print()
 {
-    bool orig_cuda_flg = this->cuda_flg;
+    bool orig_cuda = this->cuda_;
     this->to_cpu();
 
     printf("Shape: ");
-    this->dims.print();
+    this->dims_.print();
 
     printf("Data: \n");
-    for (int i = 0; i < this->dims.get_size(); i++)
+    for (int i = 0; i < this->dims_.size(); i++)
     {
-        printf("%d: %f\n", i, this->data[i]);
+        printf("%d: %f\n", i, this->data_[i]);
     }
 
-    if (orig_cuda_flg)
+    if (orig_cuda)
     {
         this->to_cuda();
     }
 }
 
-Dimensions Tensor::get_dims()
+Dimensions Tensor::shape()
 {
-    return this->dims;
+    return this->dims_;
 }
 
 int Tensor::num_dims()
 {
-    return this->dims.get_cnt();
+    return this->dims_.count();
 }
 
 int Tensor::dims_size()
 {
-    return this->dims.get_size();
+    return this->dims_.size();
 }

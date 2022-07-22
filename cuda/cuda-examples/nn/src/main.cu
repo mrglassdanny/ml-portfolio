@@ -170,7 +170,7 @@ void compare_matricies(ArrayNd *C1, ArrayNd *C2, ArrayNd *C3)
 	for (int i = 0; i < 100; i++)
 	{
 		int idx = rand() % (BATCH_SIZE * OUTPUT_SIZE);
-		printf("%d\t%f\t%f\t%f\n", idx, C1->get_data()[idx], C2->get_data()[idx], C3->get_data()[idx]);
+		printf("%d\t%f\t%f\t%f\n", idx, C1->data()[idx], C2->data()[idx], C3->data()[idx]);
 	}
 }
 
@@ -189,7 +189,7 @@ void perf_test()
 	bias->zeros();
 	for (int i = 0; i < OUTPUT_SIZE; i++)
 	{
-		bias->get_data()[i] = 0.0f;
+		bias->data()[i] = 0.0f;
 	}
 	bias->to_cuda();
 
@@ -204,11 +204,11 @@ void perf_test()
 		for (int i = 0; i < EPOCHS; i++)
 		{
 			C1->zeros();
-			matmul(A->get_data(), B->get_data(), C1->get_data());
+			matmul(A->data(), B->data(), C1->data());
 		}
 
 		float a;
-		memcpy(&a, &C1->get_data()[0], sizeof(float));
+		memcpy(&a, &C1->data()[0], sizeof(float));
 		printf("%f\n", a);
 
 		sw.stop();
@@ -225,12 +225,12 @@ void perf_test()
 		for (int i = 0; i < EPOCHS; i++)
 		{
 			C2->zeros();
-			k_matmul_1 << <((BATCH_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK >> > (A->get_data(), B->get_data(), C2->get_data(), bias->get_data(),
-				INPUT_SIZE, OUTPUT_SIZE, (BATCH_SIZE * OUTPUT_SIZE));
+			k_matmul_1<<<((BATCH_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK>>>(A->data(), B->data(), C2->data(), bias->data(),
+																									INPUT_SIZE, OUTPUT_SIZE, (BATCH_SIZE * OUTPUT_SIZE));
 		}
 
 		float a;
-		cudaMemcpy(&a, &C2->get_data()[0], sizeof(float), cudaMemcpyDeviceToHost);
+		cudaMemcpy(&a, &C2->data()[0], sizeof(float), cudaMemcpyDeviceToHost);
 		printf("%f\n", a);
 
 		sw.stop();
@@ -247,11 +247,11 @@ void perf_test()
 		for (int i = 0; i < EPOCHS; i++)
 		{
 			C3->zeros();
-			k_matmul_2 << <((BATCH_SIZE * INPUT_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK >> > (A->get_data(), B->get_data(), C3->get_data());
+			k_matmul_2<<<((BATCH_SIZE * INPUT_SIZE * OUTPUT_SIZE) / THREADS_PER_BLOCK) + 1, THREADS_PER_BLOCK>>>(A->data(), B->data(), C3->data());
 		}
 
 		float a;
-		cudaMemcpy(&a, &C3->get_data()[0], sizeof(float), cudaMemcpyDeviceToHost);
+		cudaMemcpy(&a, &C3->data()[0], sizeof(float), cudaMemcpyDeviceToHost);
 		printf("%f\n", a);
 
 		sw.stop();
@@ -272,7 +272,7 @@ void perf_test()
 
 int main(int argc, char **argv)
 {
-	perf_test();
+	//perf_test();
 
 	return 0;
 }
