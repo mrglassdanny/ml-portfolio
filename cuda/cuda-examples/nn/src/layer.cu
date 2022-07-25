@@ -1,18 +1,6 @@
 #include "layer.cuh"
 
-// Device functions:
-
-__device__ float d_sigmoid(float val)
-{
-    return (1.0f / (1.0f + exp(-val)));
-}
-
-__device__ float d_derive_sigmoid(float sigmoid_val)
-{
-    return (sigmoid_val) * (1.0f - sigmoid_val);
-}
-
-// Kernel functions:
+using namespace layer;
 
 __global__ void k_linear_matmul_w_bias(float *in, float *w, float *out, float *b,
                                        int in_col_cnt, int out_row_cnt, int out_col_cnt)
@@ -79,33 +67,7 @@ __global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int in
     }
 }
 
-__global__ void k_activation_sigmoid_evaluate(float *in, float *out, int in_row_cnt, int in_col_cnt)
-{
-    int col_idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int row_idx = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (col_idx < in_col_cnt && row_idx < in_row_cnt)
-    {
-        int out_elem_idx = row_idx * in_col_cnt + col_idx;
-
-        out[out_elem_idx] = d_sigmoid(in[out_elem_idx]);
-    }
-}
-
-__global__ void k_activation_sigmoid_derive(float *in, float *out, int in_row_cnt, int in_col_cnt)
-{
-    int col_idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int row_idx = blockIdx.y * blockDim.y + threadIdx.y;
-
-    if (col_idx < in_col_cnt && row_idx < in_row_cnt)
-    {
-        int out_elem_idx = row_idx * in_col_cnt + col_idx;
-
-        out[out_elem_idx] = d_derive_sigmoid(in[out_elem_idx]);
-    }
-}
-
-LinearLayer::LinearLayer(int in_cnt, int out_cnt)
+Linear::Linear(int in_cnt, int out_cnt)
 {
     this->n_ = new Array2d(true, 1, in_cnt);
     this->w_ = new Array2d(true, in_cnt, out_cnt);
@@ -119,7 +81,7 @@ LinearLayer::LinearLayer(int in_cnt, int out_cnt)
     this->db_->zeros();
 }
 
-LinearLayer::~LinearLayer()
+Linear::~Linear()
 {
     delete this->n_;
     delete this->w_;
@@ -128,7 +90,7 @@ LinearLayer::~LinearLayer()
     delete this->db_;
 }
 
-void LinearLayer::forward(Array2d *out)
+void Linear::forward(Array2d *out)
 {
     out->zeros();
 
@@ -144,7 +106,7 @@ void LinearLayer::forward(Array2d *out)
     }
 }
 
-Array2d *LinearLayer::backward(Array2d *in)
+Array2d *Linear::backward(Array2d *in)
 {
     {
         unsigned int grid_row_cnt = (this->w_->rows() / THREADS_PER_BLOCK) + 1;
@@ -175,57 +137,36 @@ Array2d *LinearLayer::backward(Array2d *in)
     return out;
 }
 
-Array2d *LinearLayer::n()
+Array2d *Linear::n()
 {
     return this->n_;
 }
 
-void SigmoidActivator::evaluate(Array2d *in, Array2d *out)
+void Linear::set_n(Array2d *n)
 {
-    {
-        unsigned int grid_row_cnt = (in->rows() / THREADS_PER_BLOCK) + 1;
-        unsigned int grid_col_cnt = (in->cols() / THREADS_PER_BLOCK) + 1;
-
-        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
-
-        k_activation_sigmoid_evaluate<<<grid_dims, block_dims>>>(in->data(), out->data(), in->rows(), in->cols());
-    }
+    
 }
 
-void SigmoidActivator::derive(Array2d *in, Array2d *out)
-{
-    {
-        unsigned int grid_row_cnt = (in->rows() / THREADS_PER_BLOCK) + 1;
-        unsigned int grid_col_cnt = (in->cols() / THREADS_PER_BLOCK) + 1;
-
-        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
-
-        k_activation_sigmoid_derive<<<grid_dims, block_dims>>>(in->data(), out->data(), in->rows(), in->cols());
-    }
-}
-
-ActivationLayer::ActivationLayer(Activator *a, int in_cnt)
+Activation::Activation(activation::Activation *a, int in_cnt)
 {
     this->n_ = new Array2d(true, 1, in_cnt);
     this->a_ = a;
 }
 
-ActivationLayer::~ActivationLayer()
+Activation::~Activation()
 {
     delete this->n_;
     delete this->a_;
 }
 
-void ActivationLayer::forward(Array2d *out)
+void Activation::forward(Array2d *out)
 {
     out->zeros();
 
     this->a_->evaluate(this->n_, out);
 }
 
-Array2d *ActivationLayer::backward(Array2d *in)
+Array2d *Activation::backward(Array2d *in)
 {
     Array2d *out = new Array2d(true, in->rows(), in->cols());
 
@@ -235,7 +176,12 @@ Array2d *ActivationLayer::backward(Array2d *in)
     return out;
 }
 
-Array2d *ActivationLayer::n()
+Array2d *Activation::n()
 {
     return this->n_;
+}
+
+void Activation::set_n(Array2d *n)
+{
+    
 }

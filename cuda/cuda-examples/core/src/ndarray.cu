@@ -1,5 +1,15 @@
 #include "ndarray.cuh"
 
+__global__ void k_set_all(float *data, int cnt, float val)
+{
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (tid < cnt)
+    {
+        data[tid] = val;
+    }
+}
+
 Dimensions::Dimensions()
 {
 }
@@ -158,6 +168,41 @@ void ArrayNd::to_cuda()
     }
 }
 
+void ArrayNd::print()
+{
+    bool orig_cuda = this->cuda_;
+    this->to_cpu();
+
+    printf("Shape: ");
+    this->dims_.print();
+
+    printf("Data: \n");
+    for (int i = 0; i < this->dims_.size(); i++)
+    {
+        printf("%d: %f\n", i, this->data_[i]);
+    }
+
+    if (orig_cuda)
+    {
+        this->to_cuda();
+    }
+}
+
+Dimensions ArrayNd::dims()
+{
+    return this->dims_;
+}
+
+int ArrayNd::num_dims()
+{
+    return this->dims_.count();
+}
+
+int ArrayNd::dims_size()
+{
+    return this->dims_.size();
+}
+
 float *ArrayNd::data()
 {
     return this->data_;
@@ -184,6 +229,21 @@ void ArrayNd::zeros()
     else
     {
         memset(this->data_, 0, size);
+    }
+}
+
+void ArrayNd::ones()
+{
+    if (this->is_cuda())
+    {
+        k_set_all<<<(this->count() / THREADS_PER_BLOCK + 1), THREADS_PER_BLOCK>>>(this->data_, this->count(), 1.0f);
+    }
+    else
+    {
+        for (int i = 0; i < this->count(); i++)
+        {
+            this->data_[i] = 1.0f;
+        }
     }
 }
 
@@ -455,48 +515,4 @@ int Array3d::ys()
 int Array3d::zs()
 {
     return this->dims_.dim(2);
-}
-
-Tensor::Tensor(bool cuda, Dimensions dims)
-    : ArrayNd(cuda, dims)
-{
-}
-
-Tensor::~Tensor()
-{
-}
-
-void Tensor::print()
-{
-    bool orig_cuda = this->cuda_;
-    this->to_cpu();
-
-    printf("Shape: ");
-    this->dims_.print();
-
-    printf("Data: \n");
-    for (int i = 0; i < this->dims_.size(); i++)
-    {
-        printf("%d: %f\n", i, this->data_[i]);
-    }
-
-    if (orig_cuda)
-    {
-        this->to_cuda();
-    }
-}
-
-Dimensions Tensor::shape()
-{
-    return this->dims_;
-}
-
-int Tensor::num_dims()
-{
-    return this->dims_.count();
-}
-
-int Tensor::dims_size()
-{
-    return this->dims_.size();
 }

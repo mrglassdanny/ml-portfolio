@@ -13,6 +13,8 @@
 #include <device_launch_parameters.h>
 #include <device_atomic_functions.h>
 
+#define THREADS_PER_BLOCK 32
+
 class Dimensions
 {
 private:
@@ -46,17 +48,22 @@ public:
 	ArrayNd(bool cuda, Dimensions dims);
 	~ArrayNd();
 
-	virtual void print() = 0;
+	void print();
 
 	bool is_cuda();
 	void to_cpu();
 	void to_cuda();
+
+	Dimensions dims();
+	int num_dims();
+	int dims_size();
 
 	float *data();
 	int count();
 	size_t size();
 
 	void zeros();
+	void ones();
 	void rands(float mean, float stddev);
 };
 
@@ -66,17 +73,16 @@ public:
 	Array1d(bool cuda, int cnt);
 	~Array1d();
 
-	virtual void print();
+	void print();
 };
 
 class Array2d : public ArrayNd
 {
 public:
-	Array2d(Array2d& src);
 	Array2d(bool cuda, int row_cnt, int col_cnt);
 	~Array2d();
 
-	virtual void print();
+	void print();
 
 	int rows();
 	int cols();
@@ -85,27 +91,12 @@ public:
 class Array3d : public ArrayNd
 {
 public:
-	Array3d(Array3d& src);
 	Array3d(bool cuda, int x_cnt, int y_cnt, int z_cnt);
 	~Array3d();
 
-	virtual void print();
+	void print();
 
 	int xs();
 	int ys();
 	int zs();
-};
-
-class Tensor : public ArrayNd
-{
-public:
-	Tensor(Tensor& src);
-	Tensor(bool cuda, Dimensions dims);
-	~Tensor();
-
-	virtual void print();
-
-	Dimensions shape();
-	int num_dims();
-	int dims_size();
 };

@@ -1,4 +1,8 @@
 #include "layer.cuh"
+#include "loss.cuh"
+
+using namespace layer;
+using namespace loss;
 
 class Model
 {
@@ -11,34 +15,7 @@ public:
     ~Model();
 
     ArrayNd *forward(ArrayNd *x);
-    void backward();
+    void backward(ArrayNd *p, ArrayNd *y);
     float loss(ArrayNd *p, ArrayNd *y);
     void step();
-};
-
-class Loss
-{
-
-public:
-    virtual float evaluate(ArrayNd *p, ArrayNd *y) = 0;
-    virtual void derive(ArrayNd *p, ArrayNd *y) = 0;
-};
-
-class MSELoss : public Loss
-{
-    public:
-    virtual float evaluate(ArrayNd *p, ArrayNd *y);
-    virtual ArrayNd *derive(ArrayNd *p, ArrayNd *y);
-};
-
-class Optimizer
-{
-private:
-    Model &model;
-
-public:
-    Optimizer(Model &model);
-    ~Optimizer();
-
-    virtual void step() = 0;
 };

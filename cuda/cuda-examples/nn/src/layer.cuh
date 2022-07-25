@@ -1,61 +1,55 @@
+#pragma once
+
 #include <ndarray.cuh>
 
-#define THREADS_PER_BLOCK 32
+#include "activation.cuh"
 
-class Layer
+namespace layer
 {
-public:
-    virtual void forward(ArrayNd *out) = 0;
-    virtual ArrayNd *backward(ArrayNd *in) = 0;
+    class Layer
+    {
+    public:
+        virtual void forward(ArrayNd *out) = 0;
+        virtual ArrayNd *backward(ArrayNd *in) = 0;
 
-    virtual ArrayNd *n() = 0;
-};
+        virtual ArrayNd *n() = 0;
+        virtual void set_n(ArrayNd *n) = 0;
+    };
 
-class LinearLayer : public Layer
-{
-private:
-    Array2d *n_;
-    Array2d *w_;
-    Array1d *b_;
-    Array2d *dw_;
-    Array1d *db_;
+    class Linear : public Layer
+    {
+    private:
+        Array2d *n_;
+        Array2d *w_;
+        Array1d *b_;
+        Array2d *dw_;
+        Array1d *db_;
 
-public:
-    LinearLayer(int in_cnt, int out_cnt);
-    ~LinearLayer();
+    public:
+        Linear(int in_cnt, int out_cnt);
+        ~Linear();
 
-    virtual void forward(Array2d *out);
-    virtual Array2d *backward(Array2d *in);
+        virtual void forward(Array2d *out);
+        virtual Array2d *backward(Array2d *in);
 
-    virtual ArrayNd *n();
-};
+        virtual Array2d *n();
+        virtual void set_n(Array2d *n);
+    };
 
-class Activator
-{
-public:
-    virtual void evaluate(Array2d *in, Array2d *out) = 0;
-    virtual void derive(Array2d *in, Array2d *out) = 0;
-};
+    class Activation : public Layer
+    {
+    private:
+        Array2d *n_;
+        activation::Activation *a_;
 
-class SigmoidActivator : public Activator
-{
-public:
-    virtual void evaluate(Array2d *in, Array2d *out);
-    virtual void derive(Array2d *in, Array2d *out);
-};
+    public:
+        Activation(activation::Activation *a, int in_cnt);
+        ~Activation();
 
-class ActivationLayer : public Layer
-{
-private:
-    Array2d *n_;
-    Activator *a_;
+        virtual void forward(Array2d *out);
+        virtual Array2d *backward(Array2d *in);
 
-public:
-    ActivationLayer(Activator *a, int in_cnt);
-    ~ActivationLayer();
-
-    virtual void forward(Array2d *out);
-    virtual Array2d *backward(Array2d *in);
-
-    virtual ArrayNd *n();
-};
+        virtual Array2d *n();
+        virtual void set_n(Array2d *n);
+    };
+}
