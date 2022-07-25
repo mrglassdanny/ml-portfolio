@@ -14,7 +14,22 @@ Model::~Model()
     delete this->loss_;
 }
 
-ArrayNd *Model::forward(ArrayNd *x)
+void Model::add_layer(Layer *lyr)
+{
+    this->lyrs_.push_back(lyr);
+}
+
+void Model::linear(int in_cnt, int out_cnt)
+{
+    this->add_layer(new Linear(in_cnt, out_cnt));
+}
+
+void Model::sigmoid(int in_cnt)
+{
+    this->add_layer(new Activation(new activation::Sigmoid(), in_cnt));
+}
+
+NdArray *Model::forward(NdArray *x)
 {
     x->to_cuda();
 
@@ -34,17 +49,17 @@ ArrayNd *Model::forward(ArrayNd *x)
 
     Layer *lst_lyr = this->lyrs_[lst_lyr_idx];
 
-    ArrayNd *p = new ArrayNd(true, lst_lyr->n()->dims());
+    NdArray *p = new NdArray(true, lst_lyr->n()->dims());
     lst_lyr->forward(p);
 
     return p;
 }
 
-void Model::backward(ArrayNd *p, ArrayNd *y)
+void Model::backward(NdArray *p, NdArray *y)
 {
     y->to_cuda();
 
-    ArrayNd *dl = this->loss_->derive(p, y);
+    NdArray *dl = this->loss_->derive(p, y);
 
     int lst_lyr_idx = this->lyrs_.size() - 1;
     for (int i = lst_lyr_idx; i >= 0; i--)
@@ -56,7 +71,7 @@ void Model::backward(ArrayNd *p, ArrayNd *y)
     delete dl;
 }
 
-float Model::loss(ArrayNd *p, ArrayNd *y)
+float Model::loss(NdArray *p, NdArray *y)
 {
     y->to_cuda();
 

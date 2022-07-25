@@ -69,11 +69,11 @@ __global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int in
 
 Linear::Linear(int in_cnt, int out_cnt)
 {
-    this->n_ = new Array2d(true, 1, in_cnt);
-    this->w_ = new Array2d(true, in_cnt, out_cnt);
-    this->b_ = new Array1d(true, out_cnt);
-    this->dw_ = new Array2d(true, in_cnt, out_cnt);
-    this->db_ = new Array1d(true, out_cnt);
+    this->n_ = new NdArray(true, 1, in_cnt);
+    this->w_ = new NdArray(true, in_cnt, out_cnt);
+    this->b_ = new NdArray(true, out_cnt);
+    this->dw_ = new NdArray(true, in_cnt, out_cnt);
+    this->db_ = new NdArray(true, out_cnt);
 
     this->w_->rands(0.0f, sqrt(1.0f / in_cnt));
     this->b_->zeros();
@@ -90,7 +90,7 @@ Linear::~Linear()
     delete this->db_;
 }
 
-void Linear::forward(Array2d *out)
+void Linear::forward(NdArray *out)
 {
     out->zeros();
 
@@ -106,7 +106,7 @@ void Linear::forward(Array2d *out)
     }
 }
 
-Array2d *Linear::backward(Array2d *in)
+NdArray *Linear::backward(NdArray *in)
 {
     {
         unsigned int grid_row_cnt = (this->w_->rows() / THREADS_PER_BLOCK) + 1;
@@ -119,7 +119,7 @@ Array2d *Linear::backward(Array2d *in)
                                                                   in->rows(), in->cols(), this->n_->cols(), this->w_->rows(), this->w_->cols());
     }
 
-    Array2d *out = new Array2d(true, this->n_->rows(), this->n_->cols());
+    NdArray *out = new NdArray(true, this->n_->rows(), this->n_->cols());
     out->zeros();
 
     {
@@ -137,19 +137,19 @@ Array2d *Linear::backward(Array2d *in)
     return out;
 }
 
-Array2d *Linear::n()
+NdArray *Linear::n()
 {
     return this->n_;
 }
 
-void Linear::set_n(Array2d *n)
+void Linear::set_n(NdArray *n)
 {
     
 }
 
 Activation::Activation(activation::Activation *a, int in_cnt)
 {
-    this->n_ = new Array2d(true, 1, in_cnt);
+    this->n_ = new NdArray(true, 1, in_cnt);
     this->a_ = a;
 }
 
@@ -159,16 +159,16 @@ Activation::~Activation()
     delete this->a_;
 }
 
-void Activation::forward(Array2d *out)
+void Activation::forward(NdArray *out)
 {
     out->zeros();
 
     this->a_->evaluate(this->n_, out);
 }
 
-Array2d *Activation::backward(Array2d *in)
+NdArray *Activation::backward(NdArray *in)
 {
-    Array2d *out = new Array2d(true, in->rows(), in->cols());
+    NdArray *out = new NdArray(true, in->rows(), in->cols());
 
     this->a_->derive(in, out);
 
@@ -176,12 +176,12 @@ Array2d *Activation::backward(Array2d *in)
     return out;
 }
 
-Array2d *Activation::n()
+NdArray *Activation::n()
 {
     return this->n_;
 }
 
-void Activation::set_n(Array2d *n)
+void Activation::set_n(NdArray *n)
 {
     
 }

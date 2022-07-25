@@ -9,47 +9,47 @@ namespace layer
     class Layer
     {
     public:
-        virtual void forward(ArrayNd *out) = 0;
-        virtual ArrayNd *backward(ArrayNd *in) = 0;
+        virtual void forward(NdArray *out) = 0;
+        virtual NdArray *backward(NdArray *in) = 0;
 
-        virtual ArrayNd *n() = 0;
-        virtual void set_n(ArrayNd *n) = 0;
+        virtual NdArray *n() = 0;
+        virtual void set_n(NdArray *n) = 0;
     };
 
     class Linear : public Layer
     {
     private:
-        Array2d *n_;
-        Array2d *w_;
-        Array1d *b_;
-        Array2d *dw_;
-        Array1d *db_;
+        NdArray *n_;
+        NdArray *w_;
+        NdArray *b_;
+        NdArray *dw_;
+        NdArray *db_;
 
     public:
         Linear(int in_cnt, int out_cnt);
         ~Linear();
 
-        virtual void forward(Array2d *out);
-        virtual Array2d *backward(Array2d *in);
+        virtual void forward(NdArray *out) override;
+        virtual NdArray *backward(NdArray *in) override;
 
-        virtual Array2d *n();
-        virtual void set_n(Array2d *n);
+        virtual NdArray *n();
+        virtual void set_n(NdArray *n);
     };
 
     class Activation : public Layer
     {
     private:
-        Array2d *n_;
+        NdArray *n_;
         activation::Activation *a_;
 
     public:
         Activation(activation::Activation *a, int in_cnt);
         ~Activation();
 
-        virtual void forward(Array2d *out);
-        virtual Array2d *backward(Array2d *in);
+        virtual void forward(NdArray *out);
+        virtual NdArray *backward(NdArray *in);
 
-        virtual Array2d *n();
-        virtual void set_n(Array2d *n);
+        virtual NdArray *n();
+        virtual void set_n(NdArray *n);
     };
 }

@@ -36,7 +36,7 @@ public:
 	int size();
 };
 
-class ArrayNd
+class NdArray
 {
 protected:
 	bool cuda_;
@@ -44,9 +44,12 @@ protected:
 	float *data_;
 
 public:
-	ArrayNd(ArrayNd &src);
-	ArrayNd(bool cuda, Dimensions dims);
-	~ArrayNd();
+	NdArray(NdArray &src);
+	NdArray(bool cuda, Dimensions dims);
+	NdArray(bool cuda, int cnt);
+	NdArray(bool cuda, int row_cnt, int col_cnt);
+	NdArray(bool cuda, int x_cnt, int y_cnt, int z_cnt);
+	~NdArray();
 
 	void print();
 
@@ -57,46 +60,16 @@ public:
 	Dimensions dims();
 	int num_dims();
 	int dims_size();
-
-	float *data();
 	int count();
-	size_t size();
-
-	void zeros();
-	void ones();
-	void rands(float mean, float stddev);
-};
-
-class Array1d : public ArrayNd
-{
-public:
-	Array1d(bool cuda, int cnt);
-	~Array1d();
-
-	void print();
-};
-
-class Array2d : public ArrayNd
-{
-public:
-	Array2d(bool cuda, int row_cnt, int col_cnt);
-	~Array2d();
-
-	void print();
-
 	int rows();
 	int cols();
-};
-
-class Array3d : public ArrayNd
-{
-public:
-	Array3d(bool cuda, int x_cnt, int y_cnt, int z_cnt);
-	~Array3d();
-
-	void print();
-
 	int xs();
 	int ys();
 	int zs();
+	size_t size();
+
+	float *data();
+	void zeros();
+	void ones();
+	void rands(float mean, float stddev);
 };

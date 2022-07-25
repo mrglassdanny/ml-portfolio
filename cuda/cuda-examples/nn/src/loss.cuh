@@ -7,14 +7,14 @@ namespace loss
     class Loss
     {
     public:
-        virtual void evaluate(ArrayNd *p, ArrayNd *y, float *d_out_val) = 0;
-        virtual ArrayNd *derive(ArrayNd *p, ArrayNd *y) = 0;
+        virtual void evaluate(NdArray *p, NdArray *y, float *d_out_val) = 0;
+        virtual NdArray *derive(NdArray *p, NdArray *y) = 0;
     };
 
     class MeanSquaredError : public Loss
     {
     public:
-        virtual void evaluate(ArrayNd *p, ArrayNd *y, float *d_out_val) override;
-        virtual ArrayNd *derive(ArrayNd *p, ArrayNd *y) override;
+        virtual void evaluate(NdArray *p, NdArray *y, float *d_out_val) override;
+        virtual NdArray *derive(NdArray *p, NdArray *y) override;
     };
 }

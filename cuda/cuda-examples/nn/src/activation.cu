@@ -32,12 +32,12 @@ __global__ void k_sigmoid_derive(float *in, float *out, int cnt)
     }
 }
 
-void Sigmoid::evaluate(Array2d *in, Array2d *out)
+void Sigmoid::evaluate(NdArray *in, NdArray *out)
 {
     k_sigmoid_evaluate<<<in->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(in->data(), out->data(), in->count());
 }
 
-void Sigmoid::derive(Array2d *in, Array2d *out)
+void Sigmoid::derive(NdArray *in, NdArray *out)
 {
 
     k_sigmoid_derive<<<in->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(in->data(), out->data(), in->count());

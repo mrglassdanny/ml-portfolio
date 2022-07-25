@@ -88,7 +88,7 @@ int Dimensions::size()
     return size;
 }
 
-ArrayNd::ArrayNd(ArrayNd &src)
+NdArray::NdArray(NdArray &src)
 {
     this->cuda_ = src.cuda_;
     this->dims_ = src.dims_;
@@ -107,7 +107,7 @@ ArrayNd::ArrayNd(ArrayNd &src)
     }
 }
 
-ArrayNd::ArrayNd(bool cuda, Dimensions dims)
+NdArray::NdArray(bool cuda, Dimensions dims)
 {
     this->cuda_ = cuda;
     this->dims_ = dims;
@@ -124,7 +124,25 @@ ArrayNd::ArrayNd(bool cuda, Dimensions dims)
     }
 }
 
-ArrayNd::~ArrayNd()
+NdArray::NdArray(bool cuda, int cnt)
+    : NdArray(cuda, Dimensions(cnt))
+{
+
+}
+
+NdArray::NdArray(bool cuda, int row_cnt, int col_cnt)
+    : NdArray(cuda, Dimensions(row_cnt, col_cnt))
+{
+
+}
+
+NdArray::NdArray(bool cuda, int x_cnt, int y_cnt, int z_cnt)
+    : NdArray(cuda, Dimensions(x_cnt, y_cnt, z_cnt))
+{
+
+}
+
+NdArray::~NdArray()
 {
     if (this->cuda_)
     {
@@ -136,12 +154,12 @@ ArrayNd::~ArrayNd()
     }
 }
 
-bool ArrayNd::is_cuda()
+bool NdArray::is_cuda()
 {
     return this->cuda_;
 }
 
-void ArrayNd::to_cpu()
+void NdArray::to_cpu()
 {
     if (this->cuda_)
     {
@@ -154,7 +172,7 @@ void ArrayNd::to_cpu()
     }
 }
 
-void ArrayNd::to_cuda()
+void NdArray::to_cuda()
 {
     if (!this->cuda_)
     {
@@ -168,193 +186,22 @@ void ArrayNd::to_cuda()
     }
 }
 
-void ArrayNd::print()
+void NdArray::print()
 {
     bool orig_cuda = this->cuda_;
     this->to_cpu();
 
-    printf("Shape: ");
-    this->dims_.print();
-
-    printf("Data: \n");
-    for (int i = 0; i < this->dims_.size(); i++)
+    switch (this->num_dims())
     {
-        printf("%d: %f\n", i, this->data_[i]);
-    }
-
-    if (orig_cuda)
+    case 1:
     {
-        this->to_cuda();
-    }
-}
-
-Dimensions ArrayNd::dims()
-{
-    return this->dims_;
-}
-
-int ArrayNd::num_dims()
-{
-    return this->dims_.count();
-}
-
-int ArrayNd::dims_size()
-{
-    return this->dims_.size();
-}
-
-float *ArrayNd::data()
-{
-    return this->data_;
-}
-
-int ArrayNd::count()
-{
-    return this->dims_.size();
-}
-
-size_t ArrayNd::size()
-{
-    return sizeof(float) * this->dims_.size();
-}
-
-void ArrayNd::zeros()
-{
-    size_t size = this->size();
-
-    if (this->cuda_)
-    {
-        cudaMemset(this->data_, 0, size);
-    }
-    else
-    {
-        memset(this->data_, 0, size);
-    }
-}
-
-void ArrayNd::ones()
-{
-    if (this->is_cuda())
-    {
-        k_set_all<<<(this->count() / THREADS_PER_BLOCK + 1), THREADS_PER_BLOCK>>>(this->data_, this->count(), 1.0f);
-    }
-    else
-    {
-        for (int i = 0; i < this->count(); i++)
+        int cnt = this->count();
+        printf("[ ");
+        for (int i = 0; i < cnt; i++)
         {
-            this->data_[i] = 1.0f;
-        }
-    }
-}
+            float val = this->data_[i];
 
-void ArrayNd::rands(float mean, float stddev)
-{
-    bool orig_cuda = this->cuda_;
-
-    this->to_cpu();
-
-    {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-
-        for (int i = 0; i < this->dims_.size(); i++)
-        {
-            std::normal_distribution<float> d(mean, stddev);
-            this->data_[i] = d(gen);
-        }
-    }
-
-    if (orig_cuda)
-    {
-        this->to_cuda();
-    }
-}
-
-Array1d::Array1d(bool cuda, int cnt)
-    : ArrayNd(cuda, Dimensions(cnt))
-{
-}
-
-Array1d::~Array1d()
-{
-}
-
-void Array1d::print()
-{
-    bool orig_cuda = this->cuda_;
-    this->to_cpu();
-
-    int cnt = this->count();
-    printf("[ ");
-    for (int i = 0; i < cnt; i++)
-    {
-        float val = this->data_[i];
-
-        if (i == cnt - 1)
-        {
-            if (val >= 0.0f)
-            {
-                printf(" %f", val);
-            }
-            else
-            {
-                printf("%f", val);
-            }
-        }
-        else
-        {
-            if (val >= 0.0f)
-            {
-                printf(" %f\t", val);
-            }
-            else
-            {
-                printf("%f\t", val);
-            }
-        }
-    }
-    printf(" ]");
-
-    if (orig_cuda)
-    {
-        this->to_cuda();
-    }
-}
-
-Array2d::Array2d(bool cuda, int row_cnt, int col_cnt)
-    : ArrayNd(cuda, Dimensions(row_cnt, col_cnt))
-{
-}
-
-Array2d::~Array2d()
-{
-}
-
-void Array2d::print()
-{
-    bool orig_cuda = this->cuda_;
-    this->to_cpu();
-
-    int row_cnt = this->rows();
-    int col_cnt = this->cols();
-
-    printf("[");
-    for (int i = 0; i < row_cnt; i++)
-    {
-        if (i == 0)
-        {
-            printf(" [ ");
-        }
-        else
-        {
-            printf("  [ ");
-        }
-
-        for (int j = 0; j < col_cnt; j++)
-        {
-            float val = this->data_[i * col_cnt + j];
-
-            if (j == col_cnt - 1)
+            if (i == cnt - 1)
             {
                 if (val >= 0.0f)
                 {
@@ -377,68 +224,18 @@ void Array2d::print()
                 }
             }
         }
-
-        if (i == row_cnt - 1)
-        {
-            printf(" ] ");
-        }
-        else
-        {
-            printf(" ],\n");
-        }
+        printf(" ]");
     }
-    printf("]\n");
-
-    if (orig_cuda)
+    break;
+    case 2:
     {
-        this->to_cuda();
-    }
-}
+        int row_cnt = this->rows();
+        int col_cnt = this->cols();
 
-int Array2d::rows()
-{
-    return this->dims_.dim(0);
-}
-
-int Array2d::cols()
-{
-    return this->dims_.dim(1);
-}
-
-Array3d::Array3d(bool cuda, int x_cnt, int y_cnt, int z_cnt)
-    : ArrayNd(cuda, Dimensions(x_cnt, y_cnt, z_cnt))
-{
-}
-
-Array3d::~Array3d()
-{
-}
-
-void Array3d::print()
-{
-    bool orig_cuda = this->cuda_;
-    this->to_cpu();
-
-    int x_cnt = this->xs();
-    int y_cnt = this->ys();
-    int z_cnt = this->zs();
-
-    printf("[");
-    for (int i = 0; i < x_cnt; i++)
-    {
-        if (i == 0)
+        printf("[");
+        for (int i = 0; i < row_cnt; i++)
         {
-            printf(" [ ");
-        }
-        else
-        {
-            printf("  [ ");
-        }
-
-        for (int j = 0; j < y_cnt; j++)
-        {
-
-            if (j == 0)
+            if (i == 0)
             {
                 printf(" [ ");
             }
@@ -447,11 +244,11 @@ void Array3d::print()
                 printf("  [ ");
             }
 
-            for (int k = 0; k < z_cnt; k++)
+            for (int j = 0; j < col_cnt; j++)
             {
-                float val = this->data_[(i * y_cnt * z_cnt) + (j * z_cnt) + k];
+                float val = this->data_[i * col_cnt + j];
 
-                if (k == z_cnt - 1)
+                if (j == col_cnt - 1)
                 {
                     if (val >= 0.0f)
                     {
@@ -475,7 +272,7 @@ void Array3d::print()
                 }
             }
 
-            if (j == y_cnt - 1)
+            if (i == row_cnt - 1)
             {
                 printf(" ] ");
             }
@@ -484,17 +281,103 @@ void Array3d::print()
                 printf(" ],\n");
             }
         }
+        printf("]\n");
+    }
+    break;
+    case 3:
+    {
 
-        if (i == x_cnt - 1)
+        int x_cnt = this->xs();
+        int y_cnt = this->ys();
+        int z_cnt = this->zs();
+
+        printf("[");
+        for (int i = 0; i < x_cnt; i++)
         {
-            printf(" ] ");
+            if (i == 0)
+            {
+                printf(" [ ");
+            }
+            else
+            {
+                printf("  [ ");
+            }
+
+            for (int j = 0; j < y_cnt; j++)
+            {
+
+                if (j == 0)
+                {
+                    printf(" [ ");
+                }
+                else
+                {
+                    printf("  [ ");
+                }
+
+                for (int k = 0; k < z_cnt; k++)
+                {
+                    float val = this->data_[(i * y_cnt * z_cnt) + (j * z_cnt) + k];
+
+                    if (k == z_cnt - 1)
+                    {
+                        if (val >= 0.0f)
+                        {
+                            printf(" %f", val);
+                        }
+                        else
+                        {
+                            printf("%f", val);
+                        }
+                    }
+                    else
+                    {
+                        if (val >= 0.0f)
+                        {
+                            printf(" %f\t", val);
+                        }
+                        else
+                        {
+                            printf("%f\t", val);
+                        }
+                    }
+                }
+
+                if (j == y_cnt - 1)
+                {
+                    printf(" ] ");
+                }
+                else
+                {
+                    printf(" ],\n");
+                }
+            }
+
+            if (i == x_cnt - 1)
+            {
+                printf(" ] ");
+            }
+            else
+            {
+                printf(" ],\n");
+            }
         }
-        else
+        printf("]\n");
+    }
+    break;
+    default:
+    {
+        printf("Shape: ");
+        this->dims_.print();
+
+        printf("Data: \n");
+        for (int i = 0; i < this->dims_.size(); i++)
         {
-            printf(" ],\n");
+            printf("%d: %f\n", i, this->data_[i]);
         }
     }
-    printf("]\n");
+    break;
+    }
 
     if (orig_cuda)
     {
@@ -502,17 +385,109 @@ void Array3d::print()
     }
 }
 
-int Array3d::xs()
+Dimensions NdArray::dims()
+{
+    return this->dims_;
+}
+
+int NdArray::num_dims()
+{
+    return this->dims_.count();
+}
+
+int NdArray::dims_size()
+{
+    return this->dims_.size();
+}
+
+int NdArray::count()
+{
+    return this->dims_.size();
+}
+
+int NdArray::rows()
 {
     return this->dims_.dim(0);
 }
 
-int Array3d::ys()
+int NdArray::cols()
 {
     return this->dims_.dim(1);
 }
 
-int Array3d::zs()
+int NdArray::xs()
+{
+    return this->dims_.dim(0);
+}
+
+int NdArray::ys()
+{
+    return this->dims_.dim(1);
+}
+
+int NdArray::zs()
 {
     return this->dims_.dim(2);
+}
+
+size_t NdArray::size()
+{
+    return sizeof(float) * this->dims_.size();
+}
+
+float *NdArray::data()
+{
+    return this->data_;
+}
+
+void NdArray::zeros()
+{
+    size_t size = this->size();
+
+    if (this->cuda_)
+    {
+        cudaMemset(this->data_, 0, size);
+    }
+    else
+    {
+        memset(this->data_, 0, size);
+    }
+}
+
+void NdArray::ones()
+{
+    if (this->is_cuda())
+    {
+        k_set_all<<<(this->count() / THREADS_PER_BLOCK + 1), THREADS_PER_BLOCK>>>(this->data_, this->count(), 1.0f);
+    }
+    else
+    {
+        for (int i = 0; i < this->count(); i++)
+        {
+            this->data_[i] = 1.0f;
+        }
+    }
+}
+
+void NdArray::rands(float mean, float stddev)
+{
+    bool orig_cuda = this->cuda_;
+
+    this->to_cpu();
+
+    {
+        std::random_device rd;
+        std::mt19937 gen(rd());
+
+        for (int i = 0; i < this->dims_.size(); i++)
+        {
+            std::normal_distribution<float> d(mean, stddev);
+            this->data_[i] = d(gen);
+        }
+    }
+
+    if (orig_cuda)
+    {
+        this->to_cuda();
+    }
 }

@@ -6,16 +6,21 @@ using namespace loss;
 
 class Model
 {
-private:
+protected:
     std::vector<Layer *> lyrs_;
     Loss *loss_;
+
+    void add_layer(Layer *lyr);
 
 public:
     Model();
     ~Model();
 
-    ArrayNd *forward(ArrayNd *x);
-    void backward(ArrayNd *p, ArrayNd *y);
-    float loss(ArrayNd *p, ArrayNd *y);
+    void linear(int in_cnt, int out_cnt);
+    void sigmoid(int in_cnt);
+
+    NdArray *forward(NdArray *x);
+    void backward(NdArray *p, NdArray *y);
+    float loss(NdArray *p, NdArray *y);
     void step();
 };
