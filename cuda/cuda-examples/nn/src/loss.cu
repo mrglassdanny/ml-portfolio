@@ -49,12 +49,12 @@ __global__ void k_mse_derive(float *p, float *y, float *out, int cnt)
     }
 }
 
-void MeanSquaredError::evaluate(NdArray *p, NdArray *y, float *d_out_val)
+void MSE::evaluate(NdArray *p, NdArray *y, float *d_out_val)
 {
     k_mse_evaluate<<<p->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(p->data(), y->data(), p->count(), d_out_val);
 }
 
-NdArray *MeanSquaredError::derive(NdArray *p, NdArray *y)
+NdArray *MSE::derive(NdArray *p, NdArray *y)
 {
     NdArray *dl = new NdArray(true, p->dims());
 

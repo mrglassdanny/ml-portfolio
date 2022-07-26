@@ -11,7 +11,7 @@ namespace loss
         virtual NdArray *derive(NdArray *p, NdArray *y) = 0;
     };
 
-    class MeanSquaredError : public Loss
+    class MSE : public Loss
     {
     public:
         virtual void evaluate(NdArray *p, NdArray *y, float *d_out_val) override;
