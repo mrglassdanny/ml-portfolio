@@ -52,6 +52,7 @@ public:
 	~NdArray();
 
 	void print();
+	void copy(NdArray *src);
 
 	bool is_cuda();
 	void to_cpu();

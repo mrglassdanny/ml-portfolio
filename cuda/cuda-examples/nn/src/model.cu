@@ -26,7 +26,7 @@ void Model::linear(int in_cnt, int out_cnt)
 
 void Model::sigmoid(int in_cnt)
 {
-    this->add_layer(new Activation(new activation::Sigmoid(), in_cnt));
+    this->add_layer(new Sigmoid(in_cnt));
 }
 
 NdArray *Model::forward(NdArray *x)
@@ -34,8 +34,6 @@ NdArray *Model::forward(NdArray *x)
     x->to_cuda();
 
     int batch_size = x->dims().dim(0);
-
-    this->lyrs_[0]->set_n(x);
 
     int lst_lyr_idx = this->lyrs_.size() - 1;
 

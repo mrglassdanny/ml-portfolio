@@ -2,54 +2,50 @@
 
 #include <ndarray.cuh>
 
-#include "activation.cuh"
-
 namespace layer
 {
     class Layer
     {
-    public:
-        virtual void forward(NdArray *out) = 0;
-        virtual NdArray *backward(NdArray *in) = 0;
+    protected:
+        NdArray *n_;
 
-        virtual NdArray *n() = 0;
-        virtual void set_n(NdArray *n) = 0;
+    public:
+        ~Layer();
+
+        virtual void forward(NdArray *out) = 0;
+        virtual NdArray * backward(NdArray *in) = 0;
+
+        NdArray *n();
+        void set_n(NdArray *n);
     };
 
-    class Linear : public Layer
+    class Learnable : public Layer
     {
-    private:
-        NdArray *n_;
+    protected:
         NdArray *w_;
         NdArray *b_;
         NdArray *dw_;
         NdArray *db_;
 
     public:
-        Linear(int in_cnt, int out_cnt);
-        ~Linear();
-
-        virtual void forward(NdArray *out) override;
-        virtual NdArray *backward(NdArray *in) override;
-
-        virtual NdArray *n();
-        virtual void set_n(NdArray *n);
+        ~Learnable();
     };
 
-    class Activation : public Layer
+    class Linear : public Learnable
     {
-    private:
-        NdArray *n_;
-        activation::Activation *a_;
-
     public:
-        Activation(activation::Activation *a, int in_cnt);
-        ~Activation();
+        Linear(int in_cnt, int out_cnt);
 
-        virtual void forward(NdArray *out);
-        virtual NdArray *backward(NdArray *in);
+        virtual void forward(NdArray *out) override;
+        virtual NdArray * backward(NdArray *in) override;
+    };
 
-        virtual NdArray *n();
-        virtual void set_n(NdArray *n);
+    class Sigmoid : public Layer
+    {
+    public:
+        Sigmoid(int in_cnt);
+
+        virtual void forward(NdArray *out) override;
+        virtual NdArray * backward(NdArray *in) override;
     };
 }

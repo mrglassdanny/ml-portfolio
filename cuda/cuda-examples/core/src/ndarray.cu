@@ -385,6 +385,13 @@ void NdArray::print()
     }
 }
 
+void NdArray::copy(NdArray *src)
+{
+    this->cuda_ = src->cuda_;
+    this->dims_ = src->dims_;
+    cudaMemcpy(this->data_, src->data_, src->size(), cudaMemcpyDefault);
+}
+
 Dimensions NdArray::dims()
 {
     return this->dims_;

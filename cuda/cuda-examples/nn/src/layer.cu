@@ -67,43 +67,82 @@ __global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int in
     }
 }
 
-Linear::Linear(int in_cnt, int out_cnt)
+__device__ float d_sigmoid_evaluate(float val)
 {
-    this->n_ = new NdArray(true, 1, in_cnt);
-    this->w_ = new NdArray(true, in_cnt, out_cnt);
-    this->b_ = new NdArray(true, out_cnt);
-    this->dw_ = new NdArray(true, in_cnt, out_cnt);
-    this->db_ = new NdArray(true, out_cnt);
-
-    this->w_->rands(0.0f, sqrt(1.0f / in_cnt));
-    this->b_->zeros();
-    this->dw_->zeros();
-    this->db_->zeros();
+    return (1.0f / (1.0f + exp(-val)));
 }
 
-Linear::~Linear()
+__device__ float d_sigmoid_derive(float val)
+{
+    float sigmoid_val = d_sigmoid_evaluate(val);
+    return (sigmoid_val) * (1.0f - sigmoid_val);
+}
+
+__global__ void k_sigmoid_evaluate(float *in, float *out, int cnt)
+{
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (tid < cnt)
+    {
+        out[tid] = d_sigmoid_evaluate(in[tid]);
+    }
+}
+
+__global__ void k_sigmoid_derive(float *in, float *n, float *out, int cnt)
+{
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (tid < cnt)
+    {
+        out[tid] = in[tid] * d_sigmoid_derive(n[tid]);
+    }
+}
+
+Layer::~Layer()
 {
     delete this->n_;
+}
+
+NdArray *Layer::n()
+{
+    return this->n_;
+}
+
+void Layer::set_n(NdArray *n)
+{
+    this->n_->copy(n);
+}
+
+Learnable::~Learnable()
+{
     delete this->w_;
     delete this->b_;
     delete this->dw_;
     delete this->db_;
 }
 
+Linear::Linear(int in_cnt, int out_cnt)
+{
+    this->n_ = new NdArray(true, 1, in_cnt);
+
+    this->w_ = new NdArray(true, out_cnt, in_cnt);
+    this->b_ = new NdArray(true, out_cnt);
+    this->dw_ = new NdArray(true, out_cnt, in_cnt);
+    this->db_ = new NdArray(true, out_cnt);
+}
+
 void Linear::forward(NdArray *out)
 {
     out->zeros();
 
-    {
-        unsigned int grid_row_cnt = (this->n_->rows() / THREADS_PER_BLOCK) + 1;
-        unsigned int grid_col_cnt = (out->cols() / THREADS_PER_BLOCK) + 1;
+    unsigned int grid_row_cnt = (this->n_->rows() / THREADS_PER_BLOCK) + 1;
+    unsigned int grid_col_cnt = (out->cols() / THREADS_PER_BLOCK) + 1;
 
-        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+    dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+    dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
-        k_linear_matmul_w_bias<<<grid_dims, block_dims>>>(this->n_->data(), this->w_->data(), out->data(), this->b_->data(),
-                                                          this->n_->cols(), this->n_->rows(), out->cols());
-    }
+    k_linear_matmul_w_bias<<<grid_dims, block_dims>>>(this->n_->data(), this->w_->data(), out->data(), this->b_->data(),
+                                                      this->n_->cols(), this->n_->rows(), out->cols());
 }
 
 NdArray *Linear::backward(NdArray *in)
@@ -137,51 +176,23 @@ NdArray *Linear::backward(NdArray *in)
     return out;
 }
 
-NdArray *Linear::n()
-{
-    return this->n_;
-}
-
-void Linear::set_n(NdArray *n)
-{
-    
-}
-
-Activation::Activation(activation::Activation *a, int in_cnt)
+Sigmoid::Sigmoid(int in_cnt)
 {
     this->n_ = new NdArray(true, 1, in_cnt);
-    this->a_ = a;
 }
 
-Activation::~Activation()
-{
-    delete this->n_;
-    delete this->a_;
-}
-
-void Activation::forward(NdArray *out)
+void Sigmoid::forward(NdArray *out)
 {
     out->zeros();
-
-    this->a_->evaluate(this->n_, out);
+    k_sigmoid_evaluate<<<this->n_->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(this->n_->data(), out->data(), this->n_->count());
 }
 
-NdArray *Activation::backward(NdArray *in)
+NdArray *Sigmoid::backward(NdArray *in)
 {
-    NdArray *out = new NdArray(true, in->rows(), in->cols());
+    NdArray *out = new NdArray(true, this->n_->rows(), this->n_->cols());
 
-    this->a_->derive(in, out);
+    k_sigmoid_derive<<<in->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(in->data(), this->n_->data(), out->data(), in->count());
 
     delete in;
     return out;
-}
-
-NdArray *Activation::n()
-{
-    return this->n_;
-}
-
-void Activation::set_n(NdArray *n)
-{
-    
 }
