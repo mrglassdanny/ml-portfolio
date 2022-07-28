@@ -56,7 +56,7 @@ void MSE::evaluate(NdArray *p, NdArray *y, float *d_out_val)
 
 NdArray *MSE::derive(NdArray *p, NdArray *y)
 {
-    NdArray *dl = new NdArray(true, p->dims());
+    NdArray *dl = new NdArray(true, p->shape());
 
     k_mse_derive<<<p->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(p->data(), y->data(), dl->data(), p->count());
 

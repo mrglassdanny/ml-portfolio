@@ -1,7 +1,8 @@
 #include "model.cuh"
 
-Model::Model()
+Model::Model(Loss *loss)
 {
+    this->loss_ = loss;
 }
 
 Model::~Model()
@@ -33,7 +34,7 @@ NdArray *Model::forward(NdArray *x)
 {
     x->to_cuda();
 
-    int batch_size = x->dims().dim(0);
+    int batch_size = x->shape().dim(0);
 
     int lst_lyr_idx = this->lyrs_.size() - 1;
 
@@ -42,12 +43,12 @@ NdArray *Model::forward(NdArray *x)
         Layer *lyr = this->lyrs_[i];
         Layer *nxt_lyr = this->lyrs_[i + 1];
 
-        lyr->forward(nxt_lyr->n());
+        lyr->forward(nxt_lyr->neurons());
     }
 
     Layer *lst_lyr = this->lyrs_[lst_lyr_idx];
 
-    NdArray *p = new NdArray(true, lst_lyr->n()->dims());
+    NdArray *p = new NdArray(true, lst_lyr->neurons()->shape());
     lst_lyr->forward(p);
 
     return p;
@@ -87,6 +88,17 @@ float Model::loss(NdArray *p, NdArray *y)
     return loss_val;
 }
 
-void Model::step()
+std::vector<Parameters *> Model::parameters()
 {
+    std::vector<Parameters *> params;
+
+    for (Layer *lyr : this->lyrs_)
+    {
+        if (Learnable *lrn = dynamic_cast<Learnable *>(lyr))
+        {
+            params.push_back(lrn->parameters());
+        }
+    }
+
+    return params;
 }

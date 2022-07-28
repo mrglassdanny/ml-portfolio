@@ -10,52 +10,52 @@ __global__ void k_set_all(float *data, int cnt, float val)
     }
 }
 
-Dimensions::Dimensions()
+Shape::Shape()
 {
 }
 
-Dimensions::Dimensions(int dim_1)
+Shape::Shape(int dim_1)
 {
-    this->dims_vec_.push_back(dim_1);
+    this->dims_.push_back(dim_1);
 }
 
-Dimensions::Dimensions(int dim_1, int dim_2)
+Shape::Shape(int dim_1, int dim_2)
 {
-    this->dims_vec_.push_back(dim_1);
-    this->dims_vec_.push_back(dim_2);
+    this->dims_.push_back(dim_1);
+    this->dims_.push_back(dim_2);
 }
 
-Dimensions::Dimensions(int dim_1, int dim_2, int dim_3)
+Shape::Shape(int dim_1, int dim_2, int dim_3)
 {
-    this->dims_vec_.push_back(dim_1);
-    this->dims_vec_.push_back(dim_2);
-    this->dims_vec_.push_back(dim_3);
+    this->dims_.push_back(dim_1);
+    this->dims_.push_back(dim_2);
+    this->dims_.push_back(dim_3);
 }
 
-Dimensions::Dimensions(int dim_1, int dim_2, int dim_3, int dim_4)
+Shape::Shape(int dim_1, int dim_2, int dim_3, int dim_4)
 {
-    this->dims_vec_.push_back(dim_1);
-    this->dims_vec_.push_back(dim_2);
-    this->dims_vec_.push_back(dim_3);
-    this->dims_vec_.push_back(dim_4);
+    this->dims_.push_back(dim_1);
+    this->dims_.push_back(dim_2);
+    this->dims_.push_back(dim_3);
+    this->dims_.push_back(dim_4);
 }
 
-Dimensions::Dimensions(std::vector<int> dims_vec)
+Shape::Shape(std::vector<int> dims)
 {
-    this->dims_vec_ = dims_vec;
+    this->dims_ = dims;
 }
 
-Dimensions::~Dimensions()
+Shape::~Shape()
 {
 }
 
-void Dimensions::print()
+void Shape::print()
 {
     int cnt = this->count();
 
     for (int i = 0; i < cnt; i++)
     {
-        printf("%d", this->dims_vec_[i]);
+        printf("%d", this->dims_[i]);
 
         if (i < cnt - 1)
         {
@@ -66,23 +66,28 @@ void Dimensions::print()
     printf("\n");
 }
 
-int Dimensions::dim(int dim_idx)
+int Shape::dim(int dim_idx)
 {
-    return this->dims_vec_[dim_idx];
+    return this->dims_[dim_idx];
 }
 
-int Dimensions::count()
+std::vector<int> Shape::dims()
 {
-    return this->dims_vec_.size();
+    return this->dims_;
 }
 
-int Dimensions::size()
+int Shape::count()
+{
+    return this->dims_.size();
+}
+
+int Shape::size()
 {
     int size = 1;
 
     for (int i = 0; i < this->count(); i++)
     {
-        size *= this->dims_vec_[i];
+        size *= this->dims_[i];
     }
 
     return size;
@@ -91,7 +96,7 @@ int Dimensions::size()
 NdArray::NdArray(NdArray &src)
 {
     this->cuda_ = src.cuda_;
-    this->dims_ = src.dims_;
+    this->shape_ = src.shape_;
 
     size_t size = this->size();
 
@@ -107,10 +112,10 @@ NdArray::NdArray(NdArray &src)
     }
 }
 
-NdArray::NdArray(bool cuda, Dimensions dims)
+NdArray::NdArray(bool cuda, Shape shape)
 {
     this->cuda_ = cuda;
-    this->dims_ = dims;
+    this->shape_ = shape;
 
     size_t size = this->size();
 
@@ -125,19 +130,19 @@ NdArray::NdArray(bool cuda, Dimensions dims)
 }
 
 NdArray::NdArray(bool cuda, int cnt)
-    : NdArray(cuda, Dimensions(cnt))
+    : NdArray(cuda, Shape(cnt))
 {
 
 }
 
 NdArray::NdArray(bool cuda, int row_cnt, int col_cnt)
-    : NdArray(cuda, Dimensions(row_cnt, col_cnt))
+    : NdArray(cuda, Shape(row_cnt, col_cnt))
 {
 
 }
 
 NdArray::NdArray(bool cuda, int x_cnt, int y_cnt, int z_cnt)
-    : NdArray(cuda, Dimensions(x_cnt, y_cnt, z_cnt))
+    : NdArray(cuda, Shape(x_cnt, y_cnt, z_cnt))
 {
 
 }
@@ -151,38 +156,6 @@ NdArray::~NdArray()
     else
     {
         free(this->data_);
-    }
-}
-
-bool NdArray::is_cuda()
-{
-    return this->cuda_;
-}
-
-void NdArray::to_cpu()
-{
-    if (this->cuda_)
-    {
-        size_t size = this->size();
-        float *dst = (float *)malloc(size);
-        cudaMemcpy(dst, this->data_, size, cudaMemcpyDeviceToHost);
-        cudaFree(this->data_);
-        this->data_ = dst;
-        this->cuda_ = false;
-    }
-}
-
-void NdArray::to_cuda()
-{
-    if (!this->cuda_)
-    {
-        size_t size = this->size();
-        float *dst;
-        cudaMalloc(&dst, size);
-        cudaMemcpy(dst, this->data_, size, cudaMemcpyHostToDevice);
-        free(this->data_);
-        this->data_ = dst;
-        this->cuda_ = true;
     }
 }
 
@@ -368,10 +341,10 @@ void NdArray::print()
     default:
     {
         printf("Shape: ");
-        this->dims_.print();
+        this->shape_.print();
 
         printf("Data: \n");
-        for (int i = 0; i < this->dims_.size(); i++)
+        for (int i = 0; i < this->shape_.size(); i++)
         {
             printf("%d: %f\n", i, this->data_[i]);
         }
@@ -388,58 +361,118 @@ void NdArray::print()
 void NdArray::copy(NdArray *src)
 {
     this->cuda_ = src->cuda_;
-    this->dims_ = src->dims_;
+    this->shape_ = src->shape_;
     cudaMemcpy(this->data_, src->data_, src->size(), cudaMemcpyDefault);
 }
 
-Dimensions NdArray::dims()
+void NdArray::reshape(Shape shape)
 {
-    return this->dims_;
+    this->shape_ = shape;
+    
+    if (this->cuda_)
+    {
+        cudaFree(this->data_);
+        cudaMalloc(&this->data_, this->size());
+    }
+    else
+    {
+        free(this->data_);
+        this->data_ = (float *)malloc(this->size());
+    }
+}
+
+void NdArray::change_dim(int dim_idx, int dim)
+{
+    std::vector<int> dims = this->shape_.dims();
+    dims[dim_idx] = dim;
+    this->reshape(Shape(dims));
+}
+
+bool NdArray::is_cuda()
+{
+    return this->cuda_;
+}
+
+void NdArray::to_cpu()
+{
+    if (this->cuda_)
+    {
+        size_t size = this->size();
+        float *dst = (float *)malloc(size);
+        cudaMemcpy(dst, this->data_, size, cudaMemcpyDeviceToHost);
+        cudaFree(this->data_);
+        this->data_ = dst;
+        this->cuda_ = false;
+    }
+}
+
+void NdArray::to_cuda()
+{
+    if (!this->cuda_)
+    {
+        size_t size = this->size();
+        float *dst;
+        cudaMalloc(&dst, size);
+        cudaMemcpy(dst, this->data_, size, cudaMemcpyHostToDevice);
+        free(this->data_);
+        this->data_ = dst;
+        this->cuda_ = true;
+    }
+}
+
+Shape NdArray::shape()
+{
+    return this->shape_;
 }
 
 int NdArray::num_dims()
 {
-    return this->dims_.count();
+    return this->shape_.count();
 }
 
 int NdArray::dims_size()
 {
-    return this->dims_.size();
+    return this->shape_.size();
 }
 
 int NdArray::count()
 {
-    return this->dims_.size();
+    return this->shape_.size();
 }
 
 int NdArray::rows()
 {
-    return this->dims_.dim(0);
+    return this->shape_.dim(0);
 }
 
 int NdArray::cols()
 {
-    return this->dims_.dim(1);
+    return this->shape_.dim(1);
 }
 
 int NdArray::xs()
 {
-    return this->dims_.dim(0);
+    return this->shape_.dim(0);
 }
 
 int NdArray::ys()
 {
-    return this->dims_.dim(1);
+    return this->shape_.dim(1);
 }
 
 int NdArray::zs()
 {
-    return this->dims_.dim(2);
+    return this->shape_.dim(2);
+}
+
+int NdArray::batch_size()
+{
+    return this->shape_.dim(0);
 }
 
 size_t NdArray::size()
 {
-    return sizeof(float) * this->dims_.size();
+    return sizeof(float) * this->shape_.size();
 }
 
 float *NdArray::data()
@@ -486,7 +519,7 @@ void NdArray::rands(float mean, float stddev)
         std::random_device rd;
         std::mt19937 gen(rd());
 
-        for (int i = 0; i < this->dims_.size(); i++)
+        for (int i = 0; i < this->shape_.size(); i++)
         {
             std::normal_distribution<float> d(mean, stddev);
             this->data_[i] = d(gen);
