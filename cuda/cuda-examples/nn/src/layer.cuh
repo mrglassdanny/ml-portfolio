@@ -2,54 +2,84 @@
 
 #include <ndarray.cuh>
 
-#include "activation.cuh"
-
 namespace layer
 {
+    struct Gradients
+    {
+        NdArray *dw;
+        NdArray *db;
+    };
+
+    class Parameters
+    {
+    private:
+        NdArray *w_;
+        NdArray *b_;
+        Gradients *grads_;
+
+    public:
+        Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out);
+        ~Parameters();
+
+        void zero_grad();
+
+        NdArray *weights();
+        NdArray *biases();
+        NdArray *weight_gradients();
+        NdArray *bias_gradients();
+    };
+
     class Layer
     {
+    protected:
+        NdArray *n_;
+        Shape base_shape_;
+
     public:
+        ~Layer();
+
         virtual void forward(NdArray *out) = 0;
         virtual NdArray *backward(NdArray *in) = 0;
 
-        virtual NdArray *n() = 0;
-        virtual void set_n(NdArray *n) = 0;
+        NdArray *neurons();
+        void copy_neurons(NdArray *n);
     };
 
-    class Linear : public Layer
+    class Learnable : public Layer
     {
-    private:
-        NdArray *n_;
-        NdArray *w_;
-        NdArray *b_;
-        NdArray *dw_;
-        NdArray *db_;
+    protected:
+        Parameters *params_;
 
     public:
+        ~Learnable();
+
+        Parameters *parameters();
+    };
+
+    class Linear : public Learnable
+    {
+    public:
         Linear(int in_cnt, int out_cnt);
-        ~Linear();
 
         virtual void forward(NdArray *out) override;
         virtual NdArray *backward(NdArray *in) override;
-
-        virtual NdArray *n();
-        virtual void set_n(NdArray *n);
     };
 
     class Activation : public Layer
     {
-    private:
-        NdArray *n_;
-        activation::Activation *a_;
-
     public:
-        Activation(activation::Activation *a, int in_cnt);
-        ~Activation();
+        Activation(int in_cnt);
 
-        virtual void forward(NdArray *out);
-        virtual NdArray *backward(NdArray *in);
+        virtual void forward(NdArray *out) = 0;
+        virtual NdArray *backward(NdArray *in) = 0;
+    };
 
-        virtual NdArray *n();
-        virtual void set_n(NdArray *n);
+    class Sigmoid : public Activation
+    {
+    public:
+        Sigmoid(int in_cnt);
+
+        virtual void forward(NdArray *out) override;
+        virtual NdArray *backward(NdArray *in) override;
     };
 }

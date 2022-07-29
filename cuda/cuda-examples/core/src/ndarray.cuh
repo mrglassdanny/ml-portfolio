@@ -15,23 +15,25 @@
 
 #define THREADS_PER_BLOCK 32
 
-class Dimensions
+class Shape
 {
 private:
-	std::vector<int> dims_vec_;
+	std::vector<int> dims_;
 
 public:
-	Dimensions();
-	Dimensions(int dim_1);
-	Dimensions(int dim_1, int dim_2);
-	Dimensions(int dim_1, int dim_2, int dim_3);
-	Dimensions(int dim_1, int dim_2, int dim_3, int dim_4);
-	Dimensions(std::vector<int> dims_vec);
-	~Dimensions();
+	Shape();
+	Shape(int dim_1);
+	Shape(int dim_1, int dim_2);
+	Shape(int dim_1, int dim_2, int dim_3);
+	Shape(int dim_1, int dim_2, int dim_3, int dim_4);
+	Shape(std::vector<int> dims);
+	Shape(int dim_1, Shape shape);
+	~Shape();
 
 	void print();
 
 	int dim(int dim_idx);
+	std::vector<int> dims();
 	int count();
 	int size();
 };
@@ -40,24 +42,27 @@ class NdArray
 {
 protected:
 	bool cuda_;
-	Dimensions dims_;
+	Shape shape_;
 	float *data_;
 
 public:
 	NdArray(NdArray &src);
-	NdArray(bool cuda, Dimensions dims);
+	NdArray(bool cuda, Shape shape);
 	NdArray(bool cuda, int cnt);
 	NdArray(bool cuda, int row_cnt, int col_cnt);
 	NdArray(bool cuda, int x_cnt, int y_cnt, int z_cnt);
 	~NdArray();
 
 	void print();
+	void copy(NdArray *src);
+	void reshape(Shape shape);
+	void change_dim(int dim_idx, int dim);
 
 	bool is_cuda();
 	void to_cpu();
 	void to_cuda();
 
-	Dimensions dims();
+	Shape shape();
 	int num_dims();
 	int dims_size();
 	int count();
@@ -66,6 +71,7 @@ public:
 	int xs();
 	int ys();
 	int zs();
+	int batch_size();
 	size_t size();
 
 	float *data();

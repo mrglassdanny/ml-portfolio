@@ -42,7 +42,8 @@ __global__ void k_linear_inc_param_derivatives(float *in, float *n, float *w, fl
 
             if (w_row_idx == 0)
             {
-                db[w_col_idx] += in[i * in_col_cnt + in_col_idx];
+                int b_elem_idx = w_col_idx;
+                db[b_elem_idx] += in[i * in_col_cnt + in_col_idx];
             }
         }
     }
@@ -67,121 +68,198 @@ __global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int in
     }
 }
 
+__device__ float d_sigmoid_evaluate(float val)
+{
+    return (1.0f / (1.0f + exp(-val)));
+}
+
+__device__ float d_sigmoid_derive(float val)
+{
+    float sigmoid_val = d_sigmoid_evaluate(val);
+    return (sigmoid_val) * (1.0f - sigmoid_val);
+}
+
+__global__ void k_sigmoid_evaluate(float *in, float *out, int cnt)
+{
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (tid < cnt)
+    {
+        out[tid] = d_sigmoid_evaluate(in[tid]);
+    }
+}
+
+__global__ void k_sigmoid_derive(float *in, float *n, float *out, int cnt)
+{
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (tid < cnt)
+    {
+        out[tid] = in[tid] * d_sigmoid_derive(n[tid]);
+    }
+}
+
+Parameters::Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out)
+{
+    this->w_ = new NdArray(true, w_shape);
+    this->b_ = new NdArray(true, b_shape);
+
+    this->grads_ = new Gradients();
+    this->grads_->dw = new NdArray(true, w_shape);
+    this->grads_->db = new NdArray(true, b_shape);
+
+    this->w_->rands(0.0f, sqrt(1.0f / fan_in));
+    this->b_->zeros();
+    this->zero_grad();
+}
+
+Parameters::~Parameters()
+{
+    delete this->w_;
+    delete this->b_;
+    delete this->grads_->dw;
+    delete this->grads_->db;
+    delete this->grads_;
+}
+
+void Parameters::zero_grad()
+{
+    this->grads_->dw->zeros();
+    this->grads_->db->zeros();
+}
+
+NdArray *Parameters::weights()
+{
+    return this->w_;
+}
+
+NdArray *Parameters::biases()
+{
+    return this->b_;
+}
+
+NdArray *Parameters::weight_gradients()
+{
+    return this->grads_->dw;
+}
+
+NdArray *Parameters::bias_gradients()
+{
+    return this->grads_->db;
+}
+
+Layer::~Layer()
+{
+    delete this->n_;
+}
+
+NdArray *Layer::neurons()
+{
+    return this->n_;
+}
+
+void Layer::copy_neurons(NdArray *n)
+{
+    this->n_->copy(n);
+}
+
+Learnable::~Learnable()
+{
+    delete params_;
+}
+
+Parameters *Learnable::parameters()
+{
+    return this->params_;
+}
+
 Linear::Linear(int in_cnt, int out_cnt)
 {
     this->n_ = new NdArray(true, 1, in_cnt);
-    this->w_ = new NdArray(true, in_cnt, out_cnt);
-    this->b_ = new NdArray(true, out_cnt);
-    this->dw_ = new NdArray(true, in_cnt, out_cnt);
-    this->db_ = new NdArray(true, out_cnt);
-
-    this->w_->rands(0.0f, sqrt(1.0f / in_cnt));
-    this->b_->zeros();
-    this->dw_->zeros();
-    this->db_->zeros();
-}
-
-Linear::~Linear()
-{
-    delete this->n_;
-    delete this->w_;
-    delete this->b_;
-    delete this->dw_;
-    delete this->db_;
+    this->base_shape_ = Shape(in_cnt);
+    this->params_ = new Parameters(Shape(in_cnt, out_cnt), Shape(out_cnt), in_cnt, out_cnt);
 }
 
 void Linear::forward(NdArray *out)
 {
     out->zeros();
 
-    {
-        unsigned int grid_row_cnt = (this->n_->rows() / THREADS_PER_BLOCK) + 1;
-        unsigned int grid_col_cnt = (out->cols() / THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (this->n_->rows() / THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (out->cols() / THREADS_PER_BLOCK) + 1;
 
-        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+    dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+    dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
-        k_linear_matmul_w_bias<<<grid_dims, block_dims>>>(this->n_->data(), this->w_->data(), out->data(), this->b_->data(),
-                                                          this->n_->cols(), this->n_->rows(), out->cols());
-    }
+    NdArray *n = this->n_;
+    NdArray *w = this->params_->weights();
+    NdArray *b = this->params_->biases();
+    NdArray *dw = this->params_->weight_gradients();
+    NdArray *db = this->params_->bias_gradients();
+
+    k_linear_matmul_w_bias<<<grid_dims, block_dims>>>(n->data(), w->data(), out->data(), b->data(),
+                                                      n->cols(), n->rows(), out->cols());
 }
 
 NdArray *Linear::backward(NdArray *in)
 {
+    NdArray *n = this->n_;
+    NdArray *w = this->params_->weights();
+    NdArray *b = this->params_->biases();
+    NdArray *dw = this->params_->weight_gradients();
+    NdArray *db = this->params_->bias_gradients();
+
     {
-        unsigned int grid_row_cnt = (this->w_->rows() / THREADS_PER_BLOCK) + 1;
-        unsigned int grid_col_cnt = (this->w_->cols() / THREADS_PER_BLOCK) + 1;
+        int grid_row_cnt = (w->rows() / THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (w->cols() / THREADS_PER_BLOCK) + 1;
 
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
-        k_linear_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), this->n_->data(), this->w_->data(), this->b_->data(), this->dw_->data(), this->db_->data(),
-                                                                  in->rows(), in->cols(), this->n_->cols(), this->w_->rows(), this->w_->cols());
+        k_linear_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), n->data(), w->data(), b->data(), dw->data(), db->data(),
+                                                                  in->rows(), in->cols(), n->cols(), w->rows(), w->cols());
     }
 
     NdArray *out = new NdArray(true, this->n_->rows(), this->n_->cols());
     out->zeros();
 
     {
-        unsigned int grid_row_cnt = (out->rows() / THREADS_PER_BLOCK) + 1;
-        unsigned int grid_col_cnt = (out->cols() / THREADS_PER_BLOCK) + 1;
+        int grid_row_cnt = (out->rows() / THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (out->cols() / THREADS_PER_BLOCK) + 1;
 
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
-        k_linear_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), this->w_->data(), out->data(),
-                                                            in->cols(), this->w_->cols(), out->rows(), out->cols());
+        k_linear_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), out->data(),
+                                                            in->cols(), w->cols(), out->rows(), out->cols());
     }
 
     delete in;
     return out;
 }
 
-NdArray *Linear::n()
-{
-    return this->n_;
-}
-
-void Linear::set_n(NdArray *n)
-{
-    
-}
-
-Activation::Activation(activation::Activation *a, int in_cnt)
+Activation::Activation(int in_cnt)
 {
     this->n_ = new NdArray(true, 1, in_cnt);
-    this->a_ = a;
+    this->base_shape_ = Shape(in_cnt);
 }
 
-Activation::~Activation()
+Sigmoid::Sigmoid(int in_cnt)
+    : Activation(in_cnt)
 {
-    delete this->n_;
-    delete this->a_;
 }
 
-void Activation::forward(NdArray *out)
+void Sigmoid::forward(NdArray *out)
 {
     out->zeros();
-
-    this->a_->evaluate(this->n_, out);
+    k_sigmoid_evaluate<<<this->n_->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(this->n_->data(), out->data(), this->n_->count());
 }
 
-NdArray *Activation::backward(NdArray *in)
+NdArray *Sigmoid::backward(NdArray *in)
 {
-    NdArray *out = new NdArray(true, in->rows(), in->cols());
+    NdArray *out = new NdArray(true, this->n_->rows(), this->n_->cols());
 
-    this->a_->derive(in, out);
+    k_sigmoid_derive<<<in->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(in->data(), this->n_->data(), out->data(), in->count());
 
     delete in;
     return out;
-}
-
-NdArray *Activation::n()
-{
-    return this->n_;
-}
-
-void Activation::set_n(NdArray *n)
-{
-    
 }

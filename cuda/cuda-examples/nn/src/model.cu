@@ -10,8 +10,6 @@ Model::~Model()
     {
         delete lyr;
     }
-
-    delete this->loss_;
 }
 
 void Model::add_layer(Layer *lyr)
@@ -26,16 +24,27 @@ void Model::linear(int in_cnt, int out_cnt)
 
 void Model::sigmoid(int in_cnt)
 {
-    this->add_layer(new Activation(new activation::Sigmoid(), in_cnt));
+    this->add_layer(new Sigmoid(in_cnt));
+}
+
+void Model::lock_batch_size(int batch_size)
+{
+    if (this->lyrs_[0]->neurons()->batch_size() == batch_size)
+    {
+        return;
+    }
+
+    for (Layer *lyr : this->lyrs_)
+    {
+        lyr->neurons()->change_dim(0, batch_size);
+    }
 }
 
 NdArray *Model::forward(NdArray *x)
 {
     x->to_cuda();
 
-    int batch_size = x->dims().dim(0);
-
-    this->lyrs_[0]->set_n(x);
+    int batch_size = x->shape().dim(0);
 
     int lst_lyr_idx = this->lyrs_.size() - 1;
 
@@ -44,51 +53,33 @@ NdArray *Model::forward(NdArray *x)
         Layer *lyr = this->lyrs_[i];
         Layer *nxt_lyr = this->lyrs_[i + 1];
 
-        lyr->forward(nxt_lyr->n());
+        lyr->forward(nxt_lyr->neurons());
     }
 
     Layer *lst_lyr = this->lyrs_[lst_lyr_idx];
 
-    NdArray *p = new NdArray(true, lst_lyr->n()->dims());
+    NdArray *p = new NdArray(true, lst_lyr->neurons()->shape());
     lst_lyr->forward(p);
 
     return p;
 }
 
-void Model::backward(NdArray *p, NdArray *y)
+std::vector<Layer *> Model::layers()
 {
-    y->to_cuda();
+    return this->lyrs_;
+}
 
-    NdArray *dl = this->loss_->derive(p, y);
+std::vector<Parameters *> Model::parameters()
+{
+    std::vector<Parameters *> params;
 
-    int lst_lyr_idx = this->lyrs_.size() - 1;
-    for (int i = lst_lyr_idx; i >= 0; i--)
+    for (Layer *lyr : this->lyrs_)
     {
-        Layer *lyr = this->lyrs_[i];
-        dl = lyr->backward(dl);
+        if (Learnable *lrn = dynamic_cast<Learnable *>(lyr))
+        {
+            params.push_back(lrn->parameters());
+        }
     }
 
-    delete dl;
-}
-
-float Model::loss(NdArray *p, NdArray *y)
-{
-    y->to_cuda();
-
-    float loss_val = 0.0f;
-    float *d_loss_val;
-
-    cudaMalloc(&d_loss_val, sizeof(float));
-    cudaMemset(d_loss_val, 0, sizeof(float));
-
-    this->loss_->evaluate(p, y, d_loss_val);
-
-    cudaMemcpy(&loss_val, d_loss_val, sizeof(float), cudaMemcpyDeviceToHost);
-    cudaFree(d_loss_val);
-
-    return loss_val;
-}
-
-void Model::step()
-{
+    return params;
 }

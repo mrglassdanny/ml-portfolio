@@ -11,17 +11,17 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="src\activation.cu" />
     <CudaCompile Include="src\layer.cu" />
     <CudaCompile Include="src\loss.cu" />
     <CudaCompile Include="src\main.cu" />
     <CudaCompile Include="src\model.cu" />
+    <CudaCompile Include="src\optim.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\activation.cuh" />
     <ClInclude Include="src\layer.cuh" />
     <ClInclude Include="src\loss.cuh" />
     <ClInclude Include="src\model.cuh" />
+    <ClInclude Include="src\optim.cuh" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\core\core.vcxproj">
