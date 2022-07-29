@@ -99,14 +99,16 @@ __global__ void k_sigmoid_derive(float *in, float *n, float *out, int cnt)
     }
 }
 
-Parameters::Parameters(Shape w_shape, Shape b_shape)
+Parameters::Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out)
 {
     this->w_ = new NdArray(true, w_shape);
     this->b_ = new NdArray(true, b_shape);
+
+    this->grads_ = new Gradients();
     this->grads_->dw = new NdArray(true, w_shape);
     this->grads_->db = new NdArray(true, b_shape);
 
-    this->w_->rands(0.0f, 1.0f);
+    this->w_->rands(0.0f, sqrt(1.0f / fan_in));
     this->b_->zeros();
     this->zero_grad();
 }
@@ -117,6 +119,7 @@ Parameters::~Parameters()
     delete this->b_;
     delete this->grads_->dw;
     delete this->grads_->db;
+    delete this->grads_;
 }
 
 void Parameters::zero_grad()
@@ -174,7 +177,7 @@ Linear::Linear(int in_cnt, int out_cnt)
 {
     this->n_ = new NdArray(true, 1, in_cnt);
     this->base_shape_ = Shape(in_cnt);
-    this->params_ = new Parameters(Shape(in_cnt, out_cnt), Shape(out_cnt));
+    this->params_ = new Parameters(Shape(in_cnt, out_cnt), Shape(out_cnt), in_cnt, out_cnt);
 }
 
 void Linear::forward(NdArray *out)

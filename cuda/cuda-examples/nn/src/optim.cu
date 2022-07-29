@@ -52,7 +52,7 @@ SGD::SGD(std::vector<Parameters *> model_params, float learning_rate)
 {
 }
 
-void SGD::step()
+void SGD::step(int batch_size)
 {
     for (Parameters *params : this->model_params_)
     {
@@ -68,7 +68,9 @@ void SGD::step()
         dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
         k_sgd_step<<<grid_dims, block_dims>>>(w->data(), b->data(), dw->data(), db->data(),
-                                              w->rows(), w->cols(), this->lr_, 1);
+                                              w->rows(), w->cols(), this->lr_, batch_size);
+
+        params->zero_grad();
     }
 }
 
@@ -91,7 +93,7 @@ SGDMomentum::~SGDMomentum()
     }
 }
 
-void SGDMomentum::step()
+void SGDMomentum::step(int batch_size)
 {
     for (int i = 0; i < this->model_params_.size(); i++)
     {
@@ -111,6 +113,8 @@ void SGDMomentum::step()
         dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
         k_sgd_momentum_step<<<grid_dims, block_dims>>>(w->data(), b->data(), dw->data(), db->data(), vdw->data(), vdb->data(),
-                                              w->rows(), w->cols(), this->lr_, 1);
+                                              w->rows(), w->cols(), this->lr_, batch_size);
+
+        params->zero_grad();
     }
 }

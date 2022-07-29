@@ -18,7 +18,7 @@ namespace layer
         Gradients *grads_;
 
     public:
-        Parameters(Shape w_shape, Shape b_shape);
+        Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out);
         ~Parameters();
 
         void zero_grad();

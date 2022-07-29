@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ndarray.cuh>
+
 #include "layer.cuh"
 
 namespace optim
@@ -16,7 +17,7 @@ namespace optim
     public:
         Optimizer(std::vector<Parameters *> model_params_, float learning_rate);
 
-        virtual void step() = 0;
+        virtual void step(int batch_size) = 0;
     };
 
     class SGD : public Optimizer
@@ -24,7 +25,7 @@ namespace optim
     public:
         SGD(std::vector<Parameters *> model_params_, float learning_rate);
 
-        virtual void step() override;
+        virtual void step(int batch_size) override;
     };
 
     class SGDMomentum : public Optimizer
@@ -37,6 +38,6 @@ namespace optim
         SGDMomentum(std::vector<Parameters *> model_params_, float learning_rate);
         ~SGDMomentum();
 
-        virtual void step() override;
+        virtual void step(int batch_size) override;
     };
 }
