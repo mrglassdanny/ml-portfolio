@@ -4,18 +4,13 @@
 
 namespace layer
 {
-    struct Gradients
-    {
-        NdArray *dw;
-        NdArray *db;
-    };
-
     class Parameters
     {
     private:
         NdArray *w_;
         NdArray *b_;
-        Gradients *grads_;
+        NdArray *dw_;
+        NdArray *db_;
 
     public:
         Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out);
@@ -34,15 +29,18 @@ namespace layer
     protected:
         NdArray *n_;
         Shape base_shape_;
-
     public:
         ~Layer();
 
         virtual void forward(NdArray *out) = 0;
         virtual NdArray *backward(NdArray *in) = 0;
 
+        int batch_size();
+        void lock_batch_size(int batch_size);
+
         NdArray *neurons();
         void copy_neurons(NdArray *n);
+
     };
 
     class Learnable : public Layer

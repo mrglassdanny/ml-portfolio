@@ -27,8 +27,6 @@ int main(int argc, char **argv)
 	x->ones();
 	y->ones();
 
-	model->lock_batch_size(batch_size);
-
 	for (int i = 0; i < 25; i++)
 	{
 		NdArray* p = model->forward(x);

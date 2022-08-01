@@ -71,7 +71,6 @@ public:
 	int xs();
 	int ys();
 	int zs();
-	int batch_size();
 	size_t size();
 
 	float *data();
@@ -79,3 +78,7 @@ public:
 	void ones();
 	void rands(float mean, float stddev);
 };
+
+NdArray *zeros(bool cuda, Shape shape);
+NdArray *ones(bool cuda, Shape shape);
+NdArray *rands(bool cuda, Shape shape, float mean, float stddev);

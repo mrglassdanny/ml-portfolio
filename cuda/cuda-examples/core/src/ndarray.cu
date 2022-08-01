@@ -132,19 +132,16 @@ NdArray::NdArray(bool cuda, Shape shape)
 NdArray::NdArray(bool cuda, int cnt)
     : NdArray(cuda, Shape(cnt))
 {
-
 }
 
 NdArray::NdArray(bool cuda, int row_cnt, int col_cnt)
     : NdArray(cuda, Shape(row_cnt, col_cnt))
 {
-
 }
 
 NdArray::NdArray(bool cuda, int x_cnt, int y_cnt, int z_cnt)
     : NdArray(cuda, Shape(x_cnt, y_cnt, z_cnt))
 {
-
 }
 
 NdArray::~NdArray()
@@ -368,7 +365,7 @@ void NdArray::copy(NdArray *src)
 void NdArray::reshape(Shape shape)
 {
     this->shape_ = shape;
-    
+
     if (this->cuda_)
     {
         cudaFree(this->data_);
@@ -465,11 +462,6 @@ int NdArray::zs()
     return this->shape_.dim(2);
 }
 
-int NdArray::batch_size()
-{
-    return this->shape_.dim(0);
-}
-
 size_t NdArray::size()
 {
     return sizeof(float) * this->shape_.size();
@@ -530,4 +522,31 @@ void NdArray::rands(float mean, float stddev)
     {
         this->to_cuda();
     }
+}
+
+NdArray *zeros(bool cuda, Shape shape)
+{
+    NdArray *arr = new NdArray(cuda, shape);
+
+    arr->zeros();
+
+    return arr;
+}
+
+NdArray *ones(bool cuda, Shape shape)
+{
+    NdArray *arr = new NdArray(cuda, shape);
+
+    arr->ones();
+
+    return arr;
+}
+
+NdArray *rands(bool cuda, Shape shape, float mean, float stddev)
+{
+    NdArray *arr = new NdArray(cuda, shape);
+
+    arr->rands(mean, stddev);
+
+    return arr;
 }

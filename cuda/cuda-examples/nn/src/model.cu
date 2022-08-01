@@ -27,16 +27,26 @@ void Model::sigmoid(int in_cnt)
     this->add_layer(new Sigmoid(in_cnt));
 }
 
+Layer *Model::first_layer()
+{
+    return this->lyrs_[0];
+}
+
+Layer *Model::last_layer()
+{
+    return this->lyrs_[this->lyrs_.size() - 1];
+}
+
 void Model::lock_batch_size(int batch_size)
 {
-    if (this->lyrs_[0]->neurons()->batch_size() == batch_size)
+    if (this->last_layer()->batch_size() == batch_size)
     {
         return;
     }
 
     for (Layer *lyr : this->lyrs_)
     {
-        lyr->neurons()->change_dim(0, batch_size);
+        lyr->lock_batch_size(batch_size);
     }
 }
 
@@ -45,10 +55,11 @@ NdArray *Model::forward(NdArray *x)
     x->to_cuda();
 
     int batch_size = x->shape().dim(0);
+    this->lock_batch_size(batch_size);
 
-    int lst_lyr_idx = this->lyrs_.size() - 1;
+    this->first_layer()->copy_neurons(x);
 
-    for (int i = 0; i < lst_lyr_idx; i++)
+    for (int i = 0; i < this->lyrs_.size() - 1; i++)
     {
         Layer *lyr = this->lyrs_[i];
         Layer *nxt_lyr = this->lyrs_[i + 1];
@@ -56,7 +67,7 @@ NdArray *Model::forward(NdArray *x)
         lyr->forward(nxt_lyr->neurons());
     }
 
-    Layer *lst_lyr = this->lyrs_[lst_lyr_idx];
+    Layer *lst_lyr = this->last_layer();
 
     NdArray *p = new NdArray(true, lst_lyr->neurons()->shape());
     lst_lyr->forward(p);

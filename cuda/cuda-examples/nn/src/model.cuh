@@ -20,6 +20,9 @@ public:
     void linear(int in_cnt, int out_cnt);
     void sigmoid(int in_cnt);
 
+    Layer *first_layer();
+    Layer *last_layer();
+
     void lock_batch_size(int batch_size);
 
     virtual NdArray *forward(NdArray *x);

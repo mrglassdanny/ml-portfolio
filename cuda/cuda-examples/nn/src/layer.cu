@@ -1,5 +1,7 @@
 #include "layer.cuh"
 
+#define DEFAULT_BATCH_SIZE 1
+
 using namespace layer;
 
 __global__ void k_linear_matmul_w_bias(float *in, float *w, float *out, float *b,
@@ -101,31 +103,24 @@ __global__ void k_sigmoid_derive(float *in, float *n, float *out, int cnt)
 
 Parameters::Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out)
 {
-    this->w_ = new NdArray(true, w_shape);
-    this->b_ = new NdArray(true, b_shape);
-
-    this->grads_ = new Gradients();
-    this->grads_->dw = new NdArray(true, w_shape);
-    this->grads_->db = new NdArray(true, b_shape);
-
-    this->w_->rands(0.0f, sqrt(1.0f / fan_in));
-    this->b_->zeros();
-    this->zero_grad();
+    this->w_ = rands(true, w_shape, 0.0f, sqrt(1.0f / fan_in));
+    this->b_ = zeros(true, b_shape);
+    this->dw_ = zeros(true, w_shape);
+    this->db_ = zeros(true, b_shape);
 }
 
 Parameters::~Parameters()
 {
     delete this->w_;
     delete this->b_;
-    delete this->grads_->dw;
-    delete this->grads_->db;
-    delete this->grads_;
+    delete this->dw_;
+    delete this->db_;
 }
 
 void Parameters::zero_grad()
 {
-    this->grads_->dw->zeros();
-    this->grads_->db->zeros();
+    this->dw_->zeros();
+    this->db_->zeros();
 }
 
 NdArray *Parameters::weights()
@@ -140,17 +135,27 @@ NdArray *Parameters::biases()
 
 NdArray *Parameters::weight_gradients()
 {
-    return this->grads_->dw;
+    return this->dw_;
 }
 
 NdArray *Parameters::bias_gradients()
 {
-    return this->grads_->db;
+    return this->db_;
 }
 
 Layer::~Layer()
 {
     delete this->n_;
+}
+
+int Layer::batch_size()
+{
+    return this->n_->shape().dim(0);
+}
+
+void Layer::lock_batch_size(int batch_size)
+{
+    this->n_->change_dim(0, batch_size);
 }
 
 NdArray *Layer::neurons()
@@ -175,7 +180,7 @@ Parameters *Learnable::parameters()
 
 Linear::Linear(int in_cnt, int out_cnt)
 {
-    this->n_ = new NdArray(true, 1, in_cnt);
+    this->n_ = new NdArray(true, DEFAULT_BATCH_SIZE, in_cnt);
     this->base_shape_ = Shape(in_cnt);
     this->params_ = new Parameters(Shape(in_cnt, out_cnt), Shape(out_cnt), in_cnt, out_cnt);
 }
@@ -239,7 +244,7 @@ NdArray *Linear::backward(NdArray *in)
 
 Activation::Activation(int in_cnt)
 {
-    this->n_ = new NdArray(true, 1, in_cnt);
+    this->n_ = new NdArray(true, DEFAULT_BATCH_SIZE, in_cnt);
     this->base_shape_ = Shape(in_cnt);
 }
 
