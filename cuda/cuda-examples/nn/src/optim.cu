@@ -1,7 +1,7 @@
 #include "optim.cuh"
 
-using namespace optim;
-using namespace layer;
+using namespace nn::optim;
+using namespace nn::layer;
 
 __global__ void k_sgd_step(float *w, float *b, float *dw, float *db, int w_row_cnt, int w_col_cnt, float lr, int batch_size)
 {
@@ -21,7 +21,7 @@ __global__ void k_sgd_step(float *w, float *b, float *dw, float *db, int w_row_c
     }
 }
 
-__global__ void k_sgd_momentum_step(float *w, float *b, float *dw, float *db, float *vdw, float *vdb, int w_row_cnt, int w_col_cnt, float lr, int batch_size)
+__global__ void k_sgd_momentum_step(float *w, float *b, float *dw, float *db, float *vdw, float *vdb, int w_row_cnt, int w_col_cnt, float lr, int batch_size, float momentum)
 {
     int w_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int w_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -29,13 +29,13 @@ __global__ void k_sgd_momentum_step(float *w, float *b, float *dw, float *db, fl
     if (w_col_idx < w_row_cnt && w_row_idx < w_col_cnt)
     {
         int w_elem_idx = w_row_idx * w_col_cnt + w_col_idx;
-        vdw[w_elem_idx] = 0.01f * vdw[w_elem_idx] + (1.0f - 0.01f) * dw[w_elem_idx];
+        vdw[w_elem_idx] = momentum * vdw[w_elem_idx] + (1.0f - momentum) * dw[w_elem_idx];
         w[w_elem_idx] -= (lr * vdw[w_elem_idx] / batch_size);
 
         if (w_row_idx == 0)
         {
             int b_elem_idx = w_col_idx;
-            vdb[b_elem_idx] = 0.01f * vdb[b_elem_idx] + (1.0f - 0.01f) * db[b_elem_idx];
+            vdb[b_elem_idx] = momentum * vdb[b_elem_idx] + (1.0f - momentum) * db[b_elem_idx];
             b[b_elem_idx] -= (lr * vdb[b_elem_idx] / batch_size);
         }
     }
@@ -74,9 +74,11 @@ void SGD::step(int batch_size)
     }
 }
 
-SGDMomentum::SGDMomentum(std::vector<Parameters *> model_params, float learning_rate)
+SGDMomentum::SGDMomentum(std::vector<Parameters *> model_params, float learning_rate, float momentum)
     : Optimizer(model_params, learning_rate)
 {
+    this->momentum_ = momentum;
+
     for (Parameters *params : model_params)
     {
         this->vdws_.push_back(new NdArray(true, params->weight_gradients()->shape()));
@@ -86,7 +88,7 @@ SGDMomentum::SGDMomentum(std::vector<Parameters *> model_params, float learning_
 
 SGDMomentum::~SGDMomentum()
 {
-    for(int i = 0; i < this->vdws_.size(); i++)
+    for (int i = 0; i < this->vdws_.size(); i++)
     {
         delete this->vdws_[i];
         delete this->vdbs_[i];
@@ -113,7 +115,7 @@ void SGDMomentum::step(int batch_size)
         dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
         k_sgd_momentum_step<<<grid_dims, block_dims>>>(w->data(), b->data(), dw->data(), db->data(), vdw->data(), vdb->data(),
-                                              w->rows(), w->cols(), this->lr_, batch_size);
+                                                       w->rows(), w->cols(), this->lr_, batch_size, this->momentum_);
 
         params->zero_grad();
     }

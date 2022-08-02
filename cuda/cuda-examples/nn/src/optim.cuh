@@ -4,40 +4,44 @@
 
 #include "layer.cuh"
 
-namespace optim
+namespace nn
 {
-    using namespace layer;
-
-    class Optimizer
+    namespace optim
     {
-    protected:
-        std::vector<Parameters *> model_params_;
-        float lr_;
+        using namespace layer;
 
-    public:
-        Optimizer(std::vector<Parameters *> model_params_, float learning_rate);
+        class Optimizer
+        {
+        protected:
+            std::vector<Parameters *> model_params_;
+            float lr_;
 
-        virtual void step(int batch_size) = 0;
-    };
+        public:
+            Optimizer(std::vector<Parameters *> model_params_, float learning_rate);
 
-    class SGD : public Optimizer
-    {
-    public:
-        SGD(std::vector<Parameters *> model_params_, float learning_rate);
+            virtual void step(int batch_size) = 0;
+        };
 
-        virtual void step(int batch_size) override;
-    };
+        class SGD : public Optimizer
+        {
+        public:
+            SGD(std::vector<Parameters *> model_params_, float learning_rate);
 
-    class SGDMomentum : public Optimizer
-    {
-    private:
-        std::vector<NdArray *> vdws_;
-        std::vector<NdArray *> vdbs_;
+            virtual void step(int batch_size) override;
+        };
 
-    public:
-        SGDMomentum(std::vector<Parameters *> model_params_, float learning_rate);
-        ~SGDMomentum();
+        class SGDMomentum : public Optimizer
+        {
+        private:
+            float momentum_;
+            std::vector<NdArray *> vdws_;
+            std::vector<NdArray *> vdbs_;
 
-        virtual void step(int batch_size) override;
-    };
+        public:
+            SGDMomentum(std::vector<Parameters *> model_params_, float learning_rate, float momentum);
+            ~SGDMomentum();
+
+            virtual void step(int batch_size) override;
+        };
+    }
 }

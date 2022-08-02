@@ -18,6 +18,7 @@
     <CudaCompile Include="src\optim.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\constants.cuh" />
     <ClInclude Include="src\layer.cuh" />
     <ClInclude Include="src\loss.cuh" />
     <ClInclude Include="src\model.cuh" />

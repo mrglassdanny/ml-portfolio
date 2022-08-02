@@ -1,6 +1,6 @@
 #include "loss.cuh"
 
-using namespace loss;
+using namespace nn::loss;
 
 __device__ float d_mse_evaluate(float p_val, float y_val)
 {
@@ -30,46 +30,6 @@ __global__ void k_mse_derive(float *p, float *y, float *out, int cnt)
     {
         out[tid] = d_mse_derive(p[tid], y[tid]);
     }
-}
-
-Loss::Loss(std::vector<Layer *> layers)
-{
-    this->lyrs_ = layers;
-}
-
-NdArray *Loss::loss(NdArray *p, NdArray *y)
-{
-    p->to_cuda();
-    y->to_cuda();
-
-    NdArray *out = NdArray::zeros(true, p->shape());
-
-    this->evaluate(p, y, out);
-
-    return out;
-}
-
-void Loss::backward(NdArray *p, NdArray *y)
-{
-    p->to_cuda();
-    y->to_cuda();
-
-    NdArray *dl = this->derive(p, y);
-
-    int lst_lyr_idx = this->lyrs_.size() - 1;
-    for (int i = lst_lyr_idx; i >= 0; i--)
-    {
-        Layer *lyr = this->lyrs_[i];
-        dl = lyr->backward(dl);
-    }
-
-    delete dl;
-}
-
-MSE::MSE(std::vector<Layer *> layers)
-    : Loss(layers)
-{
-
 }
 
 void MSE::evaluate(NdArray *p, NdArray *y, NdArray *out)

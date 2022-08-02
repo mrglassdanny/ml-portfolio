@@ -1,7 +1,11 @@
 #include "model.cuh"
 
+using namespace nn;
+
 Model::Model()
 {
+    this->loss_ = nullptr;
+    this->optim_ = nullptr;
 }
 
 Model::~Model()
@@ -10,11 +14,31 @@ Model::~Model()
     {
         delete lyr;
     }
+
+    if (this->loss_ != nullptr)
+    {
+        delete this->loss_;
+    }
+
+    if (this->optim_ != nullptr)
+    {
+        delete this->optim_;
+    }
 }
 
-void Model::add_layer(Layer *lyr)
+Layer *Model::first_layer()
 {
-    this->lyrs_.push_back(lyr);
+    return this->lyrs_[0];
+}
+
+Layer *Model::last_layer()
+{
+    return this->lyrs_[this->lyrs_.size() - 1];
+}
+
+int Model::batch_size()
+{
+    return this->first_layer()->batch_size();
 }
 
 void Model::lock_batch_size(int batch_size)
@@ -30,24 +54,19 @@ void Model::lock_batch_size(int batch_size)
     }
 }
 
-void Model::linear(int in_cnt, int out_cnt)
+void Model::add_layer(Layer *lyr)
 {
-    this->add_layer(new Linear(in_cnt, out_cnt));
+    this->lyrs_.push_back(lyr);
 }
 
-void Model::sigmoid(int in_cnt)
+void Model::set_loss(Loss *loss)
 {
-    this->add_layer(new Sigmoid(in_cnt));
+    this->loss_ = loss;
 }
 
-Layer *Model::first_layer()
+void Model::set_optimizer(Optimizer *optim)
 {
-    return this->lyrs_[0];
-}
-
-Layer *Model::last_layer()
-{
-    return this->lyrs_[this->lyrs_.size() - 1];
+    this->optim_ = optim;
 }
 
 std::vector<Layer *> Model::layers()
@@ -72,6 +91,11 @@ std::vector<Parameters *> Model::parameters()
 
 NdArray *Model::forward(NdArray *x)
 {
+    if (this->lyrs_.size() == 0)
+    {
+        return nullptr;
+    }
+
     x->to_cuda();
 
     int batch_size = x->shape().dim(0);
@@ -84,14 +108,63 @@ NdArray *Model::forward(NdArray *x)
         Layer *lyr = this->lyrs_[i];
         Layer *nxt_lyr = this->lyrs_[i + 1];
 
-        lyr->forward(nxt_lyr->neurons());
+        lyr->evaluate(nxt_lyr->neurons());
     }
 
     Layer *lst_lyr = this->last_layer();
 
     NdArray *p = new NdArray(true, lst_lyr->neurons()->shape());
-    lst_lyr->forward(p);
+    lst_lyr->evaluate(p);
 
     return p;
+}
+
+NdArray *Model::loss(NdArray *p, NdArray *y)
+{
+    if (this->loss_ == nullptr)
+    {
+        return nullptr;
+    }
+
+    p->to_cuda();
+    y->to_cuda();
+
+    NdArray *out = NdArray::zeros(true, p->shape());
+
+    this->loss_->evaluate(p, y, out);
+
+    return out;
+}
+
+void Model::backward(NdArray *p, NdArray *y)
+{
+    if (this->loss_ == nullptr)
+    {
+        return;
+    }
+
+    p->to_cuda();
+    y->to_cuda();
+
+    NdArray *dl = this->loss_->derive(p, y);
+
+    int lst_lyr_idx = this->lyrs_.size() - 1;
+    for (int i = lst_lyr_idx; i >= 0; i--)
+    {
+        Layer *lyr = this->lyrs_[i];
+        dl = lyr->derive(dl);
+    }
+
+    delete dl;
+}
+
+void Model::step()
+{
+    if (this->optim_ == nullptr)
+    {
+        return;
+    }
+
+    this->optim_->step(this->batch_size());
 }
 

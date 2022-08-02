@@ -2,81 +2,85 @@
 
 #include <ndarray.cuh>
 
-namespace layer
+namespace nn
 {
-    class Parameters
+
+    namespace layer
     {
-    private:
-        NdArray *w_;
-        NdArray *b_;
-        NdArray *dw_;
-        NdArray *db_;
+        class Parameters
+        {
+        private:
+            NdArray *w_;
+            NdArray *b_;
+            NdArray *dw_;
+            NdArray *db_;
 
-    public:
-        Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out);
-        ~Parameters();
+        public:
+            Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out);
+            ~Parameters();
 
-        void zero_grad();
+            void zero_grad();
 
-        NdArray *weights();
-        NdArray *biases();
-        NdArray *weight_gradients();
-        NdArray *bias_gradients();
-    };
+            NdArray *weights();
+            NdArray *biases();
+            NdArray *weight_gradients();
+            NdArray *bias_gradients();
+        };
 
-    class Layer
-    {
-    protected:
-        NdArray *n_;
-    public:
-        ~Layer();
+        class Layer
+        {
+        protected:
+            NdArray *n_;
 
-        virtual void forward(NdArray *out) = 0;
-        virtual NdArray *backward(NdArray *in) = 0;
+        public:
+            ~Layer();
 
-        int batch_size();
-        void lock_batch_size(int batch_size);
+            virtual void evaluate(NdArray *out) = 0;
+            virtual NdArray *derive(NdArray *in) = 0;
 
-        NdArray *neurons();
-        void copy_neurons(NdArray *n);
+            int batch_size();
+            void lock_batch_size(int batch_size);
 
-    };
+            NdArray *neurons();
+            void copy_neurons(NdArray *n);
+        };
 
-    class Learnable : public Layer
-    {
-    protected:
-        Parameters *params_;
+        class Learnable : public Layer
+        {
+        protected:
+            Parameters *params_;
 
-    public:
-        ~Learnable();
+        public:
+            ~Learnable();
 
-        Parameters *parameters();
-    };
+            Parameters *parameters();
+        };
 
-    class Linear : public Learnable
-    {
-    public:
-        Linear(int in_cnt, int out_cnt);
+        class Linear : public Learnable
+        {
+        public:
+            Linear(int in_cnt, int out_cnt);
 
-        virtual void forward(NdArray *out) override;
-        virtual NdArray *backward(NdArray *in) override;
-    };
+            virtual void evaluate(NdArray *out) override;
+            virtual NdArray *derive(NdArray *in) override;
+        };
 
-    class Activation : public Layer
-    {
-    public:
-        Activation(int in_cnt);
+        class Activation : public Layer
+        {
+        public:
+            Activation(int in_cnt);
 
-        virtual void forward(NdArray *out) = 0;
-        virtual NdArray *backward(NdArray *in) = 0;
-    };
+            virtual void evaluate(NdArray *out) = 0;
+            virtual NdArray *derive(NdArray *in) = 0;
+        };
 
-    class Sigmoid : public Activation
-    {
-    public:
-        Sigmoid(int in_cnt);
+        class Sigmoid : public Activation
+        {
+        public:
+            Sigmoid(int in_cnt);
 
-        virtual void forward(NdArray *out) override;
-        virtual NdArray *backward(NdArray *in) override;
-    };
+            virtual void evaluate(NdArray *out) override;
+            virtual NdArray *derive(NdArray *in) override;
+        };
+    }
 }
