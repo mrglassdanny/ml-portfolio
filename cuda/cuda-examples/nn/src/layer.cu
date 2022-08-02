@@ -103,10 +103,10 @@ __global__ void k_sigmoid_derive(float *in, float *n, float *out, int cnt)
 
 Parameters::Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out)
 {
-    this->w_ = rands(true, w_shape, 0.0f, sqrt(1.0f / fan_in));
-    this->b_ = zeros(true, b_shape);
-    this->dw_ = zeros(true, w_shape);
-    this->db_ = zeros(true, b_shape);
+    this->w_ = NdArray::rands(true, w_shape, 0.0f, sqrt(1.0f / fan_in));
+    this->b_ = NdArray::zeros(true, b_shape);
+    this->dw_ = NdArray::zeros(true, w_shape);
+    this->db_ = NdArray::zeros(true, b_shape);
 }
 
 Parameters::~Parameters()

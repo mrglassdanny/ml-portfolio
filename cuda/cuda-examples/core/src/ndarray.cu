@@ -156,6 +156,33 @@ NdArray::~NdArray()
     }
 }
 
+NdArray *NdArray::zeros(bool cuda, Shape shape)
+{
+    NdArray *arr = new NdArray(cuda, shape);
+
+    arr->zeros();
+
+    return arr;
+}
+
+NdArray *NdArray::ones(bool cuda, Shape shape)
+{
+    NdArray *arr = new NdArray(cuda, shape);
+
+    arr->ones();
+
+    return arr;
+}
+
+NdArray *NdArray::rands(bool cuda, Shape shape, float mean, float stddev)
+{
+    NdArray *arr = new NdArray(cuda, shape);
+
+    arr->rands(mean, stddev);
+
+    return arr;
+}
+
 void NdArray::print()
 {
     bool orig_cuda = this->cuda_;
@@ -522,31 +549,4 @@ void NdArray::rands(float mean, float stddev)
     {
         this->to_cuda();
     }
-}
-
-NdArray *zeros(bool cuda, Shape shape)
-{
-    NdArray *arr = new NdArray(cuda, shape);
-
-    arr->zeros();
-
-    return arr;
-}
-
-NdArray *ones(bool cuda, Shape shape)
-{
-    NdArray *arr = new NdArray(cuda, shape);
-
-    arr->ones();
-
-    return arr;
-}
-
-NdArray *rands(bool cuda, Shape shape, float mean, float stddev)
-{
-    NdArray *arr = new NdArray(cuda, shape);
-
-    arr->rands(mean, stddev);
-
-    return arr;
 }

@@ -53,6 +53,10 @@ public:
 	NdArray(bool cuda, int x_cnt, int y_cnt, int z_cnt);
 	~NdArray();
 
+	static NdArray *zeros(bool cuda, Shape shape);
+	static NdArray *ones(bool cuda, Shape shape);
+	static NdArray *rands(bool cuda, Shape shape, float mean, float stddev);
+
 	void print();
 	void copy(NdArray *src);
 	void reshape(Shape shape);
@@ -78,7 +82,3 @@ public:
 	void ones();
 	void rands(float mean, float stddev);
 };
-
-NdArray *zeros(bool cuda, Shape shape);
-NdArray *ones(bool cuda, Shape shape);
-NdArray *rands(bool cuda, Shape shape, float mean, float stddev);

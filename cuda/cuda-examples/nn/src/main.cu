@@ -21,11 +21,9 @@ int main(int argc, char **argv)
 
 	int batch_size = 5;
 
-	NdArray *x = new NdArray(true, batch_size, 10);
-	NdArray *y = new NdArray(true, batch_size, 1);
+	NdArray *x = NdArray::ones(true, Shape(batch_size, 10));
+	NdArray *y = NdArray::ones(true, Shape(batch_size, 1));
 
-	x->ones();
-	y->ones();
 
 	for (int i = 0; i < 25; i++)
 	{
