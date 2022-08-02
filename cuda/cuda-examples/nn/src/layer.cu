@@ -2,7 +2,7 @@
 
 #define DEFAULT_BATCH_SIZE 1
 
-using namespace layer;
+using namespace nn::layer;
 
 __global__ void k_linear_matmul_w_bias(float *in, float *w, float *out, float *b,
                                        int in_col_cnt, int out_row_cnt, int out_col_cnt)
@@ -184,7 +184,7 @@ Linear::Linear(int in_cnt, int out_cnt)
     this->params_ = new Parameters(Shape(in_cnt, out_cnt), Shape(out_cnt), in_cnt, out_cnt);
 }
 
-void Linear::forward(NdArray *out)
+void Linear::evaluate(NdArray *out)
 {
     out->zeros();
 
@@ -204,7 +204,7 @@ void Linear::forward(NdArray *out)
                                                       n->cols(), n->rows(), out->cols());
 }
 
-NdArray *Linear::backward(NdArray *in)
+NdArray *Linear::derive(NdArray *in)
 {
     NdArray *n = this->n_;
     NdArray *w = this->params_->weights();
@@ -251,13 +251,13 @@ Sigmoid::Sigmoid(int in_cnt)
 {
 }
 
-void Sigmoid::forward(NdArray *out)
+void Sigmoid::evaluate(NdArray *out)
 {
     out->zeros();
     k_sigmoid_evaluate<<<this->n_->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(this->n_->data(), out->data(), this->n_->count());
 }
 
-NdArray *Sigmoid::backward(NdArray *in)
+NdArray *Sigmoid::derive(NdArray *in)
 {
     NdArray *out = new NdArray(true, this->n_->rows(), this->n_->cols());
 

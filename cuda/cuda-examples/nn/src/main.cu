@@ -2,35 +2,30 @@
 #include <ndarray.cuh>
 
 #include "model.cuh"
-#include "loss.cuh"
-#include "optim.cuh"
+
+using namespace nn;
 
 int main(int argc, char **argv)
 {
 	auto model = new Model();
 
-	model->linear(10, 20);
-	model->sigmoid(20);
-	model->linear(20, 4);
-	model->sigmoid(4);
-	model->linear(4, 1);
-	model->sigmoid(1);
+	model->add_layer(new Linear(10, 1));
+	model->add_layer(new Sigmoid(1));
 
-	auto loss = new loss::MSE(model->layers());
-	auto optim = new optim::SGD(model->parameters(), 1.0f);
+	model->set_loss(new MSE());
+	model->set_optimizer(new SGD(model->parameters(), 1.0f));
 
 	int batch_size = 5;
 
 	NdArray *x = NdArray::ones(true, Shape(batch_size, 10));
 	NdArray *y = NdArray::ones(true, Shape(batch_size, 1));
 
-
 	for (int i = 0; i < 25; i++)
 	{
 		NdArray* p = model->forward(x);
-		NdArray* l = loss->loss(p, y);
-		loss->backward(p, y);
-		optim->step(batch_size);
+		NdArray* l = model->loss(p, y);
+		model->backward(p, y);
+		model->step();
 
 		l->print();
 		if (i == 24)
