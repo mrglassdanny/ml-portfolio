@@ -8,3 +8,4 @@
 - performance
 - csv
 - restructure project
+- documentation
