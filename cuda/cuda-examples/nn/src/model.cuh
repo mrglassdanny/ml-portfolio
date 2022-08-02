@@ -12,6 +12,7 @@ protected:
     std::vector<Layer *> lyrs_;
 
     void add_layer(Layer *lyr);
+    void lock_batch_size(int batch_size);
 
 public:
     Model();
@@ -22,11 +23,8 @@ public:
 
     Layer *first_layer();
     Layer *last_layer();
-
-    void lock_batch_size(int batch_size);
-
-    virtual NdArray *forward(NdArray *x);
-
     std::vector<Layer *> layers();
     std::vector<Parameters *> parameters();
+
+    virtual NdArray *forward(NdArray *x);
 };

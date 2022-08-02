@@ -17,6 +17,19 @@ void Model::add_layer(Layer *lyr)
     this->lyrs_.push_back(lyr);
 }
 
+void Model::lock_batch_size(int batch_size)
+{
+    if (this->last_layer()->batch_size() == batch_size)
+    {
+        return;
+    }
+
+    for (Layer *lyr : this->lyrs_)
+    {
+        lyr->lock_batch_size(batch_size);
+    }
+}
+
 void Model::linear(int in_cnt, int out_cnt)
 {
     this->add_layer(new Linear(in_cnt, out_cnt));
@@ -37,17 +50,24 @@ Layer *Model::last_layer()
     return this->lyrs_[this->lyrs_.size() - 1];
 }
 
-void Model::lock_batch_size(int batch_size)
+std::vector<Layer *> Model::layers()
 {
-    if (this->last_layer()->batch_size() == batch_size)
-    {
-        return;
-    }
+    return this->lyrs_;
+}
+
+std::vector<Parameters *> Model::parameters()
+{
+    std::vector<Parameters *> params;
 
     for (Layer *lyr : this->lyrs_)
     {
-        lyr->lock_batch_size(batch_size);
+        if (Learnable *lrn = dynamic_cast<Learnable *>(lyr))
+        {
+            params.push_back(lrn->parameters());
+        }
     }
+
+    return params;
 }
 
 NdArray *Model::forward(NdArray *x)
@@ -75,22 +95,3 @@ NdArray *Model::forward(NdArray *x)
     return p;
 }
 
-std::vector<Layer *> Model::layers()
-{
-    return this->lyrs_;
-}
-
-std::vector<Parameters *> Model::parameters()
-{
-    std::vector<Parameters *> params;
-
-    for (Layer *lyr : this->lyrs_)
-    {
-        if (Learnable *lrn = dynamic_cast<Learnable *>(lyr))
-        {
-            params.push_back(lrn->parameters());
-        }
-    }
-
-    return params;
-}
