@@ -181,7 +181,6 @@ Parameters *Learnable::parameters()
 Linear::Linear(int in_cnt, int out_cnt)
 {
     this->n_ = new NdArray(true, DEFAULT_BATCH_SIZE, in_cnt);
-    this->base_shape_ = Shape(in_cnt);
     this->params_ = new Parameters(Shape(in_cnt, out_cnt), Shape(out_cnt), in_cnt, out_cnt);
 }
 
@@ -245,7 +244,6 @@ NdArray *Linear::backward(NdArray *in)
 Activation::Activation(int in_cnt)
 {
     this->n_ = new NdArray(true, DEFAULT_BATCH_SIZE, in_cnt);
-    this->base_shape_ = Shape(in_cnt);
 }
 
 Sigmoid::Sigmoid(int in_cnt)

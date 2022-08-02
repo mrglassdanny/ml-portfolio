@@ -42,8 +42,7 @@ NdArray *Loss::loss(NdArray *p, NdArray *y)
     p->to_cuda();
     y->to_cuda();
 
-    NdArray *out = new NdArray(true, p->shape());
-    out->zeros();
+    NdArray *out = NdArray::zeros(true, p->shape());
 
     this->evaluate(p, y, out);
 

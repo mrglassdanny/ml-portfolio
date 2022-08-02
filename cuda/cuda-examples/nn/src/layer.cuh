@@ -28,7 +28,6 @@ namespace layer
     {
     protected:
         NdArray *n_;
-        Shape base_shape_;
     public:
         ~Layer();
 
