@@ -17,7 +17,7 @@ int main(int argc, char **argv)
 	model->add_layer(new Sigmoid(1));
 
 	model->set_loss(new MSE());
-	model->set_optimizer(new SGD(model->parameters(), 1.0f));
+	model->set_optimizer(new SGDMomentum(model->parameters(), 1.0f, 0.9f));
 
 	NdArray *x = NdArray::rands(true, Shape(1, 10), 0.0f, 1.0f);
 	NdArray *y = NdArray::ones(true, Shape(1, 1));
