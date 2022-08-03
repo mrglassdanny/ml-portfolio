@@ -26,6 +26,11 @@ int main(int argc, char **argv)
 
 	model->performance_check(x, y, 10);
 
+	NdArray::to_csv("temp/x.csv", x);
+
+	NdArray *x2 = NdArray::from_csv("temp/x.csv");
+	x2->print();
+
 	delete model;
 
 	return 0;

@@ -14,6 +14,8 @@
 #include <device_launch_parameters.h>
 #include <device_atomic_functions.h>
 
+#include "util.cuh"
+
 #define THREADS_PER_BLOCK 32
 
 class Shape
@@ -50,6 +52,10 @@ public:
 	NdArray(NdArray &src);
 	NdArray(bool cuda, Shape shape);
 	~NdArray();
+
+	static NdArray *from_csv(const char *path);
+    static void to_csv(const char *path, NdArray *ndarray);
+    static void to_file(const char *path, NdArray *ndarray);
 
 	static NdArray *zeros(bool cuda, Shape shape);
 	static NdArray *ones(bool cuda, Shape shape);

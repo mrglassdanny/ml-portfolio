@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <windows.h>
 #include <vector>
 #include <random>
 
@@ -23,12 +24,12 @@ public:
 	virtual void print_elapsed_seconds() = 0;
 };
 
-
 class CpuStopWatch : public StopWatch
 {
 private:
 	clock_t beg_;
 	clock_t end_;
+
 public:
 	CpuStopWatch();
 	~CpuStopWatch();
@@ -45,6 +46,7 @@ class CudaStopWatch : public StopWatch
 private:
 	cudaEvent_t beg_;
 	cudaEvent_t end_;
+
 public:
 	CudaStopWatch();
 	~CudaStopWatch();
@@ -54,4 +56,10 @@ public:
 
 	virtual double get_elapsed_seconds();
 	virtual void print_elapsed_seconds();
+};
+
+class FileUtils
+{
+public:
+	static long long get_file_size(const char *name);
 };

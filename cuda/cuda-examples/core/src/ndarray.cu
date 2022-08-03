@@ -141,6 +141,188 @@ NdArray::~NdArray()
     }
 }
 
+NdArray *NdArray::from_csv(const char *path)
+{
+    FILE *file_ptr = fopen(path, "rb");
+
+    fseek(file_ptr, 0L, SEEK_END);
+    long long file_size = FileUtils::get_file_size(path);
+    rewind(file_ptr);
+
+    char *buf = (char *)malloc(file_size + 1);
+    memset(buf, 0, file_size + 1);
+    fread(buf, 1, file_size, file_ptr);
+
+    fclose(file_ptr);
+
+    int buf_idx = 0;
+
+    int row_cnt = 0;
+    int col_cnt = 0;
+
+    while (buf[buf_idx] != '\n')
+    {
+        if (buf[buf_idx] == ',')
+        {
+            col_cnt++;
+        }
+
+        buf_idx++;
+    }
+
+    col_cnt++;
+    buf_idx++;
+
+    int lst_row_idx = 0;
+    for (int i = buf_idx; i < file_size; i++)
+    {
+        if (buf[i] == '\n')
+        {
+            row_cnt++;
+            lst_row_idx = i;
+        }
+    }
+
+    // If file does not end in newline, add to the row count.
+    if (lst_row_idx < file_size - 1)
+    {
+        row_cnt++;
+    }
+
+    NdArray *ndarray = new NdArray(false, Shape(row_cnt, col_cnt));
+
+    char temp_buf[64];
+    memset(temp_buf, 0, 64);
+    int temp_buf_idx = 0;
+    int row_idx = 0;
+    int col_idx = 0;
+
+    for (; buf_idx < file_size; buf_idx++)
+    {
+        while (buf[buf_idx] != ',' && buf[buf_idx] != '\n' && buf_idx < file_size)
+        {
+            if (buf[buf_idx] != '"')
+            {
+                temp_buf[temp_buf_idx++] = buf[buf_idx];
+            }
+
+            buf_idx++;
+        }
+
+        if (buf[buf_idx] == ',')
+        {
+            ndarray->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
+            memset(temp_buf, 0, 64);
+            col_idx++;
+            temp_buf_idx = 0;
+        }
+        else if (buf[buf_idx] == '\n')
+        {
+            ndarray->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
+            memset(temp_buf, 0, 64);
+            row_idx++;
+            col_idx = 0;
+            temp_buf_idx = 0;
+        }
+    }
+
+    // Make sure to grab the last bit before we finish up!
+    if (temp_buf_idx > 0)
+    {
+        ndarray->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
+        memset(temp_buf, 0, 64);
+        row_idx++;
+        col_idx = 0;
+        temp_buf_idx = 0;
+    }
+
+    free(buf);
+
+    return ndarray;
+}
+
+void NdArray::to_csv(const char *path, NdArray *ndarray)
+{
+    int dim_cnt = ndarray->num_dims();
+
+    if (dim_cnt == 1)
+    {
+        int cnt = ndarray->shape_[0];
+
+        FILE *file_ptr = fopen(path, "w");
+
+        fprintf(file_ptr, "col\n");
+
+        for (int i = 0; i < cnt; i++)
+        {
+            fprintf(file_ptr, "%f\n", ndarray->get_val(i));
+        }
+
+        fclose(file_ptr);
+    }
+    else if (dim_cnt == 2)
+    {
+
+        int row_cnt = ndarray->shape_[0];
+        int col_cnt = ndarray->shape_[1];
+
+        FILE *file_ptr = fopen(path, "w");
+
+        for (int j = 0; j < col_cnt; j++)
+        {
+
+            if (j < col_cnt - 1)
+            {
+                fprintf(file_ptr, "col_%d,", j);
+            }
+            else
+            {
+                fprintf(file_ptr, "col_%d", j);
+            }
+        }
+        fprintf(file_ptr, "\n");
+
+        for (int i = 0; i < row_cnt; i++)
+        {
+            for (int j = 0; j < col_cnt; j++)
+            {
+                if (j < col_cnt - 1)
+                {
+                    fprintf(file_ptr, "%f,", ndarray->get_val(i * col_cnt + j));
+                }
+                else
+                {
+                    fprintf(file_ptr, "%f", ndarray->get_val(i * col_cnt + j));
+                }
+            }
+            fprintf(file_ptr, "\n");
+        }
+        fclose(file_ptr);
+    }
+    else
+    {
+        return;
+    }
+}
+
+void NdArray::to_file(const char *path, NdArray *ndarray)
+{
+    bool orig_cuda = ndarray->cuda_;
+
+    FILE *file_ptr = fopen(path, "wb");
+
+    ndarray->to_cpu();
+
+    fwrite(ndarray->data_, sizeof(float), ndarray->count(), file_ptr);
+
+    fclose(file_ptr);
+
+    if (orig_cuda)
+    {
+        ndarray->to_cuda();
+    }
+}
+
 NdArray *NdArray::zeros(bool cuda, Shape shape)
 {
     NdArray *arr = new NdArray(cuda, shape);
