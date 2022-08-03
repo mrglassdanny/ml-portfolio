@@ -119,11 +119,11 @@ NdArray *Model::forward(NdArray *x)
     return p;
 }
 
-NdArray *Model::loss(NdArray *p, NdArray *y)
+float Model::loss(NdArray *p, NdArray *y)
 {
     if (this->loss_ == nullptr)
     {
-        return nullptr;
+        return 0.0f;
     }
 
     p->to_cuda();
@@ -133,7 +133,9 @@ NdArray *Model::loss(NdArray *p, NdArray *y)
 
     this->loss_->evaluate(p, y, out);
 
-    return out;
+    float mean = out->mean();
+
+    return mean;
 }
 
 void Model::backward(NdArray *p, NdArray *y)
@@ -166,5 +168,135 @@ void Model::step()
     }
 
     this->optim_->step(this->batch_size());
+}
+
+void Model::grad_check(NdArray *x, NdArray *y, bool print_params)
+{
+    if (this->lyrs_.size() == 0)
+    {
+        printf("GRADIENT CHECK FAILED: layers not added");
+        return;
+    }
+
+    if (this->loss_ == nullptr)
+    {
+        printf("GRADIENT CHECK FAILED: loss not set");
+        return;
+    }
+
+    x->to_cuda();
+    y->to_cuda();
+
+    float agg_ana_grad = 0.0f;
+    float agg_num_grad = 0.0f;
+    float agg_grad_diff = 0.0f;
+
+    NdArray *p = this->forward(x);
+    this->backward(p, y);
+    delete p;
+
+    int param_idx = 0;
+    for (Parameters *params : this->parameters())
+    {
+        NdArray *w = params->weights();
+        NdArray *b = params->biases();
+        NdArray *dw = params->weight_gradients();
+        NdArray *db = params->bias_gradients();
+
+        for (int i = 0; i < w->count(); i++)
+        {
+            float w_val = w->get_val(i);
+
+            // Left:
+            w->set_val(i, w_val - EPSILON);
+            p = this->forward(x);
+            float left_loss = this->loss(p, y);
+            delete p;
+
+            // Right:
+            w->set_val(i, w_val + EPSILON);
+            p = this->forward(x);
+            float right_loss = this->loss(p, y);
+            delete p;
+
+            w->set_val(i, w_val);
+
+            float num_grad = (right_loss - left_loss) / (2.0f * EPSILON);
+            float ana_grad = dw->get_val(i);
+
+            if (print_params)
+            {
+                printf("W: %d  %d\t%f : %f  (%f)\n", param_idx, i, ana_grad, num_grad, fabs(ana_grad - num_grad));
+            }
+
+            agg_ana_grad += (ana_grad * ana_grad);
+            agg_num_grad += (num_grad * num_grad);
+            agg_grad_diff += ((ana_grad - num_grad) * (ana_grad - num_grad));
+        }
+
+        for (int i = 0; i < b->count(); i++)
+        {
+            float b_val = b->get_val(i);
+
+            // Left:
+            b->set_val(i, b_val - EPSILON);
+            p = this->forward(x);
+            float left_loss = this->loss(p, y);
+            delete p;
+
+            // Right:
+            b->set_val(i, b_val + EPSILON);
+            p = this->forward(x);
+            float right_loss = this->loss(p, y);
+            delete p;
+
+            b->set_val(i, b_val);
+
+            float num_grad = (right_loss - left_loss) / (2.0f * EPSILON);
+            float ana_grad = db->get_val(i);
+
+            if (print_params)
+            {
+                printf("B: %d  %d\t%f : %f  (%f)\n", param_idx, i, ana_grad, num_grad, fabs(ana_grad - num_grad));
+            }
+
+            agg_ana_grad += (ana_grad * ana_grad);
+            agg_num_grad += (num_grad * num_grad);
+            agg_grad_diff += ((ana_grad - num_grad) * (ana_grad - num_grad));
+        }
+
+        param_idx++;
+    }
+
+    if ((agg_grad_diff) == 0.0f && (agg_ana_grad + agg_num_grad) == 0.0f)
+    {
+        printf("GRADIENT CHECK RESULT: %f\n", 0.0f);
+    }
+    else
+    {
+        printf("GRADIENT CHECK RESULT: %f\n", (agg_grad_diff) / (agg_ana_grad + agg_num_grad));
+    }
+}
+
+void Model::performance_check(NdArray *x, NdArray *y, int epoch_cnt)
+{
+    CudaStopWatch *sw = new CudaStopWatch();
+
+    sw->start();
+
+    for (int i = 0; i < epoch_cnt; i++)
+    {
+        NdArray *p = this->forward(x);
+        this->loss(p, y);
+        this->backward(p, y);
+        this->step();
+        delete p;
+    }
+
+    sw->stop();
+
+    sw->print_elapsed_seconds();
+
+    delete sw;
 }
 

@@ -9,33 +9,24 @@ int main(int argc, char **argv)
 {
 	auto model = new Model();
 
-	model->add_layer(new Linear(10, 1));
+	model->add_layer(new Linear(10, 32));
+	model->add_layer(new Sigmoid(32));
+	model->add_layer(new Linear(32, 16));
+	model->add_layer(new Sigmoid(16));
+	model->add_layer(new Linear(16, 1));
 	model->add_layer(new Sigmoid(1));
 
 	model->set_loss(new MSE());
 	model->set_optimizer(new SGD(model->parameters(), 1.0f));
 
-	int batch_size = 5;
+	NdArray *x = NdArray::rands(true, Shape(1, 10), 0.0f, 1.0f);
+	NdArray *y = NdArray::ones(true, Shape(1, 1));
 
-	NdArray *x = NdArray::ones(true, Shape(batch_size, 10));
-	NdArray *y = NdArray::ones(true, Shape(batch_size, 1));
+	model->grad_check(x, y, false);
 
-	for (int i = 0; i < 25; i++)
-	{
-		NdArray* p = model->forward(x);
-		NdArray* l = model->loss(p, y);
-		model->backward(p, y);
-		model->step();
+	model->performance_check(x, y, 10);
 
-		l->print();
-		if (i == 24)
-		{
-			p->print();
-		}
-
-		delete p;
-		delete l;
-	}
+	delete model;
 
 	return 0;
 }

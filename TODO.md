@@ -1,11 +1,13 @@
 
 **cuda examples**
 
-- gradient check
+- ~~gradient check~~
 - conv2d
 - relu
 - tanh
-- performance
+- ~~performance~~
 - csv
 - restructure project
+- C++ 11+ features (shared/unique ptr, etc.)
+- check for leaks
 - documentation

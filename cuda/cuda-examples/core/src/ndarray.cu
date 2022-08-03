@@ -550,3 +550,87 @@ void NdArray::rands(float mean, float stddev)
         this->to_cuda();
     }
 }
+
+float NdArray::get_val(int idx)
+{
+    float val;
+    cudaMemcpy(&val, &this->data_[idx], sizeof(float), cudaMemcpyDefault);
+    return val;
+}
+
+void NdArray::set_val(int idx, float val)
+{
+    cudaMemcpy(&this->data_[idx], &val, sizeof(float), cudaMemcpyDefault);
+}
+
+float NdArray::sum()
+{
+    float sum = 0.0f;
+
+    for (int i = 0; i < this->count(); i++)
+    {
+        sum += this->get_val(i);
+    }
+
+    return sum;
+}
+
+float NdArray::min()
+{
+    float min = FLT_MAX;
+
+    float val = 0;
+
+    for (int i = 0; i < this->count(); i++)
+    {
+        val = this->get_val(i);
+
+        if (val < min)
+        {
+            min = val;
+        }
+    }
+
+    return min;
+}
+
+float NdArray::max()
+{
+    float max = -FLT_MAX;
+
+    float val = 0;
+
+    for (int i = 0; i < this->count(); i++)
+    {
+        val = this->get_val(i);
+
+        if (val > max)
+        {
+            max = val;
+        }
+    }
+
+    return max;
+}
+
+float NdArray::mean()
+{
+    return this->sum() / this->count();
+}
+
+float NdArray::stddev()
+{
+    float stddev = 0.0f;
+
+    float mean = this->mean();
+
+    for (int i = 0; i < this->count(); i++)
+    {
+        float diff = this->get_val(i) - mean;
+        stddev == diff *diff;
+    }
+
+    stddev /= this->count();
+
+    return sqrt(stddev);
+}

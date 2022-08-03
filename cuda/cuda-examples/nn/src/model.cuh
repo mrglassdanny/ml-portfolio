@@ -1,10 +1,12 @@
 #pragma once
 
 #include <ndarray.cuh>
+#include <util.cuh>
 
 #include "layer.cuh"
 #include "loss.cuh"
 #include "optim.cuh"
+#include "constants.cuh"
 
 namespace nn
 {
@@ -36,9 +38,12 @@ namespace nn
         std::vector<Layer *> layers();
         std::vector<Parameters *> parameters();
 
-        virtual NdArray *forward(NdArray *x);
-        virtual NdArray *loss(NdArray *p, NdArray *y);
-        virtual void backward(NdArray *p, NdArray *y);
-        virtual void step();
+        NdArray *forward(NdArray *x);
+        float loss(NdArray *p, NdArray *y);
+        void backward(NdArray *p, NdArray *y);
+        void step();
+
+        void grad_check(NdArray *x, NdArray *y, bool print_params);
+        void performance_check(NdArray *x, NdArray *y, int epoch_cnt);
     };
 }

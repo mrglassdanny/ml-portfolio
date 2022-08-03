@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <float.h>
 #include <vector>
 #include <random>
 
@@ -81,4 +82,13 @@ public:
 	void zeros();
 	void ones();
 	void rands(float mean, float stddev);
+
+	float get_val(int idx);
+	void set_val(int idx, float val);
+
+	float sum();
+	float min();
+	float max();
+	float mean();
+	float stddev();
 };
