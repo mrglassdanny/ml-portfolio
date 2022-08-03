@@ -150,7 +150,7 @@ Layer::~Layer()
 
 int Layer::batch_size()
 {
-    return this->n_->shape().dim(0);
+    return this->n_->shape()[0];
 }
 
 void Layer::lock_batch_size(int batch_size)
@@ -180,7 +180,7 @@ Parameters *Learnable::parameters()
 
 Linear::Linear(int in_cnt, int out_cnt)
 {
-    this->n_ = new NdArray(true, DEFAULT_BATCH_SIZE, in_cnt);
+    this->n_ = new NdArray(true, Shape(DEFAULT_BATCH_SIZE, in_cnt));
     this->params_ = new Parameters(Shape(in_cnt, out_cnt), Shape(out_cnt), in_cnt, out_cnt);
 }
 
@@ -188,8 +188,8 @@ void Linear::evaluate(NdArray *out)
 {
     out->zeros();
 
-    int grid_row_cnt = (this->n_->rows() / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (out->cols() / THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (out->shape()[0] / THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (out->shape()[1] / THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
     dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
@@ -201,7 +201,7 @@ void Linear::evaluate(NdArray *out)
     NdArray *db = this->params_->bias_gradients();
 
     k_linear_matmul_w_bias<<<grid_dims, block_dims>>>(n->data(), w->data(), out->data(), b->data(),
-                                                      n->cols(), n->rows(), out->cols());
+                                                      n->shape()[1], out->shape()[0], out->shape()[1]);
 }
 
 NdArray *Linear::derive(NdArray *in)
@@ -213,28 +213,27 @@ NdArray *Linear::derive(NdArray *in)
     NdArray *db = this->params_->bias_gradients();
 
     {
-        int grid_row_cnt = (w->rows() / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (w->cols() / THREADS_PER_BLOCK) + 1;
+        int grid_row_cnt = (w->shape()[0] / THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (w->shape()[1] / THREADS_PER_BLOCK) + 1;
 
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
         k_linear_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), n->data(), w->data(), b->data(), dw->data(), db->data(),
-                                                                  in->rows(), in->cols(), n->cols(), w->rows(), w->cols());
+                                                                  in->shape()[0], in->shape()[1], n->shape()[1], w->shape()[0], w->shape()[1]);
     }
 
-    NdArray *out = new NdArray(true, this->n_->rows(), this->n_->cols());
-    out->zeros();
+    NdArray *out = NdArray::zeros(true, n->shape());
 
     {
-        int grid_row_cnt = (out->rows() / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (out->cols() / THREADS_PER_BLOCK) + 1;
+        int grid_row_cnt = (out->shape()[0] / THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (out->shape()[1] / THREADS_PER_BLOCK) + 1;
 
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
         k_linear_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), out->data(),
-                                                            in->cols(), w->cols(), out->rows(), out->cols());
+                                                            in->shape()[1], w->shape()[1], out->shape()[0], out->shape()[1]);
     }
 
     delete in;
@@ -243,7 +242,7 @@ NdArray *Linear::derive(NdArray *in)
 
 Activation::Activation(int in_cnt)
 {
-    this->n_ = new NdArray(true, DEFAULT_BATCH_SIZE, in_cnt);
+    this->n_ = new NdArray(true, Shape(DEFAULT_BATCH_SIZE, in_cnt));
 }
 
 Sigmoid::Sigmoid(int in_cnt)
@@ -259,7 +258,7 @@ void Sigmoid::evaluate(NdArray *out)
 
 NdArray *Sigmoid::derive(NdArray *in)
 {
-    NdArray *out = new NdArray(true, this->n_->rows(), this->n_->cols());
+    NdArray *out = new NdArray(true, this->n_->shape());
 
     k_sigmoid_derive<<<in->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(in->data(), this->n_->data(), out->data(), in->count());
 

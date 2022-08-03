@@ -98,7 +98,7 @@ NdArray *Model::forward(NdArray *x)
 
     x->to_cuda();
 
-    int batch_size = x->shape().dim(0);
+    int batch_size = x->shape()[0];
     this->lock_batch_size(batch_size);
 
     this->first_layer()->copy_neurons(x);
@@ -129,13 +129,15 @@ float Model::loss(NdArray *p, NdArray *y)
     p->to_cuda();
     y->to_cuda();
 
-    NdArray *out = NdArray::zeros(true, p->shape());
+    NdArray *losses = NdArray::zeros(true, p->shape());
 
-    this->loss_->evaluate(p, y, out);
+    this->loss_->evaluate(p, y, losses);
 
-    float mean = out->mean();
+    float mean_losses = losses->mean();
 
-    return mean;
+    delete losses;
+
+    return mean_losses;
 }
 
 void Model::backward(NdArray *p, NdArray *y)
@@ -148,16 +150,14 @@ void Model::backward(NdArray *p, NdArray *y)
     p->to_cuda();
     y->to_cuda();
 
-    NdArray *dl = this->loss_->derive(p, y);
+    NdArray *loss_gradients = this->loss_->derive(p, y);
 
-    int lst_lyr_idx = this->lyrs_.size() - 1;
-    for (int i = lst_lyr_idx; i >= 0; i--)
+    for (int i = this->lyrs_.size() - 1; i >= 0; i--)
     {
-        Layer *lyr = this->lyrs_[i];
-        dl = lyr->derive(dl);
+        loss_gradients = this->lyrs_[i]->derive(loss_gradients);
     }
 
-    delete dl;
+    delete loss_gradients;
 }
 
 void Model::step()
@@ -226,7 +226,7 @@ void Model::grad_check(NdArray *x, NdArray *y, bool print_params)
 
             if (print_params)
             {
-                printf("W: %d  %d\t%f : %f  (%f)\n", param_idx, i, ana_grad, num_grad, fabs(ana_grad - num_grad));
+                printf("W: %d  %d\t|%f - %f| = %f\n", param_idx, i, ana_grad, num_grad, fabs(ana_grad - num_grad));
             }
 
             agg_ana_grad += (ana_grad * ana_grad);
@@ -257,7 +257,7 @@ void Model::grad_check(NdArray *x, NdArray *y, bool print_params)
 
             if (print_params)
             {
-                printf("B: %d  %d\t%f : %f  (%f)\n", param_idx, i, ana_grad, num_grad, fabs(ana_grad - num_grad));
+                printf("B: %d  %d\t|%f - %f| = %f\n", param_idx, i, ana_grad, num_grad, fabs(ana_grad - num_grad));
             }
 
             agg_ana_grad += (ana_grad * ana_grad);

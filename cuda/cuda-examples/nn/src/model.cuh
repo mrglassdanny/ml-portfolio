@@ -16,7 +16,7 @@ namespace nn
 
     class Model
     {
-    protected:
+    private:
         std::vector<Layer *> lyrs_;
         Loss *loss_;
         Optimizer *optim_;

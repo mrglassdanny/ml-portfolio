@@ -49,9 +49,14 @@ Shape::~Shape()
 {
 }
 
+int Shape::operator[](int idx) const
+{
+    return this->dims_[idx];
+}
+
 void Shape::print()
 {
-    int cnt = this->count();
+    int cnt = this->num_dims();
 
     for (int i = 0; i < cnt; i++)
     {
@@ -66,26 +71,21 @@ void Shape::print()
     printf("\n");
 }
 
-int Shape::dim(int dim_idx)
-{
-    return this->dims_[dim_idx];
-}
-
 std::vector<int> Shape::dims()
 {
     return this->dims_;
 }
 
-int Shape::count()
+int Shape::num_dims()
 {
     return this->dims_.size();
 }
 
-int Shape::size()
+int Shape::dims_size()
 {
     int size = 1;
 
-    for (int i = 0; i < this->count(); i++)
+    for (int i = 0; i < this->num_dims(); i++)
     {
         size *= this->dims_[i];
     }
@@ -127,21 +127,6 @@ NdArray::NdArray(bool cuda, Shape shape)
     {
         this->data_ = (float *)malloc(size);
     }
-}
-
-NdArray::NdArray(bool cuda, int cnt)
-    : NdArray(cuda, Shape(cnt))
-{
-}
-
-NdArray::NdArray(bool cuda, int row_cnt, int col_cnt)
-    : NdArray(cuda, Shape(row_cnt, col_cnt))
-{
-}
-
-NdArray::NdArray(bool cuda, int x_cnt, int y_cnt, int z_cnt)
-    : NdArray(cuda, Shape(x_cnt, y_cnt, z_cnt))
-{
 }
 
 NdArray::~NdArray()
@@ -226,8 +211,8 @@ void NdArray::print()
     break;
     case 2:
     {
-        int row_cnt = this->rows();
-        int col_cnt = this->cols();
+        int row_cnt = this->shape_[0];
+        int col_cnt = this->shape_[1];
 
         printf("[");
         for (int i = 0; i < row_cnt; i++)
@@ -284,9 +269,9 @@ void NdArray::print()
     case 3:
     {
 
-        int x_cnt = this->xs();
-        int y_cnt = this->ys();
-        int z_cnt = this->zs();
+        int x_cnt = this->shape_[0];
+        int y_cnt = this->shape_[1];
+        int z_cnt = this->shape_[2];
 
         printf("[");
         for (int i = 0; i < x_cnt; i++)
@@ -368,7 +353,7 @@ void NdArray::print()
         this->shape_.print();
 
         printf("Data: \n");
-        for (int i = 0; i < this->shape_.size(); i++)
+        for (int i = 0; i < this->shape_.dims_size(); i++)
         {
             printf("%d: %f\n", i, this->data_[i]);
         }
@@ -451,47 +436,22 @@ Shape NdArray::shape()
 
 int NdArray::num_dims()
 {
-    return this->shape_.count();
+    return this->shape_.num_dims();
 }
 
 int NdArray::dims_size()
 {
-    return this->shape_.size();
+    return this->shape_.dims_size();
 }
 
 int NdArray::count()
 {
-    return this->shape_.size();
-}
-
-int NdArray::rows()
-{
-    return this->shape_.dim(0);
-}
-
-int NdArray::cols()
-{
-    return this->shape_.dim(1);
-}
-
-int NdArray::xs()
-{
-    return this->shape_.dim(0);
-}
-
-int NdArray::ys()
-{
-    return this->shape_.dim(1);
-}
-
-int NdArray::zs()
-{
-    return this->shape_.dim(2);
+    return this->shape_.dims_size();
 }
 
 size_t NdArray::size()
 {
-    return sizeof(float) * this->shape_.size();
+    return sizeof(float) * this->shape_.dims_size();
 }
 
 float *NdArray::data()
@@ -538,7 +498,7 @@ void NdArray::rands(float mean, float stddev)
         std::random_device rd;
         std::mt19937 gen(rd());
 
-        for (int i = 0; i < this->shape_.size(); i++)
+        for (int i = 0; i < this->shape_.dims_size(); i++)
         {
             std::normal_distribution<float> d(mean, stddev);
             this->data_[i] = d(gen);

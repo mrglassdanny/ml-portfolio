@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 	NdArray *x = NdArray::rands(true, Shape(1, 10), 0.0f, 1.0f);
 	NdArray *y = NdArray::ones(true, Shape(1, 1));
 
-	model->grad_check(x, y, false);
+	model->grad_check(x, y, true);
 
 	model->performance_check(x, y, 10);
 

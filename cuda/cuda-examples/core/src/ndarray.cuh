@@ -33,10 +33,10 @@ public:
 
 	void print();
 
-	int dim(int dim_idx);
+	int operator[](int) const;
 	std::vector<int> dims();
-	int count();
-	int size();
+	int num_dims();
+	int dims_size();
 };
 
 class NdArray
@@ -49,9 +49,6 @@ protected:
 public:
 	NdArray(NdArray &src);
 	NdArray(bool cuda, Shape shape);
-	NdArray(bool cuda, int cnt);
-	NdArray(bool cuda, int row_cnt, int col_cnt);
-	NdArray(bool cuda, int x_cnt, int y_cnt, int z_cnt);
 	~NdArray();
 
 	static NdArray *zeros(bool cuda, Shape shape);
@@ -70,12 +67,8 @@ public:
 	Shape shape();
 	int num_dims();
 	int dims_size();
+
 	int count();
-	int rows();
-	int cols();
-	int xs();
-	int ys();
-	int zs();
 	size_t size();
 
 	float *data();

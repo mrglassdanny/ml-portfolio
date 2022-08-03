@@ -61,14 +61,14 @@ void SGD::step(int batch_size)
         NdArray *dw = params->weight_gradients();
         NdArray *db = params->bias_gradients();
 
-        int grid_row_cnt = (w->rows() / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (w->cols() / THREADS_PER_BLOCK) + 1;
+        int grid_row_cnt = (w->shape()[0] / THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (w->shape()[1] / THREADS_PER_BLOCK) + 1;
 
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
         k_sgd_step<<<grid_dims, block_dims>>>(w->data(), b->data(), dw->data(), db->data(),
-                                              w->rows(), w->cols(), this->lr_, batch_size);
+                                              w->shape()[0], w->shape()[1], this->lr_, batch_size);
 
         params->zero_grad();
     }
@@ -108,14 +108,14 @@ void SGDMomentum::step(int batch_size)
         NdArray *vdw = this->vdws_[i];
         NdArray *vdb = this->vdbs_[i];
 
-        int grid_row_cnt = (w->rows() / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (w->cols() / THREADS_PER_BLOCK) + 1;
+        int grid_row_cnt = (w->shape()[0] / THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (w->shape()[1] / THREADS_PER_BLOCK) + 1;
 
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
         k_sgd_momentum_step<<<grid_dims, block_dims>>>(w->data(), b->data(), dw->data(), db->data(), vdw->data(), vdb->data(),
-                                                       w->rows(), w->cols(), this->lr_, batch_size, this->momentum_);
+                                                       w->shape()[0], w->shape()[1], this->lr_, batch_size, this->momentum_);
 
         params->zero_grad();
     }
