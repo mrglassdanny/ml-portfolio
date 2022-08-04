@@ -170,7 +170,7 @@ void Model::step()
     this->optim_->step(this->batch_size());
 }
 
-void Model::grad_check(NdArray *x, NdArray *y, bool print_params)
+void Model::gradient_check(NdArray *x, NdArray *y, bool print_params)
 {
     if (this->lyrs_.size() == 0)
     {

@@ -43,7 +43,7 @@ namespace nn
         void backward(NdArray *p, NdArray *y);
         void step();
 
-        void grad_check(NdArray *x, NdArray *y, bool print_params);
+        void gradient_check(NdArray *x, NdArray *y, bool print_params);
         void performance_check(NdArray *x, NdArray *y, int epoch_cnt);
     };
 }
