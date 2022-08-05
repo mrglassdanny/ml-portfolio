@@ -36,24 +36,6 @@ Layer *Model::last_layer()
     return this->lyrs_[this->lyrs_.size() - 1];
 }
 
-int Model::batch_size()
-{
-    return this->first_layer()->batch_size();
-}
-
-void Model::lock_batch_size(int batch_size)
-{
-    if (this->last_layer()->batch_size() == batch_size)
-    {
-        return;
-    }
-
-    for (Layer *lyr : this->lyrs_)
-    {
-        lyr->lock_batch_size(batch_size);
-    }
-}
-
 void Model::add_layer(Layer *lyr)
 {
     this->lyrs_.push_back(lyr);
@@ -67,6 +49,24 @@ void Model::set_loss(Loss *loss)
 void Model::set_optimizer(Optimizer *optim)
 {
     this->optim_ = optim;
+}
+
+int Model::batch_size()
+{
+    return this->first_layer()->batch_size();
+}
+
+void Model::lock_batch_size(int batch_size)
+{
+    if (this->last_layer()->batch_size() == batch_size)
+    {
+        return;
+    }
+
+    for (Layer* lyr : this->lyrs_)
+    {
+        lyr->lock_batch_size(batch_size);
+    }
 }
 
 std::vector<Layer *> Model::layers()
@@ -113,7 +113,7 @@ NdArray *Model::forward(NdArray *x)
 
     Layer *lst_lyr = this->last_layer();
 
-    NdArray *p = new NdArray(true, lst_lyr->neurons()->shape());
+    NdArray *p = new NdArray(true, lst_lyr->output_shape());
     lst_lyr->evaluate(p);
 
     return p;

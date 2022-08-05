@@ -10,6 +10,17 @@ __global__ void k_set_all(float *data, int cnt, float val)
     }
 }
 
+__global__ void k_pad(float *dst, float *src, int dst_row_cnt, int dst_col_cnt, int src_row_cnt, int src_col_cnt, int pad_row_cnt, int pad_col_cnt)
+{
+    int src_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int src_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if(src_col_idx < src_col_cnt && src_row_idx < src_row_cnt)
+    {
+        dst[(src_row_idx + pad_row_cnt) * dst_col_cnt + (src_col_idx + pad_col_cnt)] = src[src_row_idx * src_col_cnt + src_col_idx];
+    }
+}
+
 Shape::Shape()
 {
 }
@@ -43,6 +54,15 @@ Shape::Shape(int dim_1, int dim_2, int dim_3, int dim_4)
 Shape::Shape(std::vector<int> dims)
 {
     this->dims_ = dims;
+}
+
+Shape::Shape(int dim_1, Shape shape)
+{
+    this->dims_.push_back(dim_1);
+    for (int dim_i : shape.dims_)
+    {
+        this->dims_.push_back(dim_i);
+    }
 }
 
 Shape::~Shape()
@@ -691,6 +711,40 @@ void NdArray::rands(float mean, float stddev)
     {
         this->to_cuda();
     }
+}
+
+void NdArray::pad(int pad_row_cnt, int pad_col_cnt)
+{
+    NdArray *prev = new NdArray(*this);
+
+    this->change_dim(0, pad_row_cnt * 2 + prev->shape_[0]);
+    this->change_dim(1, pad_col_cnt * 2 + prev->shape_[1]);
+
+    this->zeros();
+
+    if (this->cuda_)
+    {
+        int grid_row_cnt = (prev->shape_[0] / THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (prev->shape_[1] / THREADS_PER_BLOCK) + 1;
+
+        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+
+        k_pad<<<grid_dims, block_dims>>>(this->data(), prev->data(), this->shape_[0], this->shape_[1], prev->shape_[0], prev->shape_[1],
+        pad_row_cnt, pad_col_cnt);
+    }
+    else
+    {
+        for (int i = 0; i < prev->shape_[0]; i++)
+        {
+            for (int j = 0; j < prev->shape_[1]; j++)
+            {
+                this->set_val((i + pad_row_cnt) * this->shape_[1] + (j + pad_col_cnt), prev->get_val(i * prev->shape_[1] + j));
+            }
+        }
+    }
+
+    delete prev;
 }
 
 float NdArray::get_val(int idx)

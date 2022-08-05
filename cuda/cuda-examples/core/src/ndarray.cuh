@@ -81,6 +81,7 @@ public:
 	void zeros();
 	void ones();
 	void rands(float mean, float stddev);
+	void pad(int row_cnt, int col_cnt);
 
 	float get_val(int idx);
 	void set_val(int idx, float val);

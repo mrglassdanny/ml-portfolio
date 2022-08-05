@@ -12,3 +12,7 @@
 - C++ 11+ features (shared/unique ptr, etc.)
 - ~~check for leaks~~
 - documentation
+- model compilation
+- layer validation
+- model summary
+- big refactor

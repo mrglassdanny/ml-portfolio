@@ -24,9 +24,6 @@ namespace nn
         Layer *first_layer();
         Layer *last_layer();
 
-        void lock_batch_size(int batch_size);
-        int batch_size();
-
     public:
         Model();
         ~Model();
@@ -34,6 +31,9 @@ namespace nn
         void add_layer(Layer *lyr);
         void set_loss(Loss *loss);
         void set_optimizer(Optimizer *optim);
+
+        int batch_size();
+        void lock_batch_size(int batch_size);
 
         std::vector<Layer *> layers();
         std::vector<Parameters *> parameters();

@@ -3,41 +3,45 @@
 using namespace nn::optim;
 using namespace nn::layer;
 
-__global__ void k_sgd_step(float *w, float *b, float *dw, float *db, int w_row_cnt, int w_col_cnt, float lr, int batch_size)
+__global__ void k_sgd_weight_step(float *w, float *dw, int w_cnt, float lr, int batch_size)
 {
-    int w_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int w_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
+    int w_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (w_col_idx < w_row_cnt && w_row_idx < w_col_cnt)
+    if (w_elem_idx < w_cnt)
     {
-        int w_elem_idx = w_row_idx * w_col_cnt + w_col_idx;
         w[w_elem_idx] -= (lr * dw[w_elem_idx] / batch_size);
-
-        if (w_row_idx == 0)
-        {
-            int b_elem_idx = w_col_idx;
-            b[b_elem_idx] -= (lr * db[b_elem_idx] / batch_size);
-        }
     }
 }
 
-__global__ void k_sgd_momentum_step(float *w, float *b, float *dw, float *db, float *vdw, float *vdb, int w_row_cnt, int w_col_cnt, float lr, int batch_size, float momentum)
+__global__ void k_sgd_bias_step(float *b, float *db, int b_cnt, float lr, int batch_size)
 {
-    int w_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int w_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
+    int b_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
-    if (w_col_idx < w_row_cnt && w_row_idx < w_col_cnt)
+    if (b_elem_idx < b_cnt)
     {
-        int w_elem_idx = w_row_idx * w_col_cnt + w_col_idx;
+        b[b_elem_idx] -= (lr * db[b_elem_idx] / batch_size);
+    }
+}
+
+__global__ void k_sgd_momentum_weight_step(float *w, float *dw, float *vdw, int w_cnt, float lr, int batch_size, float momentum)
+{
+    int w_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (w_elem_idx < w_cnt)
+    {
         vdw[w_elem_idx] = momentum * vdw[w_elem_idx] + (1.0f - momentum) * dw[w_elem_idx];
         w[w_elem_idx] -= (lr * vdw[w_elem_idx] / batch_size);
+    }
+}
 
-        if (w_row_idx == 0)
-        {
-            int b_elem_idx = w_col_idx;
-            vdb[b_elem_idx] = momentum * vdb[b_elem_idx] + (1.0f - momentum) * db[b_elem_idx];
-            b[b_elem_idx] -= (lr * vdb[b_elem_idx] / batch_size);
-        }
+__global__ void k_sgd_momentum_bias_step(float *b, float *db, float *vdb, int b_cnt, float lr, int batch_size, float momentum)
+{
+    int b_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (b_elem_idx < b_cnt)
+    {
+        vdb[b_elem_idx] = momentum * vdb[b_elem_idx] + (1.0f - momentum) * db[b_elem_idx];
+        b[b_elem_idx] -= (lr * vdb[b_elem_idx] / batch_size);
     }
 }
 
@@ -61,14 +65,11 @@ void SGD::step(int batch_size)
         NdArray *dw = params->weight_gradients();
         NdArray *db = params->bias_gradients();
 
-        int grid_row_cnt = (w->shape()[0] / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (w->shape()[1] / THREADS_PER_BLOCK) + 1;
+        int w_cnt = w->count();
+        int b_cnt = b->count();
 
-        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
-
-        k_sgd_step<<<grid_dims, block_dims>>>(w->data(), b->data(), dw->data(), db->data(),
-                                              w->shape()[0], w->shape()[1], this->lr_, batch_size);
+        k_sgd_weight_step<<<w_cnt / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(w->data(), dw->data(), w_cnt, this->lr_, batch_size);
+        k_sgd_bias_step<<<b_cnt / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(b->data(), db->data(), b_cnt, this->lr_, batch_size);
 
         params->zero_grad();
     }
@@ -108,14 +109,13 @@ void SGDMomentum::step(int batch_size)
         NdArray *vdw = this->vdws_[i];
         NdArray *vdb = this->vdbs_[i];
 
-        int grid_row_cnt = (w->shape()[0] / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (w->shape()[1] / THREADS_PER_BLOCK) + 1;
+        int w_cnt = w->count();
+        int b_cnt = b->count();
 
-        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
-
-        k_sgd_momentum_step<<<grid_dims, block_dims>>>(w->data(), b->data(), dw->data(), db->data(), vdw->data(), vdb->data(),
-                                                       w->shape()[0], w->shape()[1], this->lr_, batch_size, this->momentum_);
+        k_sgd_momentum_weight_step<<<w_cnt / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(w->data(), dw->data(), vdw->data(),
+                                                                                         w_cnt, this->lr_, batch_size, this->momentum_);
+        k_sgd_momentum_bias_step<<<b_cnt / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(b->data(), db->data(), vdb->data(),
+                                                                                       b_cnt, this->lr_, batch_size, this->momentum_);
 
         params->zero_grad();
     }
