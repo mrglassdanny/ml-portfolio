@@ -78,23 +78,17 @@ __device__ void d_conv2d_convolve(float *in, float *w, float *out, int channel_c
                                   int filter_row_cnt, int filter_col_cnt, int w_cnt, int out_row_cnt, int out_col_cnt,
                                   int stride_row_cnt, int stride_col_cnt)
 {
-    for (int i = 0; i < channel_cnt; i++)
+    for (int channel_idx = 0; channel_idx < channel_cnt; channel_idx++)
     {
-        for (int j = 0; j < out_row_cnt; j++)
+        for (int out_row_idx = 0; out_row_idx < out_row_cnt; out_row_idx++)
         {
-            for (int k = 0; k < out_col_cnt; k++)
+            for (int out_col_idx = 0; out_col_idx < out_col_cnt; out_col_idx++)
             {
-                int out_elem_idx = j * out_col_cnt + k;
-                int in_row_offset = j + stride_row_cnt;
-                int in_col_offset = k + stride_col_cnt;
-
-                for (int l = 0; l < filter_row_cnt; l++)
+                for (int w_row_idx = 0; w_row_idx < filter_row_cnt; w_row_idx++)
                 {
-                    for (int m = 0; m < filter_col_cnt; m++)
+                    for (int w_col_idx = 0; w_col_idx < filter_col_cnt; w_col_idx++)
                     {
-                        int in_elem_idx = (i * in_cnt) + (l + in_row_offset) * filter_col_cnt + (m + in_col_offset);
-                        int w_elem_idx = (i * w_cnt) + (l * filter_col_cnt + m);
-                        out[out_elem_idx] += (in[in_elem_idx] * w[w_elem_idx]);
+                        out[out_row_idx * out_col_cnt + out_col_idx] += (in[(channel_idx * in_cnt) + ((w_row_idx + (out_row_idx * stride_row_cnt)) * in_col_cnt + (w_col_idx + (out_col_idx * stride_col_cnt)))] * w[(channel_idx * w_cnt) + (w_row_idx * filter_col_cnt + w_col_idx)]);
                     }
                 }
             }
@@ -109,7 +103,7 @@ __global__ void k_conv2d_evaluate(float *in, float *w, float *out, int batch_siz
     int filter_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (batch_idx < batch_size && filter_idx < filter_cnt)
+    if (filter_idx < filter_cnt && batch_idx < batch_size)
     {
         int in_cnt = in_row_cnt * in_col_cnt;
         int w_cnt = filter_row_cnt * filter_col_cnt;
@@ -117,7 +111,7 @@ __global__ void k_conv2d_evaluate(float *in, float *w, float *out, int batch_siz
 
         float *l_in = &in[(batch_idx * channel_cnt * in_cnt)];
         float *l_w = &w[(filter_idx * channel_cnt * w_cnt)];
-        float *l_out = &out[(batch_idx * filter_cnt * out_cnt)];
+        float *l_out = &out[((batch_idx * filter_cnt * out_cnt) + (filter_idx * out_cnt))];
 
         d_conv2d_convolve(l_in, l_w, l_out, channel_cnt, in_row_cnt, in_col_cnt, in_cnt,
                           filter_row_cnt, filter_col_cnt, w_cnt, out_row_cnt, out_col_cnt,
