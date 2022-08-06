@@ -70,10 +70,6 @@ __global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int in
     }
 }
 
-__global__ void k_conv2d_pad()
-{
-}
-
 __device__ void d_conv2d_convolve(float *in, float *w, float *out, int channel_cnt, int in_row_cnt, int in_col_cnt, int in_cnt,
                                   int filter_row_cnt, int filter_col_cnt, int w_cnt, int out_row_cnt, int out_col_cnt,
                                   int stride_row_cnt, int stride_col_cnt)
@@ -118,6 +114,32 @@ __global__ void k_conv2d_evaluate(float *in, float *w, float *out, int batch_siz
                           stride_row_cnt, stride_col_cnt);
     }
 }
+
+__global__ void k_conv2d_inc_param_derivatives(float *in, float *n, float *w, float *b, float *dw, float *db,
+                                               int in_row_cnt, int in_col_cnt, int n_col_cnt, int w_row_cnt, int w_col_cnt)
+{
+    int channel_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int filter_idx = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (channel_idx < channel_cnt && filter_idx < filter_cnt)
+    {
+        for(int filter_row_idx = 0; filter_row_idx < filter_row_cnt; filter_row_idx++)
+        {
+            for (int filter_col_idx = 0; filter_col_idx < filter_col_cnt; filter_col_idx++)
+            {
+                int w_elem_idx = (filter_idx * channel_cnt * w_cnt) + (channel_idx * w_cnt) + (filter_row_idx * filter_col_cnt + filter_col_idx);
+
+                for (int i = 0; i < batch_size; i++)
+                {
+                    
+                }
+                
+                dw[w_elem_idx] += (in[]);
+            }
+        }
+    }
+}
+
 
 __device__ float d_sigmoid_evaluate(float val)
 {
@@ -323,7 +345,6 @@ Conv2d::Conv2d(int channel_cnt, Shape in_shape, int filter_cnt, Shape filter_sha
 void Conv2d::evaluate(NdArray *out)
 {
     out->zeros();
-    // this->lock_padding();
 
     int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
     int grid_col_cnt = (this->filter_cnt_ / THREADS_PER_BLOCK) + 1;
@@ -335,8 +356,9 @@ void Conv2d::evaluate(NdArray *out)
     NdArray *w = this->params_->weights();
     NdArray *b = this->params_->biases();
 
-    int out_row_cnt = (((this->in_shape_[0] - this->filter_shape_[0]) + (2 * this->padding_shape_[0])) / this->stride_shape_[0]) + 1;
-    int out_col_cnt = (((this->in_shape_[1] - this->filter_shape_[1]) + (2 * this->padding_shape_[1])) / this->stride_shape_[1]) + 1;
+    Shape output_shape = this->output_shape();
+    int out_row_cnt = output_shape[2];
+    int out_col_cnt = output_shape[3];
 
     k_conv2d_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), out->data(), this->batch_size(), this->channel_cnt_, this->in_shape_[0], this->in_shape_[1],
                                                  this->filter_cnt_, this->filter_shape_[0], this->filter_shape_[1], out_row_cnt, out_col_cnt,
@@ -345,6 +367,27 @@ void Conv2d::evaluate(NdArray *out)
 
 NdArray *Conv2d::derive(NdArray *in)
 {
+    NdArray *n = this->n_;
+    NdArray *w = this->params_->weights();
+    NdArray *b = this->params_->biases();
+    NdArray *dw = this->params_->weight_gradients();
+    NdArray *db = this->params_->bias_gradients();
+
+    {
+        int grid_row_cnt = (this->filter_cnt_ / THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (this->channel_cnt_ / THREADS_PER_BLOCK) + 1;
+
+        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+
+        Shape in_shape = this->output_shape();
+        int in_row_cnt = in_shape[2];
+        int in_col_cnt = in_shape[3];
+
+        k_conv2d_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), n->data(), w->data(), b->data(), dw->data(), db->data(),
+                                                                  in->shape()[0], in->shape()[1], n->shape()[1], w->shape()[0], w->shape()[1]);
+    }
+
     return nullptr;
 }
 
