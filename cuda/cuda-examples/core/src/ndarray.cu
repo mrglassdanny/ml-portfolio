@@ -15,7 +15,7 @@ __global__ void k_pad(float *dst, float *src, int dst_row_cnt, int dst_col_cnt, 
     int src_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int src_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if(src_col_idx < src_col_cnt && src_row_idx < src_row_cnt)
+    if (src_col_idx < src_col_cnt && src_row_idx < src_row_cnt)
     {
         dst[(src_row_idx + pad_row_cnt) * dst_col_cnt + (src_col_idx + pad_col_cnt)] = src[src_row_idx * src_col_cnt + src_col_idx];
     }
@@ -375,6 +375,13 @@ void NdArray::print()
     bool orig_cuda = this->cuda_;
     this->to_cpu();
 
+    printf("Shape: ");
+    this->shape_.print();
+
+    for (int i = 0; i < this->num_dims(); i++)
+    {
+    }
+
     switch (this->num_dims())
     {
     case 1:
@@ -549,10 +556,71 @@ void NdArray::print()
         printf("]\n");
     }
     break;
+    case 4:
+    {
+        for (int _i = 0; _i < this->shape_[0]; _i++)
+        {
+            for (int _j = 0; _j < this->shape_[1]; _j++)
+            {
+                int row_cnt = this->shape_[2];
+                int col_cnt = this->shape_[3];
+
+                printf("[");
+                for (int i = 0; i < row_cnt; i++)
+                {
+                    if (i == 0)
+                    {
+                        printf(" [ ");
+                    }
+                    else
+                    {
+                        printf("  [ ");
+                    }
+
+                    for (int j = 0; j < col_cnt; j++)
+                    {
+                        float val = this->data_[(_i * this->shape_[1] * row_cnt * col_cnt) + (_j * row_cnt * col_cnt) + (i * col_cnt + j)];
+
+                        if (j == col_cnt - 1)
+                        {
+                            if (val >= 0.0f)
+                            {
+                                printf(" %f", val);
+                            }
+                            else
+                            {
+                                printf("%f", val);
+                            }
+                        }
+                        else
+                        {
+                            if (val >= 0.0f)
+                            {
+                                printf(" %f\t", val);
+                            }
+                            else
+                            {
+                                printf("%f\t", val);
+                            }
+                        }
+                    }
+
+                    if (i == row_cnt - 1)
+                    {
+                        printf(" ] ");
+                    }
+                    else
+                    {
+                        printf(" ],\n");
+                    }
+                }
+                printf("]\n");
+            }
+        }
+    }
+    break;
     default:
     {
-        printf("Shape: ");
-        this->shape_.print();
 
         printf("Data: \n");
         for (int i = 0; i < this->shape_.dims_size(); i++)
@@ -731,7 +799,7 @@ void NdArray::pad(int pad_row_cnt, int pad_col_cnt)
         dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
         k_pad<<<grid_dims, block_dims>>>(this->data(), prev->data(), this->shape_[0], this->shape_[1], prev->shape_[0], prev->shape_[1],
-        pad_row_cnt, pad_col_cnt);
+                                         pad_row_cnt, pad_col_cnt);
     }
     else
     {
@@ -823,7 +891,7 @@ float NdArray::stddev()
     for (int i = 0; i < this->count(); i++)
     {
         float diff = this->get_val(i) - mean;
-        stddev == diff *diff;
+        stddev = diff * diff;
     }
 
     stddev /= this->count();

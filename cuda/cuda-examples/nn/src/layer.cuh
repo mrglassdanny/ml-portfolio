@@ -73,15 +73,20 @@ namespace nn
         class Conv2d : public Learnable
         {
         private:
-            int channel_cnt_;
-            Shape in_shape_;
-            int filter_cnt_;
-            Shape filter_shape_;
-            Shape padding_shape_;
-            Shape stride_shape_;
+            Shape padding_; // (rows x columns)
+            Shape stride_; // (rows x columns)
+
+            int channels();
+            int in_rows();
+            int in_cols();
+            int filters();
+            int filter_rows();
+            int filter_cols();
+            int out_rows();
+            int out_cols();
 
         public:
-            Conv2d(int channel_cnt, Shape in_shape, int filter_cnt, Shape filter_shape, Shape padding_shape, Shape stride_shape);
+            Conv2d(Shape in_shape, Shape filter_shape, Shape padding, Shape stride);
 
             virtual void evaluate(NdArray *out) override;
             virtual NdArray *derive(NdArray *in) override;
