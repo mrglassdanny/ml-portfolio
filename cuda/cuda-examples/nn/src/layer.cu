@@ -26,7 +26,7 @@ __global__ void k_linear_matmul_w_bias(float *in, float *w, float *out, float *b
     }
 }
 
-__global__ void k_linear_inc_param_derivatives(float *in, float *n, float *w, float *b, float *dw, float *db,
+__global__ void k_linear_inc_param_derivatives(float *in, float *n, float *dw, float *db,
                                                int in_row_cnt, int in_col_cnt, int n_col_cnt, int w_row_cnt, int w_col_cnt)
 {
     int w_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -108,30 +108,75 @@ __global__ void k_conv2d_evaluate(float *in, float *w, float *out, int batch_siz
     }
 }
 
-//__global__ void k_conv2d_inc_param_derivatives(float *in, float *n, float *w, float *b, float *dw, float *db,
-//                                               int in_row_cnt, int in_col_cnt, int n_col_cnt, int w_row_cnt, int w_col_cnt)
-//{
-//    int channel_idx = blockIdx.x * blockDim.x + threadIdx.x;
-//    int filter_idx = blockIdx.y * blockDim.y + threadIdx.y;
-//
-//    if (channel_idx < channel_cnt && filter_idx < filter_cnt)
-//    {
-//        for(int filter_row_idx = 0; filter_row_idx < filter_row_cnt; filter_row_idx++)
-//        {
-//            for (int filter_col_idx = 0; filter_col_idx < filter_col_cnt; filter_col_idx++)
-//            {
-//                int w_elem_idx = (filter_idx * channel_cnt * w_cnt) + (channel_idx * w_cnt) + (filter_row_idx * filter_col_cnt + filter_col_idx);
-//
-//                for (int i = 0; i < batch_size; i++)
-//                {
-//
-//                }
-//
-//                dw[w_elem_idx] += (in[]);
-//            }
-//        }
-//    }
-//}
+__global__ void k_conv2d_inc_param_derivatives(float *in, float *n, float *dw, float *db, int batch_size, int channel_cnt, int filter_cnt,
+                                               int in_row_cnt, int in_col_cnt, int in_cnt, int n_row_cnt, int n_col_cnt, int n_cnt, int w_row_cnt, int w_col_cnt,
+                                               int w_cnt, int stride_row_cnt, int stride_col_cnt)
+{
+    int channel_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int filter_idx = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (channel_idx < channel_cnt && filter_idx < filter_cnt)
+    {
+        for (int w_row_idx = 0; w_row_idx < w_row_cnt; w_row_idx++)
+        {
+            for (int w_col_idx = 0; w_col_idx < w_col_cnt; w_col_idx++)
+            {
+                int w_elem_idx = (filter_idx * channel_cnt * w_cnt) + (channel_idx * w_cnt) + (w_row_idx * w_col_cnt + w_col_idx);
+
+                for (int batch_idx = 0; batch_idx < batch_size; batch_idx++)
+                {
+                    for (int in_row_idx = 0; in_row_idx < in_row_cnt; in_row_idx++)
+                    {
+                        for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
+                        {
+                            dw[w_elem_idx] +=
+                                (in[(batch_idx * filter_cnt * in_cnt) + (filter_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx)] *
+                                 n[(batch_idx * channel_cnt * n_cnt) + (channel_idx * n_cnt) + ((w_row_idx + (in_row_idx * stride_row_cnt)) * n_col_cnt + (w_col_idx + (in_col_idx * stride_col_cnt)))]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+__global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int batch_size, int channel_cnt, int filter_cnt,
+                                         int in_row_cnt, int in_col_cnt, int in_cnt, int w_row_cnt, int w_col_cnt, int w_cnt, int out_row_cnt, int out_col_cnt, int out_cnt,
+                                         int stride_row_cnt, int stride_col_cnt)
+{
+    int channel_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (channel_idx < channel_cnt && batch_idx < batch_size)
+    {
+        for (int out_row_idx = 0; out_row_idx < out_row_cnt; out_row_idx++)
+        {
+            for (int out_col_idx = 0; out_col_idx < out_col_cnt; out_col_idx++)
+            {
+                for (int filter_idx = 0; filter_idx < filter_cnt; filter_idx++)
+                {
+                    for (int in_row_idx = 0; in_row_idx < in_row_cnt; in_row_idx++)
+                    {
+                        for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
+                        {
+                            for (int w_row_idx = 0; w_row_idx < w_row_cnt; w_row_idx++)
+                            {
+                                for (int w_col_idx = 0; w_col_idx < w_col_cnt; w_col_idx++)
+                                {
+                                    int out_elem_idx = (batch_idx * channel_cnt * out_cnt) + (channel_idx * out_cnt) + ((w_row_idx + (out_row_idx * stride_row_cnt)) * out_col_cnt + (w_col_idx + (out_col_idx * stride_col_cnt)));
+
+                                    out[out_elem_idx] +=
+                                        (in[(batch_idx * channel_cnt * in_cnt) + (channel_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx)] *
+                                         w[(filter_idx * channel_cnt * w_cnt) + (channel_idx * w_cnt) + (w_row_idx * w_col_cnt + w_col_idx)]);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 __device__ float d_sigmoid_evaluate(float val)
 {
@@ -197,16 +242,10 @@ void Layer::copy_neurons(NdArray *n)
 
 Parameters::Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out)
 {
-    // this->w_ = NdArray::rands(true, w_shape, 0.0f, sqrt(1.0f / fan_in));
-    this->w_ = NdArray::ones(true, w_shape);
+    this->w_ = NdArray::rands(true, w_shape, 0.0f, sqrt(1.0f / fan_in));
     this->b_ = NdArray::zeros(true, b_shape);
     this->dw_ = NdArray::zeros(true, w_shape);
     this->db_ = NdArray::zeros(true, b_shape);
-
-    for (int i = 0; i < this->w_->count(); i++)
-    {
-        this->w_->set_val(i, rand() % 4);
-    }
 }
 
 Parameters::~Parameters()
@@ -292,7 +331,7 @@ NdArray *Linear::derive(NdArray *in)
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
-        k_linear_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), n->data(), w->data(), b->data(), dw->data(), db->data(),
+        k_linear_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), n->data(), dw->data(), db->data(),
                                                                   in->shape()[0], in->shape()[1], n->shape()[1], w->shape()[0], w->shape()[1]);
     }
 
@@ -375,10 +414,8 @@ void Conv2d::evaluate(NdArray *out)
 {
     out->zeros();
 
-    int filter_cnt = this->filters();
-
     int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (filter_cnt / THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (this->filters() / THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
     dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
@@ -388,7 +425,7 @@ void Conv2d::evaluate(NdArray *out)
     NdArray *b = this->params_->biases();
 
     k_conv2d_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), out->data(), this->batch_size(), this->channels(), this->in_rows(), this->in_cols(),
-                                                 filter_cnt, this->filter_rows(), this->filter_cols(), this->out_rows(), this->out_cols(),
+                                                 this->filters(), this->filter_rows(), this->filter_cols(), this->out_rows(), this->out_cols(),
                                                  this->stride_[0], this->stride_[1]);
 }
 
@@ -400,22 +437,34 @@ NdArray *Conv2d::derive(NdArray *in)
     NdArray *dw = this->params_->weight_gradients();
     NdArray *db = this->params_->bias_gradients();
 
-    // {
-    //     int grid_row_cnt = (this->filter_cnt_ / THREADS_PER_BLOCK) + 1;
-    //     int grid_col_cnt = (this->channel_cnt_ / THREADS_PER_BLOCK) + 1;
+    {
+        int grid_row_cnt = (this->filters() / THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (this->channels() / THREADS_PER_BLOCK) + 1;
 
-    //     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-    //     dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
-    //     Shape in_shape = this->output_shape();
-    //     int in_row_cnt = in_shape[2];
-    //     int in_col_cnt = in_shape[3];
+        k_conv2d_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), n->data(), dw->data(), db->data(), this->batch_size(), this->channels(), this->filters(),
+                                                                  this->out_rows(), this->out_cols(), (this->out_rows() * this->out_cols()), this->in_rows(), this->in_cols(), (this->in_rows() * this->in_cols()),
+                                                                  this->filter_rows(), this->filter_cols(), (this->filter_rows() * this->filter_cols()), this->stride_[0], this->stride_[1]);
+    }
 
-    //     k_conv2d_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), n->data(), w->data(), b->data(), dw->data(), db->data(),
-    //                                                               in->shape()[0], in->shape()[1], n->shape()[1], w->shape()[0], w->shape()[1]);
-    // }
+    NdArray *out = NdArray::zeros(true, n->shape());
 
-    return nullptr;
+    {
+        int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (this->channels() / THREADS_PER_BLOCK) + 1;
+
+        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+
+        k_conv2d_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), out->data(), this->batch_size(), this->channels(), this->filters(),
+                                                            this->out_rows(), this->out_cols(), (this->out_rows() * this->out_cols()), this->filter_rows(), this->filter_cols(), (this->filter_rows() * this->filter_cols()),
+                                                            this->in_rows(), this->in_cols(), (this->in_rows() * this->in_cols()), this->stride_[0], this->stride_[1]);
+    }
+
+    delete in;
+    return out;
 }
 
 Shape Conv2d::input_shape()
@@ -425,8 +474,6 @@ Shape Conv2d::input_shape()
 
 Shape Conv2d::output_shape()
 {
-    Shape n_shape = this->n_->shape();
-
     int out_row_cnt = (((this->in_rows() - this->filter_rows()) + (2 * this->padding_[0])) / this->stride_[0]) + 1;
     int out_col_cnt = (((this->in_cols() - this->filter_cols()) + (2 * this->padding_[1])) / this->stride_[1]) + 1;
 

@@ -89,6 +89,16 @@ std::vector<Parameters *> Model::parameters()
     return params;
 }
 
+Shape Model::input_shape()
+{
+    return this->first_layer()->input_shape();
+}
+
+Shape Model::output_shape()
+{
+    return this->last_layer()->output_shape();
+}
+
 NdArray *Model::forward(NdArray *x)
 {
     if (this->lyrs_.size() == 0)

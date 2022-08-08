@@ -38,6 +38,9 @@ namespace nn
         std::vector<Layer *> layers();
         std::vector<Parameters *> parameters();
 
+        Shape input_shape();
+        Shape output_shape();
+
         NdArray *forward(NdArray *x);
         float loss(NdArray *p, NdArray *y);
         void backward(NdArray *p, NdArray *y);
