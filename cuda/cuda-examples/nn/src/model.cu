@@ -143,11 +143,11 @@ float Model::loss(NdArray *p, NdArray *y)
 
     this->loss_->evaluate(p, y, losses);
 
-    float mean_losses = losses->mean();
+    float sum_losses = losses->sum();
 
     delete losses;
 
-    return mean_losses;
+    return sum_losses;
 }
 
 void Model::backward(NdArray *p, NdArray *y)

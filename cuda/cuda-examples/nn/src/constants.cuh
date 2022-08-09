@@ -1,3 +1,3 @@
 #pragma once
 
-#define EPSILON 0.001f
+#define EPSILON 1.0f

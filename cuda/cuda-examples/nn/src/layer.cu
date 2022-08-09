@@ -70,7 +70,7 @@ __global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int in
     }
 }
 
-__global__ void k_conv2d_evaluate(float *in, float *w, float *out, int batch_size, int channel_cnt, int in_row_cnt, int in_col_cnt,
+__global__ void k_conv2d_evaluate(float *in, float *w, float *b, float *out, int batch_size, int channel_cnt, int in_row_cnt, int in_col_cnt,
                                   int filter_cnt, int filter_row_cnt, int filter_col_cnt, int out_row_cnt, int out_col_cnt,
                                   int stride_row_cnt, int stride_col_cnt)
 {
@@ -85,6 +85,7 @@ __global__ void k_conv2d_evaluate(float *in, float *w, float *out, int batch_siz
 
         float *l_in = &in[(batch_idx * channel_cnt * in_cnt)];
         float *l_w = &w[(filter_idx * channel_cnt * w_cnt)];
+        float *l_b = &b[(filter_idx * channel_cnt)];
         float *l_out = &out[((batch_idx * filter_cnt * out_cnt) + (filter_idx * out_cnt))];
 
         for (int out_row_idx = 0; out_row_idx < out_row_cnt; out_row_idx++)
@@ -102,6 +103,8 @@ __global__ void k_conv2d_evaluate(float *in, float *w, float *out, int batch_siz
                                  l_w[(channel_idx * w_cnt) + (w_row_idx * filter_col_cnt + w_col_idx)]);
                         }
                     }
+
+                    l_out[out_row_idx * out_col_cnt + out_col_idx] += l_b[channel_idx];
                 }
             }
         }
@@ -117,23 +120,27 @@ __global__ void k_conv2d_inc_param_derivatives(float *in, float *n, float *dw, f
 
     if (channel_idx < channel_cnt && filter_idx < filter_cnt)
     {
-        for (int w_row_idx = 0; w_row_idx < w_row_cnt; w_row_idx++)
+        for (int batch_idx = 0; batch_idx < batch_size; batch_idx++)
         {
-            for (int w_col_idx = 0; w_col_idx < w_col_cnt; w_col_idx++)
+            for (int in_row_idx = 0; in_row_idx < in_row_cnt; in_row_idx++)
             {
-                int w_elem_idx = (filter_idx * channel_cnt * w_cnt) + (channel_idx * w_cnt) + (w_row_idx * w_col_cnt + w_col_idx);
-
-                for (int batch_idx = 0; batch_idx < batch_size; batch_idx++)
+                for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
                 {
-                    for (int in_row_idx = 0; in_row_idx < in_row_cnt; in_row_idx++)
+                    int in_elem_idx = (batch_idx * filter_cnt * in_cnt) + (filter_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx);
+
+                    for (int w_row_idx = 0; w_row_idx < w_row_cnt; w_row_idx++)
                     {
-                        for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
+                        for (int w_col_idx = 0; w_col_idx < w_col_cnt; w_col_idx++)
                         {
+                            int w_elem_idx = (filter_idx * channel_cnt * w_cnt) + (channel_idx * w_cnt) + (w_row_idx * w_col_cnt + w_col_idx);
+
                             dw[w_elem_idx] +=
-                                (in[(batch_idx * filter_cnt * in_cnt) + (filter_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx)] *
+                                (in[in_elem_idx] *
                                  n[(batch_idx * channel_cnt * n_cnt) + (channel_idx * n_cnt) + ((w_row_idx + (in_row_idx * stride_row_cnt)) * n_col_cnt + (w_col_idx + (in_col_idx * stride_col_cnt)))]);
                         }
                     }
+
+                    db[filter_idx * channel_cnt + channel_idx] += in[in_elem_idx];
                 }
             }
         }
@@ -149,27 +156,21 @@ __global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int ba
 
     if (channel_idx < channel_cnt && batch_idx < batch_size)
     {
-        for (int out_row_idx = 0; out_row_idx < out_row_cnt; out_row_idx++)
+        for (int filter_idx = 0; filter_idx < filter_cnt; filter_idx++)
         {
-            for (int out_col_idx = 0; out_col_idx < out_col_cnt; out_col_idx++)
+            for (int in_row_idx = 0; in_row_idx < in_row_cnt; in_row_idx++)
             {
-                for (int filter_idx = 0; filter_idx < filter_cnt; filter_idx++)
+                for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
                 {
-                    for (int in_row_idx = 0; in_row_idx < in_row_cnt; in_row_idx++)
+                    for (int w_row_idx = 0; w_row_idx < w_row_cnt; w_row_idx++)
                     {
-                        for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
+                        for (int w_col_idx = 0; w_col_idx < w_col_cnt; w_col_idx++)
                         {
-                            for (int w_row_idx = 0; w_row_idx < w_row_cnt; w_row_idx++)
-                            {
-                                for (int w_col_idx = 0; w_col_idx < w_col_cnt; w_col_idx++)
-                                {
-                                    int out_elem_idx = (batch_idx * channel_cnt * out_cnt) + (channel_idx * out_cnt) + ((w_row_idx + (out_row_idx * stride_row_cnt)) * out_col_cnt + (w_col_idx + (out_col_idx * stride_col_cnt)));
+                            int out_elem_idx = (batch_idx * channel_cnt * out_cnt) + (channel_idx * out_cnt) + ((w_row_idx + (in_row_idx * stride_row_cnt)) * out_col_cnt + (w_col_idx + (in_col_idx * stride_col_cnt)));
 
-                                    out[out_elem_idx] +=
-                                        (in[(batch_idx * channel_cnt * in_cnt) + (channel_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx)] *
-                                         w[(filter_idx * channel_cnt * w_cnt) + (channel_idx * w_cnt) + (w_row_idx * w_col_cnt + w_col_idx)]);
-                                }
-                            }
+                            out[out_elem_idx] +=
+                                (in[(batch_idx * channel_cnt * in_cnt) + (channel_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx)] *
+                                 w[(filter_idx * channel_cnt * w_cnt) + (channel_idx * w_cnt) + (w_row_idx * w_col_cnt + w_col_idx)]);
                         }
                     }
                 }
@@ -242,7 +243,8 @@ void Layer::copy_neurons(NdArray *n)
 
 Parameters::Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out)
 {
-    this->w_ = NdArray::rands(true, w_shape, 0.0f, sqrt(1.0f / fan_in));
+    // this->w_ = NdArray::rands(true, w_shape, 0.0f, sqrt(1.0f / fan_in));
+    this->w_ = NdArray::ones(true, w_shape);
     this->b_ = NdArray::zeros(true, b_shape);
     this->dw_ = NdArray::zeros(true, w_shape);
     this->db_ = NdArray::zeros(true, b_shape);
@@ -424,7 +426,7 @@ void Conv2d::evaluate(NdArray *out)
     NdArray *w = this->params_->weights();
     NdArray *b = this->params_->biases();
 
-    k_conv2d_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), out->data(), this->batch_size(), this->channels(), this->in_rows(), this->in_cols(),
+    k_conv2d_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(), this->batch_size(), this->channels(), this->in_rows(), this->in_cols(),
                                                  this->filters(), this->filter_rows(), this->filter_cols(), this->out_rows(), this->out_cols(),
                                                  this->stride_[0], this->stride_[1]);
 }
