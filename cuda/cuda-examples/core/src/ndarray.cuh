@@ -54,11 +54,12 @@ public:
 	~NdArray();
 
 	static NdArray *from_csv(const char *path);
-    static void to_csv(const char *path, NdArray *ndarray);
-    static void to_file(const char *path, NdArray *ndarray);
+	static void to_csv(const char *path, NdArray *ndarray);
+	static void to_file(const char *path, NdArray *ndarray);
 
 	static NdArray *zeros(bool cuda, Shape shape);
 	static NdArray *ones(bool cuda, Shape shape);
+	static NdArray *full(bool cuda, Shape shape, float val);
 	static NdArray *rands(bool cuda, Shape shape, float mean, float stddev);
 
 	void print();
@@ -77,14 +78,16 @@ public:
 	int count();
 	size_t size();
 
+	float get_val(int idx);
+	void set_val(int idx, float val);
+
 	float *data();
 	void zeros();
 	void ones();
+	void full(float val);
 	void rands(float mean, float stddev);
-	void pad(int row_cnt, int col_cnt);
 
-	float get_val(int idx);
-	void set_val(int idx, float val);
+	void pad(int row_cnt, int col_cnt);
 
 	float sum();
 	float min();

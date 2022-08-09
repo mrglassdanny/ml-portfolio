@@ -361,6 +361,15 @@ NdArray *NdArray::ones(bool cuda, Shape shape)
     return arr;
 }
 
+NdArray *NdArray::full(bool cuda, Shape shape, float val)
+{
+    NdArray *arr = new NdArray(cuda, shape);
+
+    arr->full(val);
+
+    return arr;
+}
+
 NdArray *NdArray::rands(bool cuda, Shape shape, float mean, float stddev)
 {
     NdArray *arr = new NdArray(cuda, shape);
@@ -724,6 +733,18 @@ size_t NdArray::size()
     return sizeof(float) * this->shape_.dims_size();
 }
 
+float NdArray::get_val(int idx)
+{
+    float val;
+    cudaMemcpy(&val, &this->data_[idx], sizeof(float), cudaMemcpyDefault);
+    return val;
+}
+
+void NdArray::set_val(int idx, float val)
+{
+    cudaMemcpy(&this->data_[idx], &val, sizeof(float), cudaMemcpyDefault);
+}
+
 float *NdArray::data()
 {
     return this->data_;
@@ -754,6 +775,21 @@ void NdArray::ones()
         for (int i = 0; i < this->count(); i++)
         {
             this->data_[i] = 1.0f;
+        }
+    }
+}
+
+void NdArray::full(float val)
+{
+    if (this->cuda_)
+    {
+        k_set_all<<<this->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK >>>(this->data_, this->count(), val);
+    }
+    else
+    {
+        for (int i = 0; i < this->count(); i++)
+        {
+            this->data_[i] = val;
         }
     }
 }
@@ -813,18 +849,6 @@ void NdArray::pad(int pad_row_cnt, int pad_col_cnt)
     }
 
     delete prev;
-}
-
-float NdArray::get_val(int idx)
-{
-    float val;
-    cudaMemcpy(&val, &this->data_[idx], sizeof(float), cudaMemcpyDefault);
-    return val;
-}
-
-void NdArray::set_val(int idx, float val)
-{
-    cudaMemcpy(&this->data_[idx], &val, sizeof(float), cudaMemcpyDefault);
 }
 
 float NdArray::sum()
