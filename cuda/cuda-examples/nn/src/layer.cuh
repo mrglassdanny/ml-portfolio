@@ -21,7 +21,6 @@ namespace nn
             virtual Shape output_shape() = 0;
 
             int batch_size();
-            void lock_batch_size(int batch_size);
 
             NdArray *neurons();
             void copy_neurons(NdArray *n);
@@ -61,56 +60,91 @@ namespace nn
         class Linear : public Learnable
         {
         public:
-            Linear(int in_cnt, int out_cnt);
+            Linear(Shape in_shape, Shape out_shape);
 
             virtual void evaluate(NdArray *out) override;
             virtual NdArray *derive(NdArray *in) override;
 
             virtual Shape input_shape() override;
             virtual Shape output_shape() override;
+
+            int in_features();
+            int out_features();
+            int weight_rows();
+            int weight_cols();
+        };
+
+        class Padding
+        {
+        private:
+            int row_cnt_;
+            int col_cnt_;
+
+        public:
+            Padding();
+            Padding(int row_cnt, int col_cnt);
+
+            int rows();
+            int cols();
+        };
+
+        class Stride
+        {
+        private:
+            int row_cnt_;
+            int col_cnt_;
+
+        public:
+            Stride();
+            Stride(int row_cnt, int col_cnt);
+            
+            int rows();
+            int cols();
         };
 
         class Conv2d : public Learnable
         {
         private:
-            Shape padding_; // (rows x columns)
-            Shape stride_; // (rows x columns)
-
-            int channels();
-            int in_rows();
-            int in_cols();
-            int filters();
-            int filter_rows();
-            int filter_cols();
-            int out_rows();
-            int out_cols();
+            Padding padding_;
+            Stride stride_;
 
         public:
-            Conv2d(Shape in_shape, Shape filter_shape, Shape padding, Shape stride);
+            Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride);
 
             virtual void evaluate(NdArray *out) override;
             virtual NdArray *derive(NdArray *in) override;
 
             virtual Shape input_shape() override;
             virtual Shape output_shape() override;
+
+            int channels();
+            int in_feature_rows();
+            int in_feature_cols();
+            int filters();
+            int filter_rows();
+            int filter_cols();
+            int out_feature_rows();
+            int out_feature_cols();
         };
 
         class Activation : public Layer
         {
         public:
-            Activation(int in_cnt);
+            Activation(Shape shape);
 
             virtual void evaluate(NdArray *out) = 0;
             virtual NdArray *derive(NdArray *in) = 0;
 
             virtual Shape input_shape() override;
             virtual Shape output_shape() override;
+
+            int features();
         };
 
         class Sigmoid : public Activation
         {
         public:
-            Sigmoid(int in_cnt);
+            Sigmoid(Shape shape);
 
             virtual void evaluate(NdArray *out) override;
             virtual NdArray *derive(NdArray *in) override;

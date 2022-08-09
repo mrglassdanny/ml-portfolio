@@ -16,7 +16,7 @@ namespace nn
 
     class Model
     {
-    private:
+    protected:
         std::vector<Layer *> lyrs_;
         Loss *loss_;
         Optimizer *optim_;
@@ -28,23 +28,31 @@ namespace nn
         Model();
         ~Model();
 
-        void add_layer(Layer *lyr);
-        void set_loss(Loss *loss);
-        void set_optimizer(Optimizer *optim);
-
-        int batch_size();
-        void lock_batch_size(int batch_size);
-
-        std::vector<Layer *> layers();
-        std::vector<Parameters *> parameters();
-
-        Shape input_shape();
-        Shape output_shape();
-
         NdArray *forward(NdArray *x);
         float loss(NdArray *p, NdArray *y);
         void backward(NdArray *p, NdArray *y);
         void step();
+
+        Shape input_shape();
+        Shape output_shape();
+
+        void add_layer(Layer *lyr);
+        void set_loss(Loss *loss);
+        void set_optimizer(Optimizer *optim);
+
+        void linear(int out_feature_cnt);
+        void linear(int batch_size, int in_feature_cnt, int out_feature_cnt);
+        void conv2d(Shape filter_shape);
+        void conv2d(Shape filter_shape, Stride stride);
+        void conv2d(Shape filter_shape, Padding padding, Stride stride);
+        void conv2d(Shape in_shape, Shape filter_shape, Stride stride);
+        void conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride);
+        void sigmoid();
+
+        std::vector<Layer *> layers();
+        std::vector<Parameters *> parameters();
+
+        int batch_size();
 
         void gradient_check(NdArray *x, NdArray *y, bool print_params);
         void performance_check(NdArray *x, NdArray *y, int epoch_cnt);
