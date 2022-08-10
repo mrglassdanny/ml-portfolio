@@ -74,6 +74,29 @@ int Shape::operator[](int idx) const
     return this->dims_[idx];
 }
 
+bool Shape::operator==(const Shape &other)
+{
+    if (this->dims_.size() != other.dims_.size())
+    {
+        return false;
+    }
+
+    for (int i = 0; i < this->dims_.size(); i++)
+    {
+        if (this->dims_[i] != other.dims_[i])
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool Shape::operator!=(const Shape &other)
+{
+    return !(*this == other);
+}
+
 void Shape::print()
 {
     int cnt = this->num_dims();

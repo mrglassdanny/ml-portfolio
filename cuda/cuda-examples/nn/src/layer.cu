@@ -449,6 +449,11 @@ Shape Linear::output_shape()
     return Shape(this->batch_size(), this->params_->weights()->shape()[1]);
 }
 
+bool Linear::validate()
+{
+    return true;
+}
+
 int Linear::in_features()
 {
     return this->params_->weights()->shape()[0];
@@ -585,6 +590,15 @@ Shape Conv2d::output_shape()
     return Shape(this->batch_size(), this->filters(), out_row_cnt, out_col_cnt);
 }
 
+bool Conv2d::validate()
+{
+
+    
+
+
+    return true;
+}
+
 int Conv2d::channels()
 {
     return this->n_->shape()[1];
@@ -638,6 +652,11 @@ Shape Activation::input_shape()
 Shape Activation::output_shape()
 {
     return this->n_->shape();
+}
+
+bool Activation::validate()
+{
+    return true;
 }
 
 int Activation::features()

@@ -26,6 +26,31 @@ Model::~Model()
     }
 }
 
+void Model::add_layer(Layer *lyr)
+{
+    this->lyrs_.push_back(lyr);
+}
+
+std::vector<Layer *> Model::layers()
+{
+    return this->lyrs_;
+}
+
+std::vector<Parameters *> Model::parameters()
+{
+    std::vector<Parameters *> params;
+
+    for (Layer *lyr : this->lyrs_)
+    {
+        if (Learnable *lrn = dynamic_cast<Learnable *>(lyr))
+        {
+            params.push_back(lrn->parameters());
+        }
+    }
+
+    return params;
+}
+
 Layer *Model::first_layer()
 {
     return this->lyrs_[0];
@@ -36,146 +61,25 @@ Layer *Model::last_layer()
     return this->lyrs_[this->lyrs_.size() - 1];
 }
 
-NdArray *Model::forward(NdArray *x)
+void Model::validate_layers()
 {
     if (this->lyrs_.size() == 0)
     {
-        return nullptr;
+        printf("MODEL VALIDATION FAILED: no layers\n");
+        exit(EXIT_FAILURE);
     }
-
-    x->to_cuda();
-
-    this->first_layer()->copy_neurons(x);
 
     for (int i = 0; i < this->lyrs_.size() - 1; i++)
     {
         Layer *lyr = this->lyrs_[i];
         Layer *nxt_lyr = this->lyrs_[i + 1];
 
-        nxt_lyr->neurons()->zeros();
-        lyr->evaluate(nxt_lyr->neurons());
+        if (lyr->output_shape() != nxt_lyr->input_shape())
+        {
+            printf("MODEL VALIDATION FAILED: layer at index %d output shape does not match layer at index %d input shape\n", i, i + 1);
+            exit(EXIT_FAILURE);
+        }
     }
-
-    Layer *lst_lyr = this->last_layer();
-
-    NdArray *p = NdArray::zeros(true, lst_lyr->output_shape());
-    lst_lyr->evaluate(p);
-
-    return p;
-}
-
-float Model::loss(NdArray *p, NdArray *y)
-{
-    if (this->loss_ == nullptr)
-    {
-        return 0.0f;
-    }
-
-    p->to_cuda();
-    y->to_cuda();
-
-    NdArray *losses = NdArray::zeros(true, p->shape());
-
-    this->loss_->evaluate(p, y, losses);
-
-    float sum_losses = losses->sum();
-
-    delete losses;
-
-    return sum_losses;
-}
-
-void Model::backward(NdArray *p, NdArray *y)
-{
-    if (this->loss_ == nullptr)
-    {
-        return;
-    }
-
-    p->to_cuda();
-    y->to_cuda();
-
-    NdArray *loss_gradients = this->loss_->derive(p, y);
-
-    for (int i = this->lyrs_.size() - 1; i >= 0; i--)
-    {
-        loss_gradients = this->lyrs_[i]->derive(loss_gradients);
-    }
-
-    delete loss_gradients;
-}
-
-void Model::step()
-{
-    if (this->optim_ == nullptr)
-    {
-        return;
-    }
-
-    this->optim_->step(this->batch_size());
-}
-
-Shape Model::input_shape()
-{
-    return this->first_layer()->input_shape();
-}
-
-Shape Model::output_shape()
-{
-    return this->last_layer()->output_shape();
-}
-
-void Model::summarize()
-{
-    printf("=========================== MODEL SUMMARY ===========================\n");
-
-    printf("\nLayers: (%d)\n", this->lyrs_.size());
-    for (int lyr_idx = 0; lyr_idx < this->lyrs_.size(); lyr_idx++)
-    {
-        printf("\t%d\t", lyr_idx + 1);
-        this->lyrs_[lyr_idx]->summarize();
-        printf("\n");
-    }
-    printf("\n");
-
-    printf("Loss: ");
-    if (this->loss_ != nullptr)
-    {
-        this->loss_->summarize();
-    }
-    else
-    {
-        printf("None");
-    }
-    printf("\n\n");
-
-    printf("Optimizer: ");
-    if (this->optim_ != nullptr)
-    {
-        this->optim_->summarize();
-    }
-    else
-    {
-        printf("None");
-    }
-    printf("\n\n");
-
-    printf("=====================================================================\n");
-}
-
-void Model::add_layer(Layer *lyr)
-{
-    this->lyrs_.push_back(lyr);
-}
-
-void Model::set_loss(Loss *loss)
-{
-    this->loss_ = loss;
-}
-
-void Model::set_optimizer(Optimizer *optim)
-{
-    this->optim_ = optim;
 }
 
 void Model::linear(int out_feature_cnt)
@@ -228,44 +132,192 @@ void Model::relu()
     this->add_layer(new ReLU(this->output_shape()));
 }
 
+void Model::set_loss(Loss *loss)
+{
+    this->loss_ = loss;
+}
+
+void Model::validate_loss()
+{
+    if (this->loss_ == nullptr)
+    {
+        printf("MODEL LOSS VALIDATION FAILED: loss not set\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void Model::set_optimizer(Optimizer *optim)
+{
+    this->optim_ = optim;
+}
+
+void Model::validate_optimizer()
+{
+    if (this->optim_ == nullptr)
+    {
+        printf("MODEL OPTIMIZER VALIDATION FAILED: optimizer not set\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+Shape Model::input_shape()
+{
+    return this->first_layer()->input_shape();
+}
+
+Shape Model::output_shape()
+{
+    return this->last_layer()->output_shape();
+}
+
+void Model::validate_input(NdArray *x)
+{
+    if (this->input_shape() != x->shape())
+    {
+        printf("MODEL INPUT VALIDATION FAILED: X shape does not match model input shape\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+void Model::validate_output(NdArray *y)
+{
+    if (this->output_shape() != y->shape())
+    {
+        printf("MODEL OUTPUT VALIDATION FAILED: Y shape does not match model output shape\n");
+        exit(EXIT_FAILURE);
+    }
+}
+
+NdArray *Model::forward(NdArray *x)
+{
+    this->validate_layers();
+    this->validate_input(x);
+
+    x->to_cuda();
+
+    this->first_layer()->copy_neurons(x);
+
+    for (int i = 0; i < this->lyrs_.size() - 1; i++)
+    {
+        Layer *lyr = this->lyrs_[i];
+        Layer *nxt_lyr = this->lyrs_[i + 1];
+
+        nxt_lyr->neurons()->zeros();
+        lyr->evaluate(nxt_lyr->neurons());
+    }
+
+    Layer *lst_lyr = this->last_layer();
+
+    NdArray *p = NdArray::zeros(true, lst_lyr->output_shape());
+    lst_lyr->evaluate(p);
+
+    return p;
+}
+
+float Model::loss(NdArray *p, NdArray *y)
+{
+    this->validate_loss();
+    this->validate_output(y);
+
+    if (this->loss_ == nullptr)
+    {
+        return 0.0f;
+    }
+
+    p->to_cuda();
+    y->to_cuda();
+
+    NdArray *losses = NdArray::zeros(true, p->shape());
+
+    this->loss_->evaluate(p, y, losses);
+
+    float sum_losses = losses->sum();
+
+    delete losses;
+
+    return sum_losses;
+}
+
+void Model::backward(NdArray *p, NdArray *y)
+{
+    this->validate_layers();
+    this->validate_loss();
+    this->validate_output(y);
+
+    if (this->loss_ == nullptr)
+    {
+        return;
+    }
+
+    p->to_cuda();
+    y->to_cuda();
+
+    NdArray *loss_gradients = this->loss_->derive(p, y);
+
+    for (int i = this->lyrs_.size() - 1; i >= 0; i--)
+    {
+        loss_gradients = this->lyrs_[i]->derive(loss_gradients);
+    }
+
+    delete loss_gradients;
+}
+
+void Model::step()
+{
+    this->validate_optimizer();
+
+    this->optim_->step(this->batch_size());
+}
+
 int Model::batch_size()
 {
     return this->first_layer()->batch_size();
 }
 
-std::vector<Layer *> Model::layers()
+void Model::summarize()
 {
-    return this->lyrs_;
-}
+    printf("=========================== MODEL SUMMARY ===========================\n");
 
-std::vector<Parameters *> Model::parameters()
-{
-    std::vector<Parameters *> params;
-
-    for (Layer *lyr : this->lyrs_)
+    printf("\nLayers: (%d)\n", this->lyrs_.size());
+    for (int i = 0; i < this->lyrs_.size(); i++)
     {
-        if (Learnable *lrn = dynamic_cast<Learnable *>(lyr))
-        {
-            params.push_back(lrn->parameters());
-        }
+        printf("\t%d\t", i + 1);
+        this->lyrs_[i]->summarize();
+        printf("\n");
     }
+    printf("\n");
 
-    return params;
+    printf("Loss: ");
+    if (this->loss_ != nullptr)
+    {
+        this->loss_->summarize();
+    }
+    else
+    {
+        printf("None");
+    }
+    printf("\n\n");
+
+    printf("Optimizer: ");
+    if (this->optim_ != nullptr)
+    {
+        this->optim_->summarize();
+    }
+    else
+    {
+        printf("None");
+    }
+    printf("\n\n");
+
+    printf("=====================================================================\n");
 }
 
 void Model::gradient_check(NdArray *x, NdArray *y, bool print_params)
 {
-    if (this->lyrs_.size() == 0)
-    {
-        printf("GRADIENT CHECK FAILED: layers not added");
-        return;
-    }
-
-    if (this->loss_ == nullptr)
-    {
-        printf("GRADIENT CHECK FAILED: loss not set");
-        return;
-    }
+    this->validate_layers();
+    this->validate_loss();
+    this->validate_input(x);
+    this->validate_output(y);
 
     x->to_cuda();
     y->to_cuda();

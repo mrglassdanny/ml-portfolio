@@ -36,6 +36,8 @@ public:
 	void print();
 
 	int operator[](int) const;
+	bool operator==(const Shape&);
+	bool operator!=(const Shape&);
 	std::vector<int> dims();
 	int num_dims();
 	int dims_size();

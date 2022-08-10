@@ -20,6 +20,7 @@ namespace nn
             virtual Shape input_shape() = 0;
             virtual Shape output_shape() = 0;
 
+            virtual bool validate() = 0;
             virtual void summarize();
 
             int batch_size();
@@ -72,6 +73,8 @@ namespace nn
             virtual Shape input_shape() override;
             virtual Shape output_shape() override;
 
+            virtual bool validate() override;
+
             int in_features();
             int out_features();
             int weight_rows();
@@ -101,7 +104,7 @@ namespace nn
         public:
             Stride();
             Stride(int row_cnt, int col_cnt);
-            
+
             int rows();
             int cols();
         };
@@ -120,6 +123,8 @@ namespace nn
 
             virtual Shape input_shape() override;
             virtual Shape output_shape() override;
+
+            virtual bool validate() override;
 
             int channels();
             int in_feature_rows();
@@ -141,6 +146,8 @@ namespace nn
 
             virtual Shape input_shape() override;
             virtual Shape output_shape() override;
+
+            virtual bool validate() override;
 
             int features();
         };

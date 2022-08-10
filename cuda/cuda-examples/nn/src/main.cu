@@ -21,10 +21,12 @@ int main(int argc, char **argv)
 	model->set_loss(new MSE());
 	model->set_optimizer(new SGD(model->parameters(), 0.001f));
 
-	NdArray *x = NdArray::rands(true, model->input_shape(), 0.0f, 1.0f);
+	NdArray *x = NdArray::rands(true, Shape(2, 2, 16, 16), 0.0f, 1.0f);
 	NdArray *y = NdArray::ones(true, model->output_shape());
 
 	model->summarize();
+
+	model->gradient_check(x, y, true);
 
 	return 0;
 }
