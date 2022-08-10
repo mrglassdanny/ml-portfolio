@@ -1,25 +1,22 @@
 #include "layer.cuh"
 
-#define DEFAULT_BATCH_SIZE 1
-
 using namespace nn::layer;
 
-__global__ void k_linear_matmul_w_bias(float *in, float *w, float *out, float *b,
-                                       int in_col_cnt, int out_row_cnt, int out_col_cnt)
+__global__ void k_linear_evaluate(float *in, float *w, float *b, float *out,
+                                  int batch_size, int in_cnt, int out_cnt)
 {
-    int out_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int out_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
+    int out_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (out_col_idx < out_col_cnt && out_row_idx < out_row_cnt)
+    if (out_idx < out_cnt && batch_idx < batch_size)
     {
-        int out_elem_idx = out_row_idx * out_col_cnt + out_col_idx;
-        int in_row_idx = out_row_idx;
-        int w_col_idx = out_col_idx;
+        int out_elem_idx = batch_idx * out_cnt + out_idx;
+        int w_col_idx = out_idx;
 
-        for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
+        for (int in_idx = 0; in_idx < in_cnt; in_idx++)
         {
-            int w_row_idx = in_col_idx;
-            out[out_elem_idx] += (in[in_row_idx * in_col_cnt + in_col_idx] * w[w_row_idx * out_col_cnt + w_col_idx]);
+            int w_row_idx = in_idx;
+            out[out_elem_idx] += (in[batch_idx * in_cnt + in_idx] * w[w_row_idx * out_cnt + w_col_idx]);
         }
 
         out[out_elem_idx] += b[w_col_idx];
@@ -27,7 +24,7 @@ __global__ void k_linear_matmul_w_bias(float *in, float *w, float *out, float *b
 }
 
 __global__ void k_linear_inc_param_derivatives(float *in, float *n, float *dw, float *db,
-                                               int in_row_cnt, int in_col_cnt, int n_col_cnt, int w_row_cnt, int w_col_cnt)
+                                               int batch_size, int in_cnt, int n_cnt, int w_row_cnt, int w_col_cnt)
 {
     int w_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int w_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -35,37 +32,36 @@ __global__ void k_linear_inc_param_derivatives(float *in, float *n, float *dw, f
     if (w_col_idx < w_col_cnt && w_row_idx < w_row_cnt)
     {
         int w_elem_idx = w_row_idx * w_col_cnt + w_col_idx;
-        int n_col_idx = w_row_idx;
-        int in_col_idx = w_col_idx;
+        int n_idx = w_row_idx;
+        int in_idx = w_col_idx;
 
-        for (int i = 0; i < in_row_cnt; i++)
+        for (int batch_idx = 0; batch_idx < batch_size; batch_idx++)
         {
-            dw[w_elem_idx] += (in[i * in_col_cnt + in_col_idx] * n[i * n_col_cnt + n_col_idx]);
+            dw[w_elem_idx] += (in[batch_idx * in_cnt + in_idx] * n[batch_idx * n_cnt + n_idx]);
 
             if (w_row_idx == 0)
             {
                 int b_elem_idx = w_col_idx;
-                db[b_elem_idx] += in[i * in_col_cnt + in_col_idx];
+                db[b_elem_idx] += in[batch_idx * in_cnt + in_idx];
             }
         }
     }
 }
 
-__global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int in_col_cnt, int w_col_cnt, int out_row_cnt, int out_col_cnt)
+__global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int batch_size, int in_cnt, int w_col_cnt, int out_cnt)
 {
-    int out_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int out_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
+    int out_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (out_col_idx < out_col_cnt && out_row_idx < out_row_cnt)
+    if (out_idx < out_cnt && batch_idx < batch_size)
     {
-        int out_elem_idx = out_row_idx * w_col_cnt + out_col_idx;
-        int in_row_idx = out_row_idx;
-        int w_row_idx = out_col_idx;
+        int out_elem_idx = batch_idx * w_col_cnt + out_idx;
+        int w_row_idx = out_idx;
 
-        for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
+        for (int in_idx = 0; in_idx < in_cnt; in_idx++)
         {
-            int w_col_idx = in_col_idx;
-            out[out_elem_idx] += (in[in_row_idx * in_col_cnt + in_col_idx] * w[w_row_idx * w_col_cnt + w_col_idx]);
+            int w_col_idx = in_idx;
+            out[out_elem_idx] += (in[batch_idx * in_cnt + in_idx] * w[w_row_idx * w_col_cnt + w_col_idx]);
         }
     }
 }
@@ -162,6 +158,8 @@ __global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int ba
             {
                 for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
                 {
+                    int in_elem_idx = (batch_idx * filter_cnt * in_cnt) + (filter_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx);
+
                     for (int w_row_idx = 0; w_row_idx < w_row_cnt; w_row_idx++)
                     {
                         for (int w_col_idx = 0; w_col_idx < w_col_cnt; w_col_idx++)
@@ -169,7 +167,7 @@ __global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int ba
                             int out_elem_idx = (batch_idx * channel_cnt * out_cnt) + (channel_idx * out_cnt) + ((w_row_idx + (in_row_idx * stride_row_cnt)) * out_col_cnt + (w_col_idx + (in_col_idx * stride_col_cnt)));
 
                             out[out_elem_idx] +=
-                                (in[(batch_idx * channel_cnt * in_cnt) + (channel_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx)] *
+                                (in[in_elem_idx] *
                                  w[(filter_idx * channel_cnt * w_cnt) + (channel_idx * w_cnt) + (w_row_idx * w_col_cnt + w_col_idx)]);
                         }
                     }
@@ -190,27 +188,27 @@ __device__ float d_sigmoid_derive(float val)
     return (sigmoid_val) * (1.0f - sigmoid_val);
 }
 
-__global__ void k_sigmoid_evaluate(float *in, float *out, int row_cnt, int col_cnt)
+__global__ void k_sigmoid_evaluate(float *in, float *out, int batch_size, int cnt)
 {
-    int col_idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int row_idx = blockIdx.y * blockDim.y + threadIdx.y;
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (col_idx < col_cnt && row_idx < row_cnt)
+    if (idx < cnt && batch_idx < batch_size)
     {
-        int elem_idx = row_idx * col_cnt + col_idx;
+        int elem_idx = batch_idx * cnt + idx;
 
         out[elem_idx] = d_sigmoid_evaluate(in[elem_idx]);
     }
 }
 
-__global__ void k_sigmoid_derive(float *in, float *n, float *out, int row_cnt, int col_cnt)
+__global__ void k_sigmoid_derive(float *in, float *n, float *out, int batch_size, int cnt)
 {
-    int col_idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int row_idx = blockIdx.y * blockDim.y + threadIdx.y;
+    int idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (col_idx < col_cnt && row_idx < row_cnt)
+    if (idx < cnt && batch_idx < batch_size)
     {
-        int elem_idx = row_idx * col_cnt + col_idx;
+        int elem_idx = batch_idx * cnt + idx;
 
         out[elem_idx] = in[elem_idx] * d_sigmoid_derive(n[elem_idx]);
     }
@@ -226,11 +224,6 @@ int Layer::batch_size()
     return this->n_->shape()[0];
 }
 
-void Layer::lock_batch_size(int batch_size)
-{
-    this->n_->change_dim(0, batch_size);
-}
-
 NdArray *Layer::neurons()
 {
     return this->n_;
@@ -243,8 +236,7 @@ void Layer::copy_neurons(NdArray *n)
 
 Parameters::Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out)
 {
-    // this->w_ = NdArray::rands(true, w_shape, 0.0f, sqrt(1.0f / fan_in));
-    this->w_ = NdArray::ones(true, w_shape);
+    this->w_ = NdArray::rands(true, w_shape, 0.0f, sqrt(1.0f / fan_in));
     this->b_ = NdArray::zeros(true, b_shape);
     this->dw_ = NdArray::zeros(true, w_shape);
     this->db_ = NdArray::zeros(true, b_shape);
@@ -294,18 +286,20 @@ Parameters *Learnable::parameters()
     return this->params_;
 }
 
-Linear::Linear(int in_cnt, int out_cnt)
+Linear::Linear(Shape in_shape, Shape out_shape)
 {
-    this->n_ = new NdArray(true, Shape(DEFAULT_BATCH_SIZE, in_cnt));
+    this->n_ = new NdArray(true, in_shape);
+
+    int in_cnt = (in_shape.dims_size() / in_shape[0]);
+    int out_cnt = (out_shape.dims_size() / out_shape[0]);
+
     this->params_ = new Parameters(Shape(in_cnt, out_cnt), Shape(out_cnt), in_cnt, out_cnt);
 }
 
 void Linear::evaluate(NdArray *out)
 {
-    out->zeros();
-
-    int grid_row_cnt = (out->shape()[0] / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (out->shape()[1] / THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (this->out_features() / THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
     dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
@@ -314,8 +308,8 @@ void Linear::evaluate(NdArray *out)
     NdArray *w = this->params_->weights();
     NdArray *b = this->params_->biases();
 
-    k_linear_matmul_w_bias<<<grid_dims, block_dims>>>(n->data(), w->data(), out->data(), b->data(),
-                                                      n->shape()[1], out->shape()[0], out->shape()[1]);
+    k_linear_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(),
+                                                 this->batch_size(), this->in_features(), this->out_features());
 }
 
 NdArray *Linear::derive(NdArray *in)
@@ -327,27 +321,28 @@ NdArray *Linear::derive(NdArray *in)
     NdArray *db = this->params_->bias_gradients();
 
     {
-        int grid_row_cnt = (w->shape()[0] / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (w->shape()[1] / THREADS_PER_BLOCK) + 1;
+        int grid_row_cnt = (this->weight_rows() / THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (this->weight_cols() / THREADS_PER_BLOCK) + 1;
 
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
         k_linear_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), n->data(), dw->data(), db->data(),
-                                                                  in->shape()[0], in->shape()[1], n->shape()[1], w->shape()[0], w->shape()[1]);
+                                                                  this->batch_size(), this->out_features(), this->in_features(),
+                                                                  this->weight_rows(), this->weight_cols());
     }
 
-    NdArray *out = NdArray::zeros(true, n->shape());
+    NdArray *out = NdArray::zeros(true, this->input_shape());
 
     {
-        int grid_row_cnt = (out->shape()[0] / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (out->shape()[1] / THREADS_PER_BLOCK) + 1;
+        int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (this->in_features() / THREADS_PER_BLOCK) + 1;
 
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
         k_linear_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), out->data(),
-                                                            in->shape()[1], w->shape()[1], out->shape()[0], out->shape()[1]);
+                                                            this->batch_size(), this->out_features(), this->weight_cols(), this->in_features());
     }
 
     delete in;
@@ -364,12 +359,140 @@ Shape Linear::output_shape()
     return Shape(this->batch_size(), this->params_->weights()->shape()[1]);
 }
 
-Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Shape padding, Shape stride)
+int Linear::in_features()
 {
-    this->n_ = new NdArray(true, Shape(DEFAULT_BATCH_SIZE, in_shape));
-    this->params_ = new Parameters(filter_shape, Shape(filter_shape[0], filter_shape[1]), in_shape[1], in_shape[2]);
+    return this->params_->weights()->shape()[0];
+}
+
+int Linear::out_features()
+{
+    return this->params_->weights()->shape()[1];
+}
+
+int Linear::weight_rows()
+{
+    return this->params_->weights()->shape()[0];
+}
+
+int Linear::weight_cols()
+{
+    return this->params_->weights()->shape()[1];
+}
+
+Padding::Padding() {}
+
+Padding::Padding(int row_cnt, int col_cnt)
+{
+    this->row_cnt_ = row_cnt;
+    this->col_cnt_ = col_cnt;
+}
+
+int Padding::rows()
+{
+    return this->row_cnt_;
+}
+
+int Padding::cols()
+{
+    return this->col_cnt_;
+}
+
+Stride::Stride() {}
+
+Stride::Stride(int row_cnt, int col_cnt)
+{
+    this->row_cnt_ = row_cnt;
+    this->col_cnt_ = col_cnt;
+}
+
+int Stride::rows()
+{
+    return this->row_cnt_;
+}
+
+int Stride::cols()
+{
+    return this->col_cnt_;
+}
+
+Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride)
+{
+    this->n_ = new NdArray(true, in_shape);
+    this->params_ = new Parameters(filter_shape, Shape(filter_shape[0], filter_shape[1]), this->in_feature_rows(), this->in_feature_cols());
     this->padding_ = padding;
     this->stride_ = stride;
+}
+
+void Conv2d::evaluate(NdArray *out)
+{
+    int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (this->filters() / THREADS_PER_BLOCK) + 1;
+
+    dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+    dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+
+    NdArray *n = this->n_;
+    NdArray *w = this->params_->weights();
+    NdArray *b = this->params_->biases();
+
+    k_conv2d_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(), this->batch_size(), this->channels(), this->in_feature_rows(), this->in_feature_cols(),
+                                                 this->filters(), this->filter_rows(), this->filter_cols(), this->out_feature_rows(), this->out_feature_cols(),
+                                                 this->stride_.rows(), this->stride_.cols());
+}
+
+NdArray *Conv2d::derive(NdArray *in)
+{
+    NdArray *n = this->n_;
+    NdArray *w = this->params_->weights();
+    NdArray *b = this->params_->biases();
+    NdArray *dw = this->params_->weight_gradients();
+    NdArray *db = this->params_->bias_gradients();
+
+    {
+        int grid_row_cnt = (this->filters() / THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (this->channels() / THREADS_PER_BLOCK) + 1;
+
+        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+
+        k_conv2d_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), n->data(), dw->data(), db->data(), this->batch_size(), this->channels(), this->filters(),
+                                                                  this->out_feature_rows(), this->out_feature_cols(), (this->out_feature_rows() * this->out_feature_cols()),
+                                                                  this->in_feature_rows(), this->in_feature_cols(), (this->in_feature_rows() * this->in_feature_cols()),
+                                                                  this->filter_rows(), this->filter_cols(), (this->filter_rows() * this->filter_cols()),
+                                                                  this->stride_.rows(), this->stride_.cols());
+    }
+
+    NdArray *out = NdArray::zeros(true, this->input_shape());
+
+    {
+        int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (this->channels() / THREADS_PER_BLOCK) + 1;
+
+        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+
+        k_conv2d_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), out->data(), this->batch_size(), this->channels(), this->filters(),
+                                                            this->out_feature_rows(), this->out_feature_cols(), (this->out_feature_rows() * this->out_feature_cols()),
+                                                            this->filter_rows(), this->filter_cols(), (this->filter_rows() * this->filter_cols()),
+                                                            this->in_feature_rows(), this->in_feature_cols(), (this->in_feature_rows() * this->in_feature_cols()),
+                                                            this->stride_.rows(), this->stride_.cols());
+    }
+
+    delete in;
+    return out;
+}
+
+Shape Conv2d::input_shape()
+{
+    return this->n_->shape();
+}
+
+Shape Conv2d::output_shape()
+{
+    int out_row_cnt = (((this->in_feature_rows() - this->filter_rows()) + (2 * this->padding_.rows())) / this->stride_.rows()) + 1;
+    int out_col_cnt = (((this->in_feature_cols() - this->filter_cols()) + (2 * this->padding_.cols())) / this->stride_.cols()) + 1;
+
+    return Shape(this->batch_size(), this->filters(), out_row_cnt, out_col_cnt);
 }
 
 int Conv2d::channels()
@@ -377,12 +500,12 @@ int Conv2d::channels()
     return this->n_->shape()[1];
 }
 
-int Conv2d::in_rows()
+int Conv2d::in_feature_rows()
 {
     return this->n_->shape()[2];
 }
 
-int Conv2d::in_cols()
+int Conv2d::in_feature_cols()
 {
     return this->n_->shape()[3];
 }
@@ -402,89 +525,19 @@ int Conv2d::filter_cols()
     return this->params_->weights()->shape()[3];
 }
 
-int Conv2d::out_rows()
+int Conv2d::out_feature_rows()
 {
     return this->output_shape()[2];
 }
 
-int Conv2d::out_cols()
+int Conv2d::out_feature_cols()
 {
     return this->output_shape()[3];
 }
 
-void Conv2d::evaluate(NdArray *out)
+Activation::Activation(Shape shape)
 {
-    out->zeros();
-
-    int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (this->filters() / THREADS_PER_BLOCK) + 1;
-
-    dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-    dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
-
-    NdArray *n = this->n_;
-    NdArray *w = this->params_->weights();
-    NdArray *b = this->params_->biases();
-
-    k_conv2d_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(), this->batch_size(), this->channels(), this->in_rows(), this->in_cols(),
-                                                 this->filters(), this->filter_rows(), this->filter_cols(), this->out_rows(), this->out_cols(),
-                                                 this->stride_[0], this->stride_[1]);
-}
-
-NdArray *Conv2d::derive(NdArray *in)
-{
-    NdArray *n = this->n_;
-    NdArray *w = this->params_->weights();
-    NdArray *b = this->params_->biases();
-    NdArray *dw = this->params_->weight_gradients();
-    NdArray *db = this->params_->bias_gradients();
-
-    {
-        int grid_row_cnt = (this->filters() / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (this->channels() / THREADS_PER_BLOCK) + 1;
-
-        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
-
-        k_conv2d_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), n->data(), dw->data(), db->data(), this->batch_size(), this->channels(), this->filters(),
-                                                                  this->out_rows(), this->out_cols(), (this->out_rows() * this->out_cols()), this->in_rows(), this->in_cols(), (this->in_rows() * this->in_cols()),
-                                                                  this->filter_rows(), this->filter_cols(), (this->filter_rows() * this->filter_cols()), this->stride_[0], this->stride_[1]);
-    }
-
-    NdArray *out = NdArray::zeros(true, n->shape());
-
-    {
-        int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (this->channels() / THREADS_PER_BLOCK) + 1;
-
-        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
-
-        k_conv2d_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), out->data(), this->batch_size(), this->channels(), this->filters(),
-                                                            this->out_rows(), this->out_cols(), (this->out_rows() * this->out_cols()), this->filter_rows(), this->filter_cols(), (this->filter_rows() * this->filter_cols()),
-                                                            this->in_rows(), this->in_cols(), (this->in_rows() * this->in_cols()), this->stride_[0], this->stride_[1]);
-    }
-
-    delete in;
-    return out;
-}
-
-Shape Conv2d::input_shape()
-{
-    return this->n_->shape();
-}
-
-Shape Conv2d::output_shape()
-{
-    int out_row_cnt = (((this->in_rows() - this->filter_rows()) + (2 * this->padding_[0])) / this->stride_[0]) + 1;
-    int out_col_cnt = (((this->in_cols() - this->filter_cols()) + (2 * this->padding_[1])) / this->stride_[1]) + 1;
-
-    return Shape(this->batch_size(), this->filters(), out_row_cnt, out_col_cnt);
-}
-
-Activation::Activation(int in_cnt)
-{
-    this->n_ = new NdArray(true, Shape(DEFAULT_BATCH_SIZE, in_cnt));
+    this->n_ = new NdArray(true, shape);
 }
 
 Shape Activation::input_shape()
@@ -497,35 +550,38 @@ Shape Activation::output_shape()
     return this->n_->shape();
 }
 
-Sigmoid::Sigmoid(int in_cnt)
-    : Activation(in_cnt)
+int Activation::features()
+{
+    return (this->n_->shape().dims_size() / this->batch_size());
+}
+
+Sigmoid::Sigmoid(Shape shape)
+    : Activation(shape)
 {
 }
 
 void Sigmoid::evaluate(NdArray *out)
 {
-    out->zeros();
-
-    int grid_row_cnt = (out->shape()[0] / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (out->shape()[1] / THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (this->features() / THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
     dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
-    k_sigmoid_evaluate<<<grid_dims, block_dims>>>(this->n_->data(), out->data(), out->shape()[0], out->shape()[1]);
+    k_sigmoid_evaluate<<<grid_dims, block_dims>>>(this->n_->data(), out->data(), this->batch_size(), this->features());
 }
 
 NdArray *Sigmoid::derive(NdArray *in)
 {
     NdArray *out = new NdArray(true, this->n_->shape());
 
-    int grid_row_cnt = (out->shape()[0] / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (out->shape()[1] / THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (this->features() / THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
     dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
-    k_sigmoid_derive<<<grid_dims, block_dims>>>(in->data(), this->n_->data(), out->data(), out->shape()[0], out->shape()[1]);
+    k_sigmoid_derive<<<grid_dims, block_dims>>>(in->data(), this->n_->data(), out->data(), this->batch_size(), this->features());
 
     delete in;
     return out;
