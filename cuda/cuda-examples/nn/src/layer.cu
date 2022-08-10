@@ -158,6 +158,8 @@ __global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int ba
             {
                 for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
                 {
+                    int in_elem_idx = (batch_idx * filter_cnt * in_cnt) + (filter_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx);
+
                     for (int w_row_idx = 0; w_row_idx < w_row_cnt; w_row_idx++)
                     {
                         for (int w_col_idx = 0; w_col_idx < w_col_cnt; w_col_idx++)
@@ -165,7 +167,7 @@ __global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int ba
                             int out_elem_idx = (batch_idx * channel_cnt * out_cnt) + (channel_idx * out_cnt) + ((w_row_idx + (in_row_idx * stride_row_cnt)) * out_col_cnt + (w_col_idx + (in_col_idx * stride_col_cnt)));
 
                             out[out_elem_idx] +=
-                                (in[(batch_idx * channel_cnt * in_cnt) + (channel_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx)] *
+                                (in[in_elem_idx] *
                                  w[(filter_idx * channel_cnt * w_cnt) + (channel_idx * w_cnt) + (w_row_idx * w_col_cnt + w_col_idx)]);
                         }
                     }
