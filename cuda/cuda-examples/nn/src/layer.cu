@@ -290,6 +290,20 @@ Layer::~Layer()
     delete this->n_;
 }
 
+void Layer::summarize()
+{
+    std::string cls_name(typeid(*this).name());
+    for (int i = cls_name.size(); i < 26; i++)
+    {
+        cls_name.push_back(' ');
+    }
+
+    printf("%s\t", cls_name.c_str());
+    this->input_shape().print();
+    printf(" -> ");
+    this->output_shape().print();
+}
+
 int Layer::batch_size()
 {
     return this->n_->shape()[0];
@@ -319,6 +333,11 @@ Parameters::~Parameters()
     delete this->b_;
     delete this->dw_;
     delete this->db_;
+}
+
+size_t Parameters::count()
+{
+    return this->w_->count() + this->b_->count();
 }
 
 void Parameters::zero_grad()

@@ -51,6 +51,20 @@ Optimizer::Optimizer(std::vector<Parameters *> model_params, float learning_rate
     this->lr_ = learning_rate;
 }
 
+void Optimizer::summarize()
+{
+    std::string cls_name(typeid(*this).name());
+    printf("%s", cls_name.c_str());
+
+    size_t params_cnt = 0;
+    for (Parameters *params : this->model_params_)
+    {
+        params_cnt += params->count();
+    }
+
+    printf("\n\tParameters: %zd\t\tLearning rate: %f", params_cnt, this->lr_);
+}
+
 SGD::SGD(std::vector<Parameters *> model_params, float learning_rate)
     : Optimizer(model_params, learning_rate)
 {

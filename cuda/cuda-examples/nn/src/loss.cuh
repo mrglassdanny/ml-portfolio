@@ -11,6 +11,8 @@ namespace nn
         public:
             virtual void evaluate(NdArray *p, NdArray *y, NdArray *out) = 0;
             virtual NdArray *derive(NdArray *p, NdArray *y) = 0;
+
+            virtual void summarize();
         };
 
         class MSE : public Loss

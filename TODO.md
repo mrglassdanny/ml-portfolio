@@ -9,8 +9,7 @@
 - ~~performance~~
 - ~~csv~~
 - restructure project
-- C++ 11+ features (shared/unique ptr, etc.) ?
 - ~~check for leaks~~
 - layer validation
-- model summary
+- ~~model summary~~
 - documentation

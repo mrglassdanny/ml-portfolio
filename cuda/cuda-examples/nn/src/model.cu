@@ -125,6 +125,44 @@ Shape Model::output_shape()
     return this->last_layer()->output_shape();
 }
 
+void Model::summarize()
+{
+    printf("=========================== MODEL SUMMARY ===========================\n");
+
+    printf("\nLayers: (%d)\n", this->lyrs_.size());
+    for (int lyr_idx = 0; lyr_idx < this->lyrs_.size(); lyr_idx++)
+    {
+        printf("\t%d\t", lyr_idx + 1);
+        this->lyrs_[lyr_idx]->summarize();
+        printf("\n");
+    }
+    printf("\n");
+
+    printf("Loss: ");
+    if (this->loss_ != nullptr)
+    {
+        this->loss_->summarize();
+    }
+    else
+    {
+        printf("None");
+    }
+    printf("\n\n");
+
+    printf("Optimizer: ");
+    if (this->optim_ != nullptr)
+    {
+        this->optim_->summarize();
+    }
+    else
+    {
+        printf("None");
+    }
+    printf("\n\n");
+
+    printf("=====================================================================\n");
+}
+
 void Model::add_layer(Layer *lyr)
 {
     this->lyrs_.push_back(lyr);

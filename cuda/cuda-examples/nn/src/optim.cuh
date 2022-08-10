@@ -20,6 +20,8 @@ namespace nn
             Optimizer(std::vector<Parameters *> model_params_, float learning_rate);
 
             virtual void step(int batch_size) = 0;
+
+            virtual void summarize();
         };
 
         class SGD : public Optimizer

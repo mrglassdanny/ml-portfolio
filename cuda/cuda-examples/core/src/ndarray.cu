@@ -87,8 +87,6 @@ void Shape::print()
             printf("x");
         }
     }
-
-    printf("\n");
 }
 
 std::vector<int> Shape::dims()

@@ -36,6 +36,8 @@ namespace nn
         Shape input_shape();
         Shape output_shape();
 
+        void summarize();
+
         void add_layer(Layer *lyr);
         void set_loss(Loss *loss);
         void set_optimizer(Optimizer *optim);

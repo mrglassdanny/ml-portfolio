@@ -32,6 +32,12 @@ __global__ void k_mse_derive(float *p, float *y, float *out, int cnt)
     }
 }
 
+void Loss::summarize()
+{
+    std::string cls_name(typeid(*this).name());
+    printf("%s", cls_name.c_str());
+}
+
 void MSE::evaluate(NdArray *p, NdArray *y, NdArray *out)
 {
     k_mse_evaluate<<<p->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(p->data(), y->data(), out->data(), p->count());

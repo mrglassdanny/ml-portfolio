@@ -20,6 +20,8 @@ namespace nn
             virtual Shape input_shape() = 0;
             virtual Shape output_shape() = 0;
 
+            virtual void summarize();
+
             int batch_size();
 
             NdArray *neurons();
@@ -37,6 +39,8 @@ namespace nn
         public:
             Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out);
             ~Parameters();
+
+            size_t count();
 
             void zero_grad();
 
