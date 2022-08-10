@@ -180,6 +180,16 @@ void Model::sigmoid()
     this->add_layer(new Sigmoid(this->output_shape()));
 }
 
+void Model::tanh()
+{
+    this->add_layer(new Tanh(this->output_shape()));
+}
+
+void Model::relu()
+{
+    this->add_layer(new ReLU(this->output_shape()));
+}
+
 int Model::batch_size()
 {
     return this->first_layer()->batch_size();

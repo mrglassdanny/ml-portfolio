@@ -3,8 +3,8 @@
 
 - ~~gradient check~~
 - ~~conv2d~~
-- relu
-- tanh
+- ~~relu~~
+- ~~tanh~~
 - batch norm
 - ~~performance~~
 - ~~csv~~

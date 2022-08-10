@@ -48,6 +48,8 @@ namespace nn
         void conv2d(Shape in_shape, Shape filter_shape, Stride stride);
         void conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride);
         void sigmoid();
+        void tanh();
+        void relu();
 
         std::vector<Layer *> layers();
         std::vector<Parameters *> parameters();

@@ -11,8 +11,11 @@ int main(int argc, char **argv)
 	model->conv2d(Shape(1, 2, 16, 16), Shape(4, 2, 2, 2), Stride(2, 2));
 	model->conv2d(Shape(4, 4, 2, 2), Stride(2, 2));
 	model->conv2d(Shape(4, 4, 2, 2), Stride(1, 1));
+	model->tanh();
 	model->linear(16);
+	model->tanh();
 	model->linear(1);
+	model->sigmoid();
 	model->set_loss(new MSE());
 
 	NdArray *x = NdArray::rands(true, Shape(1, 2, 16, 16), 0.0f, 1.0f);

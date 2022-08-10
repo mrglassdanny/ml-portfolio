@@ -149,5 +149,23 @@ namespace nn
             virtual void evaluate(NdArray *out) override;
             virtual NdArray *derive(NdArray *in) override;
         };
+
+        class Tanh : public Activation
+        {
+        public:
+            Tanh(Shape shape);
+
+            virtual void evaluate(NdArray *out) override;
+            virtual NdArray *derive(NdArray *in) override;
+        };
+
+        class ReLU : public Activation
+        {
+        public:
+            ReLU(Shape shape);
+
+            virtual void evaluate(NdArray *out) override;
+            virtual NdArray *derive(NdArray *in) override;
+        };
     }
 }
