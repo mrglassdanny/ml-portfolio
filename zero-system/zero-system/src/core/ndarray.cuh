@@ -68,6 +68,7 @@ public:
 	static NdArray* ones(bool cuda, Shape shape);
 	static NdArray* full(bool cuda, Shape shape, float val);
 	static NdArray* random(bool cuda, Shape shape, float mean, float stddev);
+	static NdArray *random_ints(bool cuda, Shape shape, int upper_bound);
 
 	static NdArray* encode_one_hot(NdArray* src);
 
@@ -97,6 +98,7 @@ public:
 	void ones();
 	void full(float val);
 	void random(float mean, float stddev);
+	void random_ints(int upper_bound);
 
 	void pad(int row_cnt, int col_cnt);
 

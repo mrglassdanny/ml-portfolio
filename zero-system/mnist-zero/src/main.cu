@@ -102,11 +102,7 @@ int main(int argc, char **argv)
 {
 	printf("MNIST-ZERO\n\n");
 
-	auto arr = NdArray::full(true, Shape(10, 1), 5.0f);
-	for (int i = 0; i < arr->count(); i++)
-	{
-		arr->set_val(i, rand() % 10);
-	}
+	auto arr = NdArray::random_ints(true, Shape(10, 1), 10);
 
 	arr->print();
 

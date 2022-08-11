@@ -407,6 +407,15 @@ NdArray *NdArray::random(bool cuda, Shape shape, float mean, float stddev)
     return arr;
 }
 
+NdArray *NdArray::random_ints(bool cuda, Shape shape, int upper_bound)
+{
+    NdArray *arr = new NdArray(cuda, shape);
+
+    arr->random_ints(upper_bound);
+
+    return arr;
+}
+
 NdArray *NdArray::encode_one_hot(NdArray *src)
 {
     int lst_dim_idx = src->num_dims() - 1;
@@ -484,7 +493,7 @@ void NdArray::print_mtx(float *data, int row_cnt, int col_cnt, const char *white
 
         printf("\n");
     }
-    printf("%s]\n",whitespace_str);
+    printf("%s]\n", whitespace_str);
 }
 
 void NdArray::print()
@@ -536,8 +545,8 @@ void NdArray::print()
                 int row_cnt = this->shape_[2];
                 int col_cnt = this->shape_[3];
 
-                NdArray::print_mtx(&this->data_[(i * mtx_cnt * row_cnt * col_cnt) + (j * row_cnt * col_cnt)], 
-                row_cnt, col_cnt, "      ");
+                NdArray::print_mtx(&this->data_[(i * mtx_cnt * row_cnt * col_cnt) + (j * row_cnt * col_cnt)],
+                                   row_cnt, col_cnt, "      ");
             }
             printf("   ]\n");
         }
@@ -545,7 +554,7 @@ void NdArray::print()
     }
     break;
     default:
-    break;
+        break;
     }
 
     printf("\n");
@@ -706,24 +715,21 @@ void NdArray::full(float val)
 
 void NdArray::random(float mean, float stddev)
 {
-    bool orig_cuda = this->cuda_;
+    std::random_device rd;
+    std::mt19937 gen(rd());
 
-    this->to_cpu();
-
+    for (int i = 0; i < this->count(); i++)
     {
-        std::random_device rd;
-        std::mt19937 gen(rd());
-
-        for (int i = 0; i < this->shape_.dims_size(); i++)
-        {
-            std::normal_distribution<float> d(mean, stddev);
-            this->data_[i] = d(gen);
-        }
+        std::normal_distribution<float> d(mean, stddev);
+        this->set_val(i, d(gen));
     }
+}
 
-    if (orig_cuda)
+void NdArray::random_ints(int upper_bound)
+{
+    for (int i = 0; i < this->count(); i++)
     {
-        this->to_cuda();
+        this->set_val(i, rand() % upper_bound);
     }
 }
 
@@ -763,19 +769,19 @@ void NdArray::pad(int pad_row_cnt, int pad_col_cnt)
 
 float NdArray::sum()
 {
-    float sum = 0.0f;
+    float sum_val = 0.0f;
 
     for (int i = 0; i < this->count(); i++)
     {
-        sum += this->get_val(i);
+        sum_val += this->get_val(i);
     }
 
-    return sum;
+    return sum_val;
 }
 
 float NdArray::min()
 {
-    float min = FLT_MAX;
+    float min_val = FLT_MAX;
 
     float val = 0;
 
@@ -783,18 +789,18 @@ float NdArray::min()
     {
         val = this->get_val(i);
 
-        if (val < min)
+        if (val < min_val)
         {
-            min = val;
+            min_val = val;
         }
     }
 
-    return min;
+    return min_val;
 }
 
 float NdArray::max()
 {
-    float max = -FLT_MAX;
+    float max_val = -FLT_MAX;
 
     float val = 0;
 
@@ -802,13 +808,13 @@ float NdArray::max()
     {
         val = this->get_val(i);
 
-        if (val > max)
+        if (val > max_val)
         {
-            max = val;
+            max_val = val;
         }
     }
 
-    return max;
+    return max_val;
 }
 
 float NdArray::mean()
@@ -818,17 +824,17 @@ float NdArray::mean()
 
 float NdArray::stddev()
 {
-    float stddev = 0.0f;
+    float stddev_val = 0.0f;
 
-    float mean = this->mean();
+    float mean_val = this->mean();
 
     for (int i = 0; i < this->count(); i++)
     {
-        float diff = this->get_val(i) - mean;
-        stddev = diff * diff;
+        float diff = this->get_val(i) - mean_val;
+        stddev_val = diff * diff;
     }
 
-    stddev /= this->count();
+    stddev_val /= this->count();
 
-    return sqrt(stddev);
+    return sqrt(stddev_val);
 }
