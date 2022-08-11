@@ -1,6 +1,6 @@
 #include "ndarray.cuh"
 
-__global__ void k_set_all(float* data, int cnt, float val)
+__global__ void k_set_all(float *data, int cnt, float val)
 {
     int tid = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -10,7 +10,7 @@ __global__ void k_set_all(float* data, int cnt, float val)
     }
 }
 
-__global__ void k_pad(float* dst, float* src, int dst_row_cnt, int dst_col_cnt, int src_row_cnt, int src_col_cnt, int pad_row_cnt, int pad_col_cnt)
+__global__ void k_pad(float *dst, float *src, int dst_row_cnt, int dst_col_cnt, int src_row_cnt, int src_col_cnt, int pad_row_cnt, int pad_col_cnt)
 {
     int src_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int src_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -74,7 +74,7 @@ int Shape::operator[](int idx) const
     return this->dims_[idx];
 }
 
-bool Shape::operator==(const Shape& other)
+bool Shape::operator==(const Shape &other)
 {
     if (this->dims_.size() != other.dims_.size())
     {
@@ -92,7 +92,7 @@ bool Shape::operator==(const Shape& other)
     return true;
 }
 
-bool Shape::operator!=(const Shape& other)
+bool Shape::operator!=(const Shape &other)
 {
     return !(*this == other);
 }
@@ -134,7 +134,7 @@ int Shape::dims_size()
     return size;
 }
 
-NdArray::NdArray(NdArray& src)
+NdArray::NdArray(NdArray &src)
 {
     this->cuda_ = src.cuda_;
     this->shape_ = src.shape_;
@@ -148,7 +148,7 @@ NdArray::NdArray(NdArray& src)
     }
     else
     {
-        this->data_ = (float*)malloc(size);
+        this->data_ = (float *)malloc(size);
         memcpy(this->data_, src.data_, size);
     }
 }
@@ -166,7 +166,7 @@ NdArray::NdArray(bool cuda, Shape shape)
     }
     else
     {
-        this->data_ = (float*)malloc(size);
+        this->data_ = (float *)malloc(size);
     }
 }
 
@@ -182,15 +182,15 @@ NdArray::~NdArray()
     }
 }
 
-NdArray* NdArray::from_csv(const char* path)
+NdArray *NdArray::from_csv(const char *path)
 {
-    FILE* file_ptr = fopen(path, "rb");
+    FILE *file_ptr = fopen(path, "rb");
 
     fseek(file_ptr, 0L, SEEK_END);
     long long file_size = FileUtils::get_file_size(path);
     rewind(file_ptr);
 
-    char* buf = (char*)malloc(file_size + 1);
+    char *buf = (char *)malloc(file_size + 1);
     memset(buf, 0, file_size + 1);
     fread(buf, 1, file_size, file_ptr);
 
@@ -230,7 +230,7 @@ NdArray* NdArray::from_csv(const char* path)
         row_cnt++;
     }
 
-    NdArray* ndarray = new NdArray(false, Shape(row_cnt, col_cnt));
+    NdArray *ndarray = new NdArray(false, Shape(row_cnt, col_cnt));
 
     char temp_buf[64];
     memset(temp_buf, 0, 64);
@@ -282,7 +282,7 @@ NdArray* NdArray::from_csv(const char* path)
     return ndarray;
 }
 
-void NdArray::to_csv(const char* path, NdArray* ndarray)
+void NdArray::to_csv(const char *path, NdArray *ndarray)
 {
     int dim_cnt = ndarray->num_dims();
 
@@ -290,7 +290,7 @@ void NdArray::to_csv(const char* path, NdArray* ndarray)
     {
         int cnt = ndarray->shape_[0];
 
-        FILE* file_ptr = fopen(path, "w");
+        FILE *file_ptr = fopen(path, "w");
 
         fprintf(file_ptr, "col\n");
 
@@ -307,7 +307,7 @@ void NdArray::to_csv(const char* path, NdArray* ndarray)
         int row_cnt = ndarray->shape_[0];
         int col_cnt = ndarray->shape_[1];
 
-        FILE* file_ptr = fopen(path, "w");
+        FILE *file_ptr = fopen(path, "w");
 
         for (int j = 0; j < col_cnt; j++)
         {
@@ -346,11 +346,11 @@ void NdArray::to_csv(const char* path, NdArray* ndarray)
     }
 }
 
-void NdArray::to_file(const char* path, NdArray* ndarray)
+void NdArray::to_file(const char *path, NdArray *ndarray)
 {
     bool orig_cuda = ndarray->cuda_;
 
-    FILE* file_ptr = fopen(path, "wb");
+    FILE *file_ptr = fopen(path, "wb");
 
     ndarray->to_cpu();
 
@@ -364,40 +364,87 @@ void NdArray::to_file(const char* path, NdArray* ndarray)
     }
 }
 
-NdArray* NdArray::zeros(bool cuda, Shape shape)
+NdArray *NdArray::zeros(bool cuda, Shape shape)
 {
-    NdArray* arr = new NdArray(cuda, shape);
+    NdArray *arr = new NdArray(cuda, shape);
 
     arr->zeros();
 
     return arr;
 }
 
-NdArray* NdArray::ones(bool cuda, Shape shape)
+NdArray *NdArray::ones(bool cuda, Shape shape)
 {
-    NdArray* arr = new NdArray(cuda, shape);
+    NdArray *arr = new NdArray(cuda, shape);
 
     arr->ones();
 
     return arr;
 }
 
-NdArray* NdArray::full(bool cuda, Shape shape, float val)
+NdArray *NdArray::full(bool cuda, Shape shape, float val)
 {
-    NdArray* arr = new NdArray(cuda, shape);
+    NdArray *arr = new NdArray(cuda, shape);
 
     arr->full(val);
 
     return arr;
 }
 
-NdArray* NdArray::rands(bool cuda, Shape shape, float mean, float stddev)
+NdArray *NdArray::rands(bool cuda, Shape shape, float mean, float stddev)
 {
-    NdArray* arr = new NdArray(cuda, shape);
+    NdArray *arr = new NdArray(cuda, shape);
 
     arr->rands(mean, stddev);
 
     return arr;
+}
+
+void NdArray::print_vec(float *data, int cnt)
+{
+    printf("[ ");
+    for (int i = 0; i < cnt; i++)
+    {
+        float val = data[i];
+
+        if (i == cnt - 1)
+        {
+            if (val >= 0.0f)
+            {
+                printf(" %f ", val);
+            }
+            else
+            {
+                printf("%f ", val);
+            }
+        }
+        else
+        {
+            if (val >= 0.0f)
+            {
+                printf(" %f\t", val);
+            }
+            else
+            {
+                printf("%f\t", val);
+            }
+        }
+    }
+    printf(" ]");
+}
+
+void NdArray::print_mtx(float *data, int row_cnt, int col_cnt, const char *whitespace_str)
+{
+    printf("%s[\n", whitespace_str);
+    for (int i = 0; i < row_cnt; i++)
+    {
+        printf("%s   ", whitespace_str);
+
+        NdArray::print_vec(&data[i * col_cnt], col_cnt);
+
+        printf("\n");
+    }
+    printf("%s]\n",whitespace_str);
 }
 
 void NdArray::print()
@@ -413,248 +460,52 @@ void NdArray::print()
     {
     case 1:
     {
-        int cnt = this->count();
-        printf("[ ");
-        for (int i = 0; i < cnt; i++)
-        {
-            float val = this->data_[i];
-
-            if (i == cnt - 1)
-            {
-                if (val >= 0.0f)
-                {
-                    printf(" %f", val);
-                }
-                else
-                {
-                    printf("%f", val);
-                }
-            }
-            else
-            {
-                if (val >= 0.0f)
-                {
-                    printf(" %f\t", val);
-                }
-                else
-                {
-                    printf("%f\t", val);
-                }
-            }
-        }
-        printf(" ]");
+        NdArray::print_vec(this->data_, this->count());
     }
     break;
     case 2:
     {
-        int row_cnt = this->shape_[0];
-        int col_cnt = this->shape_[1];
-
-        printf("[");
-        for (int i = 0; i < row_cnt; i++)
-        {
-            if (i == 0)
-            {
-                printf(" [ ");
-            }
-            else
-            {
-                printf("  [ ");
-            }
-
-            for (int j = 0; j < col_cnt; j++)
-            {
-                float val = this->data_[i * col_cnt + j];
-
-                if (j == col_cnt - 1)
-                {
-                    if (val >= 0.0f)
-                    {
-                        printf(" %f", val);
-                    }
-                    else
-                    {
-                        printf("%f", val);
-                    }
-                }
-                else
-                {
-                    if (val >= 0.0f)
-                    {
-                        printf(" %f\t", val);
-                    }
-                    else
-                    {
-                        printf("%f\t", val);
-                    }
-                }
-            }
-
-            if (i == row_cnt - 1)
-            {
-                printf(" ] ");
-            }
-            else
-            {
-                printf(" ],\n");
-            }
-        }
-        printf("]\n");
+        NdArray::print_mtx(this->data_, this->shape_[0], this->shape_[1], "");
     }
     break;
     case 3:
     {
+        int mtx_cnt = this->shape_[0];
+        int row_cnt = this->shape_[1];
+        int col_cnt = this->shape_[2];
 
-        int x_cnt = this->shape_[0];
-        int y_cnt = this->shape_[1];
-        int z_cnt = this->shape_[2];
-
-        printf("[");
-        for (int i = 0; i < x_cnt; i++)
+        printf("[\n");
+        for (int i = 0; i < mtx_cnt; i++)
         {
-            if (i == 0)
-            {
-                printf(" [ ");
-            }
-            else
-            {
-                printf("  [ ");
-            }
-
-            for (int j = 0; j < y_cnt; j++)
-            {
-
-                if (j == 0)
-                {
-                    printf(" [ ");
-                }
-                else
-                {
-                    printf("  [ ");
-                }
-
-                for (int k = 0; k < z_cnt; k++)
-                {
-                    float val = this->data_[(i * y_cnt * z_cnt) + (j * z_cnt) + k];
-
-                    if (k == z_cnt - 1)
-                    {
-                        if (val >= 0.0f)
-                        {
-                            printf(" %f", val);
-                        }
-                        else
-                        {
-                            printf("%f", val);
-                        }
-                    }
-                    else
-                    {
-                        if (val >= 0.0f)
-                        {
-                            printf(" %f\t", val);
-                        }
-                        else
-                        {
-                            printf("%f\t", val);
-                        }
-                    }
-                }
-
-                if (j == y_cnt - 1)
-                {
-                    printf(" ] ");
-                }
-                else
-                {
-                    printf(" ],\n");
-                }
-            }
-
-            if (i == x_cnt - 1)
-            {
-                printf(" ] ");
-            }
-            else
-            {
-                printf(" ],\n");
-            }
+            NdArray::print_mtx(&this->data_[i * row_cnt * col_cnt], row_cnt, col_cnt, "   ");
         }
-        printf("]\n");
+        printf("]");
     }
     break;
     case 4:
     {
-        for (int _i = 0; _i < this->shape_[0]; _i++)
+        int mtx_cnt = this->shape_[1];
+        int row_cnt = this->shape_[2];
+        int col_cnt = this->shape_[3];
+
+        printf("[\n");
+        for (int i = 0; i < this->shape_[0]; i++)
         {
-            for (int _j = 0; _j < this->shape_[1]; _j++)
+            printf("   [\n");
+            for (int j = 0; j < mtx_cnt; j++)
             {
                 int row_cnt = this->shape_[2];
                 int col_cnt = this->shape_[3];
 
-                printf("[");
-                for (int i = 0; i < row_cnt; i++)
-                {
-                    if (i == 0)
-                    {
-                        printf(" [ ");
-                    }
-                    else
-                    {
-                        printf("  [ ");
-                    }
-
-                    for (int j = 0; j < col_cnt; j++)
-                    {
-                        float val = this->data_[(_i * this->shape_[1] * row_cnt * col_cnt) + (_j * row_cnt * col_cnt) + (i * col_cnt + j)];
-
-                        if (j == col_cnt - 1)
-                        {
-                            if (val >= 0.0f)
-                            {
-                                printf(" %f", val);
-                            }
-                            else
-                            {
-                                printf("%f", val);
-                            }
-                        }
-                        else
-                        {
-                            if (val >= 0.0f)
-                            {
-                                printf(" %f\t", val);
-                            }
-                            else
-                            {
-                                printf("%f\t", val);
-                            }
-                        }
-                    }
-
-                    if (i == row_cnt - 1)
-                    {
-                        printf(" ] ");
-                    }
-                    else
-                    {
-                        printf(" ],\n");
-                    }
-                }
-                printf("]\n");
+                NdArray::print_mtx(&this->data_[(i * mtx_cnt * row_cnt * col_cnt) + (j * row_cnt * col_cnt)], 
+                row_cnt, col_cnt, "      ");
             }
+            printf("   ]\n");
         }
+        printf("]");
     }
     break;
     default:
-    {
-
-        printf("Data: \n");
-        for (int i = 0; i < this->shape_.dims_size(); i++)
-        {
-            printf("%d: %f\n", i, this->data_[i]);
-        }
-    }
     break;
     }
 
@@ -664,7 +515,7 @@ void NdArray::print()
     }
 }
 
-void NdArray::copy(NdArray* src)
+void NdArray::copy(NdArray *src)
 {
     this->cuda_ = src->cuda_;
     this->shape_ = src->shape_;
@@ -683,7 +534,7 @@ void NdArray::reshape(Shape shape)
     else
     {
         free(this->data_);
-        this->data_ = (float*)malloc(this->size());
+        this->data_ = (float *)malloc(this->size());
     }
 }
 
@@ -704,7 +555,7 @@ void NdArray::to_cpu()
     if (this->cuda_)
     {
         size_t size = this->size();
-        float* dst = (float*)malloc(size);
+        float *dst = (float *)malloc(size);
         cudaMemcpy(dst, this->data_, size, cudaMemcpyDeviceToHost);
         cudaFree(this->data_);
         this->data_ = dst;
@@ -717,7 +568,7 @@ void NdArray::to_cuda()
     if (!this->cuda_)
     {
         size_t size = this->size();
-        float* dst;
+        float *dst;
         cudaMalloc(&dst, size);
         cudaMemcpy(dst, this->data_, size, cudaMemcpyHostToDevice);
         free(this->data_);
@@ -763,7 +614,7 @@ void NdArray::set_val(int idx, float val)
     cudaMemcpy(&this->data_[idx], &val, sizeof(float), cudaMemcpyDefault);
 }
 
-float* NdArray::data()
+float *NdArray::data()
 {
     return this->data_;
 }
@@ -786,7 +637,7 @@ void NdArray::ones()
 {
     if (this->is_cuda())
     {
-        k_set_all << <(this->count() / THREADS_PER_BLOCK + 1), THREADS_PER_BLOCK >> > (this->data_, this->count(), 1.0f);
+        k_set_all<<<(this->count() / THREADS_PER_BLOCK + 1), THREADS_PER_BLOCK>>>(this->data_, this->count(), 1.0f);
     }
     else
     {
@@ -801,7 +652,7 @@ void NdArray::full(float val)
 {
     if (this->cuda_)
     {
-        k_set_all << <this->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK >> > (this->data_, this->count(), val);
+        k_set_all<<<this->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(this->data_, this->count(), val);
     }
     else
     {
@@ -837,7 +688,7 @@ void NdArray::rands(float mean, float stddev)
 
 void NdArray::pad(int pad_row_cnt, int pad_col_cnt)
 {
-    NdArray* prev = new NdArray(*this);
+    NdArray *prev = new NdArray(*this);
 
     this->change_dim(0, pad_row_cnt * 2 + prev->shape_[0]);
     this->change_dim(1, pad_col_cnt * 2 + prev->shape_[1]);
@@ -852,8 +703,8 @@ void NdArray::pad(int pad_row_cnt, int pad_col_cnt)
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
 
-        k_pad << <grid_dims, block_dims >> > (this->data(), prev->data(), this->shape_[0], this->shape_[1], prev->shape_[0], prev->shape_[1],
-            pad_row_cnt, pad_col_cnt);
+        k_pad<<<grid_dims, block_dims>>>(this->data(), prev->data(), this->shape_[0], this->shape_[1], prev->shape_[0], prev->shape_[1],
+                                         pad_row_cnt, pad_col_cnt);
     }
     else
     {

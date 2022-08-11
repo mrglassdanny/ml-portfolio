@@ -45,10 +45,13 @@ public:
 
 class NdArray
 {
-protected:
+private:
 	bool cuda_;
 	Shape shape_;
 	float* data_;
+
+	static void print_vec(float *data, int cnt);
+	static void print_mtx(float *data, int row_cnt, int col_cnt, const char *whitespace_str);
 
 public:
 	NdArray(NdArray& src);
@@ -64,7 +67,9 @@ public:
 	static NdArray* full(bool cuda, Shape shape, float val);
 	static NdArray* rands(bool cuda, Shape shape, float mean, float stddev);
 
+	
 	void print();
+	
 	void copy(NdArray* src);
 	void reshape(Shape shape);
 	void change_dim(int dim_idx, int dim);
