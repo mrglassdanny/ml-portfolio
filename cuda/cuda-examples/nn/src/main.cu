@@ -11,9 +11,9 @@ int main(int argc, char **argv)
 
 	 model->conv2d(Shape(1, 2, 16, 16), Shape(4, 2, 2, 2), Stride{2, 2});
 	 model->tanh();
-	 model->conv2d(Shape(4, 4, 2, 2), Stride{2, 2});
-	 model->tanh();
 	 model->conv2d(Shape(4, 4, 2, 2), Stride{1, 1});
+	 model->tanh();
+	 model->conv2d(Shape(4, 4, 2, 2), Stride{2, 2});
 	 model->tanh();
 	 model->linear(16);
 	 model->tanh();
@@ -27,6 +27,8 @@ int main(int argc, char **argv)
 	NdArray *y = NdArray::ones(true, model->output_shape());
 
 	model->summarize();
+
+	model->gradient_check(x, y, false);
 
 	return 0;
 }
