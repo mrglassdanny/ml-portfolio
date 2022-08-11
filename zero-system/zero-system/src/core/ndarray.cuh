@@ -37,8 +37,8 @@ public:
 	void print();
 
 	int operator[](int) const;
-	bool operator==(const Shape&);
-	bool operator!=(const Shape&);
+	bool operator==(const Shape &);
+	bool operator!=(const Shape &);
 	std::vector<int> dims();
 	int num_dims();
 	int dims_size();
@@ -49,33 +49,33 @@ class NdArray
 private:
 	bool cuda_;
 	Shape shape_;
-	float* data_;
+	float *data_;
 
 	static void print_vec(float *data, int cnt);
 	static void print_mtx(float *data, int row_cnt, int col_cnt, const char *whitespace_str);
 
 public:
-	NdArray(NdArray& src);
+	NdArray(NdArray &src);
 	NdArray(bool cuda, Shape shape);
 	~NdArray();
 
 	static NdArray *from_data(Shape shape, float *data);
 	static NdArray *from_csv(const char *path);
-	static void to_csv(const char* path, NdArray* arr);
-	static void to_file(const char* path, NdArray* arr);
+	static void to_csv(const char *path, NdArray *arr);
+	static void to_file(const char *path, NdArray *arr);
 
-	static NdArray* zeros(bool cuda, Shape shape);
-	static NdArray* ones(bool cuda, Shape shape);
-	static NdArray* full(bool cuda, Shape shape, float val);
-	static NdArray* random(bool cuda, Shape shape, float mean, float stddev);
+	static NdArray *zeros(bool cuda, Shape shape);
+	static NdArray *ones(bool cuda, Shape shape);
+	static NdArray *full(bool cuda, Shape shape, float val);
+	static NdArray *random(bool cuda, Shape shape, float mean, float stddev);
 	static NdArray *random_ints(bool cuda, Shape shape, int upper_bound);
 
-	static NdArray* encode_one_hot(NdArray* src);
+	static NdArray *one_hot(NdArray *src);
+	static NdArray *pad(NdArray *src, int pad_row_cnt, int pad_col_cnt);
 
-	
 	void print();
-	
-	void copy(NdArray* src);
+
+	void copy(NdArray *src);
 	void reshape(Shape shape);
 	void change_dim(int dim_idx, int dim);
 
@@ -86,25 +86,22 @@ public:
 	Shape shape();
 	int num_dims();
 	int dims_size();
-
-	int count();
 	size_t size();
 
-	float get_val(int idx);
-	void set_val(int idx, float val);
-
-	float* data();
-	void zeros();
-	void ones();
-	void full(float val);
-	void random(float mean, float stddev);
-	void random_ints(int upper_bound);
-
-	void pad(int row_cnt, int col_cnt);
-
+	int count();
 	float sum();
 	float min();
 	float max();
 	float mean();
 	float stddev();
+
+	float get_val(int idx);
+	void set_val(int idx, float val);
+
+	float *data();
+	void zeros();
+	void ones();
+	void full(float val);
+	void random(float mean, float stddev);
+	void random_ints(int upper_bound);
 };

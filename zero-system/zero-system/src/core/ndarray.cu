@@ -416,7 +416,7 @@ NdArray *NdArray::random_ints(bool cuda, Shape shape, int upper_bound)
     return arr;
 }
 
-NdArray *NdArray::encode_one_hot(NdArray *src)
+NdArray *NdArray::one_hot(NdArray *src)
 {
     int lst_dim_idx = src->num_dims() - 1;
 
@@ -435,15 +435,94 @@ NdArray *NdArray::encode_one_hot(NdArray *src)
     int max_val = src->max();
     int oh_dim = ((int)max_val) + 1;
 
-    std::vector<int> dims = src->shape().dims();
-    dims[lst_dim_idx] = oh_dim;
+    std::vector<int> dst_dims = src->shape().dims();
+    dst_dims[lst_dim_idx] = oh_dim;
 
-    NdArray *dst = NdArray::zeros(src->is_cuda(), Shape(dims));
+    NdArray *dst = NdArray::zeros(src->is_cuda(), Shape(dst_dims));
 
     for (int i = 0; i < src->count(); i++)
     {
         int val = (int)src->get_val(i);
         dst->set_val(i * oh_dim + val, 1.0f);
+    }
+
+    return dst;
+}
+
+NdArray *NdArray::pad(NdArray *src, int pad_row_cnt, int pad_col_cnt)
+{
+    if (src->num_dims() < 2)
+    {
+        THROW_ERROR("NDARRAY PAD ERROR: shape must have at least 2 dimensions");
+    }
+
+    int col_dim_idx = src->num_dims() - 1;
+    int row_dim_idx = col_dim_idx - 1;
+
+    int src_row_cnt = src->shape()[row_dim_idx];
+    int src_col_cnt = src->shape()[col_dim_idx];
+
+    std::vector<int> dst_dims;
+    for (int i = 0; i < row_dim_idx; i++)
+    {
+        dst_dims.push_back(src->shape()[i]);
+    }
+
+    int dst_row_cnt = src_row_cnt + (pad_row_cnt * 2);
+    int dst_col_cnt = src_col_cnt + (pad_col_cnt * 2);
+
+    dst_dims.push_back(dst_row_cnt);
+    dst_dims.push_back(dst_col_cnt);
+
+    NdArray *dst = NdArray::zeros(src->is_cuda(), Shape(dst_dims));
+
+    int grid_row_cnt = (src_row_cnt / THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (src_col_cnt / THREADS_PER_BLOCK) + 1;
+
+    dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+    dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+
+    switch (src->num_dims())
+    {
+    case 2:
+    {
+        float *src_data = src->data();
+        float *dst_data = dst->data();
+
+        k_pad<<<grid_dims, block_dims>>>(dst_data, src_data, dst_row_cnt, dst_col_cnt, src_row_cnt, src_col_cnt,
+                                         pad_row_cnt, pad_col_cnt);
+    }
+    break;
+    case 3:
+    {
+        for (int i = 0; i < src->shape()[0]; i++)
+        {
+            float *src_data = &src->data()[(i * src_row_cnt * src_col_cnt)];
+            float *dst_data = &dst->data()[(i * dst_row_cnt * dst_col_cnt)];
+
+            k_pad<<<grid_dims, block_dims>>>(dst_data, src_data, dst_row_cnt, dst_col_cnt, src_row_cnt, src_col_cnt,
+                                             pad_row_cnt, pad_col_cnt);
+        }
+    }
+    break;
+    case 4:
+    {
+        for (int i = 0; i < src->shape()[0]; i++)
+        {
+            for (int j = 0; j < src->shape()[1]; j++)
+            {
+                float *src_data = &src->data()[(i * src->shape()[1] * src_row_cnt * src_col_cnt) + (j * src_row_cnt * src_col_cnt)];
+                float *dst_data = &dst->data()[(i * dst->shape()[1] * dst_row_cnt * dst_col_cnt) + (j * dst_row_cnt * dst_col_cnt)];
+
+                k_pad<<<grid_dims, block_dims>>>(dst_data, src_data, dst_row_cnt, dst_col_cnt, src_row_cnt, src_col_cnt,
+                                                 pad_row_cnt, pad_col_cnt);
+            }
+        }
+    }
+    break;
+    default:
+        THROW_ERROR("NDARRAY PAD ERROR: shape must not have more than 4 dimensions");
+        break;
     }
 
     return dst;
@@ -642,14 +721,86 @@ int NdArray::dims_size()
     return this->shape_.dims_size();
 }
 
-int NdArray::count()
-{
-    return this->shape_.dims_size();
-}
-
 size_t NdArray::size()
 {
-    return sizeof(float) * this->shape_.dims_size();
+    return sizeof(float) * this->dims_size();
+}
+
+int NdArray::count()
+{
+    return this->dims_size();
+}
+
+float NdArray::sum()
+{
+    float sum_val = 0.0f;
+
+    for (int i = 0; i < this->count(); i++)
+    {
+        sum_val += this->get_val(i);
+    }
+
+    return sum_val;
+}
+
+float NdArray::min()
+{
+    float min_val = FLT_MAX;
+
+    float val = 0;
+
+    for (int i = 0; i < this->count(); i++)
+    {
+        val = this->get_val(i);
+
+        if (val < min_val)
+        {
+            min_val = val;
+        }
+    }
+
+    return min_val;
+}
+
+float NdArray::max()
+{
+    float max_val = -FLT_MAX;
+
+    float val = 0;
+
+    for (int i = 0; i < this->count(); i++)
+    {
+        val = this->get_val(i);
+
+        if (val > max_val)
+        {
+            max_val = val;
+        }
+    }
+
+    return max_val;
+}
+
+float NdArray::mean()
+{
+    return this->sum() / this->count();
+}
+
+float NdArray::stddev()
+{
+    float stddev_val = 0.0f;
+
+    float mean_val = this->mean();
+
+    for (int i = 0; i < this->count(); i++)
+    {
+        float diff = this->get_val(i) - mean_val;
+        stddev_val = diff * diff;
+    }
+
+    stddev_val /= this->count();
+
+    return sqrt(stddev_val);
 }
 
 float NdArray::get_val(int idx)
@@ -731,110 +882,4 @@ void NdArray::random_ints(int upper_bound)
     {
         this->set_val(i, rand() % upper_bound);
     }
-}
-
-void NdArray::pad(int pad_row_cnt, int pad_col_cnt)
-{
-    NdArray *prev = new NdArray(*this);
-
-    this->change_dim(0, pad_row_cnt * 2 + prev->shape_[0]);
-    this->change_dim(1, pad_col_cnt * 2 + prev->shape_[1]);
-
-    this->zeros();
-
-    if (this->cuda_)
-    {
-        int grid_row_cnt = (prev->shape_[0] / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (prev->shape_[1] / THREADS_PER_BLOCK) + 1;
-
-        dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
-
-        k_pad<<<grid_dims, block_dims>>>(this->data(), prev->data(), this->shape_[0], this->shape_[1], prev->shape_[0], prev->shape_[1],
-                                         pad_row_cnt, pad_col_cnt);
-    }
-    else
-    {
-        for (int i = 0; i < prev->shape_[0]; i++)
-        {
-            for (int j = 0; j < prev->shape_[1]; j++)
-            {
-                this->set_val((i + pad_row_cnt) * this->shape_[1] + (j + pad_col_cnt), prev->get_val(i * prev->shape_[1] + j));
-            }
-        }
-    }
-
-    delete prev;
-}
-
-float NdArray::sum()
-{
-    float sum_val = 0.0f;
-
-    for (int i = 0; i < this->count(); i++)
-    {
-        sum_val += this->get_val(i);
-    }
-
-    return sum_val;
-}
-
-float NdArray::min()
-{
-    float min_val = FLT_MAX;
-
-    float val = 0;
-
-    for (int i = 0; i < this->count(); i++)
-    {
-        val = this->get_val(i);
-
-        if (val < min_val)
-        {
-            min_val = val;
-        }
-    }
-
-    return min_val;
-}
-
-float NdArray::max()
-{
-    float max_val = -FLT_MAX;
-
-    float val = 0;
-
-    for (int i = 0; i < this->count(); i++)
-    {
-        val = this->get_val(i);
-
-        if (val > max_val)
-        {
-            max_val = val;
-        }
-    }
-
-    return max_val;
-}
-
-float NdArray::mean()
-{
-    return this->sum() / this->count();
-}
-
-float NdArray::stddev()
-{
-    float stddev_val = 0.0f;
-
-    float mean_val = this->mean();
-
-    for (int i = 0; i < this->count(); i++)
-    {
-        float diff = this->get_val(i) - mean_val;
-        stddev_val = diff * diff;
-    }
-
-    stddev_val /= this->count();
-
-    return sqrt(stddev_val);
 }

@@ -102,19 +102,13 @@ int main(int argc, char **argv)
 {
 	printf("MNIST-ZERO\n\n");
 
-	auto arr = NdArray::random_ints(true, Shape(10, 1), 10);
+	auto arr = NdArray::random(true, Shape(4, 4), 0.0f, 1.0f);
 
 	arr->print();
 
-	printf("COUNT: %d\n", arr->count());
-	printf("SUM: %f\n", arr->sum());
-	printf("MIN: %f\n", arr->min());
-	printf("MAX: %f\n", arr->max());
-	printf("MEAN: %f\n", arr->mean());
-	printf("STDDEV: %f\n", arr->stddev());
+	auto pad_arr = NdArray::pad(arr, 6, 1);
 
-	auto oh_arr = NdArray::encode_one_hot(arr);
-	oh_arr->print();
+	pad_arr->print();
 
 	return 0;
 }
