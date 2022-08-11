@@ -28,7 +28,7 @@ int main(int argc, char **argv)
 
 	model->summarize();
 
-	model->gradient_check(x, y, false);
+	model->validate_gradients(x, y, false);
 
 	return 0;
 }

@@ -340,7 +340,7 @@ void Model::summarize()
     printf("=====================================================================\n");
 }
 
-void Model::gradient_check(NdArray *x, NdArray *y, bool print_params)
+void Model::validate_gradients(NdArray *x, NdArray *y, bool print_params)
 {
     this->validate_layers();
     this->validate_loss();

@@ -17,9 +17,9 @@ namespace nn
     class Model
     {
     protected:
-        std::vector<Layer*> lyrs_;
-        Loss* loss_;
-        Optimizer* optim_;
+        std::vector<Layer *> lyrs_;
+        Loss *loss_;
+        Optimizer *optim_;
 
         struct Validations
         {
@@ -32,12 +32,26 @@ namespace nn
         Model();
         ~Model();
 
-        void add_layer(Layer* lyr);
-        std::vector<Layer*> layers();
-        std::vector<Parameters*> parameters();
-        Layer* first_layer();
-        Layer* last_layer();
+        NdArray *forward(NdArray *x);
+        float loss(NdArray *p, NdArray *y);
+        void backward(NdArray *p, NdArray *y);
+        void step();
+
+        Shape input_shape();
+        Shape output_shape();
+
         void validate_layers();
+        void validate_loss();
+        void validate_optimizer();
+        void validate_input(NdArray *x);
+        void validate_output(NdArray *y);
+        void validate_gradients(NdArray *x, NdArray *y, bool print_params);
+
+        void summarize();
+
+        void add_layer(Layer *lyr);
+        void set_loss(Loss *loss);
+        void set_optimizer(Optimizer *optim);
 
         void linear(int out_feature_cnt);
         void linear(int batch_size, int in_feature_cnt, int out_feature_cnt);
@@ -50,25 +64,13 @@ namespace nn
         void tanh();
         void relu();
 
-        void set_loss(Loss* loss);
-        void validate_loss();
-
-        void set_optimizer(Optimizer* optim);
-        void validate_optimizer();
-
-        Shape input_shape();
-        Shape output_shape();
-        void validate_input(NdArray* x);
-        void validate_output(NdArray* y);
-
-        NdArray* forward(NdArray* x);
-        float loss(NdArray* p, NdArray* y);
-        void backward(NdArray* p, NdArray* y);
-        void step();
+        std::vector<Layer *> layers();
+        std::vector<Parameters *> parameters();
+        Layer *first_layer();
+        Layer *last_layer();
 
         int batch_size();
-        void summarize();
-        void gradient_check(NdArray* x, NdArray* y, bool print_params);
-        void performance_check(NdArray* x, NdArray* y, int epoch_cnt);
+
+        void performance_check(NdArray *x, NdArray *y, int epoch_cnt);
     };
 }

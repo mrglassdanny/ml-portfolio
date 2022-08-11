@@ -68,7 +68,7 @@ namespace nn
 
         int batch_size();
         void summarize();
-        void gradient_check(NdArray *x, NdArray *y, bool print_params);
+        void validate_gradients(NdArray *x, NdArray *y, bool print_params);
         void performance_check(NdArray *x, NdArray *y, int epoch_cnt);
     };
 }

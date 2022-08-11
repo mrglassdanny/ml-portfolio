@@ -7,12 +7,12 @@ Model::Model()
     this->loss_ = nullptr;
     this->optim_ = nullptr;
 
-    this->validations_ = Validations{ false, false, false };
+    this->validations_ = Validations{false, false, false};
 }
 
 Model::~Model()
 {
-    for (Layer* lyr : this->lyrs_)
+    for (Layer *lyr : this->lyrs_)
     {
         delete lyr;
     }
@@ -28,39 +28,89 @@ Model::~Model()
     }
 }
 
-void Model::add_layer(Layer* lyr)
+NdArray *Model::forward(NdArray *x)
 {
-    this->lyrs_.push_back(lyr);
-}
+    this->validate_layers();
+    this->validate_input(x);
 
-std::vector<Layer*> Model::layers()
-{
-    return this->lyrs_;
-}
+    x->to_cuda();
 
-std::vector<Parameters*> Model::parameters()
-{
-    std::vector<Parameters*> params;
+    this->first_layer()->copy_neurons(x);
 
-    for (Layer* lyr : this->lyrs_)
+    for (int i = 0; i < this->lyrs_.size() - 1; i++)
     {
-        if (Learnable* lrn = dynamic_cast<Learnable*>(lyr))
-        {
-            params.push_back(lrn->parameters());
-        }
+        Layer *lyr = this->lyrs_[i];
+        Layer *nxt_lyr = this->lyrs_[i + 1];
+
+        nxt_lyr->neurons()->zeros();
+        lyr->evaluate(nxt_lyr->neurons());
     }
 
-    return params;
+    Layer *lst_lyr = this->last_layer();
+
+    NdArray *p = NdArray::zeros(true, lst_lyr->output_shape());
+    lst_lyr->evaluate(p);
+
+    return p;
 }
 
-Layer* Model::first_layer()
+float Model::loss(NdArray *p, NdArray *y)
 {
-    return this->lyrs_[0];
+    this->validate_loss();
+    this->validate_output(y);
+
+    p->to_cuda();
+    y->to_cuda();
+
+    NdArray *losses = NdArray::zeros(true, p->shape());
+
+    this->loss_->evaluate(p, y, losses);
+
+    float mean_loss = losses->sum() / losses->shape()[losses->num_dims() - 1];
+
+    delete losses;
+    return mean_loss;
 }
 
-Layer* Model::last_layer()
+void Model::backward(NdArray *p, NdArray *y)
 {
-    return this->lyrs_[this->lyrs_.size() - 1];
+    this->validate_layers();
+    this->validate_loss();
+    this->validate_output(y);
+
+    if (this->loss_ == nullptr)
+    {
+        return;
+    }
+
+    p->to_cuda();
+    y->to_cuda();
+
+    NdArray *loss_gradients = this->loss_->derive(p, y);
+
+    for (int i = this->lyrs_.size() - 1; i >= 0; i--)
+    {
+        loss_gradients = this->lyrs_[i]->derive(loss_gradients);
+    }
+
+    delete loss_gradients;
+}
+
+void Model::step()
+{
+    this->validate_optimizer();
+
+    this->optim_->step(this->batch_size());
+}
+
+Shape Model::input_shape()
+{
+    return this->first_layer()->input_shape();
+}
+
+Shape Model::output_shape()
+{
+    return this->last_layer()->output_shape();
 }
 
 void Model::validate_layers()
@@ -77,8 +127,8 @@ void Model::validate_layers()
 
     for (int i = 0; i < this->lyrs_.size() - 1; i++)
     {
-        Layer* lyr = this->lyrs_[i];
-        Layer* nxt_lyr = this->lyrs_[i + 1];
+        Layer *lyr = this->lyrs_[i];
+        Layer *nxt_lyr = this->lyrs_[i + 1];
 
         if (lyr->output_shape() != nxt_lyr->input_shape())
         {
@@ -86,67 +136,12 @@ void Model::validate_layers()
         }
     }
 
-    for (Layer* lyr : this->lyrs_)
+    for (Layer *lyr : this->lyrs_)
     {
         lyr->validate();
     }
 
     this->validations_.layers = true;
-}
-
-void Model::linear(int out_feature_cnt)
-{
-    this->add_layer(new Linear(this->output_shape(), Shape(this->batch_size(), out_feature_cnt)));
-}
-
-void Model::linear(int batch_size, int in_feature_cnt, int out_feature_cnt)
-{
-    this->add_layer(new Linear(Shape(batch_size, in_feature_cnt), Shape(batch_size, out_feature_cnt)));
-}
-
-void Model::conv2d(Shape filter_shape)
-{
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding{ 0, 0 }, Stride{ 1, 1 }));
-}
-
-void Model::conv2d(Shape filter_shape, Stride stride)
-{
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding{ 0, 0 }, stride));
-}
-
-void Model::conv2d(Shape filter_shape, Padding padding, Stride stride)
-{
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, padding, stride));
-}
-
-void Model::conv2d(Shape in_shape, Shape filter_shape, Stride stride)
-{
-    this->add_layer(new Conv2d(in_shape, filter_shape, Padding{ 0, 0 }, stride));
-}
-
-void Model::conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride)
-{
-    this->add_layer(new Conv2d(in_shape, filter_shape, padding, stride));
-}
-
-void Model::sigmoid()
-{
-    this->add_layer(new Sigmoid(this->output_shape()));
-}
-
-void Model::tanh()
-{
-    this->add_layer(new Tanh(this->output_shape()));
-}
-
-void Model::relu()
-{
-    this->add_layer(new ReLU(this->output_shape()));
-}
-
-void Model::set_loss(Loss* loss)
-{
-    this->loss_ = loss;
 }
 
 void Model::validate_loss()
@@ -164,11 +159,6 @@ void Model::validate_loss()
     this->validations_.loss = true;
 }
 
-void Model::set_optimizer(Optimizer* optim)
-{
-    this->optim_ = optim;
-}
-
 void Model::validate_optimizer()
 {
     if (this->validations_.optimizer)
@@ -184,17 +174,7 @@ void Model::validate_optimizer()
     this->validations_.optimizer = true;
 }
 
-Shape Model::input_shape()
-{
-    return this->first_layer()->input_shape();
-}
-
-Shape Model::output_shape()
-{
-    return this->last_layer()->output_shape();
-}
-
-void Model::validate_input(NdArray* x)
+void Model::validate_input(NdArray *x)
 {
     if (this->input_shape() != x->shape())
     {
@@ -202,7 +182,7 @@ void Model::validate_input(NdArray* x)
     }
 }
 
-void Model::validate_output(NdArray* y)
+void Model::validate_output(NdArray *y)
 {
     if (this->output_shape() != y->shape())
     {
@@ -210,125 +190,7 @@ void Model::validate_output(NdArray* y)
     }
 }
 
-NdArray* Model::forward(NdArray* x)
-{
-    this->validate_layers();
-    this->validate_input(x);
-
-    x->to_cuda();
-
-    this->first_layer()->copy_neurons(x);
-
-    for (int i = 0; i < this->lyrs_.size() - 1; i++)
-    {
-        Layer* lyr = this->lyrs_[i];
-        Layer* nxt_lyr = this->lyrs_[i + 1];
-
-        nxt_lyr->neurons()->zeros();
-        lyr->evaluate(nxt_lyr->neurons());
-    }
-
-    Layer* lst_lyr = this->last_layer();
-
-    NdArray* p = NdArray::zeros(true, lst_lyr->output_shape());
-    lst_lyr->evaluate(p);
-
-    return p;
-}
-
-float Model::loss(NdArray* p, NdArray* y)
-{
-    this->validate_loss();
-    this->validate_output(y);
-
-    p->to_cuda();
-    y->to_cuda();
-
-    NdArray* losses = NdArray::zeros(true, p->shape());
-
-    this->loss_->evaluate(p, y, losses);
-
-    float mean_loss = losses->sum() / losses->shape()[losses->num_dims() - 1];
-
-    delete losses;
-    return mean_loss;
-}
-
-void Model::backward(NdArray* p, NdArray* y)
-{
-    this->validate_layers();
-    this->validate_loss();
-    this->validate_output(y);
-
-    if (this->loss_ == nullptr)
-    {
-        return;
-    }
-
-    p->to_cuda();
-    y->to_cuda();
-
-    NdArray* loss_gradients = this->loss_->derive(p, y);
-
-    for (int i = this->lyrs_.size() - 1; i >= 0; i--)
-    {
-        loss_gradients = this->lyrs_[i]->derive(loss_gradients);
-    }
-
-    delete loss_gradients;
-}
-
-void Model::step()
-{
-    this->validate_optimizer();
-
-    this->optim_->step(this->batch_size());
-}
-
-int Model::batch_size()
-{
-    return this->first_layer()->batch_size();
-}
-
-void Model::summarize()
-{
-    printf("=========================== MODEL SUMMARY ===========================\n");
-
-    printf("\nLayers: (%d)\n", this->lyrs_.size());
-    for (int i = 0; i < this->lyrs_.size(); i++)
-    {
-        printf("\t%d\t", i + 1);
-        this->lyrs_[i]->summarize();
-        printf("\n");
-    }
-    printf("\n");
-
-    printf("Loss: ");
-    if (this->loss_ != nullptr)
-    {
-        this->loss_->summarize();
-    }
-    else
-    {
-        printf("None");
-    }
-    printf("\n\n");
-
-    printf("Optimizer: ");
-    if (this->optim_ != nullptr)
-    {
-        this->optim_->summarize();
-    }
-    else
-    {
-        printf("None");
-    }
-    printf("\n\n");
-
-    printf("=====================================================================\n");
-}
-
-void Model::gradient_check(NdArray* x, NdArray* y, bool print_params)
+void Model::validate_gradients(NdArray *x, NdArray *y, bool print_params)
 {
     this->validate_layers();
     this->validate_loss();
@@ -342,17 +204,17 @@ void Model::gradient_check(NdArray* x, NdArray* y, bool print_params)
     float agg_num_grad = 0.0f;
     float agg_grad_diff = 0.0f;
 
-    NdArray* p = this->forward(x);
+    NdArray *p = this->forward(x);
     this->backward(p, y);
     delete p;
 
     int param_idx = 0;
-    for (Parameters* params : this->parameters())
+    for (Parameters *params : this->parameters())
     {
-        NdArray* w = params->weights();
-        NdArray* b = params->biases();
-        NdArray* dw = params->weight_gradients();
-        NdArray* db = params->bias_gradients();
+        NdArray *w = params->weights();
+        NdArray *b = params->biases();
+        NdArray *dw = params->weight_gradients();
+        NdArray *db = params->bias_gradients();
 
         for (int i = 0; i < w->count(); i++)
         {
@@ -426,18 +288,161 @@ void Model::gradient_check(NdArray* x, NdArray* y, bool print_params)
     else
     {
         printf("GRADIENT CHECK RESULT: %f\n", (agg_grad_diff) / (agg_ana_grad + agg_num_grad));
+
+        if ((agg_grad_diff) / (agg_ana_grad + agg_num_grad) > EPSILON)
+        {
+            THROW_ERROR("MODEL GRADIENTS VALIDATION FAILED");
+        }
     }
 }
 
-void Model::performance_check(NdArray* x, NdArray* y, int epoch_cnt)
+void Model::summarize()
 {
-    CudaStopWatch* sw = new CudaStopWatch();
+    printf("=========================== MODEL SUMMARY ===========================\n");
+
+    printf("\nLayers: (%d)\n", this->lyrs_.size());
+    for (int i = 0; i < this->lyrs_.size(); i++)
+    {
+        printf("\t%d\t", i + 1);
+        this->lyrs_[i]->summarize();
+        printf("\n");
+    }
+    printf("\n");
+
+    printf("Loss: ");
+    if (this->loss_ != nullptr)
+    {
+        this->loss_->summarize();
+    }
+    else
+    {
+        printf("None");
+    }
+    printf("\n\n");
+
+    printf("Optimizer: ");
+    if (this->optim_ != nullptr)
+    {
+        this->optim_->summarize();
+    }
+    else
+    {
+        printf("None");
+    }
+    printf("\n\n");
+
+    printf("=====================================================================\n");
+}
+
+void Model::add_layer(Layer *lyr)
+{
+    this->lyrs_.push_back(lyr);
+}
+
+void Model::set_loss(Loss *loss)
+{
+    this->loss_ = loss;
+}
+
+void Model::set_optimizer(Optimizer *optim)
+{
+    this->optim_ = optim;
+}
+
+void Model::linear(int out_feature_cnt)
+{
+    this->add_layer(new Linear(this->output_shape(), Shape(this->batch_size(), out_feature_cnt)));
+}
+
+void Model::linear(int batch_size, int in_feature_cnt, int out_feature_cnt)
+{
+    this->add_layer(new Linear(Shape(batch_size, in_feature_cnt), Shape(batch_size, out_feature_cnt)));
+}
+
+void Model::conv2d(Shape filter_shape)
+{
+    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding{0, 0}, Stride{1, 1}));
+}
+
+void Model::conv2d(Shape filter_shape, Stride stride)
+{
+    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding{0, 0}, stride));
+}
+
+void Model::conv2d(Shape filter_shape, Padding padding, Stride stride)
+{
+    this->add_layer(new Conv2d(this->output_shape(), filter_shape, padding, stride));
+}
+
+void Model::conv2d(Shape in_shape, Shape filter_shape, Stride stride)
+{
+    this->add_layer(new Conv2d(in_shape, filter_shape, Padding{0, 0}, stride));
+}
+
+void Model::conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride)
+{
+    this->add_layer(new Conv2d(in_shape, filter_shape, padding, stride));
+}
+
+void Model::sigmoid()
+{
+    this->add_layer(new Sigmoid(this->output_shape()));
+}
+
+void Model::tanh()
+{
+    this->add_layer(new Tanh(this->output_shape()));
+}
+
+void Model::relu()
+{
+    this->add_layer(new ReLU(this->output_shape()));
+}
+
+std::vector<Layer *> Model::layers()
+{
+    return this->lyrs_;
+}
+
+std::vector<Parameters *> Model::parameters()
+{
+    std::vector<Parameters *> params;
+
+    for (Layer *lyr : this->lyrs_)
+    {
+        if (Learnable *lrn = dynamic_cast<Learnable *>(lyr))
+        {
+            params.push_back(lrn->parameters());
+        }
+    }
+
+    return params;
+}
+
+Layer *Model::first_layer()
+{
+    return this->lyrs_[0];
+}
+
+Layer *Model::last_layer()
+{
+    return this->lyrs_[this->lyrs_.size() - 1];
+}
+
+int Model::batch_size()
+{
+    return this->first_layer()->batch_size();
+}
+
+void Model::performance_check(NdArray *x, NdArray *y, int epoch_cnt)
+{
+    CudaStopWatch *sw = new CudaStopWatch();
 
     sw->start();
 
     for (int i = 0; i < epoch_cnt; i++)
     {
-        NdArray* p = this->forward(x);
+        NdArray *p = this->forward(x);
         this->loss(p, y);
         this->backward(p, y);
         this->step();
