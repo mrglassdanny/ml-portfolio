@@ -82,8 +82,8 @@ void SGD::step(int batch_size)
         int w_cnt = w->count();
         int b_cnt = b->count();
 
-        k_sgd_weight_step << <w_cnt / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK >> > (w->data(), dw->data(), w_cnt, this->lr_, batch_size);
-        k_sgd_bias_step << <b_cnt / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK >> > (b->data(), db->data(), b_cnt, this->lr_, batch_size);
+        k_sgd_weight_step << <w_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK >> > (w->data(), dw->data(), w_cnt, this->lr_, batch_size);
+        k_sgd_bias_step << <b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK >> > (b->data(), db->data(), b_cnt, this->lr_, batch_size);
 
         params->zero_grad();
     }
@@ -126,9 +126,9 @@ void SGDMomentum::step(int batch_size)
         int w_cnt = w->count();
         int b_cnt = b->count();
 
-        k_sgd_momentum_weight_step << <w_cnt / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK >> > (w->data(), dw->data(), vdw->data(),
+        k_sgd_momentum_weight_step << <w_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK >> > (w->data(), dw->data(), vdw->data(),
             w_cnt, this->lr_, batch_size, this->momentum_);
-        k_sgd_momentum_bias_step << <b_cnt / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK >> > (b->data(), db->data(), vdb->data(),
+        k_sgd_momentum_bias_step << <b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK >> > (b->data(), db->data(), vdb->data(),
             b_cnt, this->lr_, batch_size, this->momentum_);
 
         params->zero_grad();

@@ -3,7 +3,7 @@
 
 - ~~gradient check~~
 - ~~conv2d~~
-- padding
+- ~~padding~~
 - fix loss calculation
 - ~~relu~~
 - ~~tanh~~

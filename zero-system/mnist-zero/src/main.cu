@@ -102,5 +102,8 @@ int main(int argc, char **argv)
 {
 	printf("MNIST-ZERO\n\n");
 
+	auto arr = NdArray::ones(false, Shape(3, 5));
+	arr->print();
+
 	return 0;
 }

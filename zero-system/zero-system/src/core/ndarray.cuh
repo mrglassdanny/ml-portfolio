@@ -17,8 +17,6 @@
 #include "util.cuh"
 #include "err.cuh"
 
-#define THREADS_PER_BLOCK 32
-
 class Shape
 {
 private:

@@ -14,6 +14,8 @@
 #include <device_launch_parameters.h>
 #include <device_atomic_functions.h>
 
+#define CUDA_THREADS_PER_BLOCK 32
+
 class StopWatch
 {
 public:

@@ -124,11 +124,11 @@ Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride strid
 
 void Conv2d::evaluate(NdArray* out)
 {
-    int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (this->filters() / THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (this->filters() / CUDA_THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-    dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+    dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
     NdArray* n = this->n_;
     NdArray* w = this->params_->weights();
@@ -148,11 +148,11 @@ NdArray* Conv2d::derive(NdArray* in)
     NdArray* db = this->params_->bias_gradients();
 
     {
-        int grid_row_cnt = (this->filters() / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (this->channels() / THREADS_PER_BLOCK) + 1;
+        int grid_row_cnt = (this->filters() / CUDA_THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (this->channels() / CUDA_THREADS_PER_BLOCK) + 1;
 
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+        dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
         k_conv2d_inc_param_derivatives << <grid_dims, block_dims >> > (in->data(), n->data(), dw->data(), db->data(), this->batch_size(), this->channels(), this->filters(),
             this->out_feature_rows(), this->out_feature_cols(), (this->out_feature_rows() * this->out_feature_cols()),
@@ -164,11 +164,11 @@ NdArray* Conv2d::derive(NdArray* in)
     NdArray* out = NdArray::zeros(true, this->input_shape());
 
     {
-        int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (this->channels() / THREADS_PER_BLOCK) + 1;
+        int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (this->channels() / CUDA_THREADS_PER_BLOCK) + 1;
 
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+        dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
         k_conv2d_agg_derivatives << <grid_dims, block_dims >> > (in->data(), w->data(), out->data(), this->batch_size(), this->channels(), this->filters(),
             this->out_feature_rows(), this->out_feature_cols(), (this->out_feature_rows() * this->out_feature_cols()),

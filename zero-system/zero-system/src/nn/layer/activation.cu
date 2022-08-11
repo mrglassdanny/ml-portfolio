@@ -139,11 +139,11 @@ Sigmoid::Sigmoid(Shape shape)
 
 void Sigmoid::evaluate(NdArray *out)
 {
-    int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (this->features() / THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (this->features() / CUDA_THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-    dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+    dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
     k_sigmoid_evaluate<<<grid_dims, block_dims>>>(this->n_->data(), out->data(), this->batch_size(), this->features());
 }
@@ -152,11 +152,11 @@ NdArray *Sigmoid::derive(NdArray *in)
 {
     NdArray *out = new NdArray(true, this->n_->shape());
 
-    int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (this->features() / THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (this->features() / CUDA_THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-    dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+    dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
     k_sigmoid_derive<<<grid_dims, block_dims>>>(in->data(), this->n_->data(), out->data(), this->batch_size(), this->features());
 
@@ -171,11 +171,11 @@ Tanh::Tanh(Shape shape)
 
 void Tanh::evaluate(NdArray *out)
 {
-    int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (this->features() / THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (this->features() / CUDA_THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-    dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+    dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
     k_tanh_evaluate<<<grid_dims, block_dims>>>(this->n_->data(), out->data(), this->batch_size(), this->features());
 }
@@ -184,11 +184,11 @@ NdArray *Tanh::derive(NdArray *in)
 {
     NdArray *out = new NdArray(true, this->n_->shape());
 
-    int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (this->features() / THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (this->features() / CUDA_THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-    dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+    dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
     k_tanh_derive<<<grid_dims, block_dims>>>(in->data(), this->n_->data(), out->data(), this->batch_size(), this->features());
 
@@ -203,11 +203,11 @@ ReLU::ReLU(Shape shape)
 
 void ReLU::evaluate(NdArray *out)
 {
-    int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (this->features() / THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (this->features() / CUDA_THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-    dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+    dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
     k_relu_evaluate<<<grid_dims, block_dims>>>(this->n_->data(), out->data(), this->batch_size(), this->features());
 }
@@ -216,11 +216,11 @@ NdArray *ReLU::derive(NdArray *in)
 {
     NdArray *out = new NdArray(true, this->n_->shape());
 
-    int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (this->features() / THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (this->features() / CUDA_THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-    dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+    dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
     k_relu_derive<<<grid_dims, block_dims>>>(in->data(), this->n_->data(), out->data(), this->batch_size(), this->features());
 

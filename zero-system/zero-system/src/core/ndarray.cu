@@ -456,6 +456,9 @@ NdArray *NdArray::pad(NdArray *src, int pad_row_cnt, int pad_col_cnt)
         THROW_ERROR("NDARRAY PAD ERROR: shape must have at least 2 dimensions");
     }
 
+    bool orig_cuda = src->cuda_;
+    src->to_cuda();
+
     int col_dim_idx = src->num_dims() - 1;
     int row_dim_idx = col_dim_idx - 1;
 
@@ -474,13 +477,13 @@ NdArray *NdArray::pad(NdArray *src, int pad_row_cnt, int pad_col_cnt)
     dst_dims.push_back(dst_row_cnt);
     dst_dims.push_back(dst_col_cnt);
 
-    NdArray *dst = NdArray::zeros(src->is_cuda(), Shape(dst_dims));
+    NdArray *dst = NdArray::zeros(src->cuda_, Shape(dst_dims));
 
-    int grid_row_cnt = (src_row_cnt / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (src_col_cnt / THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (src_row_cnt / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (src_col_cnt / CUDA_THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-    dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+    dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
     switch (src->num_dims())
     {
@@ -523,6 +526,12 @@ NdArray *NdArray::pad(NdArray *src, int pad_row_cnt, int pad_col_cnt)
     default:
         THROW_ERROR("NDARRAY PAD ERROR: shape must not have more than 4 dimensions");
         break;
+    }
+
+    if (!orig_cuda)
+    {
+        src->to_cpu();
+        dst->to_cpu();
     }
 
     return dst;
@@ -838,7 +847,7 @@ void NdArray::ones()
 {
     if (this->is_cuda())
     {
-        k_set_all<<<(this->count() / THREADS_PER_BLOCK + 1), THREADS_PER_BLOCK>>>(this->data_, this->count(), 1.0f);
+        k_set_all<<<(this->count() / CUDA_THREADS_PER_BLOCK + 1), CUDA_THREADS_PER_BLOCK>>>(this->data_, this->count(), 1.0f);
     }
     else
     {
@@ -853,7 +862,7 @@ void NdArray::full(float val)
 {
     if (this->cuda_)
     {
-        k_set_all<<<this->count() / THREADS_PER_BLOCK + 1, THREADS_PER_BLOCK>>>(this->data_, this->count(), val);
+        k_set_all<<<this->count() / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(this->data_, this->count(), val);
     }
     else
     {

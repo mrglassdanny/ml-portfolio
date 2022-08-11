@@ -78,11 +78,11 @@ Linear::Linear(Shape in_shape, Shape out_shape)
 
 void Linear::evaluate(NdArray* out)
 {
-    int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (this->out_features() / THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (this->out_features() / CUDA_THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-    dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+    dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
     NdArray* n = this->n_;
     NdArray* w = this->params_->weights();
@@ -101,11 +101,11 @@ NdArray* Linear::derive(NdArray* in)
     NdArray* db = this->params_->bias_gradients();
 
     {
-        int grid_row_cnt = (this->weight_rows() / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (this->weight_cols() / THREADS_PER_BLOCK) + 1;
+        int grid_row_cnt = (this->weight_rows() / CUDA_THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (this->weight_cols() / CUDA_THREADS_PER_BLOCK) + 1;
 
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+        dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
         k_linear_inc_param_derivatives << <grid_dims, block_dims >> > (in->data(), n->data(), dw->data(), db->data(),
             this->batch_size(), this->out_features(), this->in_features(),
@@ -115,11 +115,11 @@ NdArray* Linear::derive(NdArray* in)
     NdArray* out = NdArray::zeros(true, this->input_shape());
 
     {
-        int grid_row_cnt = (this->batch_size() / THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (this->in_features() / THREADS_PER_BLOCK) + 1;
+        int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = (this->in_features() / CUDA_THREADS_PER_BLOCK) + 1;
 
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-        dim3 block_dims(THREADS_PER_BLOCK, THREADS_PER_BLOCK);
+        dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
         k_linear_agg_derivatives << <grid_dims, block_dims >> > (in->data(), w->data(), out->data(),
             this->batch_size(), this->out_features(), this->weight_cols(), this->in_features());
