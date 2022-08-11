@@ -6,6 +6,8 @@ Model::Model()
 {
     this->loss_ = nullptr;
     this->optim_ = nullptr;
+
+    this->validations_ = Validations{false, false, false};
 }
 
 Model::~Model()
@@ -63,6 +65,11 @@ Layer *Model::last_layer()
 
 void Model::validate_layers()
 {
+    if (this->validations_.layers)
+    {
+        return;
+    }
+
     if (this->lyrs_.size() == 0)
     {
         printf("MODEL VALIDATION FAILED: no layers\n");
@@ -80,6 +87,13 @@ void Model::validate_layers()
             exit(EXIT_FAILURE);
         }
     }
+
+    for (Layer *lyr : this->lyrs_)
+    {
+        lyr->validate();
+    }
+
+    this->validations_.layers = true;
 }
 
 void Model::linear(int out_feature_cnt)
@@ -94,12 +108,12 @@ void Model::linear(int batch_size, int in_feature_cnt, int out_feature_cnt)
 
 void Model::conv2d(Shape filter_shape)
 {
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding(0, 0), Stride(1, 1)));
+    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding{ 0, 0 }, Stride{ 1, 1 }));
 }
 
 void Model::conv2d(Shape filter_shape, Stride stride)
 {
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding(0, 0), stride));
+    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding{ 0, 0 }, stride));
 }
 
 void Model::conv2d(Shape filter_shape, Padding padding, Stride stride)
@@ -109,7 +123,7 @@ void Model::conv2d(Shape filter_shape, Padding padding, Stride stride)
 
 void Model::conv2d(Shape in_shape, Shape filter_shape, Stride stride)
 {
-    this->add_layer(new Conv2d(in_shape, filter_shape, Padding(0, 0), stride));
+    this->add_layer(new Conv2d(in_shape, filter_shape, Padding{ 0, 0 }, stride));
 }
 
 void Model::conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride)
@@ -139,11 +153,18 @@ void Model::set_loss(Loss *loss)
 
 void Model::validate_loss()
 {
+    if (this->validations_.loss)
+    {
+        return;
+    }
+
     if (this->loss_ == nullptr)
     {
         printf("MODEL LOSS VALIDATION FAILED: loss not set\n");
         exit(EXIT_FAILURE);
     }
+
+    this->validations_.loss = true;
 }
 
 void Model::set_optimizer(Optimizer *optim)
@@ -153,11 +174,18 @@ void Model::set_optimizer(Optimizer *optim)
 
 void Model::validate_optimizer()
 {
+    if (this->validations_.optimizer)
+    {
+        return;
+    }
+
     if (this->optim_ == nullptr)
     {
         printf("MODEL OPTIMIZER VALIDATION FAILED: optimizer not set\n");
         exit(EXIT_FAILURE);
     }
+
+    this->validations_.optimizer = true;
 }
 
 Shape Model::input_shape()

@@ -20,7 +20,7 @@ namespace nn
             virtual Shape input_shape() = 0;
             virtual Shape output_shape() = 0;
 
-            virtual bool validate() = 0;
+            virtual void validate() = 0;
             virtual void summarize();
 
             int batch_size();
@@ -73,7 +73,7 @@ namespace nn
             virtual Shape input_shape() override;
             virtual Shape output_shape() override;
 
-            virtual bool validate() override;
+            virtual void validate() override;
 
             int in_features();
             int out_features();
@@ -81,32 +81,16 @@ namespace nn
             int weight_cols();
         };
 
-        class Padding
+        struct Padding
         {
-        private:
-            int row_cnt_;
-            int col_cnt_;
-
-        public:
-            Padding();
-            Padding(int row_cnt, int col_cnt);
-
-            int rows();
-            int cols();
+            int row_cnt;
+            int col_cnt;
         };
 
-        class Stride
+        struct Stride
         {
-        private:
-            int row_cnt_;
-            int col_cnt_;
-
-        public:
-            Stride();
-            Stride(int row_cnt, int col_cnt);
-
-            int rows();
-            int cols();
+            int row_cnt;
+            int col_cnt;
         };
 
         class Conv2d : public Learnable
@@ -124,7 +108,7 @@ namespace nn
             virtual Shape input_shape() override;
             virtual Shape output_shape() override;
 
-            virtual bool validate() override;
+            virtual void validate() override;
 
             int channels();
             int in_feature_rows();
@@ -132,6 +116,10 @@ namespace nn
             int filters();
             int filter_rows();
             int filter_cols();
+            int padding_rows();
+            int padding_cols();
+            int stride_rows();
+            int stride_cols();
             int out_feature_rows();
             int out_feature_cols();
         };
@@ -147,7 +135,7 @@ namespace nn
             virtual Shape input_shape() override;
             virtual Shape output_shape() override;
 
-            virtual bool validate() override;
+            virtual void validate() override;
 
             int features();
         };

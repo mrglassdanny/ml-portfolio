@@ -23,9 +23,9 @@ namespace nn
 
         struct Validations
         {
-            bool lyrs;
+            bool layers;
             bool loss;
-            bool optim;
+            bool optimizer;
         } validations_;
 
     public:

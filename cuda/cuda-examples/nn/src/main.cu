@@ -9,9 +9,11 @@ int main(int argc, char **argv)
 {
 	auto model = new Model();
 
-	 model->conv2d(Shape(1, 2, 16, 16), Shape(4, 2, 2, 2), Stride(2, 2));
-	 model->conv2d(Shape(4, 4, 2, 2), Stride(2, 2));
-	 model->conv2d(Shape(4, 4, 2, 2), Stride(1, 1));
+	 model->conv2d(Shape(1, 2, 16, 16), Shape(4, 2, 2, 2), Stride{2, 2});
+	 model->tanh();
+	 model->conv2d(Shape(4, 4, 2, 2), Stride{2, 2});
+	 model->tanh();
+	 model->conv2d(Shape(4, 4, 2, 2), Stride{1, 1});
 	 model->tanh();
 	 model->linear(16);
 	 model->tanh();
@@ -21,12 +23,10 @@ int main(int argc, char **argv)
 	model->set_loss(new MSE());
 	model->set_optimizer(new SGD(model->parameters(), 0.001f));
 
-	NdArray *x = NdArray::rands(true, Shape(2, 2, 16, 16), 0.0f, 1.0f);
+	NdArray *x = NdArray::rands(true, model->input_shape(), 0.0f, 1.0f);
 	NdArray *y = NdArray::ones(true, model->output_shape());
 
 	model->summarize();
-
-	model->gradient_check(x, y, true);
 
 	return 0;
 }

@@ -380,8 +380,8 @@ Linear::Linear(Shape in_shape, Shape out_shape)
 {
     this->n_ = new NdArray(true, in_shape);
 
-    int in_cnt = (in_shape.dims_size() / in_shape[0]);
-    int out_cnt = (out_shape.dims_size() / out_shape[0]);
+    int in_cnt = (in_shape.dims_size() / this->batch_size());
+    int out_cnt = (out_shape.dims_size() / this->batch_size());
 
     this->params_ = new Parameters(Shape(in_cnt, out_cnt), Shape(out_cnt), in_cnt, out_cnt);
 }
@@ -449,19 +449,16 @@ Shape Linear::output_shape()
     return Shape(this->batch_size(), this->params_->weights()->shape()[1]);
 }
 
-bool Linear::validate()
-{
-    return true;
-}
+void Linear::validate() {}
 
 int Linear::in_features()
 {
-    return this->params_->weights()->shape()[0];
+    return this->weight_rows();
 }
 
 int Linear::out_features()
 {
-    return this->params_->weights()->shape()[1];
+    return this->weight_cols();
 }
 
 int Linear::weight_rows()
@@ -472,42 +469,6 @@ int Linear::weight_rows()
 int Linear::weight_cols()
 {
     return this->params_->weights()->shape()[1];
-}
-
-Padding::Padding() {}
-
-Padding::Padding(int row_cnt, int col_cnt)
-{
-    this->row_cnt_ = row_cnt;
-    this->col_cnt_ = col_cnt;
-}
-
-int Padding::rows()
-{
-    return this->row_cnt_;
-}
-
-int Padding::cols()
-{
-    return this->col_cnt_;
-}
-
-Stride::Stride() {}
-
-Stride::Stride(int row_cnt, int col_cnt)
-{
-    this->row_cnt_ = row_cnt;
-    this->col_cnt_ = col_cnt;
-}
-
-int Stride::rows()
-{
-    return this->row_cnt_;
-}
-
-int Stride::cols()
-{
-    return this->col_cnt_;
 }
 
 Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride)
@@ -532,7 +493,7 @@ void Conv2d::evaluate(NdArray *out)
 
     k_conv2d_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(), this->batch_size(), this->channels(), this->in_feature_rows(), this->in_feature_cols(),
                                                  this->filters(), this->filter_rows(), this->filter_cols(), this->out_feature_rows(), this->out_feature_cols(),
-                                                 this->stride_.rows(), this->stride_.cols());
+                                                 this->stride_rows(), this->stride_cols());
 }
 
 NdArray *Conv2d::derive(NdArray *in)
@@ -554,7 +515,7 @@ NdArray *Conv2d::derive(NdArray *in)
                                                                   this->out_feature_rows(), this->out_feature_cols(), (this->out_feature_rows() * this->out_feature_cols()),
                                                                   this->in_feature_rows(), this->in_feature_cols(), (this->in_feature_rows() * this->in_feature_cols()),
                                                                   this->filter_rows(), this->filter_cols(), (this->filter_rows() * this->filter_cols()),
-                                                                  this->stride_.rows(), this->stride_.cols());
+                                                                  this->stride_rows(), this->stride_cols());
     }
 
     NdArray *out = NdArray::zeros(true, this->input_shape());
@@ -570,7 +531,7 @@ NdArray *Conv2d::derive(NdArray *in)
                                                             this->out_feature_rows(), this->out_feature_cols(), (this->out_feature_rows() * this->out_feature_cols()),
                                                             this->filter_rows(), this->filter_cols(), (this->filter_rows() * this->filter_cols()),
                                                             this->in_feature_rows(), this->in_feature_cols(), (this->in_feature_rows() * this->in_feature_cols()),
-                                                            this->stride_.rows(), this->stride_.cols());
+                                                            this->stride_rows(), this->stride_cols());
     }
 
     delete in;
@@ -584,19 +545,50 @@ Shape Conv2d::input_shape()
 
 Shape Conv2d::output_shape()
 {
-    int out_row_cnt = (((this->in_feature_rows() - this->filter_rows()) + (2 * this->padding_.rows())) / this->stride_.rows()) + 1;
-    int out_col_cnt = (((this->in_feature_cols() - this->filter_cols()) + (2 * this->padding_.cols())) / this->stride_.cols()) + 1;
+    int out_row_cnt = (((this->in_feature_rows() - this->filter_rows()) + (2 * this->padding_rows())) / this->stride_rows()) + 1;
+    int out_col_cnt = (((this->in_feature_cols() - this->filter_cols()) + (2 * this->padding_cols())) / this->stride_cols()) + 1;
 
     return Shape(this->batch_size(), this->filters(), out_row_cnt, out_col_cnt);
 }
 
-bool Conv2d::validate()
+void Conv2d::validate()
 {
 
-    
+    int r = this->filter_rows();
+    while (r < this->in_feature_rows())
+    {
+        r += this->stride_rows();
+    }
 
+    if (r != this->in_feature_rows())
+    {
+        printf("CONV2D LAYER VALIDATION FAILED: filter/stride row combination does not fit input row count\n");
+        exit(EXIT_FAILURE);
+    }
 
-    return true;
+    int c = this->filter_cols();
+    while (c < this->in_feature_cols())
+    {
+        c += this->stride_cols();
+    }
+
+    if (c != this->in_feature_cols())
+    {
+        printf("CONV2D LAYER VALIDATION FAILED: filter/stride column combination does not fit input column count\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (this->filter_rows() < this->stride_rows())
+    {
+        printf("CONV2D LAYER VALIDATION FAILED: filter row count less than stride row count\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (this->filter_cols() < this->stride_cols())
+    {
+        printf("CONV2D LAYER VALIDATION FAILED: filter column count less than stride column count\n");
+        exit(EXIT_FAILURE);
+    }
 }
 
 int Conv2d::channels()
@@ -629,6 +621,26 @@ int Conv2d::filter_cols()
     return this->params_->weights()->shape()[3];
 }
 
+int Conv2d::padding_rows()
+{
+    return this->padding_.row_cnt;
+}
+
+int Conv2d::padding_cols()
+{
+    return this->padding_.col_cnt;
+}
+
+int Conv2d::stride_rows()
+{
+    return this->stride_.row_cnt;
+}
+
+int Conv2d::stride_cols()
+{
+    return this->stride_.col_cnt;
+}
+
 int Conv2d::out_feature_rows()
 {
     return this->output_shape()[2];
@@ -654,10 +666,7 @@ Shape Activation::output_shape()
     return this->n_->shape();
 }
 
-bool Activation::validate()
-{
-    return true;
-}
+void Activation::validate() {}
 
 int Activation::features()
 {
