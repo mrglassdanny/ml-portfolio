@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\core\err.cuh" />
     <ClInclude Include="src\core\mod.cuh" />
     <ClInclude Include="src\core\ndarray.cuh" />
     <ClInclude Include="src\core\util.cuh" />

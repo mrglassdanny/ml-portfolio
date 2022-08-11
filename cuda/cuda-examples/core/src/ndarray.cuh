@@ -62,7 +62,7 @@ public:
 	static NdArray *zeros(bool cuda, Shape shape);
 	static NdArray *ones(bool cuda, Shape shape);
 	static NdArray *full(bool cuda, Shape shape, float val);
-	static NdArray *rands(bool cuda, Shape shape, float mean, float stddev);
+	static NdArray *random(bool cuda, Shape shape, float mean, float stddev);
 
 	void print();
 	void copy(NdArray *src);

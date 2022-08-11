@@ -15,6 +15,7 @@
 #include <device_atomic_functions.h>
 
 #include "util.cuh"
+#include "err.cuh"
 
 #define THREADS_PER_BLOCK 32
 
@@ -58,14 +59,17 @@ public:
 	NdArray(bool cuda, Shape shape);
 	~NdArray();
 
-	static NdArray* from_csv(const char* path);
-	static void to_csv(const char* path, NdArray* ndarray);
-	static void to_file(const char* path, NdArray* ndarray);
+	static NdArray *from_data(Shape shape, float *data);
+	static NdArray *from_csv(const char *path);
+	static void to_csv(const char* path, NdArray* arr);
+	static void to_file(const char* path, NdArray* arr);
 
 	static NdArray* zeros(bool cuda, Shape shape);
 	static NdArray* ones(bool cuda, Shape shape);
 	static NdArray* full(bool cuda, Shape shape, float val);
-	static NdArray* rands(bool cuda, Shape shape, float mean, float stddev);
+	static NdArray* random(bool cuda, Shape shape, float mean, float stddev);
+
+	static NdArray* encode_one_hot(NdArray* src);
 
 	
 	void print();
@@ -92,7 +96,7 @@ public:
 	void zeros();
 	void ones();
 	void full(float val);
-	void rands(float mean, float stddev);
+	void random(float mean, float stddev);
 
 	void pad(int row_cnt, int col_cnt);
 

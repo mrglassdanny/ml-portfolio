@@ -66,8 +66,6 @@ __global__ void k_linear_agg_derivatives(float* in, float* w, float* out, int ba
     }
 }
 
-
-
 Linear::Linear(Shape in_shape, Shape out_shape)
 {
     this->n_ = new NdArray(true, in_shape);
@@ -141,7 +139,13 @@ Shape Linear::output_shape()
     return Shape(this->batch_size(), this->params_->weights()->shape()[1]);
 }
 
-void Linear::validate() {}
+void Linear::validate() 
+{
+    if (this->output_shape().num_dims() != 2)
+    {
+        THROW_ERROR("LINEAR LAYER VALIDATION FAILED: invalid output shape");
+    }
+}
 
 int Linear::in_features()
 {

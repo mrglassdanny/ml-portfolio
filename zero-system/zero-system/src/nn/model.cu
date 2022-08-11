@@ -72,8 +72,7 @@ void Model::validate_layers()
 
     if (this->lyrs_.size() == 0)
     {
-        printf("MODEL VALIDATION FAILED: no layers\n");
-        exit(EXIT_FAILURE);
+        THROW_ERROR("MODEL VALIDATION FAILED: no layers");
     }
 
     for (int i = 0; i < this->lyrs_.size() - 1; i++)
@@ -83,8 +82,7 @@ void Model::validate_layers()
 
         if (lyr->output_shape() != nxt_lyr->input_shape())
         {
-            printf("MODEL VALIDATION FAILED: layer at index %d output shape does not match layer at index %d input shape\n", i, i + 1);
-            exit(EXIT_FAILURE);
+            THROW_ERROR("MODEL VALIDATION FAILED: layer output shape does not match next layer input shape");
         }
     }
 
@@ -160,8 +158,7 @@ void Model::validate_loss()
 
     if (this->loss_ == nullptr)
     {
-        printf("MODEL LOSS VALIDATION FAILED: loss not set\n");
-        exit(EXIT_FAILURE);
+        THROW_ERROR("MODEL LOSS VALIDATION FAILED: loss not set");
     }
 
     this->validations_.loss = true;
@@ -181,8 +178,7 @@ void Model::validate_optimizer()
 
     if (this->optim_ == nullptr)
     {
-        printf("MODEL OPTIMIZER VALIDATION FAILED: optimizer not set\n");
-        exit(EXIT_FAILURE);
+        THROW_ERROR("MODEL OPTIMIZER VALIDATION FAILED: optimizer not set");
     }
 
     this->validations_.optimizer = true;
@@ -202,8 +198,7 @@ void Model::validate_input(NdArray* x)
 {
     if (this->input_shape() != x->shape())
     {
-        printf("MODEL INPUT VALIDATION FAILED: X shape does not match model input shape\n");
-        exit(EXIT_FAILURE);
+        THROW_ERROR("MODEL INPUT VALIDATION FAILED: X shape does not match model input shape");
     }
 }
 
@@ -211,8 +206,7 @@ void Model::validate_output(NdArray* y)
 {
     if (this->output_shape() != y->shape())
     {
-        printf("MODEL OUTPUT VALIDATION FAILED: Y shape does not match model output shape\n");
-        exit(EXIT_FAILURE);
+        THROW_ERROR("MODEL OUTPUT VALIDATION FAILED: Y shape does not match model output shape");
     }
 }
 

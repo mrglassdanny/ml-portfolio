@@ -182,6 +182,13 @@ NdArray::~NdArray()
     }
 }
 
+NdArray *NdArray::from_data(Shape shape, float *data)
+{
+    NdArray *arr = new NdArray(false, shape);
+    cudaMemcpy(arr->data_, data, arr->size(), cudaMemcpyDefault);
+    return arr;
+}
+
 NdArray *NdArray::from_csv(const char *path)
 {
     FILE *file_ptr = fopen(path, "rb");
@@ -230,7 +237,7 @@ NdArray *NdArray::from_csv(const char *path)
         row_cnt++;
     }
 
-    NdArray *ndarray = new NdArray(false, Shape(row_cnt, col_cnt));
+    NdArray *arr = new NdArray(false, Shape(row_cnt, col_cnt));
 
     char temp_buf[64];
     memset(temp_buf, 0, 64);
@@ -252,14 +259,14 @@ NdArray *NdArray::from_csv(const char *path)
 
         if (buf[buf_idx] == ',')
         {
-            ndarray->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
+            arr->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
             memset(temp_buf, 0, 64);
             col_idx++;
             temp_buf_idx = 0;
         }
         else if (buf[buf_idx] == '\n')
         {
-            ndarray->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
+            arr->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
             memset(temp_buf, 0, 64);
             row_idx++;
             col_idx = 0;
@@ -270,7 +277,7 @@ NdArray *NdArray::from_csv(const char *path)
     // Make sure to grab the last bit before we finish up!
     if (temp_buf_idx > 0)
     {
-        ndarray->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
+        arr->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
         memset(temp_buf, 0, 64);
         row_idx++;
         col_idx = 0;
@@ -279,16 +286,16 @@ NdArray *NdArray::from_csv(const char *path)
 
     free(buf);
 
-    return ndarray;
+    return arr;
 }
 
-void NdArray::to_csv(const char *path, NdArray *ndarray)
+void NdArray::to_csv(const char *path, NdArray *arr)
 {
-    int dim_cnt = ndarray->num_dims();
+    int dim_cnt = arr->num_dims();
 
     if (dim_cnt == 1)
     {
-        int cnt = ndarray->shape_[0];
+        int cnt = arr->shape_[0];
 
         FILE *file_ptr = fopen(path, "w");
 
@@ -296,7 +303,7 @@ void NdArray::to_csv(const char *path, NdArray *ndarray)
 
         for (int i = 0; i < cnt; i++)
         {
-            fprintf(file_ptr, "%f\n", ndarray->get_val(i));
+            fprintf(file_ptr, "%f\n", arr->get_val(i));
         }
 
         fclose(file_ptr);
@@ -304,8 +311,8 @@ void NdArray::to_csv(const char *path, NdArray *ndarray)
     else if (dim_cnt == 2)
     {
 
-        int row_cnt = ndarray->shape_[0];
-        int col_cnt = ndarray->shape_[1];
+        int row_cnt = arr->shape_[0];
+        int col_cnt = arr->shape_[1];
 
         FILE *file_ptr = fopen(path, "w");
 
@@ -329,11 +336,11 @@ void NdArray::to_csv(const char *path, NdArray *ndarray)
             {
                 if (j < col_cnt - 1)
                 {
-                    fprintf(file_ptr, "%f,", ndarray->get_val(i * col_cnt + j));
+                    fprintf(file_ptr, "%f,", arr->get_val(i * col_cnt + j));
                 }
                 else
                 {
-                    fprintf(file_ptr, "%f", ndarray->get_val(i * col_cnt + j));
+                    fprintf(file_ptr, "%f", arr->get_val(i * col_cnt + j));
                 }
             }
             fprintf(file_ptr, "\n");
@@ -346,21 +353,21 @@ void NdArray::to_csv(const char *path, NdArray *ndarray)
     }
 }
 
-void NdArray::to_file(const char *path, NdArray *ndarray)
+void NdArray::to_file(const char *path, NdArray *arr)
 {
-    bool orig_cuda = ndarray->cuda_;
+    bool orig_cuda = arr->cuda_;
 
     FILE *file_ptr = fopen(path, "wb");
 
-    ndarray->to_cpu();
+    arr->to_cpu();
 
-    fwrite(ndarray->data_, sizeof(float), ndarray->count(), file_ptr);
+    fwrite(arr->data_, sizeof(float), arr->count(), file_ptr);
 
     fclose(file_ptr);
 
     if (orig_cuda)
     {
-        ndarray->to_cuda();
+        arr->to_cuda();
     }
 }
 
@@ -391,13 +398,46 @@ NdArray *NdArray::full(bool cuda, Shape shape, float val)
     return arr;
 }
 
-NdArray *NdArray::rands(bool cuda, Shape shape, float mean, float stddev)
+NdArray *NdArray::random(bool cuda, Shape shape, float mean, float stddev)
 {
     NdArray *arr = new NdArray(cuda, shape);
 
-    arr->rands(mean, stddev);
+    arr->random(mean, stddev);
 
     return arr;
+}
+
+NdArray *NdArray::encode_one_hot(NdArray *src)
+{
+    int lst_dim_idx = src->num_dims() - 1;
+
+    if (src->shape()[lst_dim_idx] != 1)
+    {
+        THROW_ERROR("NDARRAY ONE HOT ERROR: last dimension must be 1");
+    }
+
+    float min_val = src->min();
+
+    if (min_val < 0.0f)
+    {
+        THROW_ERROR("NDARRAY ONE HOT ERROR: negative numbers not allowed");
+    }
+
+    int max_val = src->max();
+    int oh_dim = ((int)max_val) + 1;
+
+    std::vector<int> dims = src->shape().dims();
+    dims[lst_dim_idx] = oh_dim;
+
+    NdArray *dst = NdArray::zeros(src->is_cuda(), Shape(dims));
+
+    for (int i = 0; i < src->count(); i++)
+    {
+        int val = (int)src->get_val(i);
+        dst->set_val(i * oh_dim + val, 1.0f);
+    }
+
+    return dst;
 }
 
 void NdArray::print_vec(float *data, int cnt)
@@ -452,7 +492,6 @@ void NdArray::print()
     bool orig_cuda = this->cuda_;
     this->to_cpu();
 
-    printf("Shape: ");
     this->shape_.print();
     printf("\n");
 
@@ -508,6 +547,8 @@ void NdArray::print()
     default:
     break;
     }
+
+    printf("\n");
 
     if (orig_cuda)
     {
@@ -663,7 +704,7 @@ void NdArray::full(float val)
     }
 }
 
-void NdArray::rands(float mean, float stddev)
+void NdArray::random(float mean, float stddev)
 {
     bool orig_cuda = this->cuda_;
 

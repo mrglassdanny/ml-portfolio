@@ -196,6 +196,15 @@ Shape Conv2d::output_shape()
 
 void Conv2d::validate()
 {
+    if (this->n_->shape().num_dims() != 4)
+    {
+        THROW_ERROR("CONV2D LAYER VALIDATION FAILED: invalid input shape");
+    }
+
+    if (this->params_->weights()->shape().num_dims() != 4)
+    {
+        THROW_ERROR("CONV2D LAYER VALIDATION FAILED: invalid filter shape");
+    }
 
     int r = this->filter_rows();
     while (r < this->in_feature_rows())
@@ -205,8 +214,7 @@ void Conv2d::validate()
 
     if (r != this->in_feature_rows())
     {
-        printf("CONV2D LAYER VALIDATION FAILED: filter/stride row combination does not fit input row count\n");
-        exit(EXIT_FAILURE);
+        THROW_ERROR("CONV2D LAYER VALIDATION FAILED: filter/stride row combination does not fit input row count");
     }
 
     int c = this->filter_cols();
@@ -217,20 +225,17 @@ void Conv2d::validate()
 
     if (c != this->in_feature_cols())
     {
-        printf("CONV2D LAYER VALIDATION FAILED: filter/stride column combination does not fit input column count\n");
-        exit(EXIT_FAILURE);
+        THROW_ERROR("CONV2D LAYER VALIDATION FAILED: filter/stride column combination does not fit input column count");
     }
 
     if (this->filter_rows() < this->stride_rows())
     {
-        printf("CONV2D LAYER VALIDATION FAILED: filter row count less than stride row count\n");
-        exit(EXIT_FAILURE);
+        THROW_ERROR("CONV2D LAYER VALIDATION FAILED: filter row count less than stride row count");
     }
 
     if (this->filter_cols() < this->stride_cols())
     {
-        printf("CONV2D LAYER VALIDATION FAILED: filter column count less than stride column count\n");
-        exit(EXIT_FAILURE);
+        THROW_ERROR("CONV2D LAYER VALIDATION FAILED: filter column count less than stride column count");
     }
 }
 

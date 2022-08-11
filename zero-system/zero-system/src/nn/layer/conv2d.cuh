@@ -6,7 +6,6 @@ namespace nn
 {
     namespace layer
     {
-
         struct Padding
         {
             int row_cnt;

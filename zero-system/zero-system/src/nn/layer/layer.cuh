@@ -21,6 +21,7 @@ namespace nn
             virtual Shape output_shape() = 0;
 
             virtual void validate() = 0;
+            
             virtual void summarize();
 
             int batch_size();
