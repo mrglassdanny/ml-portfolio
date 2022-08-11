@@ -2,8 +2,8 @@
 
 using namespace nn::layer;
 
-__global__ void k_linear_evaluate(float* in, float* w, float* b, float* out,
-    int batch_size, int in_cnt, int out_cnt)
+__global__ void k_linear_evaluate(float *in, float *w, float *b, float *out,
+                                  int batch_size, int in_cnt, int out_cnt)
 {
     int out_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -23,8 +23,8 @@ __global__ void k_linear_evaluate(float* in, float* w, float* b, float* out,
     }
 }
 
-__global__ void k_linear_inc_param_derivatives(float* in, float* n, float* dw, float* db,
-    int batch_size, int in_cnt, int n_cnt, int w_row_cnt, int w_col_cnt)
+__global__ void k_linear_inc_param_derivatives(float *in, float *n, float *dw, float *db,
+                                               int batch_size, int in_cnt, int n_cnt, int w_row_cnt, int w_col_cnt)
 {
     int w_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int w_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -48,7 +48,7 @@ __global__ void k_linear_inc_param_derivatives(float* in, float* n, float* dw, f
     }
 }
 
-__global__ void k_linear_agg_derivatives(float* in, float* w, float* out, int batch_size, int in_cnt, int w_col_cnt, int out_cnt)
+__global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int batch_size, int in_cnt, int w_col_cnt, int out_cnt)
 {
     int out_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -76,7 +76,7 @@ Linear::Linear(Shape in_shape, Shape out_shape)
     this->params_ = new Parameters(Shape(in_cnt, out_cnt), Shape(out_cnt), in_cnt, out_cnt);
 }
 
-void Linear::evaluate(NdArray* out)
+void Linear::evaluate(NdArray *out)
 {
     int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
     int grid_col_cnt = (this->out_features() / CUDA_THREADS_PER_BLOCK) + 1;
@@ -84,21 +84,21 @@ void Linear::evaluate(NdArray* out)
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
     dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
-    NdArray* n = this->n_;
-    NdArray* w = this->params_->weights();
-    NdArray* b = this->params_->biases();
+    NdArray *n = this->n_;
+    NdArray *w = this->params_->weights();
+    NdArray *b = this->params_->biases();
 
-    k_linear_evaluate << <grid_dims, block_dims >> > (n->data(), w->data(), b->data(), out->data(),
-        this->batch_size(), this->in_features(), this->out_features());
+    k_linear_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(),
+                                                 this->batch_size(), this->in_features(), this->out_features());
 }
 
-NdArray* Linear::derive(NdArray* in)
+NdArray *Linear::derive(NdArray *in)
 {
-    NdArray* n = this->n_;
-    NdArray* w = this->params_->weights();
-    NdArray* b = this->params_->biases();
-    NdArray* dw = this->params_->weight_gradients();
-    NdArray* db = this->params_->bias_gradients();
+    NdArray *n = this->n_;
+    NdArray *w = this->params_->weights();
+    NdArray *b = this->params_->biases();
+    NdArray *dw = this->params_->weight_gradients();
+    NdArray *db = this->params_->bias_gradients();
 
     {
         int grid_row_cnt = (this->weight_rows() / CUDA_THREADS_PER_BLOCK) + 1;
@@ -107,12 +107,12 @@ NdArray* Linear::derive(NdArray* in)
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
-        k_linear_inc_param_derivatives << <grid_dims, block_dims >> > (in->data(), n->data(), dw->data(), db->data(),
-            this->batch_size(), this->out_features(), this->in_features(),
-            this->weight_rows(), this->weight_cols());
+        k_linear_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), n->data(), dw->data(), db->data(),
+                                                                  this->batch_size(), this->out_features(), this->in_features(),
+                                                                  this->weight_rows(), this->weight_cols());
     }
 
-    NdArray* out = NdArray::zeros(true, this->input_shape());
+    NdArray *out = NdArray::zeros(true, this->input_shape());
 
     {
         int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
@@ -121,8 +121,8 @@ NdArray* Linear::derive(NdArray* in)
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
-        k_linear_agg_derivatives << <grid_dims, block_dims >> > (in->data(), w->data(), out->data(),
-            this->batch_size(), this->out_features(), this->weight_cols(), this->in_features());
+        k_linear_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), out->data(),
+                                                            this->batch_size(), this->out_features(), this->weight_cols(), this->in_features());
     }
 
     delete in;
@@ -139,7 +139,7 @@ Shape Linear::output_shape()
     return Shape(this->batch_size(), this->params_->weights()->shape()[1]);
 }
 
-void Linear::validate() 
+void Linear::validate()
 {
     if (this->output_shape().num_dims() != 2)
     {

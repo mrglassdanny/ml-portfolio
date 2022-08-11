@@ -241,11 +241,6 @@ float Model::loss(NdArray* p, NdArray* y)
     this->validate_loss();
     this->validate_output(y);
 
-    if (this->loss_ == nullptr)
-    {
-        return 0.0f;
-    }
-
     p->to_cuda();
     y->to_cuda();
 
@@ -253,11 +248,10 @@ float Model::loss(NdArray* p, NdArray* y)
 
     this->loss_->evaluate(p, y, losses);
 
-    float sum_losses = losses->sum();
+    float mean_loss = losses->sum() / losses->shape()[losses->num_dims() - 1];
 
     delete losses;
-
-    return sum_losses;
+    return mean_loss;
 }
 
 void Model::backward(NdArray* p, NdArray* y)

@@ -26,12 +26,12 @@ int Layer::batch_size()
     return this->n_->shape()[0];
 }
 
-NdArray* Layer::neurons()
+NdArray *Layer::neurons()
 {
     return this->n_;
 }
 
-void Layer::copy_neurons(NdArray* n)
+void Layer::copy_neurons(NdArray *n)
 {
     this->n_->copy(n);
 }

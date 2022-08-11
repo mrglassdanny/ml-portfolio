@@ -2,7 +2,6 @@
 
 using namespace nn::layer;
 
-
 Parameters::Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out)
 {
     this->w_ = NdArray::random(true, w_shape, 0.0f, sqrt(1.0f / fan_in));
@@ -19,33 +18,33 @@ Parameters::~Parameters()
     delete this->db_;
 }
 
-size_t Parameters::count()
-{
-    return this->w_->count() + this->b_->count();
-}
-
 void Parameters::zero_grad()
 {
     this->dw_->zeros();
     this->db_->zeros();
 }
 
-NdArray* Parameters::weights()
+size_t Parameters::count()
+{
+    return this->w_->count() + this->b_->count();
+}
+
+NdArray *Parameters::weights()
 {
     return this->w_;
 }
 
-NdArray* Parameters::biases()
+NdArray *Parameters::biases()
 {
     return this->b_;
 }
 
-NdArray* Parameters::weight_gradients()
+NdArray *Parameters::weight_gradients()
 {
     return this->dw_;
 }
 
-NdArray* Parameters::bias_gradients()
+NdArray *Parameters::bias_gradients()
 {
     return this->db_;
 }
@@ -55,7 +54,7 @@ Learnable::~Learnable()
     delete params_;
 }
 
-Parameters* Learnable::parameters()
+Parameters *Learnable::parameters()
 {
     return this->params_;
 }

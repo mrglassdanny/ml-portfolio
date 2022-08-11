@@ -18,10 +18,10 @@ namespace nn
             Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out);
             ~Parameters();
 
-            size_t count();
-
             void zero_grad();
 
+            size_t count();
+            
             NdArray *weights();
             NdArray *biases();
             NdArray *weight_gradients();
