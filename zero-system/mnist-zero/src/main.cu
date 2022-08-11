@@ -102,13 +102,5 @@ int main(int argc, char **argv)
 {
 	printf("MNIST-ZERO\n\n");
 
-	auto arr = NdArray::random(true, Shape(4, 4), 0.0f, 1.0f);
-
-	arr->print();
-
-	auto pad_arr = NdArray::pad(arr, 6, 1);
-
-	pad_arr->print();
-
 	return 0;
 }
