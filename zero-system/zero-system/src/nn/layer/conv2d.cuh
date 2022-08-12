@@ -21,6 +21,7 @@ namespace nn
         class Conv2d : public Learnable
         {
         private:
+            Shape output_shape_;
             Padding padding_;
             Stride stride_;
 
@@ -37,6 +38,8 @@ namespace nn
 
             virtual void reset_shape() override;
 
+            virtual void summarize() override;
+
             int channels();
             int in_feature_rows();
             int in_feature_cols();
@@ -49,6 +52,8 @@ namespace nn
             int stride_cols();
             int out_feature_rows();
             int out_feature_cols();
+
+            Shape padded_shape();
         };
 
     }

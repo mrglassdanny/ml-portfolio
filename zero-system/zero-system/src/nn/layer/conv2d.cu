@@ -116,10 +116,17 @@ __global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int ba
 Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride)
 {
     this->n_ = new NdArray(true, in_shape);
-    this->default_shape_ = in_shape;
+    this->default_n_shape_ = in_shape;
     this->params_ = new Parameters(filter_shape, Shape(filter_shape[0], filter_shape[1]), this->in_feature_rows(), this->in_feature_cols());
     this->padding_ = padding;
     this->stride_ = stride;
+
+    {
+        int out_row_cnt = (((this->in_feature_rows() - this->filter_rows()) + (2 * this->padding_rows())) / this->stride_rows()) + 1;
+        int out_col_cnt = (((this->in_feature_cols() - this->filter_cols()) + (2 * this->padding_cols())) / this->stride_cols()) + 1;
+
+        this->output_shape_ = Shape(this->batch_size(), this->filters(), out_row_cnt, out_col_cnt);
+    }
 }
 
 void Conv2d::evaluate(NdArray *out)
@@ -184,6 +191,13 @@ NdArray *Conv2d::derive(NdArray *in)
                                                             this->stride_rows(), this->stride_cols());
     }
 
+    if (this->padding_rows() > 0 || this->padding_cols() > 0)
+    {
+        NdArray *unpadded_out = NdArray::unpad(out, this->padding_rows(), this->padding_cols());
+        delete out;
+        out = unpadded_out;
+    }
+
     delete in;
     return out;
 }
@@ -195,10 +209,7 @@ Shape Conv2d::input_shape()
 
 Shape Conv2d::output_shape()
 {
-    int out_row_cnt = (((this->in_feature_rows() - this->filter_rows()) + (2 * this->padding_rows())) / this->stride_rows()) + 1;
-    int out_col_cnt = (((this->in_feature_cols() - this->filter_cols()) + (2 * this->padding_cols())) / this->stride_cols()) + 1;
-
-    return Shape(this->batch_size(), this->filters(), out_row_cnt, out_col_cnt);
+    return this->output_shape_;
 }
 
 void Conv2d::validate()
@@ -258,11 +269,35 @@ void Conv2d::validate()
 
 void Conv2d::reset_shape()
 {
-    if (this->input_shape() != this->default_shape_)
+    if (this->input_shape() != this->default_n_shape_)
     {
         delete this->n_;
-        this->n_ = NdArray::zeros(true, this->default_shape_);
+        this->n_ = NdArray::zeros(true, this->default_n_shape_);
     }
+}
+
+void Conv2d::summarize()
+{
+    std::string cls_name(typeid(*this).name());
+    for (int i = cls_name.size(); i < 26; i++)
+    {
+        cls_name.push_back(' ');
+    }
+
+    printf("%s\t", cls_name.c_str());
+    this->input_shape().print();
+
+    if (this->padding_rows() > 0 || this->padding_cols() > 0)
+    {
+        printf(" (");
+        this->padded_shape().print();
+        printf(")");
+    }
+    
+    printf(" -> ");
+    this->output_shape().print();
+
+    printf("\tPad (%d, %d)\tStride (%d, %d)", this->padding_rows(), this->padding_cols(), this->stride_rows(), this->stride_cols());
 }
 
 int Conv2d::channels()
@@ -323,4 +358,10 @@ int Conv2d::out_feature_rows()
 int Conv2d::out_feature_cols()
 {
     return this->output_shape()[3];
+}
+
+Shape Conv2d::padded_shape()
+{
+    return Shape(this->batch_size(), this->channels(), this->default_n_shape_[2] + (this->padding_rows() * 2), 
+                 this->default_n_shape_[3] + (this->padding_cols() * 2));
 }

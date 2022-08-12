@@ -109,18 +109,21 @@ int main(int argc, char **argv)
 
 	model->conv2d(x->shape(), Shape(2, 2, 2, 2), nn::layer::Padding{2, 2}, nn::layer::Stride{2, 2});
 	model->sigmoid();
-	model->conv2d(Shape(2, 2, 2, 2), nn::layer::Stride{1, 1});
+	model->conv2d(Shape(2, 2, 2, 2), nn::layer::Padding{2, 2}, nn::layer::Stride{1, 1});
 	model->sigmoid();
-	model->linear(32);
+	model->conv2d(Shape(2, 2, 2, 2), nn::layer::Padding{1, 1}, nn::layer::Stride{1, 1});
+	model->sigmoid();
+	model->linear(16);
 	model->tanh();
 	model->linear(y->shape());
 	model->tanh();
 
 	model->set_loss(new nn::loss::MSE());
+	model->set_optimizer(new nn::optim::SGD(model->parameters(), 0.01f));
 
 	model->summarize();
 
-	model->validate_gradients(x, y, true);
+	model->validate_gradients(x, y, false);
 
 	return 0;
 }

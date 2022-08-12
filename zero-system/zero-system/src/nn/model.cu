@@ -296,7 +296,7 @@ void Model::validate_gradients(NdArray *x, NdArray *y, bool print_params)
 
 void Model::summarize()
 {
-    printf("=========================== MODEL SUMMARY ===========================\n");
+    printf("====================================================== MODEL SUMMARY ======================================================\n");
 
     printf("\nLayers: (%d)\n", this->lyrs_.size());
     for (int i = 0; i < this->lyrs_.size(); i++)
@@ -329,7 +329,7 @@ void Model::summarize()
     }
     printf("\n\n");
 
-    printf("=====================================================================\n");
+    printf("===========================================================================================================================\n");
 }
 
 void Model::add_layer(Layer *lyr)
