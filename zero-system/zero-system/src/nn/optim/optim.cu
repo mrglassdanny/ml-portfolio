@@ -3,7 +3,7 @@
 using namespace nn::optim;
 using namespace nn::layer;
 
-__global__ void k_sgd_weight_step(float* w, float* dw, int w_cnt, float lr, int batch_size)
+__global__ void k_sgd_weight_step(float *w, float *dw, int w_cnt, float lr, int batch_size)
 {
     int w_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -13,7 +13,7 @@ __global__ void k_sgd_weight_step(float* w, float* dw, int w_cnt, float lr, int 
     }
 }
 
-__global__ void k_sgd_bias_step(float* b, float* db, int b_cnt, float lr, int batch_size)
+__global__ void k_sgd_bias_step(float *b, float *db, int b_cnt, float lr, int batch_size)
 {
     int b_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -23,7 +23,7 @@ __global__ void k_sgd_bias_step(float* b, float* db, int b_cnt, float lr, int ba
     }
 }
 
-__global__ void k_sgd_momentum_weight_step(float* w, float* dw, float* vdw, int w_cnt, float lr, int batch_size, float momentum)
+__global__ void k_sgd_momentum_weight_step(float *w, float *dw, float *vdw, int w_cnt, float lr, int batch_size, float momentum)
 {
     int w_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -34,7 +34,7 @@ __global__ void k_sgd_momentum_weight_step(float* w, float* dw, float* vdw, int 
     }
 }
 
-__global__ void k_sgd_momentum_bias_step(float* b, float* db, float* vdb, int b_cnt, float lr, int batch_size, float momentum)
+__global__ void k_sgd_momentum_bias_step(float *b, float *db, float *vdb, int b_cnt, float lr, int batch_size, float momentum)
 {
     int b_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -45,7 +45,7 @@ __global__ void k_sgd_momentum_bias_step(float* b, float* db, float* vdb, int b_
     }
 }
 
-Optimizer::Optimizer(std::vector<Parameters*> model_params, float learning_rate)
+Optimizer::Optimizer(std::vector<Parameters *> model_params, float learning_rate)
 {
     this->model_params_ = model_params;
     this->lr_ = learning_rate;
@@ -57,7 +57,7 @@ void Optimizer::summarize()
     printf("%s", cls_name.c_str());
 
     size_t params_cnt = 0;
-    for (Parameters* params : this->model_params_)
+    for (Parameters *params : this->model_params_)
     {
         params_cnt += params->count();
     }
@@ -65,36 +65,36 @@ void Optimizer::summarize()
     printf("\n\tParameters: %zd\t\tLearning rate: %f", params_cnt, this->lr_);
 }
 
-SGD::SGD(std::vector<Parameters*> model_params, float learning_rate)
+SGD::SGD(std::vector<Parameters *> model_params, float learning_rate)
     : Optimizer(model_params, learning_rate)
 {
 }
 
 void SGD::step(int batch_size)
 {
-    for (Parameters* params : this->model_params_)
+    for (Parameters *params : this->model_params_)
     {
-        NdArray* w = params->weights();
-        NdArray* b = params->biases();
-        NdArray* dw = params->weight_gradients();
-        NdArray* db = params->bias_gradients();
+        NdArray *w = params->weights();
+        NdArray *b = params->biases();
+        NdArray *dw = params->weight_gradients();
+        NdArray *db = params->bias_gradients();
 
         int w_cnt = w->count();
         int b_cnt = b->count();
 
-        k_sgd_weight_step << <w_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK >> > (w->data(), dw->data(), w_cnt, this->lr_, batch_size);
-        k_sgd_bias_step << <b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK >> > (b->data(), db->data(), b_cnt, this->lr_, batch_size);
+        k_sgd_weight_step<<<w_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(w->data(), dw->data(), w_cnt, this->lr_, batch_size);
+        k_sgd_bias_step<<<b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), b_cnt, this->lr_, batch_size);
 
         params->zero_grad();
     }
 }
 
-SGDMomentum::SGDMomentum(std::vector<Parameters*> model_params, float learning_rate, float momentum)
+SGDMomentum::SGDMomentum(std::vector<Parameters *> model_params, float learning_rate, float momentum)
     : Optimizer(model_params, learning_rate)
 {
     this->momentum_ = momentum;
 
-    for (Parameters* params : model_params)
+    for (Parameters *params : model_params)
     {
         this->vdws_.push_back(new NdArray(true, params->weight_gradients()->shape()));
         this->vdbs_.push_back(new NdArray(true, params->bias_gradients()->shape()));
@@ -114,22 +114,22 @@ void SGDMomentum::step(int batch_size)
 {
     for (int i = 0; i < this->model_params_.size(); i++)
     {
-        Parameters* params = this->model_params_[i];
+        Parameters *params = this->model_params_[i];
 
-        NdArray* w = params->weights();
-        NdArray* b = params->biases();
-        NdArray* dw = params->weight_gradients();
-        NdArray* db = params->bias_gradients();
-        NdArray* vdw = this->vdws_[i];
-        NdArray* vdb = this->vdbs_[i];
+        NdArray *w = params->weights();
+        NdArray *b = params->biases();
+        NdArray *dw = params->weight_gradients();
+        NdArray *db = params->bias_gradients();
+        NdArray *vdw = this->vdws_[i];
+        NdArray *vdb = this->vdbs_[i];
 
         int w_cnt = w->count();
         int b_cnt = b->count();
 
-        k_sgd_momentum_weight_step << <w_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK >> > (w->data(), dw->data(), vdw->data(),
-            w_cnt, this->lr_, batch_size, this->momentum_);
-        k_sgd_momentum_bias_step << <b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK >> > (b->data(), db->data(), vdb->data(),
-            b_cnt, this->lr_, batch_size, this->momentum_);
+        k_sgd_momentum_weight_step<<<w_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(w->data(), dw->data(), vdw->data(),
+                                                                                                   w_cnt, this->lr_, batch_size, this->momentum_);
+        k_sgd_momentum_bias_step<<<b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), vdb->data(),
+                                                                                                 b_cnt, this->lr_, batch_size, this->momentum_);
 
         params->zero_grad();
     }
