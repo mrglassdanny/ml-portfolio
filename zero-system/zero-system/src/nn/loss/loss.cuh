@@ -21,5 +21,12 @@ namespace nn
             virtual void evaluate(NdArray* p, NdArray* y, NdArray* out) override;
             virtual NdArray* derive(NdArray* p, NdArray* y) override;
         };
+
+        class CrossEntropy : public Loss
+        {
+        public:
+            virtual void evaluate(NdArray *p, NdArray *y, NdArray *out) override;
+            virtual NdArray *derive(NdArray *p, NdArray *y) override;
+        };
     }
 }

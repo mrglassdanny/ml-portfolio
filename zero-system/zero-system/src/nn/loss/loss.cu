@@ -12,23 +12,73 @@ __device__ float d_mse_derive(float p_val, float y_val)
     return 2.0f * (p_val - y_val);
 }
 
-__global__ void k_mse_evaluate(float *p, float *y, float *out, int cnt)
+__global__ void k_mse_evaluate(float *p, float *y, float *out, int row_cnt, int col_cnt)
 {
-    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    int col_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int row_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (tid < cnt)
+    if (col_idx < col_cnt && row_idx < row_cnt)
     {
-        out[tid] = d_mse_evaluate(p[tid], y[tid]);
+        out[row_idx * col_cnt + col_idx] = d_mse_evaluate(p[row_idx * col_cnt + col_idx], y[row_idx * col_cnt + col_idx]);
     }
 }
 
-__global__ void k_mse_derive(float *p, float *y, float *out, int cnt)
+__global__ void k_mse_derive(float *p, float *y, float *out, int row_cnt, int col_cnt)
 {
-    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+    int col_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int row_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (tid < cnt)
+    if (col_idx < col_cnt && row_idx < row_cnt)
     {
-        out[tid] = d_mse_derive(p[tid], y[tid]);
+        out[row_idx * col_cnt + col_idx] = d_mse_derive(p[row_idx * col_cnt + col_idx], y[row_idx * col_cnt + col_idx]);
+    }
+}
+
+__device__ float d_softmax(float val, float *arr, int cnt)
+{
+    float e_sum_val = 0.0f;
+
+    for (int i = 0; i < cnt; i++)
+    {
+        e_sum_val += exp(arr[i]);
+    }
+
+    return exp(val) / e_sum_val;
+}
+
+__device__ float d_cross_entropy_evaluate(float p_val, float y_val, float *p, int cnt)
+{
+    float np_val = d_softmax(p_val, p, cnt);
+    return -(y_val * log(np_val));
+}
+
+__device__ float d_cross_entropy_derive(float p_val, float y_val, float *p, int cnt)
+{
+    float np_val = d_softmax(p_val, p, cnt);
+    return np_val - y_val;
+}
+
+__global__ void k_cross_entropy_evaluate(float *p, float *y, float *out, int row_cnt, int col_cnt)
+{
+    int col_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int row_idx = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (col_idx < col_cnt && row_idx < row_cnt)
+    {
+        out[row_idx * col_cnt + col_idx] = d_cross_entropy_evaluate(p[row_idx * col_cnt + col_idx], y[row_idx * col_cnt + col_idx],
+                                                                    p, col_cnt);
+    }
+}
+
+__global__ void k_cross_entropy_derive(float *p, float *y, float *out, int row_cnt, int col_cnt)
+{
+    int col_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int row_idx = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (col_idx < col_cnt && row_idx < row_cnt)
+    {
+        out[row_idx * col_cnt + col_idx] = d_cross_entropy_derive(p[row_idx * col_cnt + col_idx], y[row_idx * col_cnt + col_idx],
+                                                                  p, col_cnt);
     }
 }
 
@@ -40,14 +90,64 @@ void Loss::summarize()
 
 void MSE::evaluate(NdArray *p, NdArray *y, NdArray *out)
 {
-    k_mse_evaluate<<<p->count() / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(p->data(), y->data(), out->data(), p->count());
+    int batch_size = p->shape()[0];
+    int output_cnt = p->shape()[1];
+
+    int grid_row_cnt = (batch_size / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (output_cnt / CUDA_THREADS_PER_BLOCK) + 1;
+
+    dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+    dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
+
+    k_mse_evaluate<<<grid_row_cnt, block_dims>>>(p->data(), y->data(), out->data(), batch_size, output_cnt);
 }
 
 NdArray *MSE::derive(NdArray *p, NdArray *y)
 {
-    NdArray *dl = new NdArray(true, p->shape());
+    NdArray *out = new NdArray(true, p->shape());
 
-    k_mse_derive<<<p->count() / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(p->data(), y->data(), dl->data(), p->count());
+    int batch_size = p->shape()[0];
+    int output_cnt = p->shape()[1];
 
-    return dl;
+    int grid_row_cnt = (batch_size / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (output_cnt / CUDA_THREADS_PER_BLOCK) + 1;
+
+    dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+    dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
+
+    k_mse_derive<<<grid_dims, block_dims>>>(p->data(), y->data(), out->data(), batch_size, output_cnt);
+
+    return out;
+}
+
+void CrossEntropy::evaluate(NdArray *p, NdArray *y, NdArray *out)
+{
+    int batch_size = p->shape()[0];
+    int output_cnt = p->shape()[1];
+
+    int grid_row_cnt = (batch_size / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (output_cnt / CUDA_THREADS_PER_BLOCK) + 1;
+
+    dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+    dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
+
+    k_cross_entropy_evaluate<<<grid_dims, block_dims>>>(p->data(), y->data(), out->data(), batch_size, output_cnt);
+}
+
+NdArray *CrossEntropy::derive(NdArray *p, NdArray *y)
+{
+    NdArray *out = new NdArray(true, p->shape());
+
+    int batch_size = p->shape()[0];
+    int output_cnt = p->shape()[1];
+
+    int grid_row_cnt = (batch_size / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (output_cnt / CUDA_THREADS_PER_BLOCK) + 1;
+
+    dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+    dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
+
+    k_cross_entropy_derive<<<grid_dims, block_dims>>>(p->data(), y->data(), out->data(), batch_size, output_cnt);
+
+    return out;
 }
