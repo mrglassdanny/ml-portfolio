@@ -10,7 +10,7 @@ namespace nn
         {
         protected:
             NdArray *n_;
-            Shape default_shape_;
+            Shape default_n_shape_;
 
         public:
             ~Layer();

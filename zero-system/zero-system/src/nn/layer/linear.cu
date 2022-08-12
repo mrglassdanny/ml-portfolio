@@ -69,6 +69,7 @@ __global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int ba
 Linear::Linear(Shape in_shape, Shape out_shape)
 {
     this->n_ = new NdArray(true, in_shape);
+    this->default_n_shape_ = in_shape;
 
     int in_cnt = (in_shape.dims_size() / this->batch_size());
     int out_cnt = (out_shape.dims_size() / this->batch_size());

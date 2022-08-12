@@ -113,6 +113,7 @@ __global__ void k_relu_derive(float *in, float *n, float *out, int batch_size, i
 Activation::Activation(Shape shape)
 {
     this->n_ = new NdArray(true, shape);
+    this->default_n_shape_ = shape;
 }
 
 Shape Activation::input_shape()
