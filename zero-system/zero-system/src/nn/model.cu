@@ -74,6 +74,45 @@ float Model::loss(NdArray *p, NdArray *y)
     return mean_loss;
 }
 
+float Model::accuracy(NdArray *p, NdArray *y)
+{
+    int correct_cnt = 0;
+
+    int batch_size = this->batch_size();
+    int output_cnt = p->shape()[1];
+
+    if (output_cnt > 1)
+    {
+        for (int i = 0; i < batch_size; i++)
+        {
+            float max_val = p->get_val(i * output_cnt + 0);
+            int max_idx = 0;
+            for (int j = 1; j < output_cnt; j++)
+            {
+                float val = p->get_val(i * output_cnt + j);
+                if (val > max_val)
+                {
+                    max_val = val;
+                    max_idx = j;
+                }
+            }
+
+            if (y->get_val(i * output_cnt + max_idx) == 1.0f)
+            {
+                correct_cnt++;
+            }
+        }
+    }
+    else
+    {
+        // TODO
+    }
+
+    
+
+    return ((float)correct_cnt / (float)batch_size);
+}
+
 void Model::backward(NdArray *p, NdArray *y)
 {
     this->validate_layers();
@@ -141,6 +180,11 @@ void Model::validate_layers()
     for (Layer *lyr : this->lyrs_)
     {
         lyr->validate();
+    }
+
+    if (this->output_shape().num_dims() != 2)
+    {
+        THROW_ERROR("MODEL VALIDATION FAILED: output shape must have 2 dimensions");
     }
 
     this->validations_.layers = true;
@@ -360,6 +404,11 @@ void Model::linear(Shape y_shape)
 void Model::linear(int batch_size, int in_feature_cnt, int out_feature_cnt)
 {
     this->add_layer(new Linear(Shape(batch_size, in_feature_cnt), Shape(batch_size, out_feature_cnt)));
+}
+
+void Model::linear(Shape in_shape, int out_feature_cnt)
+{
+    this->add_layer(new Linear(in_shape, Shape(in_shape[0], out_feature_cnt)));
 }
 
 void Model::conv2d(Shape filter_shape)

@@ -34,6 +34,7 @@ namespace nn
 
         NdArray *forward(NdArray *x);
         float loss(NdArray *p, NdArray *y);
+        float accuracy(NdArray *p, NdArray *y);
         void backward(NdArray *p, NdArray *y);
         void step();
 
@@ -56,6 +57,7 @@ namespace nn
         void linear(int out_feature_cnt);
         void linear(Shape y_shape);
         void linear(int batch_size, int in_feature_cnt, int out_feature_cnt);
+        void linear(Shape in_shape, int out_feature_cnt);
         void conv2d(Shape filter_shape);
         void conv2d(Shape filter_shape, Stride stride);
         void conv2d(Shape filter_shape, Padding padding, Stride stride);
