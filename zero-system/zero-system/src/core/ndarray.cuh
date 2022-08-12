@@ -69,7 +69,7 @@ public:
 	static NdArray *random(bool cuda, Shape shape, float mean, float stddev);
 	static NdArray *random_ints(bool cuda, Shape shape, int upper_bound);
 
-	static NdArray *one_hot(NdArray *src);
+	static NdArray *one_hot(NdArray *src, int max_val);
 	static NdArray *pad(NdArray *src, int pad_row_cnt, int pad_col_cnt);
 	static NdArray *unpad(NdArray *src, int pad_row_cnt, int pad_col_cnt);
 

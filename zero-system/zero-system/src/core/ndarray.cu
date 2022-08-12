@@ -427,7 +427,7 @@ NdArray *NdArray::random_ints(bool cuda, Shape shape, int upper_bound)
     return arr;
 }
 
-NdArray *NdArray::one_hot(NdArray *src)
+NdArray *NdArray::one_hot(NdArray *src, int max_val)
 {
     int lst_dim_idx = src->num_dims() - 1;
 
@@ -443,7 +443,6 @@ NdArray *NdArray::one_hot(NdArray *src)
         THROW_ERROR("NDARRAY ONE HOT ERROR: negative numbers not allowed");
     }
 
-    int max_val = src->max();
     int oh_dim = ((int)max_val) + 1;
 
     std::vector<int> dst_dims = src->shape().dims();
