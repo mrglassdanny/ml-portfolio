@@ -30,6 +30,8 @@ Model::~Model()
 
 NdArray *Model::forward(NdArray *x)
 {
+    this->reset_layer_shapes();
+
     this->validate_layers();
     this->validate_input(x);
 
@@ -66,7 +68,7 @@ float Model::loss(NdArray *p, NdArray *y)
 
     this->loss_->evaluate(p, y, losses);
 
-    float mean_loss = losses->sum() / losses->shape()[losses->num_dims() - 1];
+    float mean_loss = losses->sum() / this->batch_size();
 
     delete losses;
     return mean_loss;
@@ -220,13 +222,11 @@ void Model::validate_gradients(NdArray *x, NdArray *y, bool print_params)
         {
             float w_val = w->get_val(i);
 
-            // Left:
             w->set_val(i, w_val - EPSILON);
             p = this->forward(x);
             float left_loss = this->loss(p, y);
             delete p;
 
-            // Right:
             w->set_val(i, w_val + EPSILON);
             p = this->forward(x);
             float right_loss = this->loss(p, y);
@@ -251,13 +251,11 @@ void Model::validate_gradients(NdArray *x, NdArray *y, bool print_params)
         {
             float b_val = b->get_val(i);
 
-            // Left:
             b->set_val(i, b_val - EPSILON);
             p = this->forward(x);
             float left_loss = this->loss(p, y);
             delete p;
 
-            // Right:
             b->set_val(i, b_val + EPSILON);
             p = this->forward(x);
             float right_loss = this->loss(p, y);
@@ -354,6 +352,11 @@ void Model::linear(int out_feature_cnt)
     this->add_layer(new Linear(this->output_shape(), Shape(this->batch_size(), out_feature_cnt)));
 }
 
+void Model::linear(Shape y_shape)
+{
+    this->add_layer(new Linear(this->output_shape(), y_shape));
+}
+
 void Model::linear(int batch_size, int in_feature_cnt, int out_feature_cnt)
 {
     this->add_layer(new Linear(Shape(batch_size, in_feature_cnt), Shape(batch_size, out_feature_cnt)));
@@ -427,6 +430,14 @@ Layer *Model::first_layer()
 Layer *Model::last_layer()
 {
     return this->lyrs_[this->lyrs_.size() - 1];
+}
+
+void Model::reset_layer_shapes()
+{
+    for (Layer *lyr : this->lyrs_)
+    {
+        lyr->reset_shape();
+    }
 }
 
 int Model::batch_size()

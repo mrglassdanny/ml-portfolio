@@ -129,6 +129,15 @@ void Conv2d::evaluate(NdArray *out)
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
     dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
+    if (this->padding_rows() > 0 || this->padding_cols() > 0)
+    {
+        NdArray *padded_n = NdArray::pad(this->n_, this->padding_rows(), this->padding_cols());
+        delete this->n_;
+        this->n_ = padded_n;
+
+        this->default_shape_ = false;
+    }
+
     NdArray *n = this->n_;
     NdArray *w = this->params_->weights();
     NdArray *b = this->params_->biases();
@@ -195,9 +204,14 @@ Shape Conv2d::output_shape()
 
 void Conv2d::validate()
 {
-    if (this->n_->shape().num_dims() != 4)
+    if (this->n_->num_dims() != 4)
     {
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: invalid input shape");
+    }
+
+    if (this->params_->weights()->num_dims() != 4)
+    {
+        THROW_ERROR("CONV2D LAYER VALIDATION FAILED: invalid filter shape");
     }
 
     if (this->params_->weights()->shape().num_dims() != 4)
@@ -205,24 +219,29 @@ void Conv2d::validate()
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: invalid filter shape");
     }
 
-    int r = this->filter_rows();
-    while (r < this->in_feature_rows())
+    if (this->n_->shape()[1] != this->params_->weights()->shape()[1])
     {
-        r += this->stride_rows();
+        THROW_ERROR("CONV2D LAYER VALIDATION FAILED: input channels and filter channels do not match");
     }
 
-    if (r != this->in_feature_rows())
+    int filter_row_cnt = this->filter_rows();
+    int padded_row_cnt = this->in_feature_rows() + (this->padding_rows() * 2);
+    while (filter_row_cnt < padded_row_cnt)
+    {
+        filter_row_cnt += this->stride_rows();
+    }
+    if (filter_row_cnt != padded_row_cnt)
     {
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: filter/stride row combination does not fit input row count");
     }
 
-    int c = this->filter_cols();
-    while (c < this->in_feature_cols())
+    int filter_col_cnt = this->filter_cols();
+    int padded_col_cnt = this->in_feature_cols() + (this->padding_cols() * 2);
+    while (filter_col_cnt < padded_col_cnt)
     {
-        c += this->stride_cols();
+        filter_col_cnt += this->stride_cols();
     }
-
-    if (c != this->in_feature_cols())
+    if (filter_col_cnt != padded_col_cnt)
     {
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: filter/stride column combination does not fit input column count");
     }
@@ -235,6 +254,23 @@ void Conv2d::validate()
     if (this->filter_cols() < this->stride_cols())
     {
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: filter column count less than stride column count");
+    }
+}
+
+void Conv2d::reset_shape()
+{
+    if (this->default_shape_)
+    {
+        return;
+    }
+
+    if (this->padding_rows() > 0 || this->padding_cols() > 0)
+    {
+        NdArray *unpadded_n = NdArray::zeros(true, Shape(this->batch_size(), this->channels(),
+                                                         this->in_feature_rows() - (this->padding_rows() * 2), 
+                                                         this->in_feature_cols() - (this->padding_cols() * 2)));
+        delete this->n_;
+        this->n_ = unpadded_n;
     }
 }
 

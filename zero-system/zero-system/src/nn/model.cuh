@@ -54,6 +54,7 @@ namespace nn
         void set_optimizer(Optimizer *optim);
 
         void linear(int out_feature_cnt);
+        void linear(Shape y_shape);
         void linear(int batch_size, int in_feature_cnt, int out_feature_cnt);
         void conv2d(Shape filter_shape);
         void conv2d(Shape filter_shape, Stride stride);
@@ -68,6 +69,7 @@ namespace nn
         std::vector<Parameters *> parameters();
         Layer *first_layer();
         Layer *last_layer();
+        void reset_layer_shapes();
 
         int batch_size();
 

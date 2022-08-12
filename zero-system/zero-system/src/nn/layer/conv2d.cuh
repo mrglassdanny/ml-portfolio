@@ -35,6 +35,8 @@ namespace nn
 
             virtual void validate() override;
 
+            virtual void reset_shape() override;
+
             int channels();
             int in_feature_rows();
             int in_feature_cols();

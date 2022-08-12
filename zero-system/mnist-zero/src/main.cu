@@ -102,8 +102,25 @@ int main(int argc, char **argv)
 {
 	printf("MNIST-ZERO\n\n");
 
-	auto arr = NdArray::ones(false, Shape(3, 5));
-	arr->print();
+	auto x = NdArray::random(true, Shape(1, 2, 16, 16), 0.0f, 1.0f);
+	auto y = NdArray::zeros(true, Shape(1, 3));
+
+	auto model = new nn::Model();
+
+	model->conv2d(x->shape(), Shape(2, 2, 2, 2), nn::layer::Padding{2, 2}, nn::layer::Stride{2, 2});
+	model->sigmoid();
+	model->conv2d(Shape(2, 2, 2, 2), nn::layer::Stride{1, 1});
+	model->sigmoid();
+	model->linear(32);
+	model->tanh();
+	model->linear(y->shape());
+	model->tanh();
+
+	model->set_loss(new nn::loss::MSE());
+
+	model->summarize();
+
+	model->validate_gradients(x, y, true);
 
 	return 0;
 }

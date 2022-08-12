@@ -3,8 +3,8 @@
 
 - ~~gradient check~~
 - ~~conv2d~~
-- ~~padding~~
-- fix loss calculation
+- ~~padding~~ ???
+- ~~fix loss calculation~~
 - ~~relu~~
 - ~~tanh~~
 - batch norm

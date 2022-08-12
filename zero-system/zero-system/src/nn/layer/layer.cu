@@ -7,6 +7,8 @@ Layer::~Layer()
     delete this->n_;
 }
 
+void Layer::reset_shape() {}
+
 void Layer::summarize()
 {
     std::string cls_name(typeid(*this).name());
