@@ -21,6 +21,17 @@ __global__ void k_pad(float *dst, float *src, int dst_row_cnt, int dst_col_cnt, 
     }
 }
 
+__global__ void k_unpad(float *dst, float *src, int dst_row_cnt, int dst_col_cnt, int src_row_cnt, int src_col_cnt, int pad_row_cnt, int pad_col_cnt)
+{
+    int dst_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int dst_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (dst_col_idx < dst_col_cnt && dst_row_idx < dst_row_cnt)
+    {
+        dst[dst_row_idx * dst_col_cnt + dst_col_idx] = src[(dst_row_idx + pad_row_cnt) * src_col_cnt + (dst_col_idx + pad_col_cnt)];
+    }
+}
+
 Shape::Shape()
 {
 }
@@ -525,6 +536,104 @@ NdArray *NdArray::pad(NdArray *src, int pad_row_cnt, int pad_col_cnt)
     break;
     default:
         THROW_ERROR("NDARRAY PAD ERROR: shape must not have more than 4 dimensions");
+        break;
+    }
+
+    if (!orig_cuda)
+    {
+        src->to_cpu();
+        dst->to_cpu();
+    }
+
+    return dst;
+}
+
+NdArray *NdArray::unpad(NdArray *src, int pad_row_cnt, int pad_col_cnt)
+{
+    if (src->num_dims() < 2)
+    {
+        THROW_ERROR("NDARRAY UNPAD ERROR: shape must have at least 2 dimensions");
+    }
+
+    bool orig_cuda = src->cuda_;
+    src->to_cuda();
+
+    int col_dim_idx = src->num_dims() - 1;
+    int row_dim_idx = col_dim_idx - 1;
+
+    int src_row_cnt = src->shape()[row_dim_idx];
+    int src_col_cnt = src->shape()[col_dim_idx];
+
+    std::vector<int> dst_dims;
+    for (int i = 0; i < row_dim_idx; i++)
+    {
+        dst_dims.push_back(src->shape()[i]);
+    }
+
+    int dst_row_cnt = src_row_cnt - (pad_row_cnt * 2);
+    int dst_col_cnt = src_col_cnt - (pad_col_cnt * 2);
+
+    if (dst_row_cnt < 1)
+    {
+        THROW_ERROR("NDARRAY UNPAD ERROR: padding row count is too large");
+    }
+
+    if (dst_col_cnt < 1)
+    {
+        THROW_ERROR("NDARRAY UNPAD ERROR: padding column count is too large");
+    }
+
+    dst_dims.push_back(dst_row_cnt);
+    dst_dims.push_back(dst_col_cnt);
+
+    NdArray *dst = NdArray::zeros(src->cuda_, Shape(dst_dims));
+
+    int grid_row_cnt = (dst_row_cnt / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (dst_col_cnt / CUDA_THREADS_PER_BLOCK) + 1;
+
+    dim3 grid_dims(grid_col_cnt, grid_row_cnt);
+    dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
+
+    switch (src->num_dims())
+    {
+    case 2:
+    {
+        float *src_data = src->data();
+        float *dst_data = dst->data();
+
+        k_unpad<<<grid_dims, block_dims>>>(dst_data, src_data, dst_row_cnt, dst_col_cnt, src_row_cnt, src_col_cnt,
+                                           pad_row_cnt, pad_col_cnt);
+    }
+    break;
+    case 3:
+    {
+        for (int i = 0; i < src->shape()[0]; i++)
+        {
+            float *src_data = &src->data()[(i * src_row_cnt * src_col_cnt)];
+            float *dst_data = &dst->data()[(i * dst_row_cnt * dst_col_cnt)];
+
+            k_unpad<<<grid_dims, block_dims>>>(dst_data, src_data, dst_row_cnt, dst_col_cnt, src_row_cnt, src_col_cnt,
+                                               pad_row_cnt, pad_col_cnt);
+        }
+    }
+    break;
+    case 4:
+    {
+        for (int i = 0; i < src->shape()[0]; i++)
+        {
+            for (int j = 0; j < src->shape()[1]; j++)
+            {
+                float *src_data = &src->data()[(i * src->shape()[1] * src_row_cnt * src_col_cnt) + (j * src_row_cnt * src_col_cnt)];
+                float *dst_data = &dst->data()[(i * dst->shape()[1] * dst_row_cnt * dst_col_cnt) + (j * dst_row_cnt * dst_col_cnt)];
+
+                k_unpad<<<grid_dims, block_dims>>>(dst_data, src_data, dst_row_cnt, dst_col_cnt, src_row_cnt, src_col_cnt,
+                                                   pad_row_cnt, pad_col_cnt);
+            }
+        }
+    }
+    break;
+    default:
+        THROW_ERROR("NDARRAY UNPAD ERROR: shape must not have more than 4 dimensions");
         break;
     }
 

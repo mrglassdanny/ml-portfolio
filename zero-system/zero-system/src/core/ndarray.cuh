@@ -37,6 +37,7 @@ public:
 	int operator[](int) const;
 	bool operator==(const Shape &);
 	bool operator!=(const Shape &);
+
 	std::vector<int> dims();
 	int num_dims();
 	int dims_size();
@@ -70,6 +71,7 @@ public:
 
 	static NdArray *one_hot(NdArray *src);
 	static NdArray *pad(NdArray *src, int pad_row_cnt, int pad_col_cnt);
+	static NdArray *unpad(NdArray *src, int pad_row_cnt, int pad_col_cnt);
 
 	void print();
 
