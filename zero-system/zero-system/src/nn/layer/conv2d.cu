@@ -116,6 +116,7 @@ __global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int ba
 Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride)
 {
     this->n_ = new NdArray(true, in_shape);
+    this->default_shape_ = in_shape;
     this->params_ = new Parameters(filter_shape, Shape(filter_shape[0], filter_shape[1]), this->in_feature_rows(), this->in_feature_cols());
     this->padding_ = padding;
     this->stride_ = stride;
@@ -134,8 +135,6 @@ void Conv2d::evaluate(NdArray *out)
         NdArray *padded_n = NdArray::pad(this->n_, this->padding_rows(), this->padding_cols());
         delete this->n_;
         this->n_ = padded_n;
-
-        this->default_shape_ = false;
     }
 
     NdArray *n = this->n_;
@@ -259,18 +258,10 @@ void Conv2d::validate()
 
 void Conv2d::reset_shape()
 {
-    if (this->default_shape_)
+    if (this->input_shape() != this->default_shape_)
     {
-        return;
-    }
-
-    if (this->padding_rows() > 0 || this->padding_cols() > 0)
-    {
-        NdArray *unpadded_n = NdArray::zeros(true, Shape(this->batch_size(), this->channels(),
-                                                         this->in_feature_rows() - (this->padding_rows() * 2), 
-                                                         this->in_feature_cols() - (this->padding_cols() * 2)));
         delete this->n_;
-        this->n_ = unpadded_n;
+        this->n_ = NdArray::zeros(true, this->default_shape_);
     }
 }
 
