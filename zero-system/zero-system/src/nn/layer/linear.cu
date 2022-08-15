@@ -137,7 +137,7 @@ Shape Linear::input_shape()
 
 Shape Linear::output_shape()
 {
-    return Shape(this->batch_size(), this->params_->weights()->shape()[1]);
+    return Shape(this->batch_size(), this->weight_cols());
 }
 
 void Linear::validate()
