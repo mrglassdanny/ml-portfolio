@@ -65,9 +65,7 @@ float Model::loss(NdArray *p, NdArray *y)
     y->to_cuda();
 
     NdArray *losses = NdArray::zeros(true, p->shape());
-
     this->loss_->evaluate(p, y, losses);
-
     float mean_loss = losses->sum() / this->batch_size();
 
     delete losses;
