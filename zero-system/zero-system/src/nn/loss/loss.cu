@@ -99,7 +99,7 @@ void MSE::evaluate(NdArray *p, NdArray *y, NdArray *out)
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
     dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
-    k_mse_evaluate<<<grid_row_cnt, block_dims>>>(p->data(), y->data(), out->data(), batch_size, output_cnt);
+    k_mse_evaluate<<<grid_dims, block_dims>>>(p->data(), y->data(), out->data(), batch_size, output_cnt);
 }
 
 NdArray *MSE::derive(NdArray *p, NdArray *y)
