@@ -858,11 +858,19 @@ int NdArray::count()
 
 float NdArray::sum()
 {
+    bool orig_cuda = this->cuda_;
+    this->to_cpu();
+    
     float sum_val = 0.0f;
 
     for (int i = 0; i < this->count(); i++)
     {
-        sum_val += this->get_val(i);
+        sum_val += this->data_[i];
+    }
+
+    if (orig_cuda)
+    {
+        this->to_cuda();
     }
 
     return sum_val;
