@@ -411,18 +411,26 @@ NdArray *NdArray::full(bool cuda, Shape shape, float val)
 
 NdArray *NdArray::random(bool cuda, Shape shape, float mean, float stddev)
 {
-    NdArray *arr = new NdArray(cuda, shape);
-
+    NdArray *arr = new NdArray(false, shape);
     arr->random(mean, stddev);
+
+    if (cuda)
+    {
+        arr->to_cuda();
+    }
 
     return arr;
 }
 
 NdArray *NdArray::random_ints(bool cuda, Shape shape, int upper_bound)
 {
-    NdArray *arr = new NdArray(cuda, shape);
-
+    NdArray *arr = new NdArray(false, shape);
     arr->random_ints(upper_bound);
+
+    if (cuda)
+    {
+        arr->to_cuda();
+    }
 
     return arr;
 }
@@ -983,20 +991,36 @@ void NdArray::full(float val)
 
 void NdArray::random(float mean, float stddev)
 {
+    bool orig_cuda = this->cuda_;
+    this->to_cpu();
+
     std::random_device rd;
     std::mt19937 gen(rd());
 
     for (int i = 0; i < this->count(); i++)
     {
         std::normal_distribution<float> d(mean, stddev);
-        this->set_val(i, d(gen));
+        this->data_[i] = d(gen);
+    }
+
+    if (orig_cuda)
+    {
+        this->to_cuda();
     }
 }
 
 void NdArray::random_ints(int upper_bound)
 {
+    bool orig_cuda = this->cuda_;
+    this->to_cpu();
+
     for (int i = 0; i < this->count(); i++)
     {
-        this->set_val(i, rand() % upper_bound);
+        this->data_[i] = rand() % upper_bound;
+    }
+
+    if (orig_cuda)
+    {
+        this->to_cuda();
     }
 }

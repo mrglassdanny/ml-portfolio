@@ -9,8 +9,6 @@
 #include <random>
 
 #include <cuda_runtime.h>
-#include <curand.h>
-#include <curand_kernel.h>
 #include <device_launch_parameters.h>
 #include <device_atomic_functions.h>
 
