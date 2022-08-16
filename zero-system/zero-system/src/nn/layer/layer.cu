@@ -28,6 +28,11 @@ int Layer::batch_size()
     return this->n_->shape()[0];
 }
 
+void Layer::change_batch_size(int batch_size)
+{
+    this->n_->change_dim(0, batch_size);
+}
+
 NdArray *Layer::neurons()
 {
     return this->n_;

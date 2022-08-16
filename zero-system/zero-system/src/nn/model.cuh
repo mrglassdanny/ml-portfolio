@@ -74,6 +74,7 @@ namespace nn
         void reset_layer_shapes();
 
         int batch_size();
+        void change_batch_size(int batch_size);
 
         void performance_check(NdArray *x, NdArray *y, int epoch_cnt);
     };

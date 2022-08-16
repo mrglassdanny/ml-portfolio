@@ -28,6 +28,7 @@ namespace nn
             virtual void summarize();
 
             int batch_size();
+            void change_batch_size(int batch_size);
 
             NdArray *neurons();
             void copy_neurons(NdArray *n);

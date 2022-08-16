@@ -487,6 +487,14 @@ int Model::batch_size()
     return this->first_layer()->batch_size();
 }
 
+void Model::change_batch_size(int batch_size)
+{
+    for (Layer *lyr : this->lyrs_)
+    {
+        lyr->change_batch_size(batch_size);
+    }
+}
+
 void Model::performance_check(NdArray *x, NdArray *y, int epoch_cnt)
 {
     CudaStopWatch *sw = new CudaStopWatch();
