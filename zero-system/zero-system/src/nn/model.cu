@@ -117,11 +117,6 @@ void Model::backward(NdArray *p, NdArray *y)
     this->validate_loss();
     this->validate_output(y);
 
-    if (this->loss_ == nullptr)
-    {
-        return;
-    }
-
     p->to_cuda();
     y->to_cuda();
 
