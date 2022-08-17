@@ -23,7 +23,7 @@ __global__ void k_sgd_bias_step(float *b, float *db, int b_cnt, float lr, int ba
     }
 }
 
-__global__ void k_sgd_momentum_weight_step(float *w, float *dw, float *mdw, int w_cnt, float lr, float beta1, int batch_size, int step_num)
+__global__ void k_sgd_momentum_weight_step(float *w, float *dw, float *mdw, int w_cnt, float lr, float beta1, int step_num, int batch_size)
 {
     int w_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -37,7 +37,7 @@ __global__ void k_sgd_momentum_weight_step(float *w, float *dw, float *mdw, int 
     }
 }
 
-__global__ void k_sgd_momentum_bias_step(float *b, float *db, float *mdb, int b_cnt, float lr, float beta1, int batch_size, int step_num)
+__global__ void k_sgd_momentum_bias_step(float *b, float *db, float *mdb, int b_cnt, float lr, float beta1,  int step_num, int batch_size)
 {
     int b_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -51,7 +51,7 @@ __global__ void k_sgd_momentum_bias_step(float *b, float *db, float *mdb, int b_
     }
 }
 
-__global__ void k_adam_weight_step(float *w, float *dw, float *mdw, float *vdw, int w_cnt, float lr, float beta1, float beta2, int batch_size, int step_num)
+__global__ void k_adam_weight_step(float *w, float *dw, float *mdw, float *vdw, int w_cnt, float lr, float beta1, float beta2, int step_num, int batch_size)
 {
     int w_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -67,7 +67,7 @@ __global__ void k_adam_weight_step(float *w, float *dw, float *mdw, float *vdw, 
     }
 }
 
-__global__ void k_adam_bias_step(float *b, float *db, float *mdb, float *vdb, int b_cnt, float lr, float beta1, float beta2, int batch_size, int step_num)
+__global__ void k_adam_bias_step(float *b, float *db, float *mdb, float *vdb, int b_cnt, float lr, float beta1, float beta2, int step_num, int batch_size)
 {
     int b_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
@@ -166,9 +166,9 @@ void SGDMomentum::step(int batch_size)
         int b_cnt = b->count();
 
         k_sgd_momentum_weight_step<<<w_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(w->data(), dw->data(), mdw->data(),
-                                                                                                   w_cnt, this->lr_, this->beta1_, batch_size, step_num);
+                                                                                                   w_cnt, this->lr_, this->beta1_, this->step_num_, batch_size);
         k_sgd_momentum_bias_step<<<b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), mdb->data(),
-                                                                                                 b_cnt, this->lr_, this->beta1_, batch_size, step_num);
+                                                                                                 b_cnt, this->lr_, this->beta1_, this->step_num_, batch_size);
 
         params->zero_grad();
         this->step_num_++;
@@ -220,9 +220,9 @@ void Adam::step(int batch_size)
         int b_cnt = b->count();
 
         k_adam_weight_step<<<w_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(w->data(), dw->data(), vdw->data(), sdw->data(),
-                                                                                                   w_cnt, this->lr_, this->beta1_, this->beta2_, batch_size, step_num);
+                                                                                                   w_cnt, this->lr_, this->beta1_, this->beta2_, this->step_num_, batch_size);
         k_adam_bias_step<<<b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), vdb->data(), sdb->data(),
-                                                                                                 b_cnt, this->lr_, this->beta1_, this->beta2_, batch_size, step_num);
+                                                                                                 b_cnt, this->lr_, this->beta1_, this->beta2_, this->step_num_, batch_size);
 
         params->zero_grad();
         this->step_num_++;
