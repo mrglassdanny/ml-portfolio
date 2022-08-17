@@ -36,7 +36,7 @@ namespace nn
         float loss(NdArray *p, NdArray *y);
         float accuracy(NdArray *p, NdArray *y);
         void backward(NdArray *p, NdArray *y);
-        void step();
+        void step(int iter);
 
         Shape input_shape();
         Shape output_shape();
