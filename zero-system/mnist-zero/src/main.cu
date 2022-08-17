@@ -124,7 +124,6 @@ void train_mnist(nn::Model *model, int batch_size)
 		validation_batch_idxs.push_back(rand() % train_batch_cnt);
 	}
 
-	int iter = 1;
 	for (int i = 0;; i++)
 	{
 		for (int j = 0; j < train_batch_cnt; j++)
@@ -147,10 +146,8 @@ void train_mnist(nn::Model *model, int batch_size)
 			{
 				auto p = model->forward(x);
 				model->backward(p, y);
-				model->step(iter);
+				model->step();
 				delete p;
-
-				iter++;
 			}
 			else
 			{
@@ -207,7 +204,7 @@ int main(int argc, char **argv)
 	model->sigmoid();
 
 	model->set_loss(new nn::loss::MSE());
-	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.001f, BETA_1));
+	model->set_optimizer(new nn::optim::Adam(model->parameters(), 0.01f, BETA_1, BETA_2));
 
 	model->summarize();
 
