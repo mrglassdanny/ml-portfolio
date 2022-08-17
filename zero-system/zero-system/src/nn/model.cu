@@ -130,11 +130,11 @@ void Model::backward(NdArray *p, NdArray *y)
     delete loss_gradients;
 }
 
-void Model::step(int iter)
+void Model::step()
 {
     this->validate_optimizer();
 
-    this->optim_->step(this->batch_size(), iter);
+    this->optim_->step(this->batch_size());
 }
 
 Shape Model::input_shape()
