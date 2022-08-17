@@ -199,7 +199,7 @@ int main(int argc, char **argv)
 	srand(time(NULL));
 
 	auto model = new nn::Model();
-	int batch_size = 1;
+	int batch_size = 32;
 
 	model->linear(Shape(batch_size, 1, 28, 28), 16);
 	model->sigmoid();
@@ -209,7 +209,7 @@ int main(int argc, char **argv)
 	model->sigmoid();
 
 	model->set_loss(new nn::loss::MSE());
-	model->set_optimizer(new nn::optim::Adam(model->parameters(), 0.01f, BETA_1, BETA_2));
+	model->set_optimizer(new nn::optim::Adam(model->parameters(), 0.1f, BETA_1, BETA_2));
 
 	model->summarize();
 
