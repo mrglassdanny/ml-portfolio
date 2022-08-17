@@ -63,12 +63,11 @@ std::vector<Batch> get_train_dataset(int batch_size)
 	return batches;
 }
 
-Batch get_test_batch()
+Batch get_test_batch(int img_cnt)
 {
 	int img_row_cnt = 28;
 	int img_col_cnt = 28;
 	int img_area = img_row_cnt * img_col_cnt;
-	int img_cnt = 10000;
 
 	FILE *img_file = fopen("data/t10k-images.idx3-ubyte", "rb");
 	FILE *lbl_file = fopen("data/t10k-labels.idx1-ubyte", "rb");
@@ -172,7 +171,7 @@ void train_mnist(nn::Model *model, int batch_size)
 
 void test_mnist(nn::Model *model)
 {
-	auto test_batch = get_test_batch();
+	auto test_batch = get_test_batch(10000);
 	auto x = test_batch.x;
 	auto y = test_batch.y;
 
@@ -186,6 +185,12 @@ void test_mnist(nn::Model *model)
 
 	delete x;
 	delete y;
+}
+
+void check_grad(nn::Model *model)
+{
+	auto batch = get_test_batch(1);
+	model->validate_gradients(batch.x, batch.y, true);
 }
 
 int main(int argc, char **argv)
@@ -204,12 +209,13 @@ int main(int argc, char **argv)
 	model->sigmoid();
 
 	model->set_loss(new nn::loss::MSE());
-	model->set_optimizer(new nn::optim::Adam(model->parameters(), 0.01f, BETA_1, BETA_2));
+	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.01f, BETA_1));
 
 	model->summarize();
 
-	train_mnist(model, batch_size);
-	test_mnist(model);
+	// train_mnist(model, batch_size);
+	// test_mnist(model);
+	check_grad(model);
 
 	return 0;
 }
