@@ -109,6 +109,64 @@ Batch get_test_batch(int img_cnt)
 	return {x, oh_y};
 }
 
+Batch get_adj_train_batch(int batch_size)
+{
+	int img_row_cnt = 28;
+	int img_col_cnt = 28;
+	int img_area = img_row_cnt * img_col_cnt;
+	int img_cnt = 1;
+
+	std::vector<Batch> batches;
+
+	FILE *img_file = fopen("data/train-images.idx3-ubyte", "rb");
+	FILE *lbl_file = fopen("data/train-labels.idx1-ubyte", "rb");
+
+	fseek(img_file, sizeof(int) * 4, 0);
+	unsigned char *img_buf = (unsigned char *)malloc((sizeof(unsigned char) * img_area * img_cnt));
+	fread(img_buf, 1, (sizeof(unsigned char) * img_area * img_cnt), img_file);
+
+	fseek(lbl_file, sizeof(int) * 2, 0);
+	unsigned char *lbl_buf = (unsigned char *)malloc(sizeof(unsigned char) * img_cnt);
+	fread(lbl_buf, 1, (sizeof(unsigned char) * img_cnt), lbl_file);
+
+	fclose(img_file);
+	fclose(lbl_file);
+
+	float *img_flt_buf = (float *)malloc(sizeof(float) * (img_area * img_cnt));
+	for (int i = 0; i < (img_area * img_cnt); i++)
+	{
+		img_flt_buf[i] = ((float)img_buf[i] / (255.0));
+	}
+
+	float *lbl_flt_buf = (float *)malloc(sizeof(float) * (img_cnt));
+	for (int i = 0; i < (img_cnt); i++)
+	{
+		lbl_flt_buf[i] = ((float)lbl_buf[i]);
+	}
+
+	free(img_buf);
+	free(lbl_buf);
+
+	auto x = NdArray::from_data(Shape(1, 1, img_row_cnt, img_col_cnt), img_flt_buf);
+	auto y = NdArray::from_data(Shape(1, 1), lbl_flt_buf);
+	auto oh_y = NdArray::one_hot(y, 9);
+	delete y;
+
+	free(lbl_flt_buf);
+	free(img_flt_buf);
+
+	auto xs = new NdArray(false, Shape(batch_size, 1, img_row_cnt, img_col_cnt));
+	auto oh_ys = new NdArray(false, Shape(batch_size, 10));
+
+	for (int i = 0; i < batch_size; i++)
+	{
+		memcpy(&xs->data()[i * x->count()], x->data(), x->size());
+		memcpy(&oh_ys->data()[i * oh_y->count()], oh_y->data(), oh_y->size());
+	}
+
+	return {xs, oh_ys};
+}
+
 void train_mnist(nn::Model *model, int batch_size)
 {
 	auto train_ds = get_train_dataset(batch_size);
@@ -187,6 +245,33 @@ void test_mnist(nn::Model *model)
 	delete y;
 }
 
+void train_mnist_adj(nn::Model *model, int batch_size)
+{
+	auto batch = get_adj_train_batch(batch_size);
+
+	for (int i = 0;; i++)
+	{
+		auto x = batch.x;
+		auto y = batch.y;
+
+		auto p = model->forward(x);
+		auto l = model->loss(p, y);
+		model->backward(p, y);
+		model->step();
+		delete p;
+
+		printf("EPOCH: %d\tLOSS: %f\n", i + 1, l);
+
+		if (_kbhit())
+		{
+			if (_getch() == 'q')
+			{
+				break;
+			}
+		}
+	}
+}
+
 void check_grad(nn::Model *model)
 {
 	auto batch = get_test_batch(1);
@@ -199,7 +284,7 @@ int main(int argc, char **argv)
 	srand(time(NULL));
 
 	auto model = new nn::Model();
-	int batch_size = 32;
+	int batch_size = 1024;
 
 	model->linear(Shape(batch_size, 1, 28, 28), 16);
 	model->sigmoid();
@@ -209,12 +294,13 @@ int main(int argc, char **argv)
 	model->sigmoid();
 
 	model->set_loss(new nn::loss::MSE());
-	model->set_optimizer(new nn::optim::Adam(model->parameters(), 0.1f, BETA_1, BETA_2));
+	model->set_optimizer(new nn::optim::SGD(model->parameters(), 0.1f));
 
 	model->summarize();
 
-	train_mnist(model, batch_size);
-	test_mnist(model);
+	// train_mnist(model, batch_size);
+	// test_mnist(model);
+	train_mnist_adj(model, batch_size);
 	// check_grad(model);
 
 	return 0;
