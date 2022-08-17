@@ -209,13 +209,13 @@ int main(int argc, char **argv)
 	model->sigmoid();
 
 	model->set_loss(new nn::loss::MSE());
-	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.01f, BETA_1));
+	model->set_optimizer(new nn::optim::Adam(model->parameters(), 0.01f, BETA_1, BETA_2));
 
 	model->summarize();
 
-	// train_mnist(model, batch_size);
-	// test_mnist(model);
-	check_grad(model);
+	train_mnist(model, batch_size);
+	test_mnist(model);
+	// check_grad(model);
 
 	return 0;
 }

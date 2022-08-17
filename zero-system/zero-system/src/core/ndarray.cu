@@ -32,6 +32,61 @@ __global__ void k_unpad(float *dst, float *src, int dst_row_cnt, int dst_col_cnt
     }
 }
 
+__global__ void k_sum(float *data, int cnt, float *sum_val)
+{
+    __shared__ float temp[CUDA_THREADS_PER_BLOCK];
+    memset(temp, 0, CUDA_THREADS_PER_BLOCK * sizeof(float));
+
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (tid < cnt)
+    {
+        temp[threadIdx.x] = data[tid];
+    }
+
+    __syncthreads();
+
+    if (threadIdx.x == 0)
+    {
+        float l_sum_val = 0.0f;
+
+        for (int i = 0; i < CUDA_THREADS_PER_BLOCK; i++)
+        {
+            l_sum_val += temp[i];
+        }
+
+        atomicAdd(sum_val, l_sum_val);
+    }
+}
+
+__global__ void k_variance(float *data, int cnt, float mean_val, float *variance_val)
+{
+    __shared__ float temp[CUDA_THREADS_PER_BLOCK];
+    memset(temp, 0, CUDA_THREADS_PER_BLOCK * sizeof(float));
+
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (tid < cnt)
+    {
+        float diff = data[tid] - mean_val;
+        temp[threadIdx.x] = (diff * diff);
+    }
+
+    __syncthreads();
+
+    if (threadIdx.x == 0)
+    {
+        float l_variance_val = 0.0f;
+
+        for (int i = 0; i < CUDA_THREADS_PER_BLOCK; i++)
+        {
+            l_variance_val += temp[i];
+        }
+
+        atomicAdd(variance_val, l_variance_val);
+    }
+}
+
 Shape::Shape()
 {
 }
@@ -858,19 +913,24 @@ int NdArray::count()
 
 float NdArray::sum()
 {
-    bool orig_cuda = this->cuda_;
-    this->to_cpu();
-    
-    float sum_val = 0.0f;
+    float sum_val = 0;
 
-    for (int i = 0; i < this->count(); i++)
+    int cnt = this->count();
+
+    if (this->cuda_)
     {
-        sum_val += this->data_[i];
+        NdArray *temp_sum = NdArray::zeros(true, Shape(1));
+        k_sum<<<cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(this->data_, cnt, &temp_sum->data()[0]);
+
+        sum_val = temp_sum->get_val(0);
+        delete temp_sum;
     }
-
-    if (orig_cuda)
+    else
     {
-        this->to_cuda();
+        for (int i = 0; i < cnt; i++)
+        {
+            sum_val += this->data_[i];
+        }
     }
 
     return sum_val;
@@ -919,21 +979,36 @@ float NdArray::mean()
     return this->sum() / this->count();
 }
 
-float NdArray::stddev()
+float NdArray::variance()
 {
-    float stddev_val = 0.0f;
+    float variance_val = 0.0f;
 
+    int cnt = this->count();
     float mean_val = this->mean();
 
-    for (int i = 0; i < this->count(); i++)
+    if (this->cuda_)
     {
-        float diff = this->get_val(i) - mean_val;
-        stddev_val = diff * diff;
+        NdArray *temp_variance = NdArray::zeros(true, Shape(1));
+        k_variance<<<cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(this->data_, cnt, mean_val, &temp_variance->data()[0]);
+
+        variance_val = temp_variance->get_val(0);
+        delete temp_variance;
+    }
+    else
+    {
+        for (int i = 0; i < cnt; i++)
+        {
+            float diff = this->data_[i] - mean_val;
+            variance_val += (diff * diff);
+        }
     }
 
-    stddev_val /= this->count();
+    return variance_val /= (float)cnt;
+}
 
-    return sqrt(stddev_val);
+float NdArray::stddev()
+{
+    return sqrt(this->variance());
 }
 
 float NdArray::get_val(int idx)

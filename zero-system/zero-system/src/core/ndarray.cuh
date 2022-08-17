@@ -91,6 +91,7 @@ public:
 	float min();
 	float max();
 	float mean();
+	float variance();
 	float stddev();
 
 	float get_val(int idx);
