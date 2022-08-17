@@ -506,7 +506,7 @@ void Model::performance_check(NdArray *x, NdArray *y, int epoch_cnt)
         NdArray *p = this->forward(x);
         this->loss(p, y);
         this->backward(p, y);
-        this->step(1);
+        this->step();
         delete p;
     }
 

@@ -23,63 +23,63 @@ __global__ void k_sgd_bias_step(float *b, float *db, int b_cnt, float lr, int ba
     }
 }
 
-__global__ void k_sgd_momentum_weight_step(float *w, float *dw, float *vdw, int w_cnt, float lr, float beta1, int batch_size, int iter)
+__global__ void k_sgd_momentum_weight_step(float *w, float *dw, float *mdw, int w_cnt, float lr, float beta1, int batch_size, int step_num)
 {
     int w_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (w_elem_idx < w_cnt)
     {
-        vdw[w_elem_idx] = beta1 * vdw[w_elem_idx] + (1.0f - beta1) * dw[w_elem_idx];
+        mdw[w_elem_idx] = beta1 * mdw[w_elem_idx] + (1.0f - beta1) * dw[w_elem_idx];
 
-        vdw[w_elem_idx] /= (1.0f - pow(beta1, iter));
+        float corrected_mdw = mdw[w_elem_idx] / (1.0f - pow(beta1, step_num));
 
-        w[w_elem_idx] -= (lr * vdw[w_elem_idx] / batch_size);
+        w[w_elem_idx] -= (lr * corrected_mdw / batch_size);
     }
 }
 
-__global__ void k_sgd_momentum_bias_step(float *b, float *db, float *vdb, int b_cnt, float lr, float beta1, int batch_size, int iter)
+__global__ void k_sgd_momentum_bias_step(float *b, float *db, float *mdb, int b_cnt, float lr, float beta1, int batch_size, int step_num)
 {
     int b_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (b_elem_idx < b_cnt)
     {
-        vdb[b_elem_idx] = beta1 * vdb[b_elem_idx] + (1.0f - beta1) * db[b_elem_idx];
+        mdb[b_elem_idx] = beta1 * mdb[b_elem_idx] + (1.0f - beta1) * db[b_elem_idx];
 
-        vdb[b_elem_idx] /= (1.0f - pow(beta1, iter));
+        float corrected_mdb = mdb[b_elem_idx] / (1.0f - pow(beta1, step_num));
 
-        b[b_elem_idx] -= (lr * vdb[b_elem_idx] / batch_size);
+        b[b_elem_idx] -= (lr * corrected_mdb / batch_size);
     }
 }
 
-__global__ void k_adam_weight_step(float *w, float *dw, float *vdw, float *sdw, int w_cnt, float lr, float beta1, float beta2, int batch_size, int iter)
+__global__ void k_adam_weight_step(float *w, float *dw, float *mdw, float *vdw, int w_cnt, float lr, float beta1, float beta2, int batch_size, int step_num)
 {
     int w_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (w_elem_idx < w_cnt)
     {
-        vdw[w_elem_idx] = beta1 * vdw[w_elem_idx] + (1.0f - beta1) * dw[w_elem_idx];
-        sdw[w_elem_idx] = beta2 * sdw[w_elem_idx] + (1.0f - beta2) * (dw[w_elem_idx] * dw[w_elem_idx]);
+        mdw[w_elem_idx] = beta1 * mdw[w_elem_idx] + (1.0f - beta1) * dw[w_elem_idx];
+        vdw[w_elem_idx] = beta2 * vdw[w_elem_idx] + (1.0f - beta2) * (dw[w_elem_idx] * dw[w_elem_idx]);
 
-        vdw[w_elem_idx] /= (1.0f - pow(beta1, iter));
-        sdw[w_elem_idx] /= (1.0f - pow(beta2, iter));
+        float corrected_mdw = mdw[w_elem_idx] / (1.0f - pow(beta1, step_num));
+        float corrected_vdw = vdw[w_elem_idx] / (1.0f - pow(beta2, step_num));
 
-        w[w_elem_idx] -= (lr * (vdw[w_elem_idx] / (sqrt(sdw[w_elem_idx]) + EPSILON)) / batch_size);
+        w[w_elem_idx] -= (lr * (corrected_mdw / (sqrt(corrected_vdw) + EPSILON)) / batch_size);
     }
 }
 
-__global__ void k_adam_bias_step(float *b, float *db, float *vdb, float *sdb, int b_cnt, float lr, float beta1, float beta2, int batch_size, int iter)
+__global__ void k_adam_bias_step(float *b, float *db, float *mdb, float *vdb, int b_cnt, float lr, float beta1, float beta2, int batch_size, int step_num)
 {
     int b_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (b_elem_idx < b_cnt)
     {
-        vdb[b_elem_idx] = beta1 * vdb[b_elem_idx] + (1.0f - beta1) * db[b_elem_idx];
-        sdb[b_elem_idx] = beta2 * sdb[b_elem_idx] + (1.0f - beta2) * (db[b_elem_idx] * db[b_elem_idx]);
+        mdb[b_elem_idx] = beta1 * mdb[b_elem_idx] + (1.0f - beta1) * db[b_elem_idx];
+        vdb[b_elem_idx] = beta2 * vdb[b_elem_idx] + (1.0f - beta2) * (db[b_elem_idx] * db[b_elem_idx]);
 
-        vdb[b_elem_idx] /= (1.0f - pow(beta1, iter));
-        sdb[b_elem_idx] /= (1.0f - pow(beta2, iter));
+        float corrected_mdb = mdb[b_elem_idx] / (1.0f - pow(beta1, step_num));
+        float corrected_vdb = vdb[b_elem_idx] / (1.0f - pow(beta2, step_num));
 
-        b[b_elem_idx] -= (lr * (vdb[b_elem_idx] / (sqrt(sdb[b_elem_idx])) + EPSILON) / batch_size);
+        b[b_elem_idx] -= (lr * (corrected_mdb / (sqrt(corrected_vdb) + EPSILON)) / batch_size);
     }
 }
 
@@ -108,7 +108,7 @@ SGD::SGD(std::vector<Parameters *> model_params, float learning_rate)
 {
 }
 
-void SGD::step(int batch_size, int iter)
+void SGD::step(int batch_size)
 {
     for (Parameters *params : this->model_params_)
     {
@@ -124,6 +124,7 @@ void SGD::step(int batch_size, int iter)
         k_sgd_bias_step<<<b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), b_cnt, this->lr_, batch_size);
 
         params->zero_grad();
+        this->step_num_++;
     }
 }
 
@@ -134,21 +135,21 @@ SGDMomentum::SGDMomentum(std::vector<Parameters *> model_params, float learning_
 
     for (Parameters *params : model_params)
     {
-        this->vdws_.push_back(NdArray::zeros(true, params->weight_gradients()->shape()));
-        this->vdbs_.push_back(NdArray::zeros(true, params->bias_gradients()->shape()));
+        this->mdws_.push_back(NdArray::zeros(true, params->weight_gradients()->shape()));
+        this->mdbs_.push_back(NdArray::zeros(true, params->bias_gradients()->shape()));
     }
 }
 
 SGDMomentum::~SGDMomentum()
 {
-    for (int i = 0; i < this->vdws_.size(); i++)
+    for (int i = 0; i < this->mdws_.size(); i++)
     {
-        delete this->vdws_[i];
-        delete this->vdbs_[i];
+        delete this->mdws_[i];
+        delete this->mdbs_[i];
     }
 }
 
-void SGDMomentum::step(int batch_size, int iter)
+void SGDMomentum::step(int batch_size)
 {
     for (int i = 0; i < this->model_params_.size(); i++)
     {
@@ -158,18 +159,19 @@ void SGDMomentum::step(int batch_size, int iter)
         NdArray *b = params->biases();
         NdArray *dw = params->weight_gradients();
         NdArray *db = params->bias_gradients();
-        NdArray *vdw = this->vdws_[i];
-        NdArray *vdb = this->vdbs_[i];
+        NdArray *mdw = this->mdws_[i];
+        NdArray *mdb = this->mdbs_[i];
 
         int w_cnt = w->count();
         int b_cnt = b->count();
 
-        k_sgd_momentum_weight_step<<<w_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(w->data(), dw->data(), vdw->data(),
-                                                                                                   w_cnt, this->lr_, this->beta1_, batch_size, iter);
-        k_sgd_momentum_bias_step<<<b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), vdb->data(),
-                                                                                                 b_cnt, this->lr_, this->beta1_, batch_size, iter);
+        k_sgd_momentum_weight_step<<<w_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(w->data(), dw->data(), mdw->data(),
+                                                                                                   w_cnt, this->lr_, this->beta1_, batch_size, step_num);
+        k_sgd_momentum_bias_step<<<b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), mdb->data(),
+                                                                                                 b_cnt, this->lr_, this->beta1_, batch_size, step_num);
 
         params->zero_grad();
+        this->step_num_++;
     }
 }
 
@@ -181,25 +183,25 @@ Adam::Adam(std::vector<Parameters *> model_params, float learning_rate, float be
 
     for (Parameters *params : model_params)
     {
+        this->mdws_.push_back(NdArray::zeros(true, params->weight_gradients()->shape()));
+        this->mdbs_.push_back(NdArray::zeros(true, params->bias_gradients()->shape()));
         this->vdws_.push_back(NdArray::zeros(true, params->weight_gradients()->shape()));
         this->vdbs_.push_back(NdArray::zeros(true, params->bias_gradients()->shape()));
-        this->sdws_.push_back(NdArray::zeros(true, params->weight_gradients()->shape()));
-        this->sdbs_.push_back(NdArray::zeros(true, params->bias_gradients()->shape()));
     }
 }
 
 Adam::~Adam()
 {
-    for (int i = 0; i < this->vdws_.size(); i++)
+    for (int i = 0; i < this->mdws_.size(); i++)
     {
+        delete this->mdws_[i];
+        delete this->mdbs_[i];
         delete this->vdws_[i];
         delete this->vdbs_[i];
-        delete this->sdws_[i];
-        delete this->sdbs_[i];
     }
 }
 
-void Adam::step(int batch_size, int iter)
+void Adam::step(int batch_size)
 {
     for (int i = 0; i < this->model_params_.size(); i++)
     {
@@ -209,19 +211,20 @@ void Adam::step(int batch_size, int iter)
         NdArray *b = params->biases();
         NdArray *dw = params->weight_gradients();
         NdArray *db = params->bias_gradients();
-        NdArray *vdw = this->vdws_[i];
-        NdArray *vdb = this->vdbs_[i];
-        NdArray *sdw = this->sdws_[i];
-        NdArray *sdb = this->sdbs_[i];
+        NdArray *vdw = this->mdws_[i];
+        NdArray *vdb = this->mdbs_[i];
+        NdArray *sdw = this->vdws_[i];
+        NdArray *sdb = this->vdbs_[i];
 
         int w_cnt = w->count();
         int b_cnt = b->count();
 
         k_adam_weight_step<<<w_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(w->data(), dw->data(), vdw->data(), sdw->data(),
-                                                                                                   w_cnt, this->lr_, this->beta1_, this->beta2_, batch_size, iter);
+                                                                                                   w_cnt, this->lr_, this->beta1_, this->beta2_, batch_size, step_num);
         k_adam_bias_step<<<b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), vdb->data(), sdb->data(),
-                                                                                                 b_cnt, this->lr_, this->beta1_, this->beta2_, batch_size, iter);
+                                                                                                 b_cnt, this->lr_, this->beta1_, this->beta2_, batch_size, step_num);
 
         params->zero_grad();
+        this->step_num_++;
     }
 }

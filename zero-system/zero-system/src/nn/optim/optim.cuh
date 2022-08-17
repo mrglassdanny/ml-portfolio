@@ -16,11 +16,12 @@ namespace nn
         protected:
             std::vector<Parameters *> model_params_;
             float lr_;
+            int step_num_ = 1;
 
         public:
             Optimizer(std::vector<Parameters *> model_params_, float learning_rate);
 
-            virtual void step(int batch_size, int iter) = 0;
+            virtual void step(int batch_size) = 0;
 
             virtual void summarize();
         };
@@ -30,21 +31,21 @@ namespace nn
         public:
             SGD(std::vector<Parameters *> model_params_, float learning_rate);
 
-            virtual void step(int batch_size, int iter) override;
+            virtual void step(int batch_size) override;
         };
 
         class SGDMomentum : public Optimizer
         {
         private:
             float beta1_;
-            std::vector<NdArray *> vdws_;
-            std::vector<NdArray *> vdbs_;
+            std::vector<NdArray *> mdws_;
+            std::vector<NdArray *> mdbs_;
 
         public:
             SGDMomentum(std::vector<Parameters *> model_params_, float learning_rate, float beta1);
             ~SGDMomentum();
 
-            virtual void step(int batch_size, int iter) override;
+            virtual void step(int batch_size) override;
         };
 
         class Adam : public Optimizer
@@ -52,16 +53,16 @@ namespace nn
         private:
             float beta1_;
             float beta2_;
+            std::vector<NdArray *> mdws_;
+            std::vector<NdArray *> mdbs_;
             std::vector<NdArray *> vdws_;
             std::vector<NdArray *> vdbs_;
-            std::vector<NdArray *> sdws_;
-            std::vector<NdArray *> sdbs_;
 
         public:
             Adam(std::vector<Parameters *> model_params_, float learning_rate, float beta1, float beta2);
             ~Adam();
 
-            virtual void step(int batch_size, int iter) override;
+            virtual void step(int batch_size) override;
         };
     }
 }
