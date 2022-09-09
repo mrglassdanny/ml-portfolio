@@ -219,17 +219,12 @@ void Conv2d::validate()
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: invalid input shape");
     }
 
-    if (this->params_->weights()->num_dims() != 4)
+    if (this->filter_shape().num_dims() != 4)
     {
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: invalid filter shape");
     }
 
-    if (this->params_->weights()->shape().num_dims() != 4)
-    {
-        THROW_ERROR("CONV2D LAYER VALIDATION FAILED: invalid filter shape");
-    }
-
-    if (this->n_->shape()[1] != this->params_->weights()->shape()[1])
+    if (this->n_->shape()[1] != this->filter_shape()[1])
     {
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: input channels and filter channels do not match");
     }
@@ -297,6 +292,9 @@ void Conv2d::summarize()
     printf(" -> ");
     this->output_shape().print();
 
+    printf("\tFilter ");
+    this->filter_shape().print();
+
     printf("\tPad (%d, %d)\tStride (%d, %d)", this->padding_rows(), this->padding_cols(), this->stride_rows(), this->stride_cols());
 }
 
@@ -317,17 +315,22 @@ int Conv2d::in_feature_cols()
 
 int Conv2d::filters()
 {
-    return this->params_->weights()->shape()[0];
+    return this->filter_shape()[0];
 }
 
 int Conv2d::filter_rows()
 {
-    return this->params_->weights()->shape()[2];
+    return this->filter_shape()[2];
 }
 
 int Conv2d::filter_cols()
 {
-    return this->params_->weights()->shape()[3];
+    return this->filter_shape()[3];
+}
+
+Shape Conv2d::filter_shape()
+{
+    return this->params_->weights()->shape();
 }
 
 int Conv2d::padding_rows()

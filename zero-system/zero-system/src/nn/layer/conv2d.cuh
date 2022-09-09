@@ -46,6 +46,7 @@ namespace nn
             int filters();
             int filter_rows();
             int filter_cols();
+            Shape filter_shape();
             int padding_rows();
             int padding_cols();
             int stride_rows();
