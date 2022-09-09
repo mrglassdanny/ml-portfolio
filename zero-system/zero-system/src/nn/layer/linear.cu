@@ -142,6 +142,11 @@ Shape Linear::output_shape()
 
 void Linear::validate()
 {
+    if (this->input_shape().num_dims() < 2)
+    {
+        THROW_ERROR("LINEAR LAYER VALIDATION FAILED: invalid input shape");
+    }
+
     if (this->output_shape().num_dims() != 2)
     {
         THROW_ERROR("LINEAR LAYER VALIDATION FAILED: invalid output shape");
