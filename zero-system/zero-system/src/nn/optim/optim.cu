@@ -211,17 +211,17 @@ void Adam::step(int batch_size)
         NdArray *b = params->biases();
         NdArray *dw = params->weight_gradients();
         NdArray *db = params->bias_gradients();
-        NdArray *vdw = this->mdws_[i];
-        NdArray *vdb = this->mdbs_[i];
-        NdArray *sdw = this->vdws_[i];
-        NdArray *sdb = this->vdbs_[i];
+        NdArray *mdw = this->mdws_[i];
+        NdArray *mdb = this->mdbs_[i];
+        NdArray *vdw = this->vdws_[i];
+        NdArray *vdb = this->vdbs_[i];
 
         int w_cnt = w->count();
         int b_cnt = b->count();
 
-        k_adam_weight_step<<<w_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(w->data(), dw->data(), vdw->data(), sdw->data(),
+        k_adam_weight_step<<<w_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(w->data(), dw->data(), mdw->data(), vdw->data(),
                                                                                            w_cnt, this->lr_, this->beta1_, this->beta2_, this->step_num_, batch_size);
-        k_adam_bias_step<<<b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), vdb->data(), sdb->data(),
+        k_adam_bias_step<<<b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), mdb->data(), vdb->data(),
                                                                                          b_cnt, this->lr_, this->beta1_, this->beta2_, this->step_num_, batch_size);
 
         params->zero_grad();
