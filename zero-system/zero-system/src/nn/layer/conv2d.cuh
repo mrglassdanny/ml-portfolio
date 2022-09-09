@@ -21,7 +21,6 @@ namespace nn
         class Conv2d : public Learnable
         {
         private:
-            Shape output_shape_;
             Padding padding_;
             Stride stride_;
 
