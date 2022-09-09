@@ -109,80 +109,53 @@ Batch get_test_batch(int img_cnt)
 	return {x, oh_y};
 }
 
-Batch get_adj_train_batch(int batch_size)
-{
-	int img_row_cnt = 28;
-	int img_col_cnt = 28;
-	int img_area = img_row_cnt * img_col_cnt;
-	int img_cnt = 1;
-
-	std::vector<Batch> batches;
-
-	FILE *img_file = fopen("data/train-images.idx3-ubyte", "rb");
-	FILE *lbl_file = fopen("data/train-labels.idx1-ubyte", "rb");
-
-	fseek(img_file, sizeof(int) * 4, 0);
-	unsigned char *img_buf = (unsigned char *)malloc((sizeof(unsigned char) * img_area * img_cnt));
-	fread(img_buf, 1, (sizeof(unsigned char) * img_area * img_cnt), img_file);
-
-	fseek(lbl_file, sizeof(int) * 2, 0);
-	unsigned char *lbl_buf = (unsigned char *)malloc(sizeof(unsigned char) * img_cnt);
-	fread(lbl_buf, 1, (sizeof(unsigned char) * img_cnt), lbl_file);
-
-	fclose(img_file);
-	fclose(lbl_file);
-
-	float *img_flt_buf = (float *)malloc(sizeof(float) * (img_area * img_cnt));
-	for (int i = 0; i < (img_area * img_cnt); i++)
-	{
-		img_flt_buf[i] = ((float)img_buf[i] / (255.0));
-	}
-
-	float *lbl_flt_buf = (float *)malloc(sizeof(float) * (img_cnt));
-	for (int i = 0; i < (img_cnt); i++)
-	{
-		lbl_flt_buf[i] = ((float)lbl_buf[i]);
-	}
-
-	free(img_buf);
-	free(lbl_buf);
-
-	auto x = NdArray::from_data(Shape(1, 1, img_row_cnt, img_col_cnt), img_flt_buf);
-	auto y = NdArray::from_data(Shape(1, 1), lbl_flt_buf);
-	auto oh_y = NdArray::one_hot(y, 9);
-	delete y;
-
-	free(lbl_flt_buf);
-	free(img_flt_buf);
-
-	auto xs = new NdArray(false, Shape(batch_size, 1, img_row_cnt, img_col_cnt));
-	auto oh_ys = new NdArray(false, Shape(batch_size, 10));
-
-	for (int i = 0; i < batch_size; i++)
-	{
-		memcpy(&xs->data()[i * x->count()], x->data(), x->size());
-		memcpy(&oh_ys->data()[i * oh_y->count()], oh_y->data(), oh_y->size());
-	}
-
-	return {xs, oh_ys};
-}
-
-void train_mnist(nn::Model *model, int batch_size)
+void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 {
 	auto train_ds = get_train_dataset(batch_size);
 
-	float validation_loss = 0.0f;
 	int train_batch_cnt = train_ds.size();
-	int validation_batch_cnt = (int)(train_batch_cnt * 0.10f);
 
-	std::vector<int> validation_batch_idxs;
-	for (int v = 0; v < validation_batch_cnt; v++)
+	for (int i = 0; i < epoch_cnt; i++)
 	{
-		validation_batch_idxs.push_back(rand() % train_batch_cnt);
+		for (int j = 0; j < train_batch_cnt; j++)
+		{
+			auto batch = &train_ds[j];
+			auto x = batch->x;
+			auto y = batch->y;
+
+			auto p = model->forward(x);
+			model->backward(p, y);
+			model->step();
+			delete p;
+		}
+
+		if (_kbhit())
+		{
+			if (_getch() == 'q')
+			{
+				break;
+			}
+		}
 	}
+}
 
-	for (int i = 0;; i++)
+void train_validate_mnist(nn::Model *model, int batch_size, int epoch_cnt, float validation_pct)
+{
+	auto train_ds = get_train_dataset(batch_size);
+
+	int train_batch_cnt = train_ds.size();
+	int validation_batch_cnt = (int)(train_batch_cnt * validation_pct);
+
+	for (int i = 0; i < epoch_cnt; i++)
 	{
+		float validation_loss = 0.0f;
+
+		std::vector<int> validation_batch_idxs;
+		for (int v = 0; v < validation_batch_cnt; v++)
+		{
+			validation_batch_idxs.push_back(rand() % train_batch_cnt);
+		}
+
 		for (int j = 0; j < train_batch_cnt; j++)
 		{
 			auto batch = &train_ds[j];
@@ -199,23 +172,22 @@ void train_mnist(nn::Model *model, int batch_size)
 				}
 			}
 
-			if (!validation_batch_flg)
+			if (validation_batch_flg)
+			{
+				auto p = model->forward(x);
+				validation_loss += model->loss(p, y);
+				delete p;
+			}
+			else
 			{
 				auto p = model->forward(x);
 				model->backward(p, y);
 				model->step();
 				delete p;
 			}
-			else
-			{
-				auto p = model->forward(x);
-				validation_loss += model->loss(p, y);
-				delete p;
-			}
 		}
 
 		printf("EPOCH: %d\tVALIDATION LOSS: %f\n", i + 1, (validation_loss / (float)validation_batch_cnt));
-		validation_loss = 0.0f;
 
 		if (_kbhit())
 		{
@@ -245,37 +217,120 @@ void test_mnist(nn::Model *model)
 	delete y;
 }
 
-void train_mnist_adj(nn::Model *model, int batch_size)
-{
-	auto batch = get_adj_train_batch(batch_size);
-
-	for (int i = 0;; i++)
-	{
-		auto x = batch.x;
-		auto y = batch.y;
-
-		auto p = model->forward(x);
-		auto l = model->loss(p, y);
-		model->backward(p, y);
-		model->step();
-		delete p;
-
-		printf("EPOCH: %d\tLOSS: %f\n", i + 1, l);
-
-		if (_kbhit())
-		{
-			if (_getch() == 'q')
-			{
-				break;
-			}
-		}
-	}
-}
-
 void check_grad(nn::Model *model)
 {
 	auto batch = get_test_batch(1);
 	model->validate_gradients(batch.x, batch.y, true);
+}
+
+void grad_tests()
+{
+	auto m1 = new nn::Model();
+	auto m2 = new nn::Model();
+	auto m3 = new nn::Model();
+	auto m4 = new nn::Model();
+
+	int batch_size = 1;
+
+	// m1
+	{
+		auto x = NdArray::random(true, Shape(batch_size, 64), 0.0f, 1.0f);
+		auto y = NdArray::ones(true, Shape(batch_size, 1));
+
+		m1->linear(x->shape(), 16);
+		m1->tanh();
+		m1->linear(16);
+		m1->tanh();
+		m1->linear(y->shape());
+		m1->sigmoid();
+
+		m1->set_loss(new nn::loss::MSE());
+		m1->set_optimizer(new nn::optim::SGD(m1->parameters(), 0.01f));
+
+		m1->summarize();
+		m1->validate_gradients(x, y, false);
+
+		delete x;
+		delete y;
+	}
+
+	// m2
+	{
+		auto x = NdArray::random(true, Shape(batch_size, 64), 0.0f, 1.0f);
+		auto y = NdArray::zeros(true, Shape(batch_size, 10));
+		y->set_val(3, 1.0f);
+
+		m2->linear(x->shape(), 16);
+		m2->tanh();
+		m2->linear(16);
+		m2->tanh();
+		m2->linear(y->shape());
+		m2->sigmoid();
+
+		m2->set_loss(new nn::loss::CrossEntropy());
+		m2->set_optimizer(new nn::optim::SGD(m2->parameters(), 0.01f));
+
+		m2->summarize();
+		m2->validate_gradients(x, y, false);
+
+		delete x;
+		delete y;
+	}
+
+	// m3
+	{
+		auto x = NdArray::random(true, Shape(batch_size, 2, 16, 16), 0.0f, 1.0f);
+		auto y = NdArray::zeros(true, Shape(batch_size, 4));
+		y->set_val(3, 1.0f);
+
+		m3->conv2d(x->shape(), Shape(4, 2, 2, 2), nn::layer::Padding{1, 1}, nn::layer::Stride{2, 2});
+		m3->tanh();
+		m3->conv2d(Shape(4, 4, 3, 3), nn::layer::Padding{1, 1}, nn::layer::Stride{1, 1});
+		m3->tanh();
+		m3->linear(16);
+		m3->sigmoid();
+		m3->linear(y->shape());
+		m3->sigmoid();
+
+		m3->set_loss(new nn::loss::MSE());
+		m3->set_optimizer(new nn::optim::SGD(m3->parameters(), 0.01f));
+
+		m3->summarize();
+		m3->validate_gradients(x, y, false);
+
+		delete x;
+		delete y;
+	}
+
+	// m4
+	{
+		auto x = NdArray::random(true, Shape(batch_size, 2, 21, 14), 0.0f, 1.0f);
+		auto y = NdArray::zeros(true, Shape(batch_size, 4));
+		y->set_val(3, 1.0f);
+
+		m4->conv2d(x->shape(), Shape(4, 2, 3, 2), nn::layer::Stride{3, 2});
+		m4->tanh();
+		m4->conv2d(Shape(4, 4, 2, 2), nn::layer::Stride{1, 1});
+		m4->tanh();
+		m4->linear(16);
+		m4->sigmoid();
+		m4->linear(y->shape());
+		m4->sigmoid();
+
+		m4->set_loss(new nn::loss::CrossEntropy());
+		m4->set_optimizer(new nn::optim::SGD(m4->parameters(), 0.01f));
+
+		m4->summarize();
+		m4->validate_gradients(x, y, false);
+
+		delete x;
+		delete y;
+	}
+
+	delete m1;
+	delete m2;
+	delete m3;
+	delete m4;
 }
 
 int main(int argc, char **argv)
@@ -284,23 +339,25 @@ int main(int argc, char **argv)
 	srand(time(NULL));
 
 	auto model = new nn::Model();
-	int batch_size = 1024;
+	int batch_size = 1;
 
-	model->linear(Shape(batch_size, 1, 28, 28), 16);
-	model->sigmoid();
-	model->linear(16);
-	model->sigmoid();
+	model->conv2d(Shape(batch_size, 1, 28, 28), Shape(16, 1, 3, 3), nn::layer::Stride {1, 1});
+	model->tanh();
+	model->conv2d(Shape(16, 16, 3, 3), nn::layer::Stride{1, 1});
+	model->tanh();
+	model->linear(128);
+	model->tanh();
 	model->linear(Shape(batch_size, 10));
 	model->sigmoid();
 
 	model->set_loss(new nn::loss::MSE());
-	model->set_optimizer(new nn::optim::SGD(model->parameters(), 0.1f));
+	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.01f, BETA_1));
 
 	model->summarize();
 
-	// train_mnist(model, batch_size);
-	// test_mnist(model);
-	train_mnist_adj(model, batch_size);
+	// train_mnist(model, batch_size, batch_size);
+	train_validate_mnist(model, batch_size, batch_size * 4, 0.1f);
+	test_mnist(model);
 	// check_grad(model);
 
 	return 0;
