@@ -338,20 +338,29 @@ int main(int argc, char **argv)
 	printf("MNIST-ZERO\n\n");
 	srand(time(NULL));
 
-	auto model = new nn::Model();
-	int batch_size = 1;
+	auto a = NdArray::random(true, Shape(10, 10), 0.0f, 1.0f);
+	auto b = NdArray::zeros(false, Shape(10, 10));
 
-	model->conv2d(Shape(batch_size, 1, 28, 28), Shape(16, 1, 3, 3), nn::layer::Stride {1, 1});
+	a->print();
+	b->print();
+
+	b->copy(a);
+	b->print();
+
+	auto model = new nn::Model();
+	int batch_size = 32;
+
+	model->conv2d(Shape(batch_size, 1, 28, 28), Shape(8, 1, 2, 2), nn::layer::Stride {2, 2});
 	model->tanh();
-	model->conv2d(Shape(16, 16, 3, 3), nn::layer::Stride{1, 1});
+	model->conv2d(Shape(8, 8, 2, 2), nn::layer::Stride{2, 2});
 	model->tanh();
-	model->linear(128);
+	model->linear(64);
 	model->tanh();
 	model->linear(Shape(batch_size, 10));
 	model->sigmoid();
 
 	model->set_loss(new nn::loss::MSE());
-	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.01f, BETA_1));
+	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 1.0f, BETA_1));
 
 	model->summarize();
 
