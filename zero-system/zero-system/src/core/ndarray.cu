@@ -826,9 +826,49 @@ void NdArray::print()
 
 void NdArray::copy(NdArray *src)
 {
+    size_t src_size = src->size();
+
+    if (this->cuda_)
+    {
+        if (src->cuda_)
+        {
+            if (this->size() != src_size)
+            {
+                cudaFree(this->data_);
+                cudaMalloc(&this->data_, src_size);
+            }
+            
+            cudaMemcpy(this->data_, src->data_, src_size, cudaMemcpyDeviceToDevice);
+        }
+        else
+        {
+            cudaFree(this->data_);
+            this->data_ = (float *)malloc(src->size());
+            memcpy(this->data_, src->data_, src_size);
+        }
+    }
+    else
+    {
+        if (src->cuda_)
+        {
+            free(this->data_);
+            cudaMalloc(&this->data_, src_size);
+            cudaMemcpy(this->data_, src->data_, src_size, cudaMemcpyDeviceToDevice);
+        }
+        else
+        {
+            if (this->size() != src_size)
+            {
+                free(this->data_);
+                this->data_ = (float*)malloc(src->size());
+            }
+
+            memcpy(this->data_, src->data_, src_size);
+        }
+    }
+
     this->cuda_ = src->cuda_;
     this->shape_ = src->shape_;
-    cudaMemcpy(this->data_, src->data_, src->size(), cudaMemcpyDefault);
 }
 
 void NdArray::reshape(Shape shape)
