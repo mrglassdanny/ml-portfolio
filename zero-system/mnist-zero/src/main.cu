@@ -115,6 +115,8 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 
 	int train_batch_cnt = train_ds.size();
 
+	printf("EPOCH: %d\n", 0);
+
 	for (int i = 0; i < epoch_cnt; i++)
 	{
 		for (int j = 0; j < train_batch_cnt; j++)
@@ -127,15 +129,19 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 			model->backward(p, y);
 			model->step();
 			delete p;
-		}
 
-		if (_kbhit())
-		{
-			if (_getch() == 'q')
+			if (_kbhit())
 			{
-				break;
+				if (_getch() == 'q')
+				{
+					printf("Quitting...\n");
+					return;
+				}
 			}
 		}
+
+		system("cls");
+		printf("EPOCH: %d\n", i);
 	}
 }
 
@@ -149,6 +155,7 @@ void train_validate_mnist(nn::Model *model, int batch_size, int epoch_cnt, float
 	for (int i = 0; i < epoch_cnt; i++)
 	{
 		float validation_loss = 0.0f;
+		float validation_acc = 0.0f;
 
 		std::vector<int> validation_batch_idxs;
 		for (int v = 0; v < validation_batch_cnt; v++)
@@ -176,6 +183,7 @@ void train_validate_mnist(nn::Model *model, int batch_size, int epoch_cnt, float
 			{
 				auto p = model->forward(x);
 				validation_loss += model->loss(p, y);
+				validation_acc += model->accuracy(p, y);
 				delete p;
 			}
 			else
@@ -185,17 +193,20 @@ void train_validate_mnist(nn::Model *model, int batch_size, int epoch_cnt, float
 				model->step();
 				delete p;
 			}
-		}
 
-		printf("EPOCH: %d\tVALIDATION LOSS: %f\n", i + 1, (validation_loss / (float)validation_batch_cnt));
-
-		if (_kbhit())
-		{
-			if (_getch() == 'q')
+			if (_kbhit())
 			{
-				break;
+				if (_getch() == 'q')
+				{
+					printf("Quitting...\n");
+					break;
+				}
 			}
 		}
+
+		printf("EPOCH: %d\tVALIDATION LOSS: %f\tVALIDATION ACCURACY: %f%%\n", i + 1,
+			   (validation_loss / (float)validation_batch_cnt),
+			   (validation_acc / (float)validation_batch_cnt) * 100.0f);
 	}
 }
 
@@ -339,28 +350,26 @@ int main(int argc, char **argv)
 	srand(time(NULL));
 
 	auto model = new nn::Model();
-	int batch_size = 32;
+	int batch_size = 64;
 
-	model->conv2d(Shape(batch_size, 1, 28, 28), Shape(64, 1, 2, 2), nn::layer::Stride {2, 2});
-	model->tanh();
-	model->conv2d(Shape(64, 64, 2, 2), nn::layer::Stride{2, 2});
-	model->tanh();
-	model->linear(1024);
-	model->tanh();
-	model->linear(1024);
-	model->tanh();
+	model->linear(Shape(batch_size, 1, 28, 28), 16);
+	model->sigmoid();
+	//model->linear(16);
+	//model->sigmoid();
 	model->linear(Shape(batch_size, 10));
 	model->sigmoid();
 
 	model->set_loss(new nn::loss::CrossEntropy());
-	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 1.0f, BETA_1));
+	model->set_optimizer(new nn::optim::SGD(model->parameters(), 1.0f));
 
 	model->summarize();
 
-	// train_mnist(model, batch_size, batch_size);
-	train_validate_mnist(model, batch_size, batch_size * 4, 0.1f);
+	train_mnist(model, batch_size, 1000);
+	//train_validate_mnist(model, batch_size, batch_size * 4, 0.05f);
 	test_mnist(model);
-	// check_grad(model);
+	//check_grad(model);
+	//grad_tests();
+
 
 	return 0;
 }
