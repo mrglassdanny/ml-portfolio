@@ -106,8 +106,6 @@ float Model::accuracy(NdArray *p, NdArray *y)
         // TODO
     }
 
-    
-
     return ((float)correct_cnt / (float)batch_size);
 }
 
