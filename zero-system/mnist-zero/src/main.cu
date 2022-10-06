@@ -152,16 +152,16 @@ void train_validate_mnist(nn::Model *model, int batch_size, int epoch_cnt, float
 	int train_batch_cnt = train_ds.size();
 	int validation_batch_cnt = (int)(train_batch_cnt * validation_pct);
 
+	std::vector<int> validation_batch_idxs;
+	for (int v = 0; v < validation_batch_cnt; v++)
+	{
+		validation_batch_idxs.push_back(rand() % train_batch_cnt);
+	}
+
 	for (int i = 0; i < epoch_cnt; i++)
 	{
 		float validation_loss = 0.0f;
 		float validation_acc = 0.0f;
-
-		std::vector<int> validation_batch_idxs;
-		for (int v = 0; v < validation_batch_cnt; v++)
-		{
-			validation_batch_idxs.push_back(rand() % train_batch_cnt);
-		}
 
 		for (int j = 0; j < train_batch_cnt; j++)
 		{
@@ -199,7 +199,7 @@ void train_validate_mnist(nn::Model *model, int batch_size, int epoch_cnt, float
 				if (_getch() == 'q')
 				{
 					printf("Quitting...\n");
-					break;
+					return;
 				}
 			}
 		}
@@ -350,12 +350,16 @@ int main(int argc, char **argv)
 	srand(time(NULL));
 
 	auto model = new nn::Model();
-	int batch_size = 64;
+	int batch_size = 256;
 
-	model->linear(Shape(batch_size, 1, 28, 28), 16);
-	model->sigmoid();
-	//model->linear(16);
-	//model->sigmoid();
+	model->conv2d(Shape(batch_size, 1, 28, 28), Shape(16, 1, 3, 3), nn::layer::Padding{1, 1}, nn::layer::Stride{3, 3});
+	model->relu();
+	model->conv2d(Shape(8, 16, 3, 3), nn::layer::Padding{1, 1}, nn::layer::Stride{3, 3});
+	model->relu();
+	model->linear(128);
+	model->relu();
+	model->linear(64);
+	model->relu();
 	model->linear(Shape(batch_size, 10));
 	model->sigmoid();
 
@@ -365,11 +369,10 @@ int main(int argc, char **argv)
 	model->summarize();
 
 	train_mnist(model, batch_size, 1000);
-	//train_validate_mnist(model, batch_size, batch_size * 4, 0.05f);
+	// train_validate_mnist(model, batch_size, 1000, 0.10f);
 	test_mnist(model);
-	//check_grad(model);
-	//grad_tests();
-
+	// check_grad(model);
+	// grad_tests();
 
 	return 0;
 }
