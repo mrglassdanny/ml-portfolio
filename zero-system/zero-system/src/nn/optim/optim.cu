@@ -124,8 +124,9 @@ void SGD::step(int batch_size)
         k_sgd_bias_step<<<b_cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), b_cnt, this->lr_, batch_size);
 
         params->zero_grad();
-        this->step_num_++;
     }
+
+    this->step_num_++;
 }
 
 SGDMomentum::SGDMomentum(std::vector<Parameters *> model_params, float learning_rate, float beta1)
@@ -171,8 +172,9 @@ void SGDMomentum::step(int batch_size)
                                                                                                  b_cnt, this->lr_, this->beta1_, this->step_num_, batch_size);
 
         params->zero_grad();
-        this->step_num_++;
     }
+
+    this->step_num_++;
 }
 
 Adam::Adam(std::vector<Parameters *> model_params, float learning_rate, float beta1, float beta2)
@@ -225,6 +227,7 @@ void Adam::step(int batch_size)
                                                                                          b_cnt, this->lr_, this->beta1_, this->beta2_, this->step_num_, batch_size);
 
         params->zero_grad();
-        this->step_num_++;
     }
+
+    this->step_num_++;
 }
