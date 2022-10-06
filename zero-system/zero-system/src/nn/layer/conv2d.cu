@@ -120,6 +120,9 @@ Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride strid
     this->params_ = new Parameters(filter_shape, Shape(filter_shape[0], filter_shape[1]), this->in_feature_rows(), this->in_feature_cols());
     this->padding_ = padding;
     this->stride_ = stride;
+
+    this->out_row_cnt_ = (((this->in_feature_rows() - this->filter_rows()) + (2 * this->padding_rows())) / this->stride_rows()) + 1;
+    this->out_col_cnt_ = (((this->in_feature_cols() - this->filter_cols()) + (2 * this->padding_cols())) / this->stride_cols()) + 1;
 }
 
 void Conv2d::evaluate(NdArray *out)
@@ -202,10 +205,7 @@ Shape Conv2d::input_shape()
 
 Shape Conv2d::output_shape()
 {
-    int out_row_cnt = (((this->in_feature_rows() - this->filter_rows()) + (2 * this->padding_rows())) / this->stride_rows()) + 1;
-    int out_col_cnt = (((this->in_feature_cols() - this->filter_cols()) + (2 * this->padding_cols())) / this->stride_cols()) + 1;
-
-    return Shape(this->batch_size(), this->filters(), out_row_cnt, out_col_cnt);
+    return Shape(this->batch_size(), this->filters(), this->out_row_cnt_, this->out_col_cnt_);
 }
 
 void Conv2d::validate()
