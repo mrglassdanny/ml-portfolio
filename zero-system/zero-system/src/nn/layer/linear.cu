@@ -48,14 +48,14 @@ __global__ void k_linear_inc_param_derivatives(float *in, float *n, float *dw, f
     }
 }
 
-__global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int batch_size, int in_cnt, int w_col_cnt, int out_cnt)
+__global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int batch_size, int in_cnt, int w_row_cnt, int w_col_cnt, int out_cnt)
 {
     int out_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
     if (out_idx < out_cnt && batch_idx < batch_size)
     {
-        int out_elem_idx = batch_idx * w_col_cnt + out_idx;
+        int out_elem_idx = batch_idx * w_row_cnt + out_idx;
         int w_row_idx = out_idx;
 
         for (int in_idx = 0; in_idx < in_cnt; in_idx++)
@@ -123,7 +123,7 @@ NdArray *Linear::derive(NdArray *in)
         dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
         k_linear_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), out->data(),
-                                                            this->batch_size(), this->out_features(), this->weight_cols(), this->in_features());
+                                                            this->batch_size(), this->out_features(), this->weight_rows(), this->weight_cols(), this->in_features());
     }
 
     delete in;
