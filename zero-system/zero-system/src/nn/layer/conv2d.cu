@@ -345,15 +345,15 @@ void Conv2d::summarize()
 
     if (this->padding_rows() > 0 || this->padding_cols() > 0)
     {
-        this->padded_shape().print();
+        this->padded_shape().print_pad(16, true);
     }
     else
     {
-        this->input_shape().print();
+        this->input_shape().print_pad(16, true);
     }
 
     printf(" -> ");
-    this->output_shape().print();
+    this->output_shape().print_pad(16, false);
 
     printf("\tFilter (");
     this->filter_shape().print();

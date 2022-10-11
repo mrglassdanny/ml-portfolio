@@ -224,7 +224,7 @@ void Linear::summarize()
 {
     Layer::summarize();
 
-    printf("\tActivation ");
+    printf("\tActivation (");
     switch (this->activation_)
     {
     case Activation::None:
@@ -242,6 +242,7 @@ void Linear::summarize()
     default: // None
         break;
     }
+    printf(")");
 }
 
 int Linear::in_features()

@@ -31,6 +31,7 @@ public:
 	~Shape();
 
 	void print();
+	void print_pad(int pad_cnt, bool left_pad_flg);
 
 	int operator[](int) const;
 	bool operator==(const Shape &);

@@ -165,17 +165,60 @@ bool Shape::operator!=(const Shape &other)
 
 void Shape::print()
 {
+    char buf[64];
+    memset(buf, 0, sizeof(buf));
+
     int cnt = this->num_dims();
 
     for (int i = 0; i < cnt; i++)
     {
-        printf("%d", this->dims_[i]);
-
+        sprintf(&buf[strlen(buf)], "%d", this->dims_[i]);
         if (i < cnt - 1)
         {
-            printf("x");
+            sprintf(&buf[strlen(buf)], "x");
         }
     }
+
+    printf("%s", buf);
+}
+
+void Shape::print_pad(int pad_to_len, bool left_pad)
+{
+    char buf[64];
+    memset(buf, 0, sizeof(buf));
+
+    int cnt = this->num_dims();
+
+    for (int i = 0; i < cnt; i++)
+    {
+        sprintf(&buf[strlen(buf)], "%d", this->dims_[i]);
+        if (i < cnt - 1)
+        {
+            sprintf(&buf[strlen(buf)], "x");
+        }
+    }
+
+    if (left_pad)
+    {
+        char lpad_buf[64];
+        memset(lpad_buf, 0, sizeof(lpad_buf));
+
+        for (int i = strlen(buf); i < pad_to_len; i++)
+        {
+            lpad_buf[i] = ' ';
+        }
+
+        printf("%s", lpad_buf);
+    }
+    else
+    {
+        for (int i = strlen(buf); i < pad_to_len; i++)
+        {
+            buf[i] = ' ';
+        }
+    }
+
+    printf("%s", buf);
 }
 
 std::vector<int> Shape::dims()
@@ -837,7 +880,7 @@ void NdArray::copy(NdArray *src)
                 cudaFree(this->data_);
                 cudaMalloc(&this->data_, src_size);
             }
-            
+
             cudaMemcpy(this->data_, src->data_, src_size, cudaMemcpyDeviceToDevice);
         }
         else
@@ -860,7 +903,7 @@ void NdArray::copy(NdArray *src)
             if (this->size() != src_size)
             {
                 free(this->data_);
-                this->data_ = (float*)malloc(src->size());
+                this->data_ = (float *)malloc(src->size());
             }
 
             memcpy(this->data_, src->data_, src_size);
