@@ -203,7 +203,7 @@ void Shape::print_pad(int pad_to_len, bool left_pad)
         char lpad_buf[64];
         memset(lpad_buf, 0, sizeof(lpad_buf));
 
-        for (int i = strlen(buf); i < pad_to_len; i++)
+        for (int i = 0; i < pad_to_len - strlen(buf); i++)
         {
             lpad_buf[i] = ' ';
         }
