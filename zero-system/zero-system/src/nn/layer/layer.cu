@@ -20,7 +20,7 @@ void Layer::summarize()
     printf("%s\t", cls_name.c_str());
     this->input_shape().print_pad(16, true);
     printf(" -> ");
-    this->output_shape().print_pad(12, false);
+    this->output_shape().print_pad(16, false);
 }
 
 int Layer::batch_size()
