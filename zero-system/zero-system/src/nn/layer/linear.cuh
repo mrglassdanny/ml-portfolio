@@ -7,7 +7,6 @@ namespace nn
 {
     namespace layer
     {
-
         class Linear : public Learnable
         {
         private:
