@@ -13,5 +13,7 @@ namespace nn
             Tanh,
             ReLU
         };
+
+        void summarize_activation(Activation activation);
     }
 }

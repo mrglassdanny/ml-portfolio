@@ -269,9 +269,9 @@ void grad_tests()
 		auto x = NdArray::random(true, Shape(batch_size, 64), 0.0f, 1.0f);
 		auto y = NdArray::ones(true, Shape(batch_size, 1));
 
-		m1->linear(x->shape(), 16);
-		m1->linear(16);
-		m1->linear(y->shape());
+		m1->linear(x->shape(), 16, nn::layer::Activation::Sigmoid);
+		m1->linear(16, nn::layer::Activation::Tanh);
+		m1->linear(y->shape(), nn::layer::Activation::Sigmoid);
 
 		m1->set_loss(new nn::loss::MSE());
 		m1->set_optimizer(new nn::optim::SGD(m1->parameters(), 0.01f));
@@ -289,9 +289,9 @@ void grad_tests()
 		auto y = NdArray::zeros(true, Shape(batch_size, 10));
 		y->set_val(3, 1.0f);
 
-		m2->linear(x->shape(), 16);
-		m2->linear(16);
-		m2->linear(y->shape());
+		m2->linear(x->shape(), 16, nn::layer::Activation::Tanh);
+		m2->linear(16, nn::layer::Activation::Sigmoid);
+		m2->linear(y->shape(), nn::layer::Activation::Tanh);
 
 		m2->set_loss(new nn::loss::CrossEntropy());
 		m2->set_optimizer(new nn::optim::SGD(m2->parameters(), 0.01f));
@@ -309,10 +309,10 @@ void grad_tests()
 		auto y = NdArray::zeros(true, Shape(batch_size, 4));
 		y->set_val(3, 1.0f);
 
-		m3->conv2d(x->shape(), Shape(4, 2, 2, 2), nn::layer::Padding{1, 1}, nn::layer::Stride{2, 2});
-		m3->conv2d(Shape(4, 4, 3, 3), nn::layer::Padding{1, 1}, nn::layer::Stride{1, 1});
-		m3->linear(16);
-		m3->linear(y->shape());
+		m3->conv2d(x->shape(), Shape(4, 2, 2, 2), nn::layer::Padding{1, 1}, nn::layer::Stride{2, 2}, nn::layer::Activation::Sigmoid);
+		m3->conv2d(Shape(4, 4, 3, 3), nn::layer::Padding{1, 1}, nn::layer::Stride{1, 1}, nn::layer::Activation::Sigmoid);
+		m3->linear(16, nn::layer::Activation::Sigmoid);
+		m3->linear(y->shape(), nn::layer::Activation::Sigmoid);
 
 		m3->set_loss(new nn::loss::MSE());
 		m3->set_optimizer(new nn::optim::SGD(m3->parameters(), 0.01f));
@@ -330,10 +330,10 @@ void grad_tests()
 		auto y = NdArray::zeros(true, Shape(batch_size, 4));
 		y->set_val(3, 1.0f);
 
-		m4->conv2d(x->shape(), Shape(4, 2, 3, 2), nn::layer::Stride{3, 2});
-		m4->conv2d(Shape(4, 4, 2, 2), nn::layer::Stride{1, 1});
-		m4->linear(16);
-		m4->linear(y->shape());
+		m4->conv2d(x->shape(), Shape(4, 2, 3, 2), nn::layer::Stride{3, 2}, nn::layer::Activation::Sigmoid);
+		m4->conv2d(Shape(4, 4, 2, 2), nn::layer::Stride{1, 1}, nn::layer::Activation::Sigmoid);
+		m4->linear(16, nn::layer::Activation::Sigmoid);
+		m4->linear(y->shape(), nn::layer::Activation::None);
 
 		m4->set_loss(new nn::loss::CrossEntropy());
 		m4->set_optimizer(new nn::optim::SGD(m4->parameters(), 0.01f));
@@ -351,11 +351,11 @@ void grad_tests()
 		auto y = NdArray::zeros(true, Shape(batch_size, 4));
 		y->set_val(3, 1.0f);
 
-		m5->conv2d(x->shape(), Shape(4, 1, 3, 3), nn::layer::Stride{1, 1});
-		m5->conv2d(Shape(4, 4, 4, 4), nn::layer::Stride{1, 1});
-		m5->conv2d(Shape(4, 4, 2, 2), nn::layer::Stride{1, 1});
-		m5->linear(16);
-		m5->linear(y->shape());
+		m5->conv2d(x->shape(), Shape(4, 1, 3, 3), nn::layer::Stride{1, 1}, nn::layer::Activation::Sigmoid);
+		m5->conv2d(Shape(4, 4, 4, 4), nn::layer::Stride{1, 1}, nn::layer::Activation::None);
+		m5->conv2d(Shape(4, 4, 2, 2), nn::layer::Stride{1, 1}, nn::layer::Activation::None);
+		m5->linear(16, nn::layer::Activation::Sigmoid);
+		m5->linear(y->shape(), nn::layer::Activation::Sigmoid);
 
 		m5->set_loss(new nn::loss::MSE());
 		m5->set_optimizer(new nn::optim::SGD(m5->parameters(), 0.01f));

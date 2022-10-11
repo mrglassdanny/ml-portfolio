@@ -10,6 +10,9 @@ namespace nn
 
         class Linear : public Learnable
         {
+        private:
+            Activation activation_;
+            
         public:
             Linear(Shape in_shape, Shape out_shape, Activation activation);
 
@@ -20,6 +23,8 @@ namespace nn
             virtual Shape output_shape() override;
 
             virtual void validate() override;
+
+            virtual void summarize() override;
 
             int in_features();
             int out_features();
