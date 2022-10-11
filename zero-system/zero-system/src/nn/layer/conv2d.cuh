@@ -1,6 +1,7 @@
 #pragma once
 
 #include "learnable.cuh"
+#include "activation.cuh"
 
 namespace nn
 {
@@ -27,10 +28,10 @@ namespace nn
             int out_col_cnt_;
 
         public:
-            Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride);
+            Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride, Activation activation);
 
             virtual void evaluate(NdArray *out) override;
-            virtual NdArray *derive(NdArray *in) override;
+            virtual NdArray *derive(NdArray *in, NdArray *in_n) override;
 
             virtual Shape input_shape() override;
             virtual Shape output_shape() override;

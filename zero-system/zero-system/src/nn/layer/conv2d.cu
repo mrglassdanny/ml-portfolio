@@ -2,6 +2,36 @@
 
 using namespace nn::layer;
 
+__device__ float d_conv2d_sigmoid_evaluate(float val)
+{
+    return (1.0f / (1.0f + exp(-val)));
+}
+
+__device__ float d_conv2d_sigmoid_derive(float sigmoid_val)
+{
+    return (sigmoid_val) * (1.0f - sigmoid_val);
+}
+
+__device__ float d_conv2d_tanh_evaluate(float val)
+{
+    return ((exp(val) - exp(-val)) / (exp(val) + exp(-val)));
+}
+
+__device__ float d_conv2d_tanh_derive(float tanh_val)
+{
+    return (1.0f - (tanh_val * tanh_val));
+}
+
+__device__ float d_conv2d_relu_evaluate(float val)
+{
+    return val > 0.0f ? val : 0.0f;
+}
+
+__device__ float d_conv2d_relu_derive(float relu_val)
+{
+    return relu_val > 0.0f ? 1.0f : 0.0f;
+}
+
 __global__ void k_conv2d_evaluate(float *in, float *w, float *b, float *out, int batch_size, int channel_cnt, int in_row_cnt, int in_col_cnt,
                                   int filter_cnt, int filter_row_cnt, int filter_col_cnt, int out_row_cnt, int out_col_cnt,
                                   int stride_row_cnt, int stride_col_cnt)
@@ -38,12 +68,14 @@ __global__ void k_conv2d_evaluate(float *in, float *w, float *b, float *out, int
 
                     l_out[out_row_idx * out_col_cnt + out_col_idx] += l_b[channel_idx];
                 }
+
+                l_out[out_row_idx * out_col_cnt + out_col_idx] = d_conv2d_sigmoid_evaluate(l_out[out_row_idx * out_col_cnt + out_col_idx]);
             }
         }
     }
 }
 
-__global__ void k_conv2d_inc_param_derivatives(float *in, float *n, float *dw, float *db, int batch_size, int channel_cnt, int filter_cnt,
+__global__ void k_conv2d_inc_param_derivatives(float *in, float *in_n, float *n, float *dw, float *db, int batch_size, int channel_cnt, int filter_cnt,
                                                int in_row_cnt, int in_col_cnt, int in_cnt, int n_row_cnt, int n_col_cnt, int n_cnt, int w_row_cnt, int w_col_cnt,
                                                int w_cnt, int stride_row_cnt, int stride_col_cnt)
 {
@@ -59,6 +91,7 @@ __global__ void k_conv2d_inc_param_derivatives(float *in, float *n, float *dw, f
                 for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
                 {
                     int in_elem_idx = (batch_idx * filter_cnt * in_cnt) + (filter_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx);
+                    in[in_elem_idx] *= d_conv2d_sigmoid_derive(in_n[in_elem_idx]);
 
                     for (int w_row_idx = 0; w_row_idx < w_row_cnt; w_row_idx++)
                     {
@@ -113,7 +146,7 @@ __global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int ba
     }
 }
 
-Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride)
+Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride, Activation activation)
 {
     this->n_ = new NdArray(true, in_shape);
     this->default_n_shape_ = in_shape;
@@ -149,7 +182,7 @@ void Conv2d::evaluate(NdArray *out)
                                                  this->stride_rows(), this->stride_cols());
 }
 
-NdArray *Conv2d::derive(NdArray *in)
+NdArray *Conv2d::derive(NdArray *in, NdArray *in_n)
 {
     NdArray *n = this->n_;
     NdArray *w = this->params_->weights();
@@ -164,7 +197,7 @@ NdArray *Conv2d::derive(NdArray *in)
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
-        k_conv2d_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), n->data(), dw->data(), db->data(), this->batch_size(), this->channels(), this->filters(),
+        k_conv2d_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), in_n->data(), n->data(), dw->data(), db->data(), this->batch_size(), this->channels(), this->filters(),
                                                                   this->out_feature_rows(), this->out_feature_cols(), (this->out_feature_rows() * this->out_feature_cols()),
                                                                   this->in_feature_rows(), this->in_feature_cols(), (this->in_feature_rows() * this->in_feature_cols()),
                                                                   this->filter_rows(), this->filter_cols(), (this->filter_rows() * this->filter_cols()),

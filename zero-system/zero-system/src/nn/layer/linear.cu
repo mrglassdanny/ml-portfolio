@@ -2,6 +2,36 @@
 
 using namespace nn::layer;
 
+__device__ float d_linear_sigmoid_evaluate(float val)
+{
+    return (1.0f / (1.0f + exp(-val)));
+}
+
+__device__ float d_linear_sigmoid_derive(float sigmoid_val)
+{
+    return (sigmoid_val) * (1.0f - sigmoid_val);
+}
+
+__device__ float d_linear_tanh_evaluate(float val)
+{
+    return ((exp(val) - exp(-val)) / (exp(val) + exp(-val)));
+}
+
+__device__ float d_linear_tanh_derive(float tanh_val)
+{
+    return (1.0f - (tanh_val * tanh_val));
+}
+
+__device__ float d_linear_relu_evaluate(float val)
+{
+    return val > 0.0f ? val : 0.0f;
+}
+
+__device__ float d_linear_relu_derive(float relu_val)
+{
+    return relu_val > 0.0f ? 1.0f : 0.0f;
+}
+
 __global__ void k_linear_evaluate(float *in, float *w, float *b, float *out,
                                   int batch_size, int in_cnt, int out_cnt)
 {
@@ -20,10 +50,12 @@ __global__ void k_linear_evaluate(float *in, float *w, float *b, float *out,
         }
 
         out[out_elem_idx] += b[w_col_idx];
+        out[out_elem_idx] = d_linear_sigmoid_evaluate(out[out_elem_idx]);
+
     }
 }
 
-__global__ void k_linear_inc_param_derivatives(float *in, float *n, float *dw, float *db,
+__global__ void k_linear_inc_param_derivatives(float *in, float *in_n, float *n, float *dw, float *db,
                                                int batch_size, int in_cnt, int n_cnt, int w_row_cnt, int w_col_cnt)
 {
     int w_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -37,6 +69,8 @@ __global__ void k_linear_inc_param_derivatives(float *in, float *n, float *dw, f
 
         for (int batch_idx = 0; batch_idx < batch_size; batch_idx++)
         {
+            in[batch_idx * in_cnt + in_idx] *= d_linear_sigmoid_derive(in_n[batch_idx * in_cnt + in_idx]);
+
             dw[w_elem_idx] += (in[batch_idx * in_cnt + in_idx] * n[batch_idx * n_cnt + n_idx]);
 
             if (w_row_idx == 0)
@@ -66,7 +100,7 @@ __global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int ba
     }
 }
 
-Linear::Linear(Shape in_shape, Shape out_shape)
+Linear::Linear(Shape in_shape, Shape out_shape, Activation activation)
 {
     this->n_ = new NdArray(true, in_shape);
     this->default_n_shape_ = in_shape;
@@ -93,7 +127,7 @@ void Linear::evaluate(NdArray *out)
                                                  this->batch_size(), this->in_features(), this->out_features());
 }
 
-NdArray *Linear::derive(NdArray *in)
+NdArray *Linear::derive(NdArray *in, NdArray *in_n)
 {
     NdArray *n = this->n_;
     NdArray *w = this->params_->weights();
@@ -108,7 +142,7 @@ NdArray *Linear::derive(NdArray *in)
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
-        k_linear_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), n->data(), dw->data(), db->data(),
+        k_linear_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), in_n->data(), n->data(), dw->data(), db->data(),
                                                                   this->batch_size(), this->out_features(), this->in_features(),
                                                                   this->weight_rows(), this->weight_cols());
     }

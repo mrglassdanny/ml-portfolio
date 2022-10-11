@@ -32,7 +32,6 @@
     <CudaCompile Include="src\core\ndarray.cu" />
     <CudaCompile Include="src\core\util.cu" />
     <CudaCompile Include="src\nn\constants.cuh" />
-    <CudaCompile Include="src\nn\layer\activation.cu" />
     <CudaCompile Include="src\nn\layer\conv2d.cu" />
     <CudaCompile Include="src\nn\layer\layer.cu" />
     <CudaCompile Include="src\nn\layer\learnable.cu" />

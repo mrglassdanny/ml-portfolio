@@ -119,10 +119,12 @@ void Model::backward(NdArray *p, NdArray *y)
     y->to_cuda();
 
     NdArray *loss_gradients = this->loss_->derive(p, y);
+    NdArray *prev_n = p;
 
     for (int i = this->lyrs_.size() - 1; i >= 0; i--)
     {
-        loss_gradients = this->lyrs_[i]->derive(loss_gradients);
+        loss_gradients = this->lyrs_[i]->derive(loss_gradients, prev_n);
+        prev_n = this->lyrs_[i]->neurons();
     }
 
     delete loss_gradients;
@@ -384,62 +386,47 @@ void Model::set_optimizer(Optimizer *optim)
 
 void Model::linear(int out_feature_cnt)
 {
-    this->add_layer(new Linear(this->output_shape(), Shape(this->batch_size(), out_feature_cnt)));
+    this->add_layer(new Linear(this->output_shape(), Shape(this->batch_size(), out_feature_cnt), layer::Activation::Sigmoid));
 }
 
 void Model::linear(Shape y_shape)
 {
-    this->add_layer(new Linear(this->output_shape(), y_shape));
+    this->add_layer(new Linear(this->output_shape(), y_shape, layer::Activation::Sigmoid));
 }
 
 void Model::linear(int batch_size, int in_feature_cnt, int out_feature_cnt)
 {
-    this->add_layer(new Linear(Shape(batch_size, in_feature_cnt), Shape(batch_size, out_feature_cnt)));
+    this->add_layer(new Linear(Shape(batch_size, in_feature_cnt), Shape(batch_size, out_feature_cnt), layer::Activation::Sigmoid));
 }
 
 void Model::linear(Shape in_shape, int out_feature_cnt)
 {
-    this->add_layer(new Linear(in_shape, Shape(in_shape[0], out_feature_cnt)));
+    this->add_layer(new Linear(in_shape, Shape(in_shape[0], out_feature_cnt), layer::Activation::Sigmoid));
 }
 
 void Model::conv2d(Shape filter_shape)
 {
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding{0, 0}, Stride{1, 1}));
+    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding{0, 0}, Stride{1, 1}, layer::Activation::Sigmoid));
 }
 
 void Model::conv2d(Shape filter_shape, Stride stride)
 {
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding{0, 0}, stride));
+    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding{0, 0}, stride, layer::Activation::Sigmoid));
 }
 
 void Model::conv2d(Shape filter_shape, Padding padding, Stride stride)
 {
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, padding, stride));
+    this->add_layer(new Conv2d(this->output_shape(), filter_shape, padding, stride, layer::Activation::Sigmoid));
 }
 
 void Model::conv2d(Shape in_shape, Shape filter_shape, Stride stride)
 {
-    this->add_layer(new Conv2d(in_shape, filter_shape, Padding{0, 0}, stride));
+    this->add_layer(new Conv2d(in_shape, filter_shape, Padding{0, 0}, stride, layer::Activation::Sigmoid));
 }
 
 void Model::conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride)
 {
-    this->add_layer(new Conv2d(in_shape, filter_shape, padding, stride));
-}
-
-void Model::sigmoid()
-{
-    this->add_layer(new Sigmoid(this->output_shape()));
-}
-
-void Model::tanh()
-{
-    this->add_layer(new Tanh(this->output_shape()));
-}
-
-void Model::relu()
-{
-    this->add_layer(new ReLU(this->output_shape()));
+    this->add_layer(new Conv2d(in_shape, filter_shape, padding, stride, layer::Activation::Sigmoid));
 }
 
 std::vector<Layer *> Model::layers()

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "learnable.cuh"
+#include "activation.cuh"
 
 namespace nn
 {
@@ -10,10 +11,10 @@ namespace nn
         class Linear : public Learnable
         {
         public:
-            Linear(Shape in_shape, Shape out_shape);
+            Linear(Shape in_shape, Shape out_shape, Activation activation);
 
             virtual void evaluate(NdArray *out) override;
-            virtual NdArray *derive(NdArray *in) override;
+            virtual NdArray *derive(NdArray *in, NdArray *in_n) override;
 
             virtual Shape input_shape() override;
             virtual Shape output_shape() override;

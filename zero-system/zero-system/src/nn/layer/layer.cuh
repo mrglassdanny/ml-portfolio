@@ -16,7 +16,7 @@ namespace nn
             ~Layer();
 
             virtual void evaluate(NdArray *out) = 0;
-            virtual NdArray *derive(NdArray *in) = 0;
+            virtual NdArray *derive(NdArray *in, NdArray *prev_n) = 0;
 
             virtual Shape input_shape() = 0;
             virtual Shape output_shape() = 0;
