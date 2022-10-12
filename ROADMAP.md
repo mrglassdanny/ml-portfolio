@@ -1,10 +1,12 @@
 # Roadmap
 
-1. ZERO System
+ - [x] ZERO System
     - homemade neural network framework
-2. MNIST-ZERO
+ - [] MNIST-ZERO
     - MNIST hand-written digit predictions with ZERO System
-3. deep-lm
-    - warehouse labor management task time predictions with Pytorch
-4. schneizel
+ - [] fully-fully connected neural network
+    - Experimental neural network architecture
+ - [] deep-lm
+    - warehouse labor management task time predictions
+ - [] schneizel
     - chess AI capable of beating my brother
