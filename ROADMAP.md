@@ -2,11 +2,11 @@
 
  - [x] ZERO System
     - homemade neural network framework
- - [] MNIST-ZERO
+ - [ ] MNIST-ZERO
     - MNIST hand-written digit predictions with ZERO System
- - [] fully-fully connected neural network
+ - [ ] fully-fully connected neural network
     - Experimental neural network architecture
- - [] deep-lm
+ - [ ] deep-lm
     - warehouse labor management task time predictions
- - [] schneizel
+ - [ ] schneizel
     - chess AI capable of beating my brother
