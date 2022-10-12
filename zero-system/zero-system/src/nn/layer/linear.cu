@@ -84,7 +84,6 @@ __global__ void k_linear_inc_param_derivatives(float *in, float *in_n, float *n,
 
         for (int batch_idx = 0; batch_idx < batch_size; batch_idx++)
         {
-
             switch (activation)
             {
             case Activation::None:
