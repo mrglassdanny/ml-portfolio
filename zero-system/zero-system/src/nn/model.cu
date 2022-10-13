@@ -103,7 +103,17 @@ float Model::accuracy(NdArray *p, NdArray *y)
     }
     else
     {
-        // TODO
+        // Assume value is between 0 and 1.
+
+        for (int i = 0; i < batch_size; i++)
+        {
+            float p_val = p->get_val(i) >= 0.50 ? 1.0f : 0.0f;
+
+            if (p_val == y->get_val(i))
+            {
+                correct_cnt++;
+            }
+        }
     }
 
     return ((float)correct_cnt / (float)batch_size);
