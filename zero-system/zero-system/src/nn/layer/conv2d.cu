@@ -305,25 +305,7 @@ void Conv2d::summarize()
 
     printf("\tPad (%d, %d)\tStride (%d, %d)", this->padding_rows(), this->padding_cols(), this->stride_rows(), this->stride_cols());
 
-    printf("\tActivation (");
-    switch (this->activation_)
-    {
-    case ActivationType::None:
-        printf("None");
-        break;
-    case ActivationType::Sigmoid:
-        printf("Sigmoid");
-        break;
-    case ActivationType::Tanh:
-        printf("Tanh");
-        break;
-    case ActivationType::ReLU:
-        printf("ReLU");
-        break;
-    default: // None
-        break;
-    }
-    printf(")");
+    Activation::summarize(this->activation_);
 }
 
 int Conv2d::channels()
