@@ -54,15 +54,15 @@ namespace nn
         void set_loss(Loss *loss);
         void set_optimizer(Optimizer *optim);
 
-        void linear(int out_feature_cnt, Activation activation);
-        void linear(Shape y_shape, Activation activation);
-        void linear(int batch_size, int in_feature_cnt, int out_feature_cnt, Activation activation);
-        void linear(Shape in_shape, int out_feature_cnt, Activation activation);
-        void conv2d(Shape filter_shape, Activation activation);
-        void conv2d(Shape filter_shape, Stride stride, Activation activation);
-        void conv2d(Shape filter_shape, Padding padding, Stride stride, Activation activation);
-        void conv2d(Shape in_shape, Shape filter_shape, Stride stride, Activation activation);
-        void conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride, Activation activation);
+        void linear(int out_feature_cnt, ActivationType activation);
+        void linear(Shape y_shape, ActivationType activation);
+        void linear(int batch_size, int in_feature_cnt, int out_feature_cnt, ActivationType activation);
+        void linear(Shape in_shape, int out_feature_cnt, ActivationType activation);
+        void conv2d(Shape filter_shape, ActivationType activation);
+        void conv2d(Shape filter_shape, Stride stride, ActivationType activation);
+        void conv2d(Shape filter_shape, Padding padding, Stride stride, ActivationType activation);
+        void conv2d(Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation);
+        void conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride, ActivationType activation);
 
         std::vector<Layer *> layers();
         std::vector<Parameters *> parameters();

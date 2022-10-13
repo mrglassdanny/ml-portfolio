@@ -26,10 +26,10 @@ namespace nn
             Stride stride_;
             int out_row_cnt_;
             int out_col_cnt_;
-            Activation activation_;
+            ActivationType activation_;
 
         public:
-            Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride, Activation activation);
+            Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride, ActivationType activation);
 
             virtual void evaluate(NdArray *out) override;
             virtual NdArray *derive(NdArray *in, NdArray *in_n) override;

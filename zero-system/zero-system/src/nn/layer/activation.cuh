@@ -6,7 +6,7 @@ namespace nn
 {
     namespace layer
     {
-        enum Activation
+        enum ActivationType
         {
             None,
             Sigmoid,
@@ -14,6 +14,12 @@ namespace nn
             ReLU
         };
 
-        void summarize_activation(Activation activation);
+        class Activation
+        {
+            public:
+            static void evaluate(NdArray *in, int batch_size, int cnt, ActivationType activation);
+            static void derive(NdArray *in, NdArray *n, int batch_size, int cnt, ActivationType activation);
+            static void summarize(ActivationType activation);
+        };
     }
 }

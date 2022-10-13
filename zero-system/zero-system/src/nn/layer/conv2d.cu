@@ -2,39 +2,9 @@
 
 using namespace nn::layer;
 
-__device__ float d_conv2d_sigmoid_evaluate(float val)
-{
-    return (1.0f / (1.0f + exp(-val)));
-}
-
-__device__ float d_conv2d_sigmoid_derive(float sigmoid_val)
-{
-    return (sigmoid_val) * (1.0f - sigmoid_val);
-}
-
-__device__ float d_conv2d_tanh_evaluate(float val)
-{
-    return ((exp(val) - exp(-val)) / (exp(val) + exp(-val)));
-}
-
-__device__ float d_conv2d_tanh_derive(float tanh_val)
-{
-    return (1.0f - (tanh_val * tanh_val));
-}
-
-__device__ float d_conv2d_relu_evaluate(float val)
-{
-    return val > 0.0f ? val : 0.0f;
-}
-
-__device__ float d_conv2d_relu_derive(float relu_val)
-{
-    return relu_val > 0.0f ? 1.0f : 0.0f;
-}
-
 __global__ void k_conv2d_evaluate(float *in, float *w, float *b, float *out, int batch_size, int channel_cnt, int in_row_cnt, int in_col_cnt,
                                   int filter_cnt, int filter_row_cnt, int filter_col_cnt, int out_row_cnt, int out_col_cnt,
-                                  int stride_row_cnt, int stride_col_cnt, Activation activation)
+                                  int stride_row_cnt, int stride_col_cnt)
 {
     int filter_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -68,23 +38,6 @@ __global__ void k_conv2d_evaluate(float *in, float *w, float *b, float *out, int
 
                     l_out[out_row_idx * out_col_cnt + out_col_idx] += l_b[channel_idx];
                 }
-
-                switch (activation)
-                {
-                case Activation::None:
-                    break;
-                case Activation::Sigmoid:
-                    l_out[out_row_idx * out_col_cnt + out_col_idx] = d_conv2d_sigmoid_evaluate(l_out[out_row_idx * out_col_cnt + out_col_idx]);
-                    break;
-                case Activation::Tanh:
-                    l_out[out_row_idx * out_col_cnt + out_col_idx] = d_conv2d_tanh_evaluate(l_out[out_row_idx * out_col_cnt + out_col_idx]);
-                    break;
-                case Activation::ReLU:
-                    l_out[out_row_idx * out_col_cnt + out_col_idx] = d_conv2d_relu_evaluate(l_out[out_row_idx * out_col_cnt + out_col_idx]);
-                    break;
-                default: // None
-                    break;
-                }
             }
         }
     }
@@ -92,7 +45,7 @@ __global__ void k_conv2d_evaluate(float *in, float *w, float *b, float *out, int
 
 __global__ void k_conv2d_inc_param_derivatives(float *in, float *in_n, float *n, float *dw, float *db, int batch_size, int channel_cnt, int filter_cnt,
                                                int in_row_cnt, int in_col_cnt, int in_cnt, int n_row_cnt, int n_col_cnt, int n_cnt, int w_row_cnt, int w_col_cnt,
-                                               int w_cnt, int stride_row_cnt, int stride_col_cnt, Activation activation)
+                                               int w_cnt, int stride_row_cnt, int stride_col_cnt)
 {
     int channel_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int filter_idx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -106,23 +59,6 @@ __global__ void k_conv2d_inc_param_derivatives(float *in, float *in_n, float *n,
                 for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
                 {
                     int in_elem_idx = (batch_idx * filter_cnt * in_cnt) + (filter_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx);
-
-                    switch (activation)
-                    {
-                    case Activation::None:
-                        break;
-                    case Activation::Sigmoid:
-                        in[in_elem_idx] *= d_conv2d_sigmoid_derive(in_n[in_elem_idx]);
-                        break;
-                    case Activation::Tanh:
-                        in[in_elem_idx] *= d_conv2d_tanh_derive(in_n[in_elem_idx]);
-                        break;
-                    case Activation::ReLU:
-                        in[in_elem_idx] *= d_conv2d_relu_derive(in_n[in_elem_idx]);
-                        break;
-                    default: // None
-                        break;
-                    }
 
                     for (int w_row_idx = 0; w_row_idx < w_row_cnt; w_row_idx++)
                     {
@@ -177,7 +113,7 @@ __global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int ba
     }
 }
 
-Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride, Activation activation)
+Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride, ActivationType activation)
 {
     this->n_ = new NdArray(true, in_shape);
     this->default_n_shape_ = in_shape;
@@ -212,7 +148,9 @@ void Conv2d::evaluate(NdArray *out)
 
     k_conv2d_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(), this->batch_size(), this->channels(), this->in_feature_rows(), this->in_feature_cols(),
                                                  this->filters(), this->filter_rows(), this->filter_cols(), this->out_feature_rows(), this->out_feature_cols(),
-                                                 this->stride_rows(), this->stride_cols(), this->activation_);
+                                                 this->stride_rows(), this->stride_cols());
+
+    Activation::evaluate(out, this->batch_size(), out->dims_size() / this->batch_size(), this->activation_);
 }
 
 NdArray *Conv2d::derive(NdArray *in, NdArray *in_n)
@@ -222,6 +160,8 @@ NdArray *Conv2d::derive(NdArray *in, NdArray *in_n)
     NdArray *b = this->params_->biases();
     NdArray *dw = this->params_->weight_gradients();
     NdArray *db = this->params_->bias_gradients();
+
+    Activation::derive(in, in_n, this->batch_size(), in->dims_size() / this->batch_size(), this->activation_);
 
     {
         int grid_row_cnt = (this->filters() / CUDA_THREADS_PER_BLOCK) + 1;
@@ -234,7 +174,7 @@ NdArray *Conv2d::derive(NdArray *in, NdArray *in_n)
                                                                   this->out_feature_rows(), this->out_feature_cols(), (this->out_feature_rows() * this->out_feature_cols()),
                                                                   this->in_feature_rows(), this->in_feature_cols(), (this->in_feature_rows() * this->in_feature_cols()),
                                                                   this->filter_rows(), this->filter_cols(), (this->filter_rows() * this->filter_cols()),
-                                                                  this->stride_rows(), this->stride_cols(), this->activation_);
+                                                                  this->stride_rows(), this->stride_cols());
     }
 
     NdArray *out = NdArray::zeros(true, this->input_shape());
@@ -258,6 +198,10 @@ NdArray *Conv2d::derive(NdArray *in, NdArray *in_n)
         NdArray *unpadded_out = NdArray::unpad(out, this->padding_rows(), this->padding_cols());
         delete out;
         out = unpadded_out;
+
+        NdArray *unpadded_n = NdArray::unpad(this->n_, this->padding_rows(), this->padding_cols());
+        delete this->n_;
+        this->n_ = unpadded_n;
     }
 
     delete in;
@@ -364,16 +308,16 @@ void Conv2d::summarize()
     printf("\tActivation (");
     switch (this->activation_)
     {
-    case Activation::None:
+    case ActivationType::None:
         printf("None");
         break;
-    case Activation::Sigmoid:
+    case ActivationType::Sigmoid:
         printf("Sigmoid");
         break;
-    case Activation::Tanh:
+    case ActivationType::Tanh:
         printf("Tanh");
         break;
-    case Activation::ReLU:
+    case ActivationType::ReLU:
         printf("ReLU");
         break;
     default: // None

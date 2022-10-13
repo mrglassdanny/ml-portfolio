@@ -10,10 +10,10 @@ namespace nn
         class Linear : public Learnable
         {
         private:
-            Activation activation_;
+            ActivationType activation_;
             
         public:
-            Linear(Shape in_shape, Shape out_shape, Activation activation);
+            Linear(Shape in_shape, Shape out_shape, ActivationType activation);
 
             virtual void evaluate(NdArray *out) override;
             virtual NdArray *derive(NdArray *in, NdArray *in_n) override;

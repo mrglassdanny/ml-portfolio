@@ -2,38 +2,8 @@
 
 using namespace nn::layer;
 
-__device__ float d_linear_sigmoid_evaluate(float val)
-{
-    return (1.0f / (1.0f + exp(-val)));
-}
-
-__device__ float d_linear_sigmoid_derive(float sigmoid_val)
-{
-    return (sigmoid_val) * (1.0f - sigmoid_val);
-}
-
-__device__ float d_linear_tanh_evaluate(float val)
-{
-    return ((exp(val) - exp(-val)) / (exp(val) + exp(-val)));
-}
-
-__device__ float d_linear_tanh_derive(float tanh_val)
-{
-    return (1.0f - (tanh_val * tanh_val));
-}
-
-__device__ float d_linear_relu_evaluate(float val)
-{
-    return val > 0.0f ? val : 0.0f;
-}
-
-__device__ float d_linear_relu_derive(float relu_val)
-{
-    return relu_val > 0.0f ? 1.0f : 0.0f;
-}
-
 __global__ void k_linear_evaluate(float *in, float *w, float *b, float *out,
-                                  int batch_size, int in_cnt, int out_cnt, Activation activation)
+                                  int batch_size, int in_cnt, int out_cnt)
 {
     int out_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -50,28 +20,11 @@ __global__ void k_linear_evaluate(float *in, float *w, float *b, float *out,
         }
 
         out[out_elem_idx] += b[w_col_idx];
-
-        switch (activation)
-        {
-        case Activation::None:
-            break;
-        case Activation::Sigmoid:
-            out[out_elem_idx] = d_linear_sigmoid_evaluate(out[out_elem_idx]);
-            break;
-        case Activation::Tanh:
-            out[out_elem_idx] = d_linear_tanh_evaluate(out[out_elem_idx]);
-            break;
-        case Activation::ReLU:
-            out[out_elem_idx] = d_linear_relu_evaluate(out[out_elem_idx]);
-            break;
-        default: // None
-            break;
-        }
     }
 }
 
 __global__ void k_linear_inc_param_derivatives(float *in, float *in_n, float *n, float *dw, float *db,
-                                               int batch_size, int in_cnt, int n_cnt, int w_row_cnt, int w_col_cnt, Activation activation)
+                                               int batch_size, int in_cnt, int n_cnt, int w_row_cnt, int w_col_cnt)
 {
     int w_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int w_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -84,23 +37,6 @@ __global__ void k_linear_inc_param_derivatives(float *in, float *in_n, float *n,
 
         for (int batch_idx = 0; batch_idx < batch_size; batch_idx++)
         {
-            switch (activation)
-            {
-            case Activation::None:
-                break;
-            case Activation::Sigmoid:
-                in[batch_idx * in_cnt + in_idx] *= d_linear_sigmoid_derive(in_n[batch_idx * in_cnt + in_idx]);
-                break;
-            case Activation::Tanh:
-                in[batch_idx * in_cnt + in_idx] *= d_linear_tanh_derive(in_n[batch_idx * in_cnt + in_idx]);
-                break;
-            case Activation::ReLU:
-                in[batch_idx * in_cnt + in_idx] *= d_linear_relu_derive(in_n[batch_idx * in_cnt + in_idx]);
-                break;
-            default: // None
-                break;
-            }
-
             dw[w_elem_idx] += (in[batch_idx * in_cnt + in_idx] * n[batch_idx * n_cnt + n_idx]);
 
             if (w_row_idx == 0)
@@ -130,7 +66,7 @@ __global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int ba
     }
 }
 
-Linear::Linear(Shape in_shape, Shape out_shape, Activation activation)
+Linear::Linear(Shape in_shape, Shape out_shape, ActivationType activation)
 {
     this->n_ = new NdArray(true, in_shape);
     this->default_n_shape_ = in_shape;
@@ -156,7 +92,9 @@ void Linear::evaluate(NdArray *out)
     NdArray *b = this->params_->biases();
 
     k_linear_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(),
-                                                 this->batch_size(), this->in_features(), this->out_features(), this->activation_);
+                                                 this->batch_size(), this->in_features(), this->out_features());
+
+    Activation::evaluate(out, this->batch_size(), this->out_features(), this->activation_);
 }
 
 NdArray *Linear::derive(NdArray *in, NdArray *in_n)
@@ -167,6 +105,8 @@ NdArray *Linear::derive(NdArray *in, NdArray *in_n)
     NdArray *dw = this->params_->weight_gradients();
     NdArray *db = this->params_->bias_gradients();
 
+    Activation::derive(in, in_n, this->batch_size(), this->out_features(), this->activation_);
+
     {
         int grid_row_cnt = (this->weight_rows() / CUDA_THREADS_PER_BLOCK) + 1;
         int grid_col_cnt = (this->weight_cols() / CUDA_THREADS_PER_BLOCK) + 1;
@@ -176,7 +116,7 @@ NdArray *Linear::derive(NdArray *in, NdArray *in_n)
 
         k_linear_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), in_n->data(), n->data(), dw->data(), db->data(),
                                                                   this->batch_size(), this->out_features(), this->in_features(),
-                                                                  this->weight_rows(), this->weight_cols(), this->activation_);
+                                                                  this->weight_rows(), this->weight_cols());
     }
 
     NdArray *out = NdArray::zeros(true, this->input_shape());
@@ -222,26 +162,7 @@ void Linear::validate()
 void Linear::summarize()
 {
     Layer::summarize();
-
-    printf("\tActivation (");
-    switch (this->activation_)
-    {
-    case Activation::None:
-        printf("None");
-        break;
-    case Activation::Sigmoid:
-        printf("Sigmoid");
-        break;
-    case Activation::Tanh:
-        printf("Tanh");
-        break;
-    case Activation::ReLU:
-        printf("ReLU");
-        break;
-    default: // None
-        break;
-    }
-    printf(")");
+    Activation::summarize(this->activation_);
 }
 
 int Linear::in_features()
