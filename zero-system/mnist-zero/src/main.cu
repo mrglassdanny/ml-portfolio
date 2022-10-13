@@ -136,7 +136,7 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 
 			auto p = model->forward(x);
 
-			if (j % 100 == 0)
+			if (rand() % 50 == 0)
 			{
 				auto l = model->loss(p, y);
 				printf("TRAIN LOSS: %f\tACCURACY: %f%%\n", l, model->accuracy(p, y) * 100.0f);
@@ -398,7 +398,7 @@ int main(int argc, char **argv)
 	model->set_loss(new nn::loss::CrossEntropy());
 	model->set_optimizer(new nn::optim::SGD(model->parameters(), 0.1f));
 
-	model->summarize();
+	model->summarize(); //98.91%
 
 	train_mnist(model, batch_size, 30);
 	// // train_validate_mnist(model, batch_size, 1000, 0.10f);
