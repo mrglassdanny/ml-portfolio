@@ -303,7 +303,7 @@ void Conv2d::summarize()
     this->filter_shape().print();
     printf(")");
 
-    printf("\tPad (%d, %d)\tStride (%d, %d)", this->padding_rows(), this->padding_cols(), this->stride_rows(), this->stride_cols());
+    printf("\tPad (%d, %d)\tStride (%d, %d)\t", this->padding_rows(), this->padding_cols(), this->stride_rows(), this->stride_cols());
 
     Activation::summarize(this->activation_);
 }
