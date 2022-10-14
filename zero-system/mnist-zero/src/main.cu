@@ -123,13 +123,12 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 
 	int train_batch_cnt = train_ds.size();
 
+	auto sw = new CudaStopWatch();
+
 	bool quit = false;
 
 	for (int i = 0; i < epoch_cnt; i++)
 	{
-		auto sw = new CudaStopWatch();
-		sw->start();
-
 		for (int j = 0; j < train_batch_cnt; j++)
 		{
 			auto batch = &train_ds[j];
@@ -144,7 +143,11 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 			// 	printf("TRAIN LOSS: %f\tACCURACY: %f%%\n", l, model->accuracy(p, y) * 100.0f);
 			// }
 
+			sw->start();
 			model->backward(p, y);
+			sw->stop();
+			sw->print_elapsed_seconds();
+
 			model->step();
 
 			delete p;
@@ -160,10 +163,6 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 			}
 		}
 
-		sw->stop();
-		sw->print_elapsed_seconds();
-		delete sw;
-
 		if (quit)
 		{
 			break;
@@ -171,6 +170,8 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 
 		printf("\nEPOCH COMPLETED: %d\n", i);
 	}
+
+	delete sw;
 
 	for (auto batch : train_ds)
 	{
@@ -383,7 +384,7 @@ void grad_tests()
 		m5->set_optimizer(new nn::optim::SGD(m5->parameters(), 0.01f));
 
 		m5->summarize();
-		m5->validate_gradients(x, y, false);
+		m5->validate_gradients(x, y, true);
 
 		delete x;
 		delete y;
@@ -401,7 +402,7 @@ int main(int argc, char **argv)
 	printf("MNIST-ZERO\n\n");
 	srand(time(NULL));
 
-	// grad_tests();
+	grad_tests();
 
 	auto model = new nn::Model();
 	int batch_size = 64;
@@ -419,19 +420,17 @@ int main(int argc, char **argv)
 	// model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
 
 	// ?%
-	model->conv2d(input_shape, Shape(32, 1, 5, 5), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(32, 32, 5, 5), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(32, 32, 3, 3), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(32, 32, 3, 3), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->linear(64, nn::layer::ActivationType::ReLU);
-	model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
+	// model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	// model->conv2d(Shape(64, 64, 5, 5), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	// model->linear(64, nn::layer::ActivationType::ReLU);
+	// model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
 
-	model->set_loss(new nn::loss::CrossEntropy());
-	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.1f, BETA_1));
+	// model->set_loss(new nn::loss::CrossEntropy());
+	// model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.1f, BETA_1));
 
-	model->summarize();
+	// model->summarize();
 
-	train_mnist(model, batch_size, 30);
+	// train_mnist(model, batch_size, 30);
 	// train_validate_mnist(model, batch_size, 1000, 0.10f);
 	// test_mnist(model);
 
