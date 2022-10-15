@@ -69,7 +69,10 @@ __global__ void k_conv2d_inc_param_derivatives(float *in, float *in_n, float *n,
                         (in[in_elem_idx] *
                          n[(batch_idx * channel_cnt * n_cnt) + (channel_idx * n_cnt) + ((w_row_idx + (in_row_idx * stride_row_cnt)) * n_col_cnt + (w_col_idx + (in_col_idx * stride_col_cnt)))]);
 
-                    db[b_elem_idx] += in[in_elem_idx];
+                    if (w_row_idx == 0 && w_col_idx == 0)
+                    {
+                        db[b_elem_idx] += in[in_elem_idx];
+                    }
                 }
             }
         }
