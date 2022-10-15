@@ -6,10 +6,14 @@ __global__ void k_conv2d_evaluate(float *in, float *w, float *b, float *out, int
                                   int filter_cnt, int filter_row_cnt, int filter_col_cnt, int out_row_cnt, int out_col_cnt,
                                   int stride_row_cnt, int stride_col_cnt)
 {
-    int filter_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int f_or_oc_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (filter_idx < filter_cnt && batch_idx < batch_size)
+    int filter_idx = f_or_oc_idx / (out_row_cnt * out_col_cnt);
+    int out_row_idx = (f_or_oc_idx - (filter_idx * (out_row_cnt * out_col_cnt))) / out_col_cnt;
+    int out_col_idx = f_or_oc_idx % out_col_cnt;
+
+    if (filter_idx < filter_cnt && out_row_idx < out_row_cnt && out_col_idx < out_col_cnt && batch_idx < batch_size)
     {
         int in_cnt = in_row_cnt * in_col_cnt;
         int w_cnt = filter_row_cnt * filter_col_cnt;
@@ -20,25 +24,19 @@ __global__ void k_conv2d_evaluate(float *in, float *w, float *b, float *out, int
         float *l_b = &b[(filter_idx * channel_cnt)];
         float *l_out = &out[((batch_idx * filter_cnt * out_cnt) + (filter_idx * out_cnt))];
 
-        for (int out_row_idx = 0; out_row_idx < out_row_cnt; out_row_idx++)
+        for (int channel_idx = 0; channel_idx < channel_cnt; channel_idx++)
         {
-            for (int out_col_idx = 0; out_col_idx < out_col_cnt; out_col_idx++)
+            for (int w_row_idx = 0; w_row_idx < filter_row_cnt; w_row_idx++)
             {
-                for (int channel_idx = 0; channel_idx < channel_cnt; channel_idx++)
+                for (int w_col_idx = 0; w_col_idx < filter_col_cnt; w_col_idx++)
                 {
-                    for (int w_row_idx = 0; w_row_idx < filter_row_cnt; w_row_idx++)
-                    {
-                        for (int w_col_idx = 0; w_col_idx < filter_col_cnt; w_col_idx++)
-                        {
-                            l_out[out_row_idx * out_col_cnt + out_col_idx] +=
-                                (l_in[(channel_idx * in_cnt) + (((w_row_idx + (out_row_idx * stride_row_cnt)) * in_col_cnt + (w_col_idx + (out_col_idx * stride_col_cnt))))] *
-                                 l_w[(channel_idx * w_cnt) + (w_row_idx * filter_col_cnt + w_col_idx)]);
-                        }
-                    }
-
-                    l_out[out_row_idx * out_col_cnt + out_col_idx] += l_b[channel_idx];
+                    l_out[out_row_idx * out_col_cnt + out_col_idx] +=
+                        (l_in[(channel_idx * in_cnt) + (((w_row_idx + (out_row_idx * stride_row_cnt)) * in_col_cnt + (w_col_idx + (out_col_idx * stride_col_cnt))))] *
+                         l_w[(channel_idx * w_cnt) + (w_row_idx * filter_col_cnt + w_col_idx)]);
                 }
             }
+
+            l_out[out_row_idx * out_col_cnt + out_col_idx] += l_b[channel_idx];
         }
     }
 }
@@ -47,11 +45,18 @@ __global__ void k_conv2d_inc_param_derivatives(float *in, float *in_n, float *n,
                                                int in_row_cnt, int in_col_cnt, int in_cnt, int n_row_cnt, int n_col_cnt, int n_cnt, int w_row_cnt, int w_col_cnt,
                                                int w_cnt, int stride_row_cnt, int stride_col_cnt)
 {
-    int channel_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int c_wr_wc_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int filter_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (channel_idx < channel_cnt && filter_idx < filter_cnt)
+    int channel_idx = c_wr_wc_idx / w_cnt;
+    int w_row_idx = (c_wr_wc_idx - (channel_idx * w_cnt)) / w_col_cnt;
+    int w_col_idx = c_wr_wc_idx % w_col_cnt;
+
+    if (channel_idx < channel_cnt && w_row_idx < w_row_cnt && w_col_idx < w_col_cnt && filter_idx < filter_cnt)
     {
+        int w_elem_idx = (filter_idx * channel_cnt * w_cnt) + (channel_idx * w_cnt) + (w_row_idx * w_col_cnt + w_col_idx);
+        int b_elem_idx = filter_idx * channel_cnt + channel_idx;
+
         for (int batch_idx = 0; batch_idx < batch_size; batch_idx++)
         {
             for (int in_row_idx = 0; in_row_idx < in_row_cnt; in_row_idx++)
@@ -60,19 +65,14 @@ __global__ void k_conv2d_inc_param_derivatives(float *in, float *in_n, float *n,
                 {
                     int in_elem_idx = (batch_idx * filter_cnt * in_cnt) + (filter_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx);
 
-                    for (int w_row_idx = 0; w_row_idx < w_row_cnt; w_row_idx++)
+                    dw[w_elem_idx] +=
+                        (in[in_elem_idx] *
+                         n[(batch_idx * channel_cnt * n_cnt) + (channel_idx * n_cnt) + ((w_row_idx + (in_row_idx * stride_row_cnt)) * n_col_cnt + (w_col_idx + (in_col_idx * stride_col_cnt)))]);
+
+                    if (w_row_idx == 0 && w_col_idx == 0)
                     {
-                        for (int w_col_idx = 0; w_col_idx < w_col_cnt; w_col_idx++)
-                        {
-                            int w_elem_idx = (filter_idx * channel_cnt * w_cnt) + (channel_idx * w_cnt) + (w_row_idx * w_col_cnt + w_col_idx);
-
-                            dw[w_elem_idx] +=
-                                (in[in_elem_idx] *
-                                 n[(batch_idx * channel_cnt * n_cnt) + (channel_idx * n_cnt) + ((w_row_idx + (in_row_idx * stride_row_cnt)) * n_col_cnt + (w_col_idx + (in_col_idx * stride_col_cnt)))]);
-                        }
+                        db[b_elem_idx] += in[in_elem_idx];
                     }
-
-                    db[filter_idx * channel_cnt + channel_idx] += in[in_elem_idx];
                 }
             }
         }
@@ -83,30 +83,26 @@ __global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int ba
                                          int in_row_cnt, int in_col_cnt, int in_cnt, int w_row_cnt, int w_col_cnt, int w_cnt, int out_row_cnt, int out_col_cnt, int out_cnt,
                                          int stride_row_cnt, int stride_col_cnt)
 {
-    int channel_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int f_ir_ic_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (channel_idx < channel_cnt && batch_idx < batch_size)
+    int filter_idx = f_ir_ic_idx / in_cnt;
+    int in_row_idx = (f_ir_ic_idx - (filter_idx * in_cnt)) / in_col_cnt;
+    int in_col_idx = f_ir_ic_idx % in_col_cnt;
+
+    if (filter_idx < filter_cnt && in_row_idx < in_row_cnt && in_col_idx < in_col_cnt && batch_idx < batch_size)
     {
-        for (int filter_idx = 0; filter_idx < filter_cnt; filter_idx++)
+        int in_elem_idx = (batch_idx * filter_cnt * in_cnt) + (filter_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx);
+
+        for (int channel_idx = 0; channel_idx < channel_cnt; channel_idx++)
         {
-            for (int in_row_idx = 0; in_row_idx < in_row_cnt; in_row_idx++)
+            for (int w_row_idx = 0; w_row_idx < w_row_cnt; w_row_idx++)
             {
-                for (int in_col_idx = 0; in_col_idx < in_col_cnt; in_col_idx++)
+                for (int w_col_idx = 0; w_col_idx < w_col_cnt; w_col_idx++)
                 {
-                    int in_elem_idx = (batch_idx * filter_cnt * in_cnt) + (filter_idx * in_cnt) + (in_row_idx * in_col_cnt + in_col_idx);
+                    int out_elem_idx = (batch_idx * channel_cnt * out_cnt) + (channel_idx * out_cnt) + ((w_row_idx + (in_row_idx * stride_row_cnt)) * out_col_cnt + (w_col_idx + (in_col_idx * stride_col_cnt)));
 
-                    for (int w_row_idx = 0; w_row_idx < w_row_cnt; w_row_idx++)
-                    {
-                        for (int w_col_idx = 0; w_col_idx < w_col_cnt; w_col_idx++)
-                        {
-                            int out_elem_idx = (batch_idx * channel_cnt * out_cnt) + (channel_idx * out_cnt) + ((w_row_idx + (in_row_idx * stride_row_cnt)) * out_col_cnt + (w_col_idx + (in_col_idx * stride_col_cnt)));
-
-                            out[out_elem_idx] +=
-                                (in[in_elem_idx] *
-                                 w[(filter_idx * channel_cnt * w_cnt) + (channel_idx * w_cnt) + (w_row_idx * w_col_cnt + w_col_idx)]);
-                        }
-                    }
+                    atomicAdd(&out[out_elem_idx], (in[in_elem_idx] * w[(filter_idx * channel_cnt * w_cnt) + (channel_idx * w_cnt) + (w_row_idx * w_col_cnt + w_col_idx)]));
                 }
             }
         }
@@ -130,7 +126,7 @@ Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride strid
 void Conv2d::evaluate(NdArray *out)
 {
     int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (this->filters() / CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = ((this->filters() * this->out_feature_rows() * this->out_feature_cols()) / CUDA_THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
     dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
@@ -165,7 +161,7 @@ NdArray *Conv2d::derive(NdArray *in, NdArray *in_n)
 
     {
         int grid_row_cnt = (this->filters() / CUDA_THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (this->channels() / CUDA_THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = ((this->channels() * this->filter_rows() * this->filter_cols()) / CUDA_THREADS_PER_BLOCK) + 1;
 
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
@@ -181,7 +177,7 @@ NdArray *Conv2d::derive(NdArray *in, NdArray *in_n)
 
     {
         int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
-        int grid_col_cnt = (this->channels() / CUDA_THREADS_PER_BLOCK) + 1;
+        int grid_col_cnt = ((this->filters() * this->out_feature_rows() * this->out_feature_cols()) / CUDA_THREADS_PER_BLOCK) + 1;
 
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
