@@ -123,8 +123,6 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 
 	int train_batch_cnt = train_ds.size();
 
-	auto sw = new CudaStopWatch();
-
 	bool quit = false;
 
 	for (int i = 0; i < epoch_cnt; i++)
@@ -137,17 +135,13 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 
 			auto p = model->forward(x);
 
-			// if (rand() % 50 == 0)
-			// {
-			// 	auto l = model->loss(p, y);
-			// 	printf("TRAIN LOSS: %f\tACCURACY: %f%%\n", l, model->accuracy(p, y) * 100.0f);
-			// }
+			if (rand() % 50 == 0)
+			{
+				auto l = model->loss(p, y);
+				printf("TRAIN LOSS: %f\tACCURACY: %f%%\n", l, model->accuracy(p, y) * 100.0f);
+			}
 
-			sw->start();
 			model->backward(p, y);
-			sw->stop();
-			sw->print_elapsed_seconds();
-
 			model->step();
 
 			delete p;
@@ -170,8 +164,6 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 
 		printf("\nEPOCH COMPLETED: %d\n", i);
 	}
-
-	delete sw;
 
 	for (auto batch : train_ds)
 	{
@@ -356,7 +348,7 @@ void grad_tests()
 		m4->conv2d(x->shape(), Shape(4, 2, 3, 2), nn::layer::Stride{3, 2}, nn::layer::ActivationType::Sigmoid);
 		m4->conv2d(Shape(4, 4, 2, 2), nn::layer::Stride{1, 1}, nn::layer::ActivationType::Sigmoid);
 		m4->linear(16, nn::layer::ActivationType::Sigmoid);
-		m4->linear(y->shape(), nn::layer::ActivationType::None);
+		m4->linear(y->shape(), nn::layer::ActivationType::Sigmoid);
 
 		m4->set_loss(new nn::loss::CrossEntropy());
 		m4->set_optimizer(new nn::optim::SGD(m4->parameters(), 0.01f));
@@ -384,7 +376,7 @@ void grad_tests()
 		m5->set_optimizer(new nn::optim::SGD(m5->parameters(), 0.01f));
 
 		m5->summarize();
-		m5->validate_gradients(x, y, true);
+		m5->validate_gradients(x, y, false);
 
 		delete x;
 		delete y;
@@ -402,7 +394,7 @@ int main(int argc, char **argv)
 	printf("MNIST-ZERO\n\n");
 	srand(time(NULL));
 
-	grad_tests();
+	// grad_tests();
 
 	auto model = new nn::Model();
 	int batch_size = 64;
@@ -411,28 +403,22 @@ int main(int argc, char **argv)
 	Shape output_shape = Shape(batch_size, 10);
 
 	// 98.91%
-	// model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	// model->conv2d(Shape(64, 64, 3, 3), nn::layer::Padding{0, 0}, nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
-	// model->conv2d(Shape(64, 64, 3, 3), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	// model->linear(512, nn::layer::ActivationType::ReLU);
-	// model->linear(256, nn::layer::ActivationType::ReLU);
-	// model->linear(128, nn::layer::ActivationType::ReLU);
-	// model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
+	model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Padding{0, 0}, nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	model->linear(512, nn::layer::ActivationType::ReLU);
+	model->linear(256, nn::layer::ActivationType::ReLU);
+	model->linear(128, nn::layer::ActivationType::ReLU);
+	model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
 
-	// ?%
-	// model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	// model->conv2d(Shape(64, 64, 5, 5), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	// model->linear(64, nn::layer::ActivationType::ReLU);
-	// model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
+	model->set_loss(new nn::loss::CrossEntropy());
+	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.1f, BETA_1));
 
-	// model->set_loss(new nn::loss::CrossEntropy());
-	// model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.1f, BETA_1));
+	model->summarize();
 
-	// model->summarize();
-
-	// train_mnist(model, batch_size, 30);
+	train_mnist(model, batch_size, 30);
 	// train_validate_mnist(model, batch_size, 1000, 0.10f);
-	// test_mnist(model);
+	test_mnist(model);
 
 	return 0;
 }
