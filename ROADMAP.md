@@ -2,9 +2,9 @@
 
  - [x] ZERO System
     - homemade neural network framework
- - [ ] MNIST-ZERO
+ - [x] MNIST-ZERO
     - MNIST hand-written digit predictions with ZERO System
- - [ ] fully-fully connected neural network
+ - [ ] Enhanced residual neural network
     - Experimental neural network architecture
  - [ ] deep-lm
     - warehouse labor management task time predictions
