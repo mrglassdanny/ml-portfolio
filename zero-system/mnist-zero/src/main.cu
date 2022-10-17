@@ -117,7 +117,7 @@ std::vector<Batch> get_test_dataset(int batch_size)
 	return batches;
 }
 
-void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
+void train_mnist(nn::Model *model, int batch_size, int epochs)
 {
 	auto train_ds = get_train_dataset(batch_size);
 
@@ -125,7 +125,9 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 
 	bool quit = false;
 
-	for (int i = 0; i < epoch_cnt; i++)
+	int epoch;
+
+	for (epoch = 0; epoch < epochs; epoch++)
 	{
 		for (int j = 0; j < train_batch_cnt; j++)
 		{
@@ -134,12 +136,6 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 			auto y = batch->y;
 
 			auto p = model->forward(x);
-
-			if (rand() % 50 == 0)
-			{
-				auto l = model->loss(p, y);
-				printf("TRAIN LOSS: %f\tACCURACY: %f%%\n", l, model->accuracy(p, y) * 100.0f);
-			}
 
 			model->backward(p, y);
 			model->step();
@@ -150,7 +146,6 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 			{
 				if (_getch() == 'q')
 				{
-					printf("QUITTING:\n");
 					quit = true;
 					break;
 				}
@@ -161,8 +156,6 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 		{
 			break;
 		}
-
-		printf("\nEPOCH COMPLETED: %d\n", i);
 	}
 
 	for (auto batch : train_ds)
@@ -172,100 +165,97 @@ void train_mnist(nn::Model *model, int batch_size, int epoch_cnt)
 	}
 }
 
-void train_validate_mnist(nn::Model *model, int batch_size, int epoch_cnt, float validation_pct)
+void test_mnist(nn::Model* model, int epoch, bool train, bool csv)
 {
-	auto train_ds = get_train_dataset(batch_size);
-
-	int train_batch_cnt = train_ds.size();
-	int validation_batch_cnt = (int)(train_batch_cnt * validation_pct);
-
-	std::vector<int> validation_batch_idxs;
-	for (int v = 0; v < validation_batch_cnt; v++)
+	// TEST:
 	{
-		validation_batch_idxs.push_back(rand() % train_batch_cnt);
-	}
+		auto ds = get_test_dataset(model->batch_size());
 
-	for (int i = 0; i < epoch_cnt; i++)
-	{
-		float validation_loss = 0.0f;
-		float validation_acc = 0.0f;
+		int batch_cnt = ds.size();
 
-		for (int j = 0; j < train_batch_cnt; j++)
+		float loss = 0.0f;
+		float acc = 0.0f;
+
+		for (int j = 0; j < batch_cnt; j++)
 		{
-			auto batch = &train_ds[j];
+			auto batch = &ds[j];
 			auto x = batch->x;
 			auto y = batch->y;
 
-			bool validation_batch_flg = false;
-			for (int v = 0; v < validation_batch_cnt; v++)
-			{
-				if (validation_batch_idxs[v] == j)
-				{
-					validation_batch_flg = true;
-					break;
-				}
-			}
-
-			if (validation_batch_flg)
-			{
-				auto p = model->forward(x);
-				validation_loss += model->loss(p, y);
-				validation_acc += model->accuracy(p, y);
-				delete p;
-			}
-			else
-			{
-				auto p = model->forward(x);
-				model->backward(p, y);
-				model->step();
-				delete p;
-			}
-
-			if (_kbhit())
-			{
-				if (_getch() == 'q')
-				{
-					printf("QUITTING:\n");
-					return;
-				}
-			}
+			auto p = model->forward(x);
+			loss += model->loss(p, y);
+			acc += model->accuracy(p, y);
+			delete p;
 		}
 
-		printf("EPOCH: %d\tVALIDATION LOSS: %f\tVALIDATION ACCURACY: %f%%\n", i + 1,
-			   (validation_loss / (float)validation_batch_cnt),
-			   (validation_acc / (float)validation_batch_cnt) * 100.0f);
-	}
-}
+		if (csv)
+		{
+			FILE* f = fopen("temp/test.csv", "a");
+			fprintf(f, "EPOCH: %d\tTEST LOSS: %f\tTEST ACCURACY: %f%%\n",
+				epoch,
+				(loss / (float)batch_cnt),
+				(acc / (float)batch_cnt) * 100.0f);
+			fclose(f);
+		}
+		else
+		{
+			printf("EPOCH: %d\tTEST LOSS: %f\tTEST ACCURACY: %f%%\n",
+				epoch,
+				(loss / (float)batch_cnt),
+				(acc / (float)batch_cnt) * 100.0f);
+		}
 
-void test_mnist(nn::Model *model)
-{
-	auto test_ds = get_test_dataset(model->batch_size());
-
-	int test_batch_cnt = test_ds.size();
-
-	float test_loss = 0.0f;
-	float test_acc = 0.0f;
-
-	for (int j = 0; j < test_batch_cnt; j++)
-	{
-		auto batch = &test_ds[j];
-		auto x = batch->x;
-		auto y = batch->y;
-
-		auto p = model->forward(x);
-		test_loss += model->loss(p, y);
-		test_acc += model->accuracy(p, y);
-		delete p;
+		for (auto batch : ds)
+		{
+			delete batch.x;
+			delete batch.y;
+		}
 	}
 
-	printf("TEST LOSS: %f\tTEST ACCURACY: %f%%\n",
-		   (test_loss / (float)test_batch_cnt),
-		   (test_acc / (float)test_batch_cnt) * 100.0f);
-
-	for (auto batch : test_ds)
+	// TRAIN
+	if (train)
 	{
-		delete batch.x;
-		delete batch.y;
+		auto ds = get_train_dataset(model->batch_size());
+
+		int batch_cnt = ds.size();
+
+		float loss = 0.0f;
+		float acc = 0.0f;
+
+		for (int j = 0; j < batch_cnt; j++)
+		{
+			auto batch = &ds[j];
+			auto x = batch->x;
+			auto y = batch->y;
+
+			auto p = model->forward(x);
+			loss += model->loss(p, y);
+			acc += model->accuracy(p, y);
+			delete p;
+		}
+
+		if (csv)
+		{
+			FILE* f = fopen("temp/test.csv", "a");
+			fprintf(f, "EPOCH: %d\tTRAIN LOSS: %f\tTRAIN ACCURACY: %f%%\n",
+				epoch,
+				(loss / (float)batch_cnt),
+				(acc / (float)batch_cnt) * 100.0f);
+			fclose(f);
+		}
+		else
+		{
+			printf("EPOCH: %d\tTRAIN LOSS: %f\tTRAIN ACCURACY: %f%%\n",
+				epoch,
+				(loss / (float)batch_cnt),
+				(acc / (float)batch_cnt) * 100.0f);
+		}
+
+		for (auto batch : ds)
+		{
+			delete batch.x;
+			delete batch.y;
+		}
 	}
 }
 
@@ -394,15 +384,12 @@ int main(int argc, char **argv)
 	printf("MNIST-ZERO\n\n");
 	srand(time(NULL));
 
-	// grad_tests();
-
 	auto model = new nn::Model();
-	int batch_size = 64;
+	int batch_size = 50;
 
 	Shape input_shape = Shape(batch_size, 1, 28, 28);
 	Shape output_shape = Shape(batch_size, 10);
 
-	// 98.91%
 	model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
 	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Padding{0, 0}, nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
 	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
@@ -416,9 +403,9 @@ int main(int argc, char **argv)
 
 	model->summarize();
 
-	train_mnist(model, batch_size, 30);
-	// train_validate_mnist(model, batch_size, 1000, 0.10f);
-	test_mnist(model);
+	int epochs = 20;
+	train_mnist(model, batch_size, epochs);
+	test_mnist(model, epochs, true, false);
 
 	return 0;
 }
