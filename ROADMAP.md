@@ -5,7 +5,7 @@
  - [x] MNIST-ZERO
     - MNIST hand-written digit predictions with ZERO System
  - [ ] Enhanced residual neural network
-    - Experimental neural network architecture
+    - experimental neural network architecture
  - [ ] deep-lm
     - warehouse labor management task time predictions
  - [ ] schneizel
