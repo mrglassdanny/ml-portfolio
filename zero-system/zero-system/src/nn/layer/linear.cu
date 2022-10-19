@@ -66,6 +66,8 @@ __global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int ba
     }
 }
 
+Linear::Linear() {}
+
 Linear::Linear(Shape in_shape, Shape out_shape, ActivationType activation)
 {
     this->n_ = new NdArray(true, in_shape);
