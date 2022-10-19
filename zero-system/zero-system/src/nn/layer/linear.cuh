@@ -9,10 +9,11 @@ namespace nn
     {
         class Linear : public Learnable
         {
-        private:
+        protected:
             ActivationType activation_;
             
         public:
+            Linear();
             Linear(Shape in_shape, Shape out_shape, ActivationType activation);
 
             virtual void evaluate(NdArray *out) override;
