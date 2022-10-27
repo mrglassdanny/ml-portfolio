@@ -32,8 +32,6 @@ namespace nn
 
             virtual void validate() override;
 
-            virtual void reset_shape() override;
-
             virtual void summarize() override;
 
             int channels();

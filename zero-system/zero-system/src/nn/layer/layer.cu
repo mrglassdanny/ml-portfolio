@@ -8,8 +8,6 @@ Layer::~Layer()
     delete this->dn_;
 }
 
-void Layer::reset_shape() {}
-
 void Layer::summarize()
 {
     std::string cls_name(typeid(*this).name());
@@ -33,10 +31,6 @@ void Layer::change_batch_size(int batch_size)
 {
     this->n_->change_dim(0, batch_size);
     this->dn_->change_dim(0, batch_size);
-
-    std::vector<int> default_n_dims = this->default_n_shape_.dims();
-    default_n_dims[0] = batch_size;
-    this->default_n_shape_ = Shape(default_n_dims);
 }
 
 NdArray *Layer::neurons()

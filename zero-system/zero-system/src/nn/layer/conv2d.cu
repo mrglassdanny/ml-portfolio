@@ -113,7 +113,6 @@ Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Stride stride, ActivationType
 {
     this->n_ = new NdArray(true, in_shape);
     this->dn_ = new NdArray(true, in_shape);
-    this->default_n_shape_ = in_shape;
     this->params_ = new Parameters(filter_shape, Shape(filter_shape[0], filter_shape[1]), this->in_feature_rows(), this->in_feature_cols());
     this->stride_ = stride;
 
@@ -236,15 +235,6 @@ void Conv2d::validate()
     if (this->filter_cols() < this->stride_cols())
     {
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: filter column count less than stride column count");
-    }
-}
-
-void Conv2d::reset_shape()
-{
-    if (this->input_shape() != this->default_n_shape_)
-    {
-        delete this->n_;
-        this->n_ = NdArray::zeros(true, this->default_n_shape_);
     }
 }
 

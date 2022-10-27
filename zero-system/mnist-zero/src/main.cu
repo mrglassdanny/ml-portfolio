@@ -367,9 +367,9 @@ int main(int argc, char **argv)
 	// Shape input_shape = Shape(batch_size, 1, 28, 28);
 	// Shape output_shape = Shape(batch_size, 10);
 
-	// model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	// model->conv2d(Shape(64, 64, 3, 3), nn::layer::Padding{0, 0}, nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
-	// model->conv2d(Shape(64, 64, 3, 3), nn::layer::Padding{0, 0}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	// model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	// model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
+	// model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
 	// model->linear(512, nn::layer::ActivationType::ReLU);
 	// model->linear(256, nn::layer::ActivationType::ReLU);
 	// model->linear(128, nn::layer::ActivationType::ReLU);

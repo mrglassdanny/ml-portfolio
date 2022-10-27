@@ -30,8 +30,6 @@ Model::~Model()
 
 NdArray *Model::forward(NdArray *x)
 {
-    this->reset_layer_shapes();
-
     this->validate_layers();
     this->validate_input(x);
 
@@ -145,11 +143,6 @@ void Model::backward(NdArray *p, NdArray *y)
         loss_gradients = lyr->neuron_gradients();
         prev_n = this->lyrs_[i]->neurons();
     }
-
-    for (Layer *lyr : this->lyrs_)
-    {
-        lyr->zero_grad();
-    }
 }
 
 void Model::step()
@@ -157,6 +150,11 @@ void Model::step()
     this->validate_optimizer();
 
     this->optim_->step(this->batch_size());
+
+    for (Layer *lyr : this->lyrs_)
+    {
+        lyr->zero_grad();
+    }
 }
 
 Shape Model::input_shape()
@@ -469,14 +467,6 @@ Layer *Model::first_layer()
 Layer *Model::last_layer()
 {
     return this->lyrs_[this->lyrs_.size() - 1];
-}
-
-void Model::reset_layer_shapes()
-{
-    for (Layer *lyr : this->lyrs_)
-    {
-        lyr->reset_shape();
-    }
 }
 
 int Model::batch_size()

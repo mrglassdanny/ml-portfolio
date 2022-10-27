@@ -11,7 +11,6 @@ namespace nn
         protected:
             NdArray *n_;
             NdArray *dn_;
-            Shape default_n_shape_;
 
         public:
             ~Layer();
@@ -23,8 +22,6 @@ namespace nn
             virtual Shape output_shape() = 0;
 
             virtual void validate() = 0;
-
-            virtual void reset_shape();
 
             virtual void summarize();
 
