@@ -30,8 +30,6 @@ Model::~Model()
 
 NdArray *Model::forward(NdArray *x)
 {
-    this->reset_layer_shapes();
-
     this->validate_layers();
     this->validate_input(x);
 
@@ -133,11 +131,18 @@ void Model::backward(NdArray *p, NdArray *y)
 
     for (int i = this->lyrs_.size() - 1; i >= 0; i--)
     {
-        loss_gradients = this->lyrs_[i]->derive(loss_gradients, prev_n);
-        prev_n = this->lyrs_[i]->neurons();
-    }
+        Layer *lyr = this->lyrs_[i];
 
-    delete loss_gradients;
+        lyr->derive(loss_gradients, prev_n);
+
+        if (i == this->lyrs_.size() - 1)
+        {
+            delete loss_gradients;
+        }
+
+        loss_gradients = lyr->neuron_gradients();
+        prev_n = lyr->neurons();
+    }
 }
 
 void Model::step()
@@ -145,6 +150,11 @@ void Model::step()
     this->validate_optimizer();
 
     this->optim_->step(this->batch_size());
+
+    for (Layer *lyr : this->lyrs_)
+    {
+        lyr->zero_grad();
+    }
 }
 
 Shape Model::input_shape()
@@ -416,27 +426,17 @@ void Model::linear(Shape in_shape, int out_feature_cnt, ActivationType activatio
 
 void Model::conv2d(Shape filter_shape, ActivationType activation)
 {
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding{0, 0}, Stride{1, 1}, activation));
+    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Stride{1, 1}, activation));
 }
 
 void Model::conv2d(Shape filter_shape, Stride stride, ActivationType activation)
 {
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding{0, 0}, stride, activation));
-}
-
-void Model::conv2d(Shape filter_shape, Padding padding, Stride stride, ActivationType activation)
-{
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, padding, stride, activation));
+    this->add_layer(new Conv2d(this->output_shape(), filter_shape, stride, activation));
 }
 
 void Model::conv2d(Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation)
 {
-    this->add_layer(new Conv2d(in_shape, filter_shape, Padding{0, 0}, stride, activation));
-}
-
-void Model::conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride, ActivationType activation)
-{
-    this->add_layer(new Conv2d(in_shape, filter_shape, padding, stride, activation));
+    this->add_layer(new Conv2d(in_shape, filter_shape, stride, activation));
 }
 
 std::vector<Layer *> Model::layers()
@@ -467,14 +467,6 @@ Layer *Model::first_layer()
 Layer *Model::last_layer()
 {
     return this->lyrs_[this->lyrs_.size() - 1];
-}
-
-void Model::reset_layer_shapes()
-{
-    for (Layer *lyr : this->lyrs_)
-    {
-        lyr->reset_shape();
-    }
 }
 
 int Model::batch_size()

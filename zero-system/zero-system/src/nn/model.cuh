@@ -60,9 +60,7 @@ namespace nn
         void linear(Shape in_shape, int out_feature_cnt, ActivationType activation);
         void conv2d(Shape filter_shape, ActivationType activation);
         void conv2d(Shape filter_shape, Stride stride, ActivationType activation);
-        void conv2d(Shape filter_shape, Padding padding, Stride stride, ActivationType activation);
         void conv2d(Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation);
-        void conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride, ActivationType activation);
 
         std::vector<Layer *> layers();
         std::vector<Parameters *> parameters();
