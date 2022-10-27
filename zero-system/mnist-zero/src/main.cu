@@ -400,5 +400,7 @@ int main(int argc, char **argv)
 
 	ernn->forward(x)->print();
 
+	ernn->validate_gradients(x, y, true);
+
 	return 0;
 }

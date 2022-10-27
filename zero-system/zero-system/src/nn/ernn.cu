@@ -27,6 +27,7 @@ __global__ void k_enhanced_residual_evaluate(float *in, float *w, float *b, floa
 EnhancedResidual::EnhancedResidual(Shape in_shape, Shape out_shape, ActivationType activation)
 {
     this->n_ = new NdArray(true, in_shape);
+    this->dn_ = new NdArray(true, in_shape);
 
     int in_cnt = (in_shape.dims_size() / this->batch_size());
     int out_cnt = (out_shape.dims_size() / this->batch_size());
@@ -237,6 +238,103 @@ Shape ERNN::input_shape()
 Shape ERNN::output_shape()
 {
     return this->last_layer()->output_shape();
+}
+
+void ERNN::validate_gradients(NdArray *x, NdArray *y, bool print_params)
+{
+    x->to_cuda();
+    y->to_cuda();
+
+    float agg_ana_grad = 0.0f;
+    float agg_num_grad = 0.0f;
+    float agg_grad_diff = 0.0f;
+
+    NdArray *p = this->forward(x);
+    this->backward(p, y);
+    delete p;
+
+    int param_idx = 0;
+    for (Parameters *params : this->parameters())
+    {
+        NdArray *w = params->weights();
+        NdArray *b = params->biases();
+        NdArray *dw = params->weight_gradients();
+        NdArray *db = params->bias_gradients();
+
+        for (int i = 0; i < w->count(); i++)
+        {
+            float w_val = w->get_val(i);
+
+            w->set_val(i, w_val - EPSILON);
+            p = this->forward(x);
+            float left_loss = this->loss(p, y);
+            delete p;
+
+            w->set_val(i, w_val + EPSILON);
+            p = this->forward(x);
+            float right_loss = this->loss(p, y);
+            delete p;
+
+            w->set_val(i, w_val);
+
+            float num_grad = (right_loss - left_loss) / (2.0f * EPSILON);
+            float ana_grad = dw->get_val(i);
+
+            if (print_params)
+            {
+                printf("W: %d  %d\t|%f - %f| = %f\n", param_idx, i, ana_grad, num_grad, fabs(ana_grad - num_grad));
+            }
+
+            agg_ana_grad += (ana_grad * ana_grad);
+            agg_num_grad += (num_grad * num_grad);
+            agg_grad_diff += ((ana_grad - num_grad) * (ana_grad - num_grad));
+        }
+
+        for (int i = 0; i < b->count(); i++)
+        {
+            float b_val = b->get_val(i);
+
+            b->set_val(i, b_val - EPSILON);
+            p = this->forward(x);
+            float left_loss = this->loss(p, y);
+            delete p;
+
+            b->set_val(i, b_val + EPSILON);
+            p = this->forward(x);
+            float right_loss = this->loss(p, y);
+            delete p;
+
+            b->set_val(i, b_val);
+
+            float num_grad = (right_loss - left_loss) / (2.0f * EPSILON);
+            float ana_grad = db->get_val(i);
+
+            if (print_params)
+            {
+                printf("B: %d  %d\t|%f - %f| = %f\n", param_idx, i, ana_grad, num_grad, fabs(ana_grad - num_grad));
+            }
+
+            agg_ana_grad += (ana_grad * ana_grad);
+            agg_num_grad += (num_grad * num_grad);
+            agg_grad_diff += ((ana_grad - num_grad) * (ana_grad - num_grad));
+        }
+
+        param_idx++;
+    }
+
+    if ((agg_grad_diff) == 0.0f && (agg_ana_grad + agg_num_grad) == 0.0f)
+    {
+        printf("GRADIENT CHECK RESULT: %f\n", 0.0f);
+    }
+    else
+    {
+        printf("GRADIENT CHECK RESULT: %f\n", (agg_grad_diff) / (agg_ana_grad + agg_num_grad));
+
+        if ((agg_grad_diff) / (agg_ana_grad + agg_num_grad) > EPSILON)
+        {
+            THROW_ERROR("ERNN GRADIENTS VALIDATION FAILED");
+        }
+    }
 }
 
 void ERNN::summarize()

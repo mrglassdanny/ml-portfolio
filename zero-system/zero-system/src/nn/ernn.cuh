@@ -52,6 +52,8 @@ namespace nn
         Shape input_shape();
         Shape output_shape();
 
+        void validate_gradients(NdArray *x, NdArray *y, bool print_params);
+
         void summarize();
 
         void add_layer(EnhancedResidual *lyr);
