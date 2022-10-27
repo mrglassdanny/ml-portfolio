@@ -259,6 +259,148 @@ void test_mnist(nn::Model *model, int epoch, bool train, bool csv)
 	}
 }
 
+void train_mnist(nn::ERNN *ernn, int batch_size, int epochs)
+{
+	auto train_ds = get_train_dataset(batch_size);
+
+	int train_batch_cnt = train_ds.size();
+
+	bool quit = false;
+
+	int epoch;
+
+	for (epoch = 0; epoch < epochs; epoch++)
+	{
+		for (int j = 0; j < train_batch_cnt; j++)
+		{
+			auto batch = &train_ds[j];
+			auto x = batch->x;
+			auto y = batch->y;
+
+			auto p = ernn->forward(x);
+
+			ernn->backward(p, y);
+			ernn->step();
+
+			delete p;
+
+			if (_kbhit())
+			{
+				if (_getch() == 'q')
+				{
+					quit = true;
+					break;
+				}
+			}
+		}
+
+		if (quit)
+		{
+			break;
+		}
+	}
+
+	for (auto batch : train_ds)
+	{
+		delete batch.x;
+		delete batch.y;
+	}
+}
+
+void test_mnist(nn::ERNN *ernn, int epoch, bool train, bool csv)
+{
+	// TEST:
+	{
+		auto ds = get_test_dataset(ernn->batch_size());
+
+		int batch_cnt = ds.size();
+
+		float loss = 0.0f;
+		float acc = 0.0f;
+
+		for (int j = 0; j < batch_cnt; j++)
+		{
+			auto batch = &ds[j];
+			auto x = batch->x;
+			auto y = batch->y;
+
+			auto p = ernn->forward(x);
+			loss += ernn->loss(p, y);
+			acc += ernn->accuracy(p, y);
+			delete p;
+		}
+
+		if (csv)
+		{
+			FILE *f = fopen("temp/test.csv", "a");
+			fprintf(f, "EPOCH: %d\tTEST LOSS: %f\tTEST ACCURACY: %f%%\n",
+					epoch,
+					(loss / (float)batch_cnt),
+					(acc / (float)batch_cnt) * 100.0f);
+			fclose(f);
+		}
+		else
+		{
+			printf("EPOCH: %d\tTEST LOSS: %f\tTEST ACCURACY: %f%%\n",
+				   epoch,
+				   (loss / (float)batch_cnt),
+				   (acc / (float)batch_cnt) * 100.0f);
+		}
+
+		for (auto batch : ds)
+		{
+			delete batch.x;
+			delete batch.y;
+		}
+	}
+
+	// TRAIN
+	if (train)
+	{
+		auto ds = get_train_dataset(ernn->batch_size());
+
+		int batch_cnt = ds.size();
+
+		float loss = 0.0f;
+		float acc = 0.0f;
+
+		for (int j = 0; j < batch_cnt; j++)
+		{
+			auto batch = &ds[j];
+			auto x = batch->x;
+			auto y = batch->y;
+
+			auto p = ernn->forward(x);
+			loss += ernn->loss(p, y);
+			acc += ernn->accuracy(p, y);
+			delete p;
+		}
+
+		if (csv)
+		{
+			FILE *f = fopen("temp/test.csv", "a");
+			fprintf(f, "EPOCH: %d\tTRAIN LOSS: %f\tTRAIN ACCURACY: %f%%\n",
+					epoch,
+					(loss / (float)batch_cnt),
+					(acc / (float)batch_cnt) * 100.0f);
+			fclose(f);
+		}
+		else
+		{
+			printf("EPOCH: %d\tTRAIN LOSS: %f\tTRAIN ACCURACY: %f%%\n",
+				   epoch,
+				   (loss / (float)batch_cnt),
+				   (acc / (float)batch_cnt) * 100.0f);
+		}
+
+		for (auto batch : ds)
+		{
+			delete batch.x;
+			delete batch.y;
+		}
+	}
+}
+
 void grad_tests()
 {
 	auto m1 = new nn::Model();
@@ -356,54 +498,83 @@ void grad_tests()
 	delete m4;
 }
 
+void mnist_conv(int batch_size, int epochs)
+{
+	Shape input_shape = Shape(batch_size, 1, 28, 28);
+	Shape output_shape = Shape(batch_size, 10);
+
+	auto model = new nn::Model();
+
+	model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	model->linear(512, nn::layer::ActivationType::ReLU);
+	model->linear(256, nn::layer::ActivationType::ReLU);
+	model->linear(128, nn::layer::ActivationType::ReLU);
+	model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
+
+	model->set_loss(new nn::loss::CrossEntropy());
+	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.1f, BETA_1));
+
+	model->summarize();
+
+	train_mnist(model, batch_size, epochs);
+	test_mnist(model, epochs, true, false);
+
+	delete model;
+}
+
+void mnist_compare_ernn(int batch_size, int epochs)
+{
+	Shape input_shape = Shape(batch_size, 1, 28, 28);
+	Shape output_shape = Shape(batch_size, 10);
+
+	// NN
+	{
+		auto nn = new nn::Model();
+
+		nn->linear(input_shape, 16, nn::layer::ActivationType::Sigmoid);
+		nn->linear(16, nn::layer::ActivationType::Sigmoid);
+		nn->linear(output_shape, nn::layer::ActivationType::Sigmoid);
+
+		nn->set_loss(new nn::loss::MSE());
+		nn->set_optimizer(new nn::optim::SGD(nn->parameters(), 0.1f));
+
+		nn->summarize();
+
+		train_mnist(nn, batch_size, epochs);
+		test_mnist(nn, epochs, false, false);
+
+		delete nn;
+	}
+
+	// ERNN
+	{
+		auto ernn = new nn::ERNN();
+
+		ernn->layer(input_shape, 16, nn::layer::ActivationType::Sigmoid);
+		ernn->layer(16, nn::layer::ActivationType::Sigmoid);
+		ernn->layer(output_shape, nn::layer::ActivationType::Sigmoid);
+		ernn->compile();
+
+		ernn->set_loss(new nn::loss::MSE());
+		ernn->set_optimizer(new nn::optim::SGD(ernn->parameters(), 0.1f));
+
+		ernn->summarize();
+
+		train_mnist(ernn, batch_size, epochs);
+		test_mnist(ernn, epochs, false, false);
+
+		delete ernn;
+	}
+}
+
 int main(int argc, char **argv)
 {
 	printf("MNIST-ZERO\n\n");
 	srand(time(NULL));
 
-	// auto model = new nn::Model();
-	// int batch_size = 50;
-
-	// Shape input_shape = Shape(batch_size, 1, 28, 28);
-	// Shape output_shape = Shape(batch_size, 10);
-
-	// model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	// model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
-	// model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	// model->linear(512, nn::layer::ActivationType::ReLU);
-	// model->linear(256, nn::layer::ActivationType::ReLU);
-	// model->linear(128, nn::layer::ActivationType::ReLU);
-	// model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
-
-	// model->set_loss(new nn::loss::CrossEntropy());
-	// model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.1f, BETA_1));
-
-	// model->summarize();
-
-	// int epochs = 20;
-	// train_mnist(model, batch_size, epochs);
-	// test_mnist(model, epochs, true, false);
-
-	// grad_tests();
-
-	auto x = NdArray::ones(true, Shape(1, 16));
-	auto y = NdArray::ones(true, Shape(1, 2));
-	y->set_val(0, 0.0f);
-
-	auto ernn = new nn::ERNN();
-	ernn->layer(x->shape(), 16, nn::ActivationType::Sigmoid);
-	ernn->layer(8, nn::ActivationType::Sigmoid);
-	ernn->layer(8, nn::ActivationType::Sigmoid);
-	ernn->layer(4, nn::ActivationType::Sigmoid);
-	ernn->layer(y->shape(), nn::ActivationType::Sigmoid);
-	ernn->compile();
-
-	ernn->set_loss(new nn::loss::MSE());
-	ernn->set_optimizer(new nn::optim::SGD(ernn->parameters(), 0.1f));
-
-	ernn->summarize();
-
-	ernn->validate_gradients(x, y, false);
+	mnist_compare_ernn(50, 10);
 
 	return 0;
 }
