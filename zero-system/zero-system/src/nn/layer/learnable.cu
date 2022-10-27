@@ -4,8 +4,8 @@ using namespace nn::layer;
 
 Parameters::Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out)
 {
-    // this->w_ = NdArray::random(true, w_shape, 0.0f, sqrt(1.0f / fan_in));
-    this->w_ = NdArray::ones(true, w_shape);
+    this->w_ = NdArray::random(true, w_shape, 0.0f, sqrt(1.0f / fan_in));
+    // this->w_ = NdArray::ones(true, w_shape);
     this->b_ = NdArray::zeros(true, b_shape);
     this->dw_ = NdArray::zeros(true, w_shape);
     this->db_ = NdArray::zeros(true, b_shape);

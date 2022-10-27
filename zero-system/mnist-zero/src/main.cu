@@ -309,25 +309,25 @@ void grad_tests()
 	}
 
 	// m3
-	{
-		auto x = NdArray::random(true, Shape(batch_size, 2, 16, 16), 0.0f, 1.0f);
-		auto y = NdArray::zeros(true, Shape(batch_size, 4));
-		y->set_val(3, 1.0f);
+	// {
+	// 	auto x = NdArray::random(true, Shape(batch_size, 2, 16, 16), 0.0f, 1.0f);
+	// 	auto y = NdArray::zeros(true, Shape(batch_size, 4));
+	// 	y->set_val(3, 1.0f);
 
-		m3->conv2d(x->shape(), Shape(4, 2, 2, 2), nn::layer::Padding{1, 1}, nn::layer::Stride{2, 2}, nn::layer::ActivationType::Sigmoid);
-		m3->conv2d(Shape(4, 4, 3, 3), nn::layer::Padding{1, 1}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::Sigmoid);
-		m3->linear(16, nn::layer::ActivationType::Sigmoid);
-		m3->linear(y->shape(), nn::layer::ActivationType::Sigmoid);
+	// 	m3->conv2d(x->shape(), Shape(4, 2, 2, 2), nn::layer::Padding{1, 1}, nn::layer::Stride{2, 2}, nn::layer::ActivationType::Sigmoid);
+	// 	m3->conv2d(Shape(4, 4, 3, 3), nn::layer::Padding{1, 1}, nn::layer::Stride{1, 1}, nn::layer::ActivationType::Sigmoid);
+	// 	m3->linear(16, nn::layer::ActivationType::Sigmoid);
+	// 	m3->linear(y->shape(), nn::layer::ActivationType::Sigmoid);
 
-		m3->set_loss(new nn::loss::MSE());
-		m3->set_optimizer(new nn::optim::SGD(m3->parameters(), 0.01f));
+	// 	m3->set_loss(new nn::loss::MSE());
+	// 	m3->set_optimizer(new nn::optim::SGD(m3->parameters(), 0.01f));
 
-		m3->summarize();
-		m3->validate_gradients(x, y, false);
+	// 	m3->summarize();
+	// 	m3->validate_gradients(x, y, false);
 
-		delete x;
-		delete y;
-	}
+	// 	delete x;
+	// 	delete y;
+	// }
 
 	// m4
 	{
@@ -407,19 +407,21 @@ int main(int argc, char **argv)
 	// train_mnist(model, batch_size, epochs);
 	// test_mnist(model, epochs, true, false);
 
-	auto x = NdArray::ones(true, Shape(1, 4));
-	auto y = NdArray::ones(true, Shape(1, 2));
+	// auto x = NdArray::ones(true, Shape(1, 4));
+	// auto y = NdArray::ones(true, Shape(1, 2));
 
-	auto ernn = new nn::ERNN();
-	ernn->add_layer(new nn::EnhancedResidual(Shape(1, 4), Shape(1, 4), nn::ActivationType::None));
-	ernn->add_layer(new nn::EnhancedResidual(Shape(1, 4), Shape(1, 4), nn::ActivationType::None));
-	ernn->add_layer(new nn::EnhancedResidual(Shape(1, 4), Shape(1, 2), nn::ActivationType::None));
-	ernn->compile();
+	// auto ernn = new nn::ERNN();
+	// ernn->add_layer(new nn::EnhancedResidual(Shape(1, 4), Shape(1, 4), nn::ActivationType::None));
+	// ernn->add_layer(new nn::EnhancedResidual(Shape(1, 4), Shape(1, 4), nn::ActivationType::None));
+	// ernn->add_layer(new nn::EnhancedResidual(Shape(1, 4), Shape(1, 2), nn::ActivationType::None));
+	// ernn->compile();
 
-	ernn->set_loss(new nn::loss::MSE());
-	ernn->set_optimizer(new nn::optim::SGD(ernn->parameters(), 0.1f));
+	// ernn->set_loss(new nn::loss::MSE());
+	// ernn->set_optimizer(new nn::optim::SGD(ernn->parameters(), 0.1f));
 
-	ernn->forward(x)->print();
+	// ernn->forward(x)->print();
+
+	grad_tests();
 
 	return 0;
 }

@@ -133,11 +133,23 @@ void Model::backward(NdArray *p, NdArray *y)
 
     for (int i = this->lyrs_.size() - 1; i >= 0; i--)
     {
-        loss_gradients = this->lyrs_[i]->derive(loss_gradients, prev_n);
+        Layer *lyr = this->lyrs_[i];
+
+        lyr->derive(loss_gradients, prev_n);
+
+        if (i == this->lyrs_.size() - 1)
+        {
+            delete loss_gradients;
+        }
+
+        loss_gradients = lyr->neuron_gradients();
         prev_n = this->lyrs_[i]->neurons();
     }
 
-    delete loss_gradients;
+    for (Layer *lyr : this->lyrs_)
+    {
+        lyr->zero_grad();
+    }
 }
 
 void Model::step()

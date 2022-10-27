@@ -32,7 +32,7 @@ namespace nn
             Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride, ActivationType activation);
 
             virtual void evaluate(NdArray *out) override;
-            virtual NdArray *derive(NdArray *in, NdArray *in_n) override;
+            virtual void derive(NdArray *in, NdArray *in_n) override;
 
             virtual Shape input_shape() override;
             virtual Shape output_shape() override;

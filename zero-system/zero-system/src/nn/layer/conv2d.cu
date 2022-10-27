@@ -112,6 +112,7 @@ __global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int ba
 Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride, ActivationType activation)
 {
     this->n_ = new NdArray(true, in_shape);
+    this->dn_ = new NdArray(true, in_shape);
     this->default_n_shape_ = in_shape;
     this->params_ = new Parameters(filter_shape, Shape(filter_shape[0], filter_shape[1]), this->in_feature_rows(), this->in_feature_cols());
     this->padding_ = padding;
@@ -136,6 +137,10 @@ void Conv2d::evaluate(NdArray *out)
         NdArray *padded_n = NdArray::pad(this->n_, this->padding_rows(), this->padding_cols());
         delete this->n_;
         this->n_ = padded_n;
+
+        NdArray *padded_dn = NdArray::pad(this->dn_, this->padding_rows(), this->padding_cols());
+        delete this->dn_;
+        this->dn_ = padded_dn;
     }
 
     NdArray *n = this->n_;
@@ -149,7 +154,7 @@ void Conv2d::evaluate(NdArray *out)
     Activation::evaluate(out, this->batch_size(), out->dims_size() / this->batch_size(), this->activation_);
 }
 
-NdArray *Conv2d::derive(NdArray *in, NdArray *in_n)
+void Conv2d::derive(NdArray *in, NdArray *in_n)
 {
     NdArray *n = this->n_;
     NdArray *w = this->params_->weights();
@@ -173,8 +178,6 @@ NdArray *Conv2d::derive(NdArray *in, NdArray *in_n)
                                                                   this->stride_rows(), this->stride_cols());
     }
 
-    NdArray *out = NdArray::zeros(true, this->input_shape());
-
     {
         int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
         int grid_col_cnt = ((this->filters() * this->out_feature_rows() * this->out_feature_cols()) / CUDA_THREADS_PER_BLOCK) + 1;
@@ -182,7 +185,7 @@ NdArray *Conv2d::derive(NdArray *in, NdArray *in_n)
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
-        k_conv2d_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), out->data(), this->batch_size(), this->channels(), this->filters(),
+        k_conv2d_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), this->dn_->data(), this->batch_size(), this->channels(), this->filters(),
                                                             this->out_feature_rows(), this->out_feature_cols(), (this->out_feature_rows() * this->out_feature_cols()),
                                                             this->filter_rows(), this->filter_cols(), (this->filter_rows() * this->filter_cols()),
                                                             this->in_feature_rows(), this->in_feature_cols(), (this->in_feature_rows() * this->in_feature_cols()),
@@ -191,17 +194,14 @@ NdArray *Conv2d::derive(NdArray *in, NdArray *in_n)
 
     if (this->padding_rows() > 0 || this->padding_cols() > 0)
     {
-        NdArray *unpadded_out = NdArray::unpad(out, this->padding_rows(), this->padding_cols());
-        delete out;
-        out = unpadded_out;
+        NdArray *unpadded_dn = NdArray::unpad(this->dn_, this->padding_rows(), this->padding_cols());
+        delete this->dn_;
+        this->dn_ = unpadded_dn;
 
         NdArray *unpadded_n = NdArray::unpad(this->n_, this->padding_rows(), this->padding_cols());
         delete this->n_;
         this->n_ = unpadded_n;
     }
-
-    delete in;
-    return out;
 }
 
 Shape Conv2d::input_shape()
