@@ -318,7 +318,7 @@ void grad_tests()
 		m3->linear(16, nn::layer::ActivationType::Sigmoid);
 		m3->linear(y->shape(), nn::layer::ActivationType::Sigmoid);
 
-		m3->set_loss(new nn::loss::CrossEntropy());
+		m3->set_loss(new nn::loss::MSE());
 		m3->set_optimizer(new nn::optim::SGD(m3->parameters(), 0.01f));
 
 		m3->summarize();

@@ -257,7 +257,7 @@ void Conv2d::summarize()
     this->filter_shape().print();
     printf(")");
 
-    printf("Stride (%d, %d)\t", this->stride_rows(), this->stride_cols());
+    printf("\tStride (%d, %d)\t", this->stride_rows(), this->stride_cols());
 
     Activation::summarize(this->activation_);
 }
