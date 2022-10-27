@@ -384,21 +384,21 @@ int main(int argc, char **argv)
 	// train_mnist(model, batch_size, epochs);
 	// test_mnist(model, epochs, true, false);
 
-	// auto x = NdArray::ones(true, Shape(1, 4));
-	// auto y = NdArray::ones(true, Shape(1, 2));
+	auto x = NdArray::ones(true, Shape(1, 4));
+	auto y = NdArray::ones(true, Shape(1, 2));
 
-	// auto ernn = new nn::ERNN();
-	// ernn->add_layer(new nn::EnhancedResidual(Shape(1, 4), Shape(1, 4), nn::ActivationType::None));
-	// ernn->add_layer(new nn::EnhancedResidual(Shape(1, 4), Shape(1, 4), nn::ActivationType::None));
-	// ernn->add_layer(new nn::EnhancedResidual(Shape(1, 4), Shape(1, 2), nn::ActivationType::None));
-	// ernn->compile();
+	auto ernn = new nn::ERNN();
+	ernn->layer(x->shape(), 4, nn::ActivationType::None);
+	ernn->layer(4, nn::ActivationType::None);
+	ernn->layer(y->shape(), nn::ActivationType::None);
+	ernn->compile();
 
-	// ernn->set_loss(new nn::loss::MSE());
-	// ernn->set_optimizer(new nn::optim::SGD(ernn->parameters(), 0.1f));
+	ernn->set_loss(new nn::loss::MSE());
+	ernn->set_optimizer(new nn::optim::SGD(ernn->parameters(), 0.1f));
 
-	// ernn->forward(x)->print();
+	ernn->summarize();
 
-	grad_tests();
+	ernn->forward(x)->print();
 
 	return 0;
 }

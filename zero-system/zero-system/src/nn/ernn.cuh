@@ -52,9 +52,16 @@ namespace nn
         Shape input_shape();
         Shape output_shape();
 
+        void summarize();
+
         void add_layer(EnhancedResidual *lyr);
         void set_loss(Loss *loss);
         void set_optimizer(Optimizer *optim);
+
+        void layer(int out_feature_cnt, ActivationType activation);
+        void layer(Shape y_shape, ActivationType activation);
+        void layer(int batch_size, int in_feature_cnt, int out_feature_cnt, ActivationType activation);
+        void layer(Shape in_shape, int out_feature_cnt, ActivationType activation);
 
         std::vector<EnhancedResidual *> layers();
         EnhancedResidual *first_layer();

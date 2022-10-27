@@ -67,10 +67,10 @@ void EnhancedResidual::compile(ERNN *ernn, int my_idx)
     int fan_in = this->input_shape().dims_size() / this->batch_size();
 
     std::vector<EnhancedResidual *> lyrs = ernn->layers();
-    for (int i = my_idx; i < lyrs.size(); i++)
+    for (int i = my_idx + 1; i < lyrs.size(); i++)
     {
         EnhancedResidual *lyr = lyrs[i];
-        int fan_out = lyr->input_shape().dims_size() / this->batch_size();
+        int fan_out = lyr->output_shape().dims_size() / this->batch_size();
 
         this->residual_params_.push_back(new Parameters(Shape(fan_in, fan_out), Shape(fan_out), fan_in, fan_out));
     }
@@ -111,10 +111,9 @@ NdArray *ERNN::forward(NdArray *x)
 
     this->first_layer()->copy_neurons(x);
 
-    for (int i = 0; i < this->lyrs_.size() - 1; i++)
+    for (int i = 1; i < this->lyrs_.size(); i++)
     {
-        Layer *nxt_lyr = this->lyrs_[i + 1];
-        nxt_lyr->neurons()->zeros();
+        this->lyrs_[i]->neurons()->zeros();
     }
     NdArray *p = NdArray::zeros(true, this->output_shape());
 
@@ -132,7 +131,7 @@ NdArray *ERNN::forward(NdArray *x)
             lyr->evaluate_residual(nxt_lyr->neurons(), k++);
         }
 
-        lyr->evaluate_residual(p, k + 1);
+        lyr->evaluate_residual(p, k);
     }
 
     Layer *lst_lyr = this->last_layer();
@@ -240,6 +239,44 @@ Shape ERNN::output_shape()
     return this->last_layer()->output_shape();
 }
 
+void ERNN::summarize()
+{
+    printf("=========================================================================== ERNN SUMMARY ============================================================================\n");
+
+    printf("\nLayers: (%d)\n", this->lyrs_.size());
+    for (int i = 0; i < this->lyrs_.size(); i++)
+    {
+        printf("\t%d\t", i + 1);
+        this->lyrs_[i]->summarize();
+        printf("\n");
+    }
+    printf("\n");
+
+    printf("Loss: ");
+    if (this->loss_ != nullptr)
+    {
+        this->loss_->summarize();
+    }
+    else
+    {
+        printf("None");
+    }
+    printf("\n\n");
+
+    printf("Optimizer: ");
+    if (this->optim_ != nullptr)
+    {
+        this->optim_->summarize();
+    }
+    else
+    {
+        printf("None");
+    }
+    printf("\n\n");
+
+    printf("=====================================================================================================================================================================\n");
+}
+
 void ERNN::add_layer(EnhancedResidual *lyr)
 {
     this->lyrs_.push_back(lyr);
@@ -253,6 +290,26 @@ void ERNN::set_loss(Loss *loss)
 void ERNN::set_optimizer(Optimizer *optim)
 {
     this->optim_ = optim;
+}
+
+void ERNN::layer(int out_feature_cnt, ActivationType activation)
+{
+    this->add_layer(new EnhancedResidual(this->output_shape(), Shape(this->batch_size(), out_feature_cnt), activation));
+}
+
+void ERNN::layer(Shape y_shape, ActivationType activation)
+{
+    this->add_layer(new EnhancedResidual(this->output_shape(), y_shape, activation));
+}
+
+void ERNN::layer(int batch_size, int in_feature_cnt, int out_feature_cnt, ActivationType activation)
+{
+    this->add_layer(new EnhancedResidual(Shape(batch_size, in_feature_cnt), Shape(batch_size, out_feature_cnt), activation));
+}
+
+void ERNN::layer(Shape in_shape, int out_feature_cnt, ActivationType activation)
+{
+    this->add_layer(new EnhancedResidual(in_shape, Shape(in_shape[0], out_feature_cnt), activation));
 }
 
 std::vector<EnhancedResidual *> ERNN::layers()
