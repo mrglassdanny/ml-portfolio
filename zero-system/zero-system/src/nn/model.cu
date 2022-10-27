@@ -141,7 +141,7 @@ void Model::backward(NdArray *p, NdArray *y)
         }
 
         loss_gradients = lyr->neuron_gradients();
-        prev_n = this->lyrs_[i]->neurons();
+        prev_n = lyr->neurons();
     }
 }
 

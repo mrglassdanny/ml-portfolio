@@ -384,13 +384,18 @@ int main(int argc, char **argv)
 	// train_mnist(model, batch_size, epochs);
 	// test_mnist(model, epochs, true, false);
 
-	auto x = NdArray::ones(true, Shape(1, 4));
+	// grad_tests();
+
+	auto x = NdArray::ones(true, Shape(1, 16));
 	auto y = NdArray::ones(true, Shape(1, 2));
+	y->set_val(0, 0.0f);
 
 	auto ernn = new nn::ERNN();
-	ernn->layer(x->shape(), 4, nn::ActivationType::None);
-	ernn->layer(4, nn::ActivationType::None);
-	ernn->layer(y->shape(), nn::ActivationType::None);
+	ernn->layer(x->shape(), 16, nn::ActivationType::Sigmoid);
+	ernn->layer(8, nn::ActivationType::Sigmoid);
+	ernn->layer(8, nn::ActivationType::Sigmoid);
+	ernn->layer(4, nn::ActivationType::Sigmoid);
+	ernn->layer(y->shape(), nn::ActivationType::Sigmoid);
 	ernn->compile();
 
 	ernn->set_loss(new nn::loss::MSE());
@@ -398,9 +403,7 @@ int main(int argc, char **argv)
 
 	ernn->summarize();
 
-	ernn->forward(x)->print();
-
-	ernn->validate_gradients(x, y, true);
+	ernn->validate_gradients(x, y, false);
 
 	return 0;
 }

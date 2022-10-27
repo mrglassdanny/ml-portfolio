@@ -26,6 +26,7 @@ namespace nn
         ~EnhancedResidual();
 
         void evaluate_residual(NdArray *out, int idx);
+        void derive_residual(NdArray *in, NdArray *in_n, int idx);
 
         void compile(ERNN *ernn, int my_idx);
 
