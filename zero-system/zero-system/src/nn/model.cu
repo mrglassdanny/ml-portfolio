@@ -428,27 +428,17 @@ void Model::linear(Shape in_shape, int out_feature_cnt, ActivationType activatio
 
 void Model::conv2d(Shape filter_shape, ActivationType activation)
 {
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding{0, 0}, Stride{1, 1}, activation));
+    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Stride{1, 1}, activation));
 }
 
 void Model::conv2d(Shape filter_shape, Stride stride, ActivationType activation)
 {
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Padding{0, 0}, stride, activation));
-}
-
-void Model::conv2d(Shape filter_shape, Padding padding, Stride stride, ActivationType activation)
-{
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, padding, stride, activation));
+    this->add_layer(new Conv2d(this->output_shape(), filter_shape, stride, activation));
 }
 
 void Model::conv2d(Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation)
 {
-    this->add_layer(new Conv2d(in_shape, filter_shape, Padding{0, 0}, stride, activation));
-}
-
-void Model::conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride, ActivationType activation)
-{
-    this->add_layer(new Conv2d(in_shape, filter_shape, padding, stride, activation));
+    this->add_layer(new Conv2d(in_shape, filter_shape, stride, activation));
 }
 
 std::vector<Layer *> Model::layers()

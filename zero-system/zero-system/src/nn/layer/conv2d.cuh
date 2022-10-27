@@ -7,12 +7,6 @@ namespace nn
 {
     namespace layer
     {
-        struct Padding
-        {
-            int row_cnt;
-            int col_cnt;
-        };
-
         struct Stride
         {
             int row_cnt;
@@ -22,14 +16,13 @@ namespace nn
         class Conv2d : public Learnable
         {
         protected:
-            Padding padding_;
             Stride stride_;
             int out_row_cnt_;
             int out_col_cnt_;
             ActivationType activation_;
 
         public:
-            Conv2d(Shape in_shape, Shape filter_shape, Padding padding, Stride stride, ActivationType activation);
+            Conv2d(Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation);
 
             virtual void evaluate(NdArray *out) override;
             virtual void derive(NdArray *in, NdArray *in_n) override;
@@ -50,14 +43,10 @@ namespace nn
             int filter_rows();
             int filter_cols();
             Shape filter_shape();
-            int padding_rows();
-            int padding_cols();
             int stride_rows();
             int stride_cols();
             int out_feature_rows();
             int out_feature_cols();
-
-            Shape padded_shape();
         };
 
     }
