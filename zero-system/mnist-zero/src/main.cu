@@ -609,7 +609,7 @@ int main(int argc, char **argv)
 	printf("MNIST-ZERO\n\n");
 	srand(time(NULL));
 
-	mnist_compare_ernn(50, 50);
+	// mnist_compare_ernn(50, 50);
 
 	return 0;
 }
