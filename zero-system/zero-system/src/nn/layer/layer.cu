@@ -22,6 +22,16 @@ void Layer::summarize()
     this->output_shape().print_pad(16, false);
 }
 
+int Layer::in_features()
+{
+    return this->input_shape().dims_size() / this->batch_size();
+}
+
+int Layer::out_features()
+{
+    return this->output_shape().dims_size() / this->batch_size();
+}
+
 int Layer::batch_size()
 {
     return this->n_->shape()[0];
@@ -38,14 +48,14 @@ NdArray *Layer::neurons()
     return this->n_;
 }
 
-NdArray *Layer::neuron_gradients()
-{
-    return this->dn_;
-}
-
 void Layer::copy_neurons(NdArray *n)
 {
     this->n_->copy(n);
+}
+
+NdArray *Layer::neuron_gradients()
+{
+    return this->dn_;
 }
 
 void Layer::zero_grad()

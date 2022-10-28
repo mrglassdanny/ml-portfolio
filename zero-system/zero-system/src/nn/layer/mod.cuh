@@ -7,6 +7,7 @@
 #include "layer.cuh"
 #include "linear.cuh"
 #include "conv2d.cuh"
+#include "enhanced_residual.cuh"
 #include "activation.cuh"
 
 #endif

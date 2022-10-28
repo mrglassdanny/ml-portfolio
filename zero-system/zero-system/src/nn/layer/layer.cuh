@@ -25,13 +25,16 @@ namespace nn
 
             virtual void summarize();
 
+            int in_features();
+            int out_features();
+
             int batch_size();
             void change_batch_size(int batch_size);
 
             NdArray *neurons();
-            NdArray *neuron_gradients();
             void copy_neurons(NdArray *n);
 
+            NdArray *neuron_gradients();
             void zero_grad();
         };
     }

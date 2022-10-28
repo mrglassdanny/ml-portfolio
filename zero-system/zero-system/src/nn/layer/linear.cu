@@ -162,16 +162,6 @@ void Linear::summarize()
     Activation::summarize(this->activation_);
 }
 
-int Linear::in_features()
-{
-    return this->weight_rows();
-}
-
-int Linear::out_features()
-{
-    return this->weight_cols();
-}
-
 int Linear::weight_rows()
 {
     return this->params_->weights()->shape()[0];
