@@ -192,7 +192,7 @@ Shape Conv2d::output_shape()
 
 void Conv2d::validate()
 {
-    if (this->n_->num_dims() != 4)
+    if (this->input_shape().num_dims() != 4)
     {
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: invalid input shape");
     }
@@ -202,7 +202,7 @@ void Conv2d::validate()
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: invalid filter shape");
     }
 
-    if (this->n_->shape()[1] != this->filter_shape()[1])
+    if (this->input_shape()[1] != this->filter_shape()[1])
     {
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: input channels and filter channels do not match");
     }
