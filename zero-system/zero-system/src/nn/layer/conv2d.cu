@@ -138,7 +138,7 @@ void Conv2d::evaluate(NdArray *out)
                                                  this->filters(), this->filter_rows(), this->filter_cols(), this->out_feature_rows(), this->out_feature_cols(),
                                                  this->stride_rows(), this->stride_cols());
 
-    Activation::evaluate(out, this->batch_size(), out->dims_size() / this->batch_size(), this->activation_);
+    Activation::evaluate(out, this->batch_size(), this->out_features(), this->activation_);
 }
 
 void Conv2d::derive(NdArray *in, NdArray *in_n)
@@ -149,7 +149,7 @@ void Conv2d::derive(NdArray *in, NdArray *in_n)
     NdArray *dw = this->params_->weight_gradients();
     NdArray *db = this->params_->bias_gradients();
 
-    Activation::derive(in, in_n, this->batch_size(), in->dims_size() / this->batch_size(), this->activation_);
+    Activation::derive(in, in_n, this->batch_size(), this->out_features(), this->activation_);
 
     {
         int grid_row_cnt = (this->filters() / CUDA_THREADS_PER_BLOCK) + 1;

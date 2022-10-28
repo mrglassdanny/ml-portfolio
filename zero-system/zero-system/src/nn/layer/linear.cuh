@@ -26,8 +26,6 @@ namespace nn
 
             virtual void summarize() override;
 
-            int in_features();
-            int out_features();
             int weight_rows();
             int weight_cols();
         };
