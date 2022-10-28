@@ -207,22 +207,22 @@ void Conv2d::validate()
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: input channels and filter channels do not match");
     }
 
-    int filter_row_cnt = this->filter_rows();
-    while (filter_row_cnt < this->in_feature_rows())
+    int filter_row_test = this->filter_rows();
+    while (filter_row_test < this->in_feature_rows())
     {
-        filter_row_cnt += this->stride_rows();
+        filter_row_test += this->stride_rows();
     }
-    if (filter_row_cnt != this->in_feature_rows())
+    if (filter_row_test != this->in_feature_rows())
     {
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: filter/stride row combination does not fit input row count");
     }
 
-    int filter_col_cnt = this->filter_cols();
-    while (filter_col_cnt < this->in_feature_cols())
+    int filter_col_test = this->filter_cols();
+    while (filter_col_test < this->in_feature_cols())
     {
-        filter_col_cnt += this->stride_cols();
+        filter_col_test += this->stride_cols();
     }
-    if (filter_col_cnt != this->in_feature_cols())
+    if (filter_col_test != this->in_feature_cols())
     {
         THROW_ERROR("CONV2D LAYER VALIDATION FAILED: filter/stride column combination does not fit input column count");
     }
