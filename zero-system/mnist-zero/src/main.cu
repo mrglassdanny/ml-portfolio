@@ -117,6 +117,8 @@ std::vector<Batch> get_test_dataset(int batch_size)
 	return batches;
 }
 
+void test_mnist(nn::Model *model, int epoch, bool train, bool csv);
+
 void train_mnist(nn::Model *model, int batch_size, int epochs)
 {
 	auto train_ds = get_train_dataset(batch_size);
@@ -259,6 +261,8 @@ void test_mnist(nn::Model *model, int epoch, bool train, bool csv)
 	}
 }
 
+void test_mnist(nn::ERNN *ernn, int epoch, bool train, bool csv);
+
 void train_mnist(nn::ERNN *ernn, int batch_size, int epochs)
 {
 	auto train_ds = get_train_dataset(batch_size);
@@ -298,6 +302,8 @@ void train_mnist(nn::ERNN *ernn, int batch_size, int epochs)
 		{
 			break;
 		}
+
+		test_mnist(ernn, epoch, false, false);
 	}
 
 	for (auto batch : train_ds)
@@ -407,6 +413,7 @@ void grad_tests()
 	auto m2 = new nn::Model();
 	auto m3 = new nn::Model();
 	auto m4 = new nn::Model();
+	auto m5 = new nn::ERNN();
 
 	int batch_size = 1;
 
@@ -492,10 +499,33 @@ void grad_tests()
 		delete y;
 	}
 
+	// m5
+	{
+		auto x = NdArray::random(true, Shape(batch_size, 64), 0.0f, 1.0f);
+		auto y = NdArray::zeros(true, Shape(batch_size, 10));
+		y->set_val(3, 1.0f);
+
+		m5->layer(x->shape(), 16, nn::layer::ActivationType::Tanh);
+		m5->layer(16, nn::layer::ActivationType::Sigmoid);
+		m5->layer(16, nn::layer::ActivationType::Sigmoid);
+		m5->layer(y->shape(), nn::layer::ActivationType::Sigmoid);
+		m5->compile();
+
+		m5->set_loss(new nn::loss::MSE());
+		m5->set_optimizer(new nn::optim::SGD(m5->parameters(), 0.01f));
+
+		m5->summarize();
+		m5->validate_gradients(x, y, false);
+
+		delete x;
+		delete y;
+	}
+
 	delete m1;
 	delete m2;
 	delete m3;
 	delete m4;
+	delete m5;
 }
 
 void mnist_conv(int batch_size, int epochs)
@@ -530,35 +560,40 @@ void mnist_compare_ernn(int batch_size, int epochs)
 	Shape output_shape = Shape(batch_size, 10);
 
 	// NN
-	{
-		auto nn = new nn::Model();
+	// {
+	// 	auto nn = new nn::Model();
 
-		nn->linear(input_shape, 16, nn::layer::ActivationType::Sigmoid);
-		nn->linear(16, nn::layer::ActivationType::Sigmoid);
-		nn->linear(output_shape, nn::layer::ActivationType::Sigmoid);
+	// 	nn->linear(input_shape, 128, nn::layer::ActivationType::Sigmoid);
+	// 	nn->linear(128, nn::layer::ActivationType::Sigmoid);
+	// 	nn->linear(64, nn::layer::ActivationType::Sigmoid);
+	// 	nn->linear(output_shape, nn::layer::ActivationType::Sigmoid);
 
-		nn->set_loss(new nn::loss::MSE());
-		nn->set_optimizer(new nn::optim::SGD(nn->parameters(), 0.1f));
+	// 	nn->set_loss(new nn::loss::MSE());
+	// 	nn->set_optimizer(new nn::optim::SGD(nn->parameters(), 1.0f));
 
-		nn->summarize();
+	// 	nn->summarize();
 
-		train_mnist(nn, batch_size, epochs);
-		test_mnist(nn, epochs, false, false);
+	// 	train_mnist(nn, batch_size, epochs);
+	// 	test_mnist(nn, epochs, false, false);
 
-		delete nn;
-	}
+	// 	delete nn;
+	// }
 
 	// ERNN
 	{
 		auto ernn = new nn::ERNN();
 
-		ernn->layer(input_shape, 16, nn::layer::ActivationType::Sigmoid);
-		ernn->layer(16, nn::layer::ActivationType::Sigmoid);
+		ernn->layer(input_shape, 256, nn::layer::ActivationType::Tanh);
+		ernn->layer(256, nn::layer::ActivationType::Tanh);
+		ernn->layer(128, nn::layer::ActivationType::Tanh);
+		ernn->layer(128, nn::layer::ActivationType::Tanh);
+		ernn->layer(64, nn::layer::ActivationType::Tanh);
+		ernn->layer(64, nn::layer::ActivationType::Tanh);
 		ernn->layer(output_shape, nn::layer::ActivationType::Sigmoid);
 		ernn->compile();
 
 		ernn->set_loss(new nn::loss::MSE());
-		ernn->set_optimizer(new nn::optim::SGD(ernn->parameters(), 0.1f));
+		ernn->set_optimizer(new nn::optim::SGD(ernn->parameters(), 0.50f));
 
 		ernn->summarize();
 
@@ -574,7 +609,7 @@ int main(int argc, char **argv)
 	printf("MNIST-ZERO\n\n");
 	srand(time(NULL));
 
-	mnist_compare_ernn(50, 10);
+	mnist_compare_ernn(50, 50);
 
 	return 0;
 }
