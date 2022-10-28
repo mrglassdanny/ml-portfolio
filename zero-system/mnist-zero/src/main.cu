@@ -119,7 +119,7 @@ std::vector<Batch> get_test_dataset(int batch_size)
 
 void test_mnist(nn::Model *model, int epoch, bool train, bool csv);
 
-void train_mnist(nn::Model *model, int batch_size, int epochs)
+void train_mnist(nn::Model *model, int batch_size, int epochs, bool test_each_epoch)
 {
 	auto train_ds = get_train_dataset(batch_size);
 
@@ -154,7 +154,10 @@ void train_mnist(nn::Model *model, int batch_size, int epochs)
 			}
 		}
 
-		test_mnist(model, epoch, false, false);
+		if (test_each_epoch)
+		{
+			test_mnist(model, epoch, false, true);
+		}
 
 		if (quit)
 		{
@@ -450,8 +453,34 @@ void mnist_conv(int batch_size, int epochs)
 
 	model->summarize();
 
-	train_mnist(model, batch_size, epochs);
+	train_mnist(model, batch_size, epochs, false);
 	test_mnist(model, epochs, true, false);
+
+	delete model;
+}
+
+void mnist_conv_2(int batch_size, int epochs)
+{
+	Shape input_shape = Shape(batch_size, 1, 28, 28);
+	Shape output_shape = Shape(batch_size, 10);
+
+	auto model = new nn::Model();
+
+	model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	model->full_residual(512, nn::layer::ActivationType::Tanh);
+	model->full_residual(256, nn::layer::ActivationType::Tanh);
+	model->full_residual(128, nn::layer::ActivationType::Tanh);
+	model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
+
+	model->set_loss(new nn::loss::CrossEntropy());
+	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.01f, BETA_1));
+
+	model->summarize();
+
+	train_mnist(model, batch_size, epochs, true);
+	test_mnist(model, epochs, false, false);
 
 	delete model;
 }
@@ -461,8 +490,7 @@ int main(int argc, char **argv)
 	printf("MNIST-ZERO\n\n");
 	srand(time(NULL));
 
-	grad_tests();
-
+	mnist_conv_2(50, 50);
 
 	return 0;
 }
