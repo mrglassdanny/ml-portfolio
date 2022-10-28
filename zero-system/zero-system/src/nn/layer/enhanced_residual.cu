@@ -87,7 +87,7 @@ EnhancedResidual::~EnhancedResidual()
     }
 }
 
-void EnhancedResidual::evaluate_residual(NdArray *out, int idx)
+void EnhancedResidual::evaluate(NdArray *out, int idx)
 {
     int out_feature_cnt = out->dims_size() / this->batch_size();
 
@@ -105,7 +105,7 @@ void EnhancedResidual::evaluate_residual(NdArray *out, int idx)
                                                             this->batch_size(), this->in_features(), out_feature_cnt);
 }
 
-void EnhancedResidual::derive_residual(NdArray *in, NdArray *in_n, int idx)
+void EnhancedResidual::derive(NdArray *in, NdArray *in_n, int idx)
 {
     NdArray *n = this->n_;
     NdArray *w = this->residual_params_[idx]->weights();
@@ -141,17 +141,12 @@ void EnhancedResidual::derive_residual(NdArray *in, NdArray *in_n, int idx)
     }
 }
 
-void EnhancedResidual::compile(std::vector<Layer *> layers, int my_idx)
+void EnhancedResidual::link(Layer *lyr)
 {
     int fan_in = this->in_features();
+    int fan_out = lyr->out_features();
 
-    for (int i = my_idx + 1; i < layers.size(); i++)
-    {
-        Layer *lyr = layers[i];
-        int fan_out = lyr->out_features();
-
-        this->residual_params_.push_back(new Parameters(Shape(fan_in, fan_out), Shape(fan_out), fan_in, fan_out));
-    }
+    this->residual_params_.push_back(new Parameters(Shape(fan_in, fan_out), Shape(fan_out), fan_in, fan_out));
 }
 
 std::vector<Parameters *> EnhancedResidual::residual_parameters()

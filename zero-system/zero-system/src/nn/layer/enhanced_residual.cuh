@@ -15,10 +15,10 @@ namespace nn
             EnhancedResidual(Shape in_shape, Shape out_shape, ActivationType activation);
             ~EnhancedResidual();
 
-            void evaluate_residual(NdArray *out, int idx);
-            void derive_residual(NdArray *in, NdArray *in_n, int idx);
+            void evaluate(NdArray *out, int idx);
+            void derive(NdArray *in, NdArray *in_n, int idx);
 
-            void compile(std::vector<Layer *> layers, int my_idx);
+            void link(Layer *lyr);
 
             std::vector<Parameters *> residual_parameters();
         };

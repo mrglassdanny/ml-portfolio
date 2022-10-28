@@ -57,9 +57,9 @@ NdArray *Model::forward(NdArray *x)
             for (int j = i + 2; j < this->lyrs_.size(); j++)
             {
                 nxt_lyr = this->lyrs_[j];
-                er_lyr->evaluate_residual(nxt_lyr->neurons(), k++);
+                er_lyr->evaluate(nxt_lyr->neurons(), k++);
             }
-            er_lyr->evaluate_residual(p, k);
+            er_lyr->evaluate(p, k);
         }
     }
 
@@ -155,7 +155,7 @@ void Model::backward(NdArray *p, NdArray *y)
         {
             if (EnhancedResidual *er_lyr = dynamic_cast<EnhancedResidual *>(this->lyrs_[j]))
             {
-                er_lyr->derive_residual(loss_gradients, prev_n, k);
+                er_lyr->derive(loss_gradients, prev_n, k);
             }
 
             k++;
@@ -418,6 +418,14 @@ void Model::summarize()
 void Model::add_layer(Layer *lyr)
 {
     this->lyrs_.push_back(lyr);
+
+    for (int i = 0; i < this->lyrs_.size() - 1; i++)
+    {
+        if (EnhancedResidual *er_lyr = dynamic_cast<EnhancedResidual *>(this->lyrs_[i]))
+        {
+            er_lyr->link(lyr);
+        }
+    }
 }
 
 void Model::set_loss(Loss *loss)
