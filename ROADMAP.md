@@ -4,8 +4,8 @@
     - homemade neural network framework
  - [x] MNIST-ZERO
     - MNIST hand-written digit predictions with ZERO System
- - [ ] Enhanced residual neural network
-    - experimental neural network architecture
+ - [x] Full residual layer
+    - experimental layer type
  - [ ] deep-lm
     - warehouse labor management task time predictions
  - [ ] schneizel
