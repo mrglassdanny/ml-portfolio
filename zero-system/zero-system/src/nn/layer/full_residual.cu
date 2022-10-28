@@ -1,9 +1,9 @@
-#include "enhanced_residual.cuh"
+#include "full_residual.cuh"
 
 using namespace nn::layer;
 
-__global__ void k_enhanced_residual_evaluate(float *in, float *w, float *b, float *out,
-                                             int batch_size, int in_cnt, int out_cnt)
+__global__ void k_full_residual_evaluate(float *in, float *w, float *b, float *out,
+                                         int batch_size, int in_cnt, int out_cnt)
 {
     int out_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -23,8 +23,8 @@ __global__ void k_enhanced_residual_evaluate(float *in, float *w, float *b, floa
     }
 }
 
-__global__ void k_enhanced_residual_inc_param_derivatives(float *in, float *in_n, float *n, float *dw, float *db,
-                                                          int batch_size, int in_cnt, int n_cnt, int w_row_cnt, int w_col_cnt)
+__global__ void k_full_residual_inc_param_derivatives(float *in, float *in_n, float *n, float *dw, float *db,
+                                                      int batch_size, int in_cnt, int n_cnt, int w_row_cnt, int w_col_cnt)
 {
     int w_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int w_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -48,7 +48,7 @@ __global__ void k_enhanced_residual_inc_param_derivatives(float *in, float *in_n
     }
 }
 
-__global__ void k_enhanced_residual_agg_derivatives(float *in, float *w, float *out, int batch_size, int in_cnt, int w_row_cnt, int w_col_cnt, int out_cnt)
+__global__ void k_full_residual_agg_derivatives(float *in, float *w, float *out, int batch_size, int in_cnt, int w_row_cnt, int w_col_cnt, int out_cnt)
 {
     int out_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int batch_idx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -66,7 +66,7 @@ __global__ void k_enhanced_residual_agg_derivatives(float *in, float *w, float *
     }
 }
 
-EnhancedResidual::EnhancedResidual(Shape in_shape, Shape out_shape, ActivationType activation)
+FullResidual::FullResidual(Shape in_shape, Shape out_shape, ActivationType activation)
 {
     this->n_ = new NdArray(true, in_shape);
     this->dn_ = new NdArray(true, in_shape);
@@ -79,7 +79,7 @@ EnhancedResidual::EnhancedResidual(Shape in_shape, Shape out_shape, ActivationTy
     this->activation_ = activation;
 }
 
-EnhancedResidual::~EnhancedResidual()
+FullResidual::~FullResidual()
 {
     for (Parameters *rp : this->residual_params_)
     {
@@ -87,7 +87,7 @@ EnhancedResidual::~EnhancedResidual()
     }
 }
 
-void EnhancedResidual::evaluate(NdArray *out, int idx)
+void FullResidual::evaluate(NdArray *out, int idx)
 {
     int out_feature_cnt = out->dims_size() / this->batch_size();
 
@@ -101,11 +101,11 @@ void EnhancedResidual::evaluate(NdArray *out, int idx)
     NdArray *w = this->residual_params_[idx]->weights();
     NdArray *b = this->residual_params_[idx]->biases();
 
-    k_enhanced_residual_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(),
+    k_full_residual_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(),
                                                             this->batch_size(), this->in_features(), out_feature_cnt);
 }
 
-void EnhancedResidual::derive(NdArray *in, NdArray *in_n, int idx)
+void FullResidual::derive(NdArray *in, NdArray *in_n, int idx)
 {
     NdArray *n = this->n_;
     NdArray *w = this->residual_params_[idx]->weights();
@@ -124,7 +124,7 @@ void EnhancedResidual::derive(NdArray *in, NdArray *in_n, int idx)
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
-        k_enhanced_residual_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), in_n->data(), n->data(), dw->data(), db->data(),
+        k_full_residual_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), in_n->data(), n->data(), dw->data(), db->data(),
                                                                              this->batch_size(), out_cnt, this->in_features(),
                                                                              w_row_cnt, w_col_cnt);
     }
@@ -136,12 +136,12 @@ void EnhancedResidual::derive(NdArray *in, NdArray *in_n, int idx)
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
-        k_enhanced_residual_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), this->dn_->data(),
+        k_full_residual_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), this->dn_->data(),
                                                                        this->batch_size(), out_cnt, w_row_cnt, w_col_cnt, this->in_features());
     }
 }
 
-void EnhancedResidual::link(Layer *lyr)
+void FullResidual::link(Layer *lyr)
 {
     int fan_in = this->in_features();
     int fan_out = lyr->out_features();
@@ -149,7 +149,7 @@ void EnhancedResidual::link(Layer *lyr)
     this->residual_params_.push_back(new Parameters(Shape(fan_in, fan_out), Shape(fan_out), fan_in, fan_out));
 }
 
-std::vector<Parameters *> EnhancedResidual::residual_parameters()
+std::vector<Parameters *> FullResidual::residual_parameters()
 {
     return this->residual_params_;
 }

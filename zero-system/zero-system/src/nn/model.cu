@@ -51,15 +51,15 @@ NdArray *Model::forward(NdArray *x)
 
         lyr->evaluate(nxt_lyr->neurons());
 
-        if (EnhancedResidual *er_lyr = dynamic_cast<EnhancedResidual *>(lyr))
+        if (FullResidual *fr_lyr = dynamic_cast<FullResidual *>(lyr))
         {
             int k = 0;
             for (int j = i + 2; j < this->lyrs_.size(); j++)
             {
                 nxt_lyr = this->lyrs_[j];
-                er_lyr->evaluate(nxt_lyr->neurons(), k++);
+                fr_lyr->evaluate(nxt_lyr->neurons(), k++);
             }
-            er_lyr->evaluate(p, k);
+            fr_lyr->evaluate(p, k);
         }
     }
 
@@ -153,9 +153,9 @@ void Model::backward(NdArray *p, NdArray *y)
         int k = 0;
         for (int j = i - 1; j >= 0; j--)
         {
-            if (EnhancedResidual *er_lyr = dynamic_cast<EnhancedResidual *>(this->lyrs_[j]))
+            if (FullResidual *fr_lyr = dynamic_cast<FullResidual *>(this->lyrs_[j]))
             {
-                er_lyr->derive(loss_gradients, prev_n, k);
+                fr_lyr->derive(loss_gradients, prev_n, k);
             }
 
             k++;
@@ -421,9 +421,9 @@ void Model::add_layer(Layer *lyr)
 
     for (int i = 0; i < this->lyrs_.size() - 1; i++)
     {
-        if (EnhancedResidual *er_lyr = dynamic_cast<EnhancedResidual *>(this->lyrs_[i]))
+        if (FullResidual *fr_lyr = dynamic_cast<FullResidual *>(this->lyrs_[i]))
         {
-            er_lyr->link(lyr);
+            fr_lyr->link(lyr);
         }
     }
 }
@@ -473,24 +473,24 @@ void Model::conv2d(Shape in_shape, Shape filter_shape, Stride stride, Activation
     this->add_layer(new Conv2d(in_shape, filter_shape, stride, activation));
 }
 
-void Model::enhanced_residual(int out_feature_cnt, ActivationType activation)
+void Model::full_residual(int out_feature_cnt, ActivationType activation)
 {
-    this->add_layer(new EnhancedResidual(this->output_shape(), Shape(this->batch_size(), out_feature_cnt), activation));
+    this->add_layer(new FullResidual(this->output_shape(), Shape(this->batch_size(), out_feature_cnt), activation));
 }
 
-void Model::enhanced_residual(Shape y_shape, ActivationType activation)
+void Model::full_residual(Shape y_shape, ActivationType activation)
 {
-    this->add_layer(new EnhancedResidual(this->output_shape(), y_shape, activation));
+    this->add_layer(new FullResidual(this->output_shape(), y_shape, activation));
 }
 
-void Model::enhanced_residual(int batch_size, int in_feature_cnt, int out_feature_cnt, ActivationType activation)
+void Model::full_residual(int batch_size, int in_feature_cnt, int out_feature_cnt, ActivationType activation)
 {
-    this->add_layer(new EnhancedResidual(Shape(batch_size, in_feature_cnt), Shape(batch_size, out_feature_cnt), activation));
+    this->add_layer(new FullResidual(Shape(batch_size, in_feature_cnt), Shape(batch_size, out_feature_cnt), activation));
 }
 
-void Model::enhanced_residual(Shape in_shape, int out_feature_cnt, ActivationType activation)
+void Model::full_residual(Shape in_shape, int out_feature_cnt, ActivationType activation)
 {
-    this->add_layer(new EnhancedResidual(in_shape, Shape(in_shape[0], out_feature_cnt), activation));
+    this->add_layer(new FullResidual(in_shape, Shape(in_shape[0], out_feature_cnt), activation));
 }
 
 std::vector<Layer *> Model::layers()
@@ -508,9 +508,9 @@ std::vector<Parameters *> Model::parameters()
         {
             params.push_back(lrn_lyr->parameters());
 
-            if (EnhancedResidual *er_lyr = dynamic_cast<EnhancedResidual *>(lrn_lyr))
+            if (FullResidual *fr_lyr = dynamic_cast<FullResidual *>(lrn_lyr))
             {
-                for (Parameters *r_params : er_lyr->residual_parameters())
+                for (Parameters *r_params : fr_lyr->residual_parameters())
                 {
                     params.push_back(r_params);
                 }

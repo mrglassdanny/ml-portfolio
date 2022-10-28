@@ -6,14 +6,14 @@ namespace nn
 {
     namespace layer
     {
-        class EnhancedResidual : public Linear
+        class FullResidual : public Linear
         {
         private:
             std::vector<Parameters *> residual_params_;
 
         public:
-            EnhancedResidual(Shape in_shape, Shape out_shape, ActivationType activation);
-            ~EnhancedResidual();
+            FullResidual(Shape in_shape, Shape out_shape, ActivationType activation);
+            ~FullResidual();
 
             void evaluate(NdArray *out, int idx);
             void derive(NdArray *in, NdArray *in_n, int idx);
