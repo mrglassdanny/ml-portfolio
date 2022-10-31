@@ -459,23 +459,28 @@ void mnist_conv(int batch_size, int epochs)
 	delete model;
 }
 
-void mnist_conv_2(int batch_size, int epochs)
+void mnist_conv_fr(int batch_size, int epochs)
 {
 	Shape input_shape = Shape(batch_size, 1, 28, 28);
 	Shape output_shape = Shape(batch_size, 10);
 
 	auto model = new nn::Model();
 
-	model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->full_residual(512, nn::layer::ActivationType::Tanh);
-	model->full_residual(256, nn::layer::ActivationType::Tanh);
-	model->full_residual(128, nn::layer::ActivationType::Tanh);
+	model->conv2d(input_shape, Shape(32, 1, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(32, 32, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(32, 32, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(32, 32, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(32, 32, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	model->full_residual(128, nn::layer::ActivationType::Sigmoid);
+	model->full_residual(128, nn::layer::ActivationType::Sigmoid);
+	model->full_residual(128, nn::layer::ActivationType::Sigmoid);
+	model->full_residual(128, nn::layer::ActivationType::Sigmoid);
+	model->full_residual(64, nn::layer::ActivationType::Sigmoid);
+	model->full_residual(32, nn::layer::ActivationType::Sigmoid);
 	model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
 
 	model->set_loss(new nn::loss::CrossEntropy());
-	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.01f, BETA_1));
+	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.10f, BETA_1));
 
 	model->summarize();
 
@@ -491,6 +496,7 @@ int main(int argc, char **argv)
 	srand(time(NULL));
 
 	grad_tests();
+	// mnist_conv_fr(50, 50);
 
 	return 0;
 }

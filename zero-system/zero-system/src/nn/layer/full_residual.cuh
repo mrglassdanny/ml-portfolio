@@ -15,8 +15,8 @@ namespace nn
             FullResidual(Shape in_shape, Shape out_shape, ActivationType activation);
             ~FullResidual();
 
-            void evaluate(NdArray *out, int residual_param_idx);
-            void derive(NdArray *in, NdArray *in_n, int residual_param_idx);
+            void evaluate_residual(NdArray *out, int residual_param_idx);
+            void derive_residual(NdArray *in, NdArray *in_n, int residual_param_idx);
 
             void link(Layer *lyr);
 

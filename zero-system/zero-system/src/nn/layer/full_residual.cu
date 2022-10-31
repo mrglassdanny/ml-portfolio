@@ -87,7 +87,7 @@ FullResidual::~FullResidual()
     }
 }
 
-void FullResidual::evaluate(NdArray *out, int residual_param_idx)
+void FullResidual::evaluate_residual(NdArray *out, int residual_param_idx)
 {
     int out_feature_cnt = out->dims_size() / this->batch_size();
 
@@ -105,7 +105,7 @@ void FullResidual::evaluate(NdArray *out, int residual_param_idx)
                                                         this->batch_size(), this->in_features(), out_feature_cnt);
 }
 
-void FullResidual::derive(NdArray *in, NdArray *in_n, int residual_param_idx)
+void FullResidual::derive_residual(NdArray *in, NdArray *in_n, int residual_param_idx)
 {
     NdArray *n = this->n_;
     NdArray *dn = this->dn_;

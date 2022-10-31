@@ -57,9 +57,9 @@ NdArray *Model::forward(NdArray *x)
             for (int nxt_lyr_idx = lyr_idx + 2; nxt_lyr_idx < this->lyrs_.size(); nxt_lyr_idx++, residual_param_idx++)
             {
                 nxt_lyr = this->lyrs_[nxt_lyr_idx];
-                fr_lyr->evaluate(nxt_lyr->neurons(), residual_param_idx);
+                fr_lyr->evaluate_residual(nxt_lyr->neurons(), residual_param_idx);
             }
-            fr_lyr->evaluate(p, residual_param_idx);
+            fr_lyr->evaluate_residual(p, residual_param_idx);
         }
     }
 
@@ -154,7 +154,7 @@ void Model::backward(NdArray *p, NdArray *y)
         {
             if (FullResidual *fr_lyr = dynamic_cast<FullResidual *>(this->lyrs_[nxt_lyr_idx]))
             {
-                fr_lyr->derive(loss_gradients, prev_n, residual_param_idx);
+                fr_lyr->derive_residual(loss_gradients, prev_n, residual_param_idx);
             }
         }
 
