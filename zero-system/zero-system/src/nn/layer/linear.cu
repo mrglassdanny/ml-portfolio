@@ -102,6 +102,7 @@ void Linear::evaluate(NdArray *out)
 void Linear::derive(NdArray *in, NdArray *in_n)
 {
     NdArray *n = this->n_;
+    NdArray *dn = this->dn_;
     NdArray *w = this->params_->weights();
     NdArray *b = this->params_->biases();
     NdArray *dw = this->params_->weight_gradients();
@@ -128,7 +129,7 @@ void Linear::derive(NdArray *in, NdArray *in_n)
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
-        k_linear_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), this->dn_->data(),
+        k_linear_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), dn->data(),
                                                             this->batch_size(), this->out_features(), this->weight_rows(), this->weight_cols(), this->in_features());
     }
 }

@@ -44,22 +44,22 @@ NdArray *Model::forward(NdArray *x)
 
     NdArray *p = NdArray::zeros(true, this->output_shape());
 
-    for (int i = 0; i < this->lyrs_.size() - 1; i++)
+    for (int lyr_idx = 0; lyr_idx < this->lyrs_.size() - 1; lyr_idx++)
     {
-        Layer *lyr = this->lyrs_[i];
-        Layer *nxt_lyr = this->lyrs_[i + 1];
+        Layer *lyr = this->lyrs_[lyr_idx];
+        Layer *nxt_lyr = this->lyrs_[lyr_idx + 1];
 
         lyr->evaluate(nxt_lyr->neurons());
 
         if (FullResidual *fr_lyr = dynamic_cast<FullResidual *>(lyr))
         {
-            int k = 0;
-            for (int j = i + 2; j < this->lyrs_.size(); j++)
+            int residual_param_idx = 0;
+            for (int nxt_lyr_idx = lyr_idx + 2; nxt_lyr_idx < this->lyrs_.size(); nxt_lyr_idx++, residual_param_idx++)
             {
-                nxt_lyr = this->lyrs_[j];
-                fr_lyr->evaluate(nxt_lyr->neurons(), k++);
+                nxt_lyr = this->lyrs_[nxt_lyr_idx];
+                fr_lyr->evaluate(nxt_lyr->neurons(), residual_param_idx);
             }
-            fr_lyr->evaluate(p, k);
+            fr_lyr->evaluate(p, residual_param_idx);
         }
     }
 
@@ -144,24 +144,21 @@ void Model::backward(NdArray *p, NdArray *y)
     NdArray *loss_gradients = this->loss_->derive(p, y);
     NdArray *prev_n = p;
 
-    for (int i = this->lyrs_.size() - 1; i >= 0; i--)
+    for (int lyr_idx = this->lyrs_.size() - 1; lyr_idx >= 0; lyr_idx--)
     {
-        Layer *lyr = this->lyrs_[i];
+        Layer *lyr = this->lyrs_[lyr_idx];
 
         lyr->derive(loss_gradients, prev_n);
 
-        int k = 0;
-        for (int j = i - 1; j >= 0; j--)
+        for (int nxt_lyr_idx = lyr_idx - 1, residual_param_idx = 0; nxt_lyr_idx >= 0; nxt_lyr_idx--, residual_param_idx++)
         {
-            if (FullResidual *fr_lyr = dynamic_cast<FullResidual *>(this->lyrs_[j]))
+            if (FullResidual *fr_lyr = dynamic_cast<FullResidual *>(this->lyrs_[nxt_lyr_idx]))
             {
-                fr_lyr->derive(loss_gradients, prev_n, k);
+                fr_lyr->derive(loss_gradients, prev_n, residual_param_idx);
             }
-
-            k++;
         }
 
-        if (i == this->lyrs_.size() - 1)
+        if (lyr_idx == this->lyrs_.size() - 1)
         {
             delete loss_gradients;
         }

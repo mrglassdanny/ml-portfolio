@@ -144,6 +144,7 @@ void Conv2d::evaluate(NdArray *out)
 void Conv2d::derive(NdArray *in, NdArray *in_n)
 {
     NdArray *n = this->n_;
+    NdArray *dn = this->dn_;
     NdArray *w = this->params_->weights();
     NdArray *b = this->params_->biases();
     NdArray *dw = this->params_->weight_gradients();
@@ -172,7 +173,7 @@ void Conv2d::derive(NdArray *in, NdArray *in_n)
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
-        k_conv2d_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), this->dn_->data(), this->batch_size(), this->channels(), this->filters(),
+        k_conv2d_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), dn->data(), this->batch_size(), this->channels(), this->filters(),
                                                             this->out_feature_rows(), this->out_feature_cols(), (this->out_feature_rows() * this->out_feature_cols()),
                                                             this->filter_rows(), this->filter_cols(), (this->filter_rows() * this->filter_cols()),
                                                             this->in_feature_rows(), this->in_feature_cols(), (this->in_feature_rows() * this->in_feature_cols()),

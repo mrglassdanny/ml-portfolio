@@ -87,7 +87,7 @@ FullResidual::~FullResidual()
     }
 }
 
-void FullResidual::evaluate(NdArray *out, int idx)
+void FullResidual::evaluate(NdArray *out, int residual_param_idx)
 {
     int out_feature_cnt = out->dims_size() / this->batch_size();
 
@@ -98,20 +98,21 @@ void FullResidual::evaluate(NdArray *out, int idx)
     dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
     NdArray *n = this->n_;
-    NdArray *w = this->residual_params_[idx]->weights();
-    NdArray *b = this->residual_params_[idx]->biases();
+    NdArray *w = this->residual_params_[residual_param_idx]->weights();
+    NdArray *b = this->residual_params_[residual_param_idx]->biases();
 
     k_full_residual_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(),
-                                                            this->batch_size(), this->in_features(), out_feature_cnt);
+                                                        this->batch_size(), this->in_features(), out_feature_cnt);
 }
 
-void FullResidual::derive(NdArray *in, NdArray *in_n, int idx)
+void FullResidual::derive(NdArray *in, NdArray *in_n, int residual_param_idx)
 {
     NdArray *n = this->n_;
-    NdArray *w = this->residual_params_[idx]->weights();
-    NdArray *b = this->residual_params_[idx]->biases();
-    NdArray *dw = this->residual_params_[idx]->weight_gradients();
-    NdArray *db = this->residual_params_[idx]->bias_gradients();
+    NdArray *dn = this->dn_;
+    NdArray *w = this->residual_params_[residual_param_idx]->weights();
+    NdArray *b = this->residual_params_[residual_param_idx]->biases();
+    NdArray *dw = this->residual_params_[residual_param_idx]->weight_gradients();
+    NdArray *db = this->residual_params_[residual_param_idx]->bias_gradients();
 
     int w_row_cnt = w->shape()[0];
     int w_col_cnt = w->shape()[1];
@@ -125,8 +126,8 @@ void FullResidual::derive(NdArray *in, NdArray *in_n, int idx)
         dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
         k_full_residual_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), in_n->data(), n->data(), dw->data(), db->data(),
-                                                                             this->batch_size(), out_cnt, this->in_features(),
-                                                                             w_row_cnt, w_col_cnt);
+                                                                         this->batch_size(), out_cnt, this->in_features(),
+                                                                         w_row_cnt, w_col_cnt);
     }
 
     {
@@ -136,8 +137,8 @@ void FullResidual::derive(NdArray *in, NdArray *in_n, int idx)
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
-        k_full_residual_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), this->dn_->data(),
-                                                                       this->batch_size(), out_cnt, w_row_cnt, w_col_cnt, this->in_features());
+        k_full_residual_agg_derivatives<<<grid_dims, block_dims>>>(in->data(), w->data(), dn->data(),
+                                                                   this->batch_size(), out_cnt, w_row_cnt, w_col_cnt, this->in_features());
     }
 }
 

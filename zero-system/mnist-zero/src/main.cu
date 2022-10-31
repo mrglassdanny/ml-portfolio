@@ -490,7 +490,7 @@ int main(int argc, char **argv)
 	printf("MNIST-ZERO\n\n");
 	srand(time(NULL));
 
-	mnist_conv_2(50, 50);
+	grad_tests();
 
 	return 0;
 }
