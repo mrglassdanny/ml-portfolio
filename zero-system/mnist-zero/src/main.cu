@@ -159,7 +159,7 @@ void train_mnist(nn::Model *model, int batch_size, int epochs, bool test_each_ep
 			float test_acc_pct = test_mnist(model, epoch, false, true);
 			if (test_acc_pct >= 99.0f)
 			{
-				model->optimizer()->set_learning_rate(0.01f);
+				model->optimizer()->scale_learning_rate(0.1f);
 			}
 		}
 
@@ -462,7 +462,7 @@ void mnist_conv(int batch_size, int epochs)
 	model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
 
 	model->set_loss(new nn::loss::CrossEntropy());
-	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.1f, BETA_1));
+	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.2f, BETA_1));
 
 	model->summarize();
 
@@ -483,8 +483,8 @@ void mnist_conv_fr(int batch_size, int epochs)
 	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
 	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
 	model->full_residual(512, nn::layer::ActivationType::ReLU);
-	model->linear(256, nn::layer::ActivationType::ReLU);
-	model->linear(128, nn::layer::ActivationType::ReLU);
+	model->full_residual(256, nn::layer::ActivationType::ReLU);
+	model->full_residual(128, nn::layer::ActivationType::ReLU);
 	model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
 
 	model->set_loss(new nn::loss::CrossEntropy());
@@ -503,8 +503,8 @@ int main(int argc, char **argv)
 	printf("MNIST-ZERO\n\n");
 	srand(time(NULL));
 
-	// mnist_conv(50, 20);
-	mnist_conv_fr(50, 20);
+	mnist_conv(50, 20);
+	// mnist_conv_fr(50, 20);
 
 	return 0;
 }
