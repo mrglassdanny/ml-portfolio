@@ -25,7 +25,8 @@ namespace nn
 
             virtual void summarize();
 
-            void set_learning_rate(float lr);
+            void set_learning_rate(float learning_rate);
+            void scale_learning_rate(float factor);
         };
 
         class SGD : public Optimizer
