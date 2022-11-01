@@ -117,7 +117,7 @@ std::vector<Batch> get_test_dataset(int batch_size)
 	return batches;
 }
 
-void test_mnist(nn::Model *model, int epoch, bool train, bool csv);
+float test_mnist(nn::Model *model, int epoch, bool train, bool csv);
 
 void train_mnist(nn::Model *model, int batch_size, int epochs, bool test_each_epoch)
 {
@@ -156,7 +156,11 @@ void train_mnist(nn::Model *model, int batch_size, int epochs, bool test_each_ep
 
 		if (test_each_epoch)
 		{
-			test_mnist(model, epoch, false, true);
+			float test_acc_pct = test_mnist(model, epoch, false, true);
+			if (test_acc_pct >= 99.0f)
+			{
+				model->optimizer()->set_learning_rate(0.01f);
+			}
 		}
 
 		if (quit)
@@ -172,8 +176,11 @@ void train_mnist(nn::Model *model, int batch_size, int epochs, bool test_each_ep
 	}
 }
 
-void test_mnist(nn::Model *model, int epoch, bool train, bool csv)
+float test_mnist(nn::Model *model, int epoch, bool train, bool csv)
 {
+	float test_acc_pct = 0.0f;
+	float train_acc_pct = 0.0f;
+
 	// TEST:
 	{
 		auto ds = get_test_dataset(model->batch_size());
@@ -195,13 +202,15 @@ void test_mnist(nn::Model *model, int epoch, bool train, bool csv)
 			delete p;
 		}
 
+		test_acc_pct = (acc / (float)batch_cnt) * 100.0f;
+
 		if (csv)
 		{
 			FILE *f = fopen("temp/test.csv", "a");
 			fprintf(f, "EPOCH: %d\tTEST LOSS: %f\tTEST ACCURACY: %f%%\n",
 					epoch,
 					(loss / (float)batch_cnt),
-					(acc / (float)batch_cnt) * 100.0f);
+					test_acc_pct);
 			fclose(f);
 		}
 		else
@@ -209,7 +218,7 @@ void test_mnist(nn::Model *model, int epoch, bool train, bool csv)
 			printf("EPOCH: %d\tTEST LOSS: %f\tTEST ACCURACY: %f%%\n",
 				   epoch,
 				   (loss / (float)batch_cnt),
-				   (acc / (float)batch_cnt) * 100.0f);
+				   test_acc_pct);
 		}
 
 		for (auto batch : ds)
@@ -241,13 +250,15 @@ void test_mnist(nn::Model *model, int epoch, bool train, bool csv)
 			delete p;
 		}
 
+		train_acc_pct = (acc / (float)batch_cnt) * 100.0f;
+
 		if (csv)
 		{
 			FILE *f = fopen("temp/test.csv", "a");
 			fprintf(f, "EPOCH: %d\tTRAIN LOSS: %f\tTRAIN ACCURACY: %f%%\n",
 					epoch,
 					(loss / (float)batch_cnt),
-					(acc / (float)batch_cnt) * 100.0f);
+					train_acc_pct);
 			fclose(f);
 		}
 		else
@@ -255,7 +266,7 @@ void test_mnist(nn::Model *model, int epoch, bool train, bool csv)
 			printf("EPOCH: %d\tTRAIN LOSS: %f\tTRAIN ACCURACY: %f%%\n",
 				   epoch,
 				   (loss / (float)batch_cnt),
-				   (acc / (float)batch_cnt) * 100.0f);
+				   train_acc_pct);
 		}
 
 		for (auto batch : ds)
@@ -264,6 +275,8 @@ void test_mnist(nn::Model *model, int epoch, bool train, bool csv)
 			delete batch.y;
 		}
 	}
+
+	return test_acc_pct;
 }
 
 void grad_tests()
@@ -453,7 +466,7 @@ void mnist_conv(int batch_size, int epochs)
 
 	model->summarize();
 
-	train_mnist(model, batch_size, epochs, false);
+	train_mnist(model, batch_size, epochs, true);
 	test_mnist(model, epochs, true, false);
 
 	delete model;
@@ -466,26 +479,21 @@ void mnist_conv_fr(int batch_size, int epochs)
 
 	auto model = new nn::Model();
 
-	model->conv2d(input_shape, Shape(32, 1, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(32, 32, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(32, 32, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(32, 32, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(32, 32, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->full_residual(128, nn::layer::ActivationType::Sigmoid);
-	model->full_residual(128, nn::layer::ActivationType::Sigmoid);
-	model->full_residual(128, nn::layer::ActivationType::Sigmoid);
-	model->full_residual(128, nn::layer::ActivationType::Sigmoid);
-	model->full_residual(64, nn::layer::ActivationType::Sigmoid);
-	model->full_residual(32, nn::layer::ActivationType::Sigmoid);
+	model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	model->full_residual(512, nn::layer::ActivationType::ReLU);
+	model->linear(256, nn::layer::ActivationType::ReLU);
+	model->linear(128, nn::layer::ActivationType::ReLU);
 	model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
 
 	model->set_loss(new nn::loss::CrossEntropy());
-	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.10f, BETA_1));
+	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.01f, BETA_1));
 
 	model->summarize();
 
 	train_mnist(model, batch_size, epochs, true);
-	test_mnist(model, epochs, false, false);
+	test_mnist(model, epochs, true, false);
 
 	delete model;
 }
@@ -495,8 +503,8 @@ int main(int argc, char **argv)
 	printf("MNIST-ZERO\n\n");
 	srand(time(NULL));
 
-	grad_tests();
-	// mnist_conv_fr(50, 50);
+	// mnist_conv(50, 20);
+	mnist_conv_fr(50, 20);
 
 	return 0;
 }

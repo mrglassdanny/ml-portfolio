@@ -24,6 +24,8 @@ namespace nn
             virtual void step(int batch_size) = 0;
 
             virtual void summarize();
+
+            void set_learning_rate(float lr);
         };
 
         class SGD : public Optimizer

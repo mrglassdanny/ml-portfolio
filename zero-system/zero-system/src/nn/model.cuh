@@ -75,6 +75,8 @@ namespace nn
         int batch_size();
         void change_batch_size(int batch_size);
 
+        Optimizer *optimizer();
+
         void performance_check(NdArray *x, NdArray *y, int epoch_cnt);
     };
 }

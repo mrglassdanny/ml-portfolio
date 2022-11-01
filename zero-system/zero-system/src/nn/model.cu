@@ -541,6 +541,11 @@ void Model::change_batch_size(int batch_size)
     }
 }
 
+Optimizer *Model::optimizer()
+{
+    return this->optim_;
+}
+
 void Model::performance_check(NdArray *x, NdArray *y, int epoch_cnt)
 {
     CudaStopWatch *sw = new CudaStopWatch();

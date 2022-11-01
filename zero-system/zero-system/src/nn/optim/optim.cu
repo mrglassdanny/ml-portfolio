@@ -103,6 +103,11 @@ void Optimizer::summarize()
     printf("\n\tParameters: %zd\t\tLearning rate: %f", params_cnt, this->lr_);
 }
 
+void Optimizer::set_learning_rate(float lr)
+{
+    this->lr_ = lr;
+}
+
 SGD::SGD(std::vector<Parameters *> model_params, float learning_rate)
     : Optimizer(model_params, learning_rate)
 {
