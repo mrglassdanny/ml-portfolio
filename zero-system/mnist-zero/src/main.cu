@@ -392,7 +392,7 @@ void mnist_conv(int batch_size, int epochs)
 	model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
 
 	model->set_loss(new nn::loss::CrossEntropy());
-	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.2f, BETA_1));
+	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.15f, BETA_1));
 
 	model->summarize();
 

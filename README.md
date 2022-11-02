@@ -1,5 +1,3 @@
-# ml-portfolio
-Machine Learning Portfolio
 
 # Roadmap
 
