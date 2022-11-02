@@ -285,9 +285,6 @@ void grad_tests()
 	auto m2 = new nn::Model();
 	auto m3 = new nn::Model();
 	auto m4 = new nn::Model();
-	auto m5 = new nn::Model();
-	auto m6 = new nn::Model();
-	auto m7 = new nn::Model();
 
 	int batch_size = 1;
 
@@ -373,77 +370,10 @@ void grad_tests()
 		delete y;
 	}
 
-	// m5
-	{
-		auto x = NdArray::random(true, Shape(batch_size, 64), 0.0f, 1.0f);
-		auto y = NdArray::ones(true, Shape(batch_size, 1));
-
-		m5->full_residual(x->shape(), 16, nn::layer::ActivationType::Tanh);
-		m5->full_residual(16, nn::layer::ActivationType::Sigmoid);
-		m5->full_residual(16, nn::layer::ActivationType::Sigmoid);
-		m5->full_residual(y->shape(), nn::layer::ActivationType::Sigmoid);
-
-		m5->set_loss(new nn::loss::MSE());
-		m5->set_optimizer(new nn::optim::SGD(m5->parameters(), 0.01f));
-
-		m5->summarize();
-		m5->validate_gradients(x, y, false);
-
-		delete x;
-		delete y;
-	}
-
-	// m6
-	{
-		auto x = NdArray::random(true, Shape(batch_size, 64), 0.0f, 1.0f);
-		auto y = NdArray::zeros(true, Shape(batch_size, 10));
-		y->set_val(3, 1.0f);
-
-		m6->full_residual(x->shape(), 16, nn::layer::ActivationType::Tanh);
-		m6->linear(16, nn::layer::ActivationType::Sigmoid);
-		m6->full_residual(16, nn::layer::ActivationType::Sigmoid);
-		m6->linear(y->shape(), nn::layer::ActivationType::Sigmoid);
-
-		m6->set_loss(new nn::loss::CrossEntropy());
-		m6->set_optimizer(new nn::optim::SGD(m6->parameters(), 0.01f));
-
-		m6->summarize();
-		m6->validate_gradients(x, y, false);
-
-		delete x;
-		delete y;
-	}
-
-	// m7
-	{
-		auto x = NdArray::random(true, Shape(batch_size, 1, 12, 12), 0.0f, 1.0f);
-		auto y = NdArray::zeros(true, Shape(batch_size, 4));
-		y->set_val(3, 1.0f);
-
-		m7->conv2d(x->shape(), Shape(4, 1, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::Sigmoid);
-		m7->conv2d(Shape(4, 4, 4, 4), nn::layer::Stride{1, 1}, nn::layer::ActivationType::Tanh);
-		m7->conv2d(Shape(4, 4, 2, 2), nn::layer::Stride{1, 1}, nn::layer::ActivationType::None);
-		m7->full_residual(16, nn::layer::ActivationType::Sigmoid);
-		m7->full_residual(16, nn::layer::ActivationType::Sigmoid);
-		m7->linear(y->shape(), nn::layer::ActivationType::Sigmoid);
-
-		m7->set_loss(new nn::loss::CrossEntropy());
-		m7->set_optimizer(new nn::optim::SGD(m7->parameters(), 0.01f));
-
-		m7->summarize();
-		m7->validate_gradients(x, y, false);
-
-		delete x;
-		delete y;
-	}
-
 	delete m1;
 	delete m2;
 	delete m3;
 	delete m4;
-	delete m5;
-	delete m6;
-	delete m7;
 }
 
 void mnist_conv(int batch_size, int epochs)
@@ -472,39 +402,12 @@ void mnist_conv(int batch_size, int epochs)
 	delete model;
 }
 
-void mnist_conv_fr(int batch_size, int epochs)
-{
-	Shape input_shape = Shape(batch_size, 1, 28, 28);
-	Shape output_shape = Shape(batch_size, 10);
-
-	auto model = new nn::Model();
-
-	model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->full_residual(512, nn::layer::ActivationType::ReLU);
-	model->full_residual(256, nn::layer::ActivationType::ReLU);
-	model->full_residual(128, nn::layer::ActivationType::ReLU);
-	model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
-
-	model->set_loss(new nn::loss::CrossEntropy());
-	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.05f, BETA_1));
-
-	model->summarize();
-
-	train_mnist(model, batch_size, epochs, true);
-	test_mnist(model, epochs, true, false);
-
-	delete model;
-}
-
 int main(int argc, char **argv)
 {
 	printf("MNIST-ZERO\n\n");
 	srand(time(NULL));
 
 	mnist_conv(50, 20);
-	// mnist_conv_fr(50, 20);
 
 	return 0;
 }

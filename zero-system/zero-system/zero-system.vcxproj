@@ -17,7 +17,6 @@
     <ClInclude Include="src\core\util.cuh" />
     <ClInclude Include="src\nn\layer\activation.cuh" />
     <ClInclude Include="src\nn\layer\conv2d.cuh" />
-    <ClInclude Include="src\nn\layer\full_residual.cuh" />
     <ClInclude Include="src\nn\layer\layer.cuh" />
     <ClInclude Include="src\nn\layer\learnable.cuh" />
     <ClInclude Include="src\nn\layer\linear.cuh" />
@@ -35,7 +34,6 @@
     <CudaCompile Include="src\nn\constants.cuh" />
     <CudaCompile Include="src\nn\layer\activation.cu" />
     <CudaCompile Include="src\nn\layer\conv2d.cu" />
-    <CudaCompile Include="src\nn\layer\full_residual.cu" />
     <CudaCompile Include="src\nn\layer\layer.cu" />
     <CudaCompile Include="src\nn\layer\learnable.cu" />
     <CudaCompile Include="src\nn\layer\linear.cu" />
