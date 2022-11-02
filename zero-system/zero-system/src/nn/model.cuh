@@ -61,10 +61,6 @@ namespace nn
         void conv2d(Shape filter_shape, ActivationType activation);
         void conv2d(Shape filter_shape, Stride stride, ActivationType activation);
         void conv2d(Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation);
-        void full_residual(int out_feature_cnt, ActivationType activation);
-        void full_residual(Shape y_shape, ActivationType activation);
-        void full_residual(int batch_size, int in_feature_cnt, int out_feature_cnt, ActivationType activation);
-        void full_residual(Shape in_shape, int out_feature_cnt, ActivationType activation);
 
         std::vector<Layer *> layers();
         std::vector<Parameters *> parameters();
