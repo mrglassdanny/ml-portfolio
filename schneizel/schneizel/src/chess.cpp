@@ -8,27 +8,27 @@ int CHESS_START_BOARD[CHESS_BOARD_LEN] = {
     ChessPiece::Empty, ChessPiece::Empty, ChessPiece::Empty, ChessPiece::Empty, ChessPiece::Empty, ChessPiece::Empty, ChessPiece::Empty, ChessPiece::Empty,
     ChessPiece::Empty, ChessPiece::Empty, ChessPiece::Empty, ChessPiece::Empty, ChessPiece::Empty, ChessPiece::Empty, ChessPiece::Empty, ChessPiece::Empty,
     ChessPiece::BlackPawn, ChessPiece::BlackPawn, ChessPiece::BlackPawn, ChessPiece::BlackPawn, ChessPiece::BlackPawn, ChessPiece::BlackPawn, ChessPiece::BlackPawn, ChessPiece::BlackPawn,
-    ChessPiece::BlackRook, ChessPiece::BlackKnight, ChessPiece::BlackBishop, ChessPiece::BlackQueen, ChessPiece::BlackKing, ChessPiece::BlackBishop, ChessPiece::BlackKnight, ChessPiece::BlackRook };
+    ChessPiece::BlackRook, ChessPiece::BlackKnight, ChessPiece::BlackBishop, ChessPiece::BlackQueen, ChessPiece::BlackKing, ChessPiece::BlackBishop, ChessPiece::BlackKnight, ChessPiece::BlackRook};
 
-int* init_board()
+int *init_board()
 {
-    int* board = (int*)malloc(sizeof(int) * (CHESS_BOARD_LEN));
+    int *board = (int *)malloc(sizeof(int) * (CHESS_BOARD_LEN));
     memcpy(board, CHESS_START_BOARD, sizeof(int) * (CHESS_BOARD_LEN));
     return board;
 }
 
-int* copy_board(int* src, int* dst)
+int *copy_board(int *src, int *dst)
 {
     if (dst == NULL)
     {
-        dst = (int*)malloc(sizeof(int) * (CHESS_BOARD_LEN));
+        dst = (int *)malloc(sizeof(int) * (CHESS_BOARD_LEN));
     }
 
     memcpy(dst, src, sizeof(int) * CHESS_BOARD_LEN);
     return dst;
 }
 
-void reset_board(int* board)
+void reset_board(int *board)
 {
     memcpy(board, CHESS_START_BOARD, sizeof(int) * (CHESS_BOARD_LEN));
 }
@@ -313,7 +313,7 @@ bool is_piece_same_color(ChessPiece a, ChessPiece b)
     }
 }
 
-bool is_cell_under_attack(int* board, int cell_idx, bool white_pov_flg)
+bool is_cell_under_attack(int *board, int cell_idx, bool white_pov_flg)
 {
     bool under_attack_flg = false;
     int legal_moves[CHESS_MAX_LEGAL_MOVE_CNT];
@@ -381,7 +381,7 @@ bool is_cell_under_attack(int* board, int cell_idx, bool white_pov_flg)
     return under_attack_flg;
 }
 
-bool is_in_check(int* board, bool white_mov_flg)
+bool is_in_check(int *board, bool white_mov_flg)
 {
     bool in_check_flg = 0;
     int legal_moves[CHESS_MAX_LEGAL_MOVE_CNT];
@@ -449,7 +449,7 @@ bool is_in_check(int* board, bool white_mov_flg)
     return in_check_flg;
 }
 
-bool is_in_checkmate(int* board, bool white_mov_flg)
+bool is_in_checkmate(int *board, bool white_mov_flg)
 {
     bool in_checkmate_flg;
     int legal_moves[CHESS_MAX_LEGAL_MOVE_CNT];
@@ -500,7 +500,7 @@ bool is_in_checkmate(int* board, bool white_mov_flg)
     return in_checkmate_flg;
 }
 
-bool is_in_stalemate(int* board, bool white_mov_flg)
+bool is_in_stalemate(int *board, bool white_mov_flg)
 {
     bool in_stalemate_flg;
     int legal_moves[CHESS_MAX_LEGAL_MOVE_CNT];
@@ -551,7 +551,7 @@ bool is_in_stalemate(int* board, bool white_mov_flg)
     return in_stalemate_flg;
 }
 
-void get_legal_moves(int* board, int piece_idx, int* out, bool test_in_check_flg)
+void get_legal_moves(int *board, int piece_idx, int *out, bool test_in_check_flg)
 {
     memset(out, CHESS_INVALID_VALUE, sizeof(int) * CHESS_MAX_LEGAL_MOVE_CNT);
     int mov_ctr = 0;
@@ -580,78 +580,78 @@ void get_legal_moves(int* board, int piece_idx, int* out, bool test_in_check_flg
     {
     case ChessPiece::WhitePawn:
         // TODO: au passant
-    {
-        test_idx = get_idx_fr_colrow(col, row + 1);
-        if (is_row_valid(row + 1) && board[test_idx] == ChessPiece::Empty)
         {
-            out[mov_ctr++] = test_idx;
-        }
-
-        test_idx = get_idx_fr_adj_colrow(adj_col - 1, adj_row + 1);
-        if (is_adj_colrow_valid(adj_col - 1, adj_row + 1) && board[test_idx] != ChessPiece::Empty && !is_piece_same_color(piece, (ChessPiece)board[test_idx]))
-        {
-            out[mov_ctr++] = test_idx;
-        }
-
-        test_idx = get_idx_fr_adj_colrow(adj_col + 1, adj_row + 1);
-        if (is_adj_colrow_valid(adj_col + 1, adj_row + 1) && board[test_idx] != ChessPiece::Empty && !is_piece_same_color(piece, (ChessPiece)board[test_idx]))
-        {
-            out[mov_ctr++] = test_idx;
-        }
-
-        if (row == 2)
-        {
-            // Dont need to check if row adjustments are valid since we know that starting row is 2.
             test_idx = get_idx_fr_colrow(col, row + 1);
-            if (board[test_idx] == ChessPiece::Empty)
+            if (is_row_valid(row + 1) && board[test_idx] == ChessPiece::Empty)
             {
-                test_idx = get_idx_fr_colrow(col, row + 2);
+                out[mov_ctr++] = test_idx;
+            }
+
+            test_idx = get_idx_fr_adj_colrow(adj_col - 1, adj_row + 1);
+            if (is_adj_colrow_valid(adj_col - 1, adj_row + 1) && board[test_idx] != ChessPiece::Empty && !is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+            {
+                out[mov_ctr++] = test_idx;
+            }
+
+            test_idx = get_idx_fr_adj_colrow(adj_col + 1, adj_row + 1);
+            if (is_adj_colrow_valid(adj_col + 1, adj_row + 1) && board[test_idx] != ChessPiece::Empty && !is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+            {
+                out[mov_ctr++] = test_idx;
+            }
+
+            if (row == 2)
+            {
+                // Dont need to check if row adjustments are valid since we know that starting row is 2.
+                test_idx = get_idx_fr_colrow(col, row + 1);
                 if (board[test_idx] == ChessPiece::Empty)
                 {
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_colrow(col, row + 2);
+                    if (board[test_idx] == ChessPiece::Empty)
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
             }
         }
-    }
 
-    break;
+        break;
     case ChessPiece::BlackPawn:
         // TODO: au passant
-    {
-        test_idx = get_idx_fr_colrow(col, row - 1);
-        if (is_row_valid(row - 1) && board[test_idx] == ChessPiece::Empty)
         {
-            out[mov_ctr++] = test_idx;
-        }
-
-        test_idx = get_idx_fr_adj_colrow(adj_col - 1, adj_row - 1);
-        if (is_adj_colrow_valid(adj_col - 1, adj_row - 1) && board[test_idx] != ChessPiece::Empty && !is_piece_same_color(piece, (ChessPiece)board[test_idx]))
-        {
-            out[mov_ctr++] = test_idx;
-        }
-
-        test_idx = get_idx_fr_adj_colrow(adj_col + 1, adj_row - 1);
-        if (is_adj_colrow_valid(adj_col + 1, adj_row - 1) && board[test_idx] != ChessPiece::Empty && !is_piece_same_color(piece, (ChessPiece)board[test_idx]))
-        {
-            out[mov_ctr++] = test_idx;
-        }
-
-        if (row == 7)
-        {
-            // Dont need to check if row adjustments are valid since we know that starting row is 7.
             test_idx = get_idx_fr_colrow(col, row - 1);
-            if (board[test_idx] == ChessPiece::Empty)
+            if (is_row_valid(row - 1) && board[test_idx] == ChessPiece::Empty)
             {
-                test_idx = get_idx_fr_colrow(col, row - 2);
+                out[mov_ctr++] = test_idx;
+            }
+
+            test_idx = get_idx_fr_adj_colrow(adj_col - 1, adj_row - 1);
+            if (is_adj_colrow_valid(adj_col - 1, adj_row - 1) && board[test_idx] != ChessPiece::Empty && !is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+            {
+                out[mov_ctr++] = test_idx;
+            }
+
+            test_idx = get_idx_fr_adj_colrow(adj_col + 1, adj_row - 1);
+            if (is_adj_colrow_valid(adj_col + 1, adj_row - 1) && board[test_idx] != ChessPiece::Empty && !is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+            {
+                out[mov_ctr++] = test_idx;
+            }
+
+            if (row == 7)
+            {
+                // Dont need to check if row adjustments are valid since we know that starting row is 7.
+                test_idx = get_idx_fr_colrow(col, row - 1);
                 if (board[test_idx] == ChessPiece::Empty)
                 {
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_colrow(col, row - 2);
+                    if (board[test_idx] == ChessPiece::Empty)
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
             }
         }
-    }
 
-    break;
+        break;
     case ChessPiece::WhiteKnight:
     case ChessPiece::BlackKnight:
     {
@@ -895,375 +895,375 @@ void get_legal_moves(int* board, int piece_idx, int* out, bool test_in_check_flg
     case ChessPiece::WhiteQueen:
     case ChessPiece::BlackQueen:
         // ne,sw,se,nw
-    {
-        int ne = 0;
-        int sw = 0;
-        int se = 0;
-        int nw = 0;
-        for (int i = 1; i < 8; i++)
         {
-
-            if (is_adj_colrow_valid(adj_col + i, adj_row + i) && ne == 0)
+            int ne = 0;
+            int sw = 0;
+            int se = 0;
+            int nw = 0;
+            for (int i = 1; i < 8; i++)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
-                if (board[test_idx] != ChessPiece::Empty)
+
+                if (is_adj_colrow_valid(adj_col + i, adj_row + i) && ne == 0)
                 {
-                    ne = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        ne = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row - i) && sw == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col - i, adj_row - i) && sw == 0)
                 {
-                    sw = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        sw = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col + i, adj_row - i) && se == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col + i, adj_row - i) && se == 0)
                 {
-                    se = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        se = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row + i) && nw == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col - i, adj_row + i) && nw == 0)
                 {
-                    nw = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        nw = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
-                }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
                 }
             }
         }
-    }
-    // n,s,e,w
-    {
-        int n = 0;
-        int s = 0;
-        int e = 0;
-        int w = 0;
-        for (int i = 1; i < 8; i++)
+        // n,s,e,w
         {
-
-            if (is_adj_colrow_valid(adj_col + i, adj_row) && e == 0)
+            int n = 0;
+            int s = 0;
+            int e = 0;
+            int w = 0;
+            for (int i = 1; i < 8; i++)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row);
-                if (board[test_idx] != ChessPiece::Empty)
+
+                if (is_adj_colrow_valid(adj_col + i, adj_row) && e == 0)
                 {
-                    e = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        e = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row) && w == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col - i, adj_row) && w == 0)
                 {
-                    w = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        w = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col, adj_row + i) && n == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col, adj_row + i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col, adj_row + i) && n == 0)
                 {
-                    n = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col, adj_row + i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        n = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col, adj_row - i) && s == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col, adj_row - i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col, adj_row - i) && s == 0)
                 {
-                    s = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col, adj_row - i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        s = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
-                }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
                 }
             }
         }
-    }
 
-    break;
+        break;
     case ChessPiece::WhiteKing:
     case ChessPiece::BlackKing:
         // ne,sw,se,nw
-    {
-        int ne = 0;
-        int sw = 0;
-        int se = 0;
-        int nw = 0;
-        for (int i = 1; i < 2; i++)
         {
-
-            if (is_adj_colrow_valid(adj_col + i, adj_row + i) && ne == 0)
+            int ne = 0;
+            int sw = 0;
+            int se = 0;
+            int nw = 0;
+            for (int i = 1; i < 2; i++)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
-                if (board[test_idx] != ChessPiece::Empty)
+
+                if (is_adj_colrow_valid(adj_col + i, adj_row + i) && ne == 0)
                 {
-                    ne = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        ne = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row - i) && sw == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col - i, adj_row - i) && sw == 0)
                 {
-                    sw = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        sw = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col + i, adj_row - i) && se == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col + i, adj_row - i) && se == 0)
                 {
-                    se = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        se = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row + i) && nw == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col - i, adj_row + i) && nw == 0)
                 {
-                    nw = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        nw = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
-                }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
                 }
             }
         }
-    }
-    // n,s,e,w
-    {
-        int n = 0;
-        int s = 0;
-        int e = 0;
-        int w = 0;
-        for (int i = 1; i < 2; i++)
+        // n,s,e,w
         {
-
-            if (is_adj_colrow_valid(adj_col + i, adj_row) && e == 0)
+            int n = 0;
+            int s = 0;
+            int e = 0;
+            int w = 0;
+            for (int i = 1; i < 2; i++)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row);
-                if (board[test_idx] != ChessPiece::Empty)
+
+                if (is_adj_colrow_valid(adj_col + i, adj_row) && e == 0)
                 {
-                    e = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        e = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row) && w == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col - i, adj_row) && w == 0)
                 {
-                    w = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        w = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col, adj_row + i) && n == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col, adj_row + i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col, adj_row + i) && n == 0)
                 {
-                    n = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col, adj_row + i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        n = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col, adj_row - i) && s == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col, adj_row - i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col, adj_row - i) && s == 0)
                 {
-                    s = 1;
-                    if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                    test_idx = get_idx_fr_adj_colrow(adj_col, adj_row - i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        s = 1;
+                        if (!is_piece_same_color(piece, (ChessPiece)board[test_idx]))
+                        {
+                            out[mov_ctr++] = test_idx;
+                        }
+                    }
+                    else
                     {
                         out[mov_ctr++] = test_idx;
                     }
-                }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
                 }
             }
         }
-    }
 
-    // Castles.
-    if (piece == ChessPiece::WhiteKing)
-    {
-        if (col == 'e' && row == 1)
+        // Castles.
+        if (piece == ChessPiece::WhiteKing)
         {
-            // Queen side castle.
-            if (board[get_idx_fr_colrow('a', 1)] == ChessPiece::WhiteRook)
+            if (col == 'e' && row == 1)
             {
-                if (board[get_idx_fr_colrow('b', 1)] == ChessPiece::Empty && board[get_idx_fr_colrow('c', 1)] == ChessPiece::Empty && board[get_idx_fr_colrow('d', 1)] == ChessPiece::Empty &&
-                    !is_cell_under_attack(board, get_idx_fr_colrow('b', 1), true) && !is_cell_under_attack(board, get_idx_fr_colrow('c', 1), true) && !is_cell_under_attack(board, get_idx_fr_colrow('d', 1), true))
+                // Queen side castle.
+                if (board[get_idx_fr_colrow('a', 1)] == ChessPiece::WhiteRook)
                 {
-                    out[mov_ctr++] = get_idx_fr_colrow('c', 1);
+                    if (board[get_idx_fr_colrow('b', 1)] == ChessPiece::Empty && board[get_idx_fr_colrow('c', 1)] == ChessPiece::Empty && board[get_idx_fr_colrow('d', 1)] == ChessPiece::Empty &&
+                        !is_cell_under_attack(board, get_idx_fr_colrow('b', 1), true) && !is_cell_under_attack(board, get_idx_fr_colrow('c', 1), true) && !is_cell_under_attack(board, get_idx_fr_colrow('d', 1), true))
+                    {
+                        out[mov_ctr++] = get_idx_fr_colrow('c', 1);
+                    }
                 }
-            }
 
-            // King side castle.
-            if (board[get_idx_fr_colrow('h', 1)] == ChessPiece::WhiteRook)
-            {
-                if (board[get_idx_fr_colrow('f', 1)] == ChessPiece::Empty && board[get_idx_fr_colrow('g', 1)] == ChessPiece::Empty &&
-                    !is_cell_under_attack(board, get_idx_fr_colrow('f', 1), true) && !is_cell_under_attack(board, get_idx_fr_colrow('g', 1), true))
+                // King side castle.
+                if (board[get_idx_fr_colrow('h', 1)] == ChessPiece::WhiteRook)
                 {
-                    out[mov_ctr++] = get_idx_fr_colrow('g', 1);
+                    if (board[get_idx_fr_colrow('f', 1)] == ChessPiece::Empty && board[get_idx_fr_colrow('g', 1)] == ChessPiece::Empty &&
+                        !is_cell_under_attack(board, get_idx_fr_colrow('f', 1), true) && !is_cell_under_attack(board, get_idx_fr_colrow('g', 1), true))
+                    {
+                        out[mov_ctr++] = get_idx_fr_colrow('g', 1);
+                    }
                 }
             }
         }
-    }
-    else
-    {
-        if (col == 'e' && row == 8)
+        else
         {
-            // Queen side castle.
-            if (board[get_idx_fr_colrow('a', 8)] == ChessPiece::BlackRook)
+            if (col == 'e' && row == 8)
             {
-                if (board[get_idx_fr_colrow('b', 8)] == ChessPiece::Empty && board[get_idx_fr_colrow('c', 8)] == ChessPiece::Empty && board[get_idx_fr_colrow('d', 8)] == ChessPiece::Empty &&
-                    !is_cell_under_attack(board, get_idx_fr_colrow('b', 8), false) && !is_cell_under_attack(board, get_idx_fr_colrow('c', 8), false) && !is_cell_under_attack(board, get_idx_fr_colrow('d', 8), false))
+                // Queen side castle.
+                if (board[get_idx_fr_colrow('a', 8)] == ChessPiece::BlackRook)
                 {
-                    out[mov_ctr++] = get_idx_fr_colrow('c', 8);
+                    if (board[get_idx_fr_colrow('b', 8)] == ChessPiece::Empty && board[get_idx_fr_colrow('c', 8)] == ChessPiece::Empty && board[get_idx_fr_colrow('d', 8)] == ChessPiece::Empty &&
+                        !is_cell_under_attack(board, get_idx_fr_colrow('b', 8), false) && !is_cell_under_attack(board, get_idx_fr_colrow('c', 8), false) && !is_cell_under_attack(board, get_idx_fr_colrow('d', 8), false))
+                    {
+                        out[mov_ctr++] = get_idx_fr_colrow('c', 8);
+                    }
                 }
-            }
 
-            // King side castle.
-            if (board[get_idx_fr_colrow('h', 8)] == ChessPiece::BlackRook)
-            {
-                if (board[get_idx_fr_colrow('f', 8)] == ChessPiece::Empty && board[get_idx_fr_colrow('g', 8)] == ChessPiece::Empty &&
-                    !is_cell_under_attack(board, get_idx_fr_colrow('f', 8), false) && !is_cell_under_attack(board, get_idx_fr_colrow('g', 8), false))
+                // King side castle.
+                if (board[get_idx_fr_colrow('h', 8)] == ChessPiece::BlackRook)
                 {
-                    out[mov_ctr++] = get_idx_fr_colrow('g', 8);
+                    if (board[get_idx_fr_colrow('f', 8)] == ChessPiece::Empty && board[get_idx_fr_colrow('g', 8)] == ChessPiece::Empty &&
+                        !is_cell_under_attack(board, get_idx_fr_colrow('f', 8), false) && !is_cell_under_attack(board, get_idx_fr_colrow('g', 8), false))
+                    {
+                        out[mov_ctr++] = get_idx_fr_colrow('g', 8);
+                    }
                 }
             }
         }
-    }
 
-    break;
+        break;
     default: // Nothing...
         break;
     }
@@ -1287,7 +1287,7 @@ void get_legal_moves(int* board, int piece_idx, int* out, bool test_in_check_flg
     }
 }
 
-void get_piece_influence(int* board, int piece_idx, int* out)
+void get_piece_influence(int *board, int piece_idx, int *out)
 {
     memset(out, CHESS_INVALID_VALUE, sizeof(int) * CHESS_MAX_LEGAL_MOVE_CNT);
     int mov_ctr = 0;
@@ -1316,38 +1316,38 @@ void get_piece_influence(int* board, int piece_idx, int* out)
     {
     case ChessPiece::WhitePawn:
         // TODO: au passant
-    {
-        test_idx = get_idx_fr_adj_colrow(adj_col - 1, adj_row + 1);
-        if (is_adj_colrow_valid(adj_col - 1, adj_row + 1))
         {
-            out[mov_ctr++] = test_idx;
+            test_idx = get_idx_fr_adj_colrow(adj_col - 1, adj_row + 1);
+            if (is_adj_colrow_valid(adj_col - 1, adj_row + 1))
+            {
+                out[mov_ctr++] = test_idx;
+            }
+
+            test_idx = get_idx_fr_adj_colrow(adj_col + 1, adj_row + 1);
+            if (is_adj_colrow_valid(adj_col + 1, adj_row + 1))
+            {
+                out[mov_ctr++] = test_idx;
+            }
         }
 
-        test_idx = get_idx_fr_adj_colrow(adj_col + 1, adj_row + 1);
-        if (is_adj_colrow_valid(adj_col + 1, adj_row + 1))
-        {
-            out[mov_ctr++] = test_idx;
-        }
-    }
-
-    break;
+        break;
     case ChessPiece::BlackPawn:
         // TODO: au passant
-    {
-        test_idx = get_idx_fr_adj_colrow(adj_col - 1, adj_row - 1);
-        if (is_adj_colrow_valid(adj_col - 1, adj_row - 1))
         {
-            out[mov_ctr++] = test_idx;
+            test_idx = get_idx_fr_adj_colrow(adj_col - 1, adj_row - 1);
+            if (is_adj_colrow_valid(adj_col - 1, adj_row - 1))
+            {
+                out[mov_ctr++] = test_idx;
+            }
+
+            test_idx = get_idx_fr_adj_colrow(adj_col + 1, adj_row - 1);
+            if (is_adj_colrow_valid(adj_col + 1, adj_row - 1))
+            {
+                out[mov_ctr++] = test_idx;
+            }
         }
 
-        test_idx = get_idx_fr_adj_colrow(adj_col + 1, adj_row - 1);
-        if (is_adj_colrow_valid(adj_col + 1, adj_row - 1))
-        {
-            out[mov_ctr++] = test_idx;
-        }
-    }
-
-    break;
+        break;
     case ChessPiece::WhiteKnight:
     case ChessPiece::BlackKnight:
     {
@@ -1543,275 +1543,275 @@ void get_piece_influence(int* board, int piece_idx, int* out)
     case ChessPiece::WhiteQueen:
     case ChessPiece::BlackQueen:
         // ne,sw,se,nw
-    {
-        int ne = 0;
-        int sw = 0;
-        int se = 0;
-        int nw = 0;
-        for (int i = 1; i < 8; i++)
         {
-
-            if (is_adj_colrow_valid(adj_col + i, adj_row + i) && ne == 0)
+            int ne = 0;
+            int sw = 0;
+            int se = 0;
+            int nw = 0;
+            for (int i = 1; i < 8; i++)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
-                if (board[test_idx] != ChessPiece::Empty)
-                {
-                    ne = 1;
-                    out[mov_ctr++] = test_idx;
-                }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row - i) && sw == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col + i, adj_row + i) && ne == 0)
                 {
-                    sw = 1;
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        ne = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col + i, adj_row - i) && se == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col - i, adj_row - i) && sw == 0)
                 {
-                    se = 1;
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        sw = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row + i) && nw == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col + i, adj_row - i) && se == 0)
                 {
-                    nw = 1;
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        se = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
-                else
+
+                if (is_adj_colrow_valid(adj_col - i, adj_row + i) && nw == 0)
                 {
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        nw = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
             }
         }
-    }
-    // n,s,e,w
-    {
-        int n = 0;
-        int s = 0;
-        int e = 0;
-        int w = 0;
-        for (int i = 1; i < 8; i++)
+        // n,s,e,w
         {
-
-            if (is_adj_colrow_valid(adj_col + i, adj_row) && e == 0)
+            int n = 0;
+            int s = 0;
+            int e = 0;
+            int w = 0;
+            for (int i = 1; i < 8; i++)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row);
-                if (board[test_idx] != ChessPiece::Empty)
-                {
-                    e = 1;
-                    out[mov_ctr++] = test_idx;
-                }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row) && w == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col + i, adj_row) && e == 0)
                 {
-                    w = 1;
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        e = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col, adj_row + i) && n == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col, adj_row + i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col - i, adj_row) && w == 0)
                 {
-                    n = 1;
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        w = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col, adj_row - i) && s == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col, adj_row - i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col, adj_row + i) && n == 0)
                 {
-                    s = 1;
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col, adj_row + i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        n = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
-                else
+
+                if (is_adj_colrow_valid(adj_col, adj_row - i) && s == 0)
                 {
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col, adj_row - i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        s = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
             }
         }
-    }
 
-    break;
+        break;
     case ChessPiece::WhiteKing:
     case ChessPiece::BlackKing:
         // ne,sw,se,nw
-    {
-        int ne = 0;
-        int sw = 0;
-        int se = 0;
-        int nw = 0;
-        for (int i = 1; i < 2; i++)
         {
-
-            if (is_adj_colrow_valid(adj_col + i, adj_row + i) && ne == 0)
+            int ne = 0;
+            int sw = 0;
+            int se = 0;
+            int nw = 0;
+            for (int i = 1; i < 2; i++)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
-                if (board[test_idx] != ChessPiece::Empty)
-                {
-                    ne = 1;
-                    out[mov_ctr++] = test_idx;
-                }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row - i) && sw == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col + i, adj_row + i) && ne == 0)
                 {
-                    sw = 1;
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        ne = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col + i, adj_row - i) && se == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col - i, adj_row - i) && sw == 0)
                 {
-                    se = 1;
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        sw = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row + i) && nw == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col + i, adj_row - i) && se == 0)
                 {
-                    nw = 1;
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        se = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
-                else
+
+                if (is_adj_colrow_valid(adj_col - i, adj_row + i) && nw == 0)
                 {
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        nw = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
             }
         }
-    }
-    // n,s,e,w
-    {
-        int n = 0;
-        int s = 0;
-        int e = 0;
-        int w = 0;
-        for (int i = 1; i < 2; i++)
+        // n,s,e,w
         {
-
-            if (is_adj_colrow_valid(adj_col + i, adj_row) && e == 0)
+            int n = 0;
+            int s = 0;
+            int e = 0;
+            int w = 0;
+            for (int i = 1; i < 2; i++)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row);
-                if (board[test_idx] != ChessPiece::Empty)
-                {
-                    e = 1;
-                    out[mov_ctr++] = test_idx;
-                }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row) && w == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col + i, adj_row) && e == 0)
                 {
-                    w = 1;
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        e = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col, adj_row + i) && n == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col, adj_row + i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col - i, adj_row) && w == 0)
                 {
-                    n = 1;
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        w = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
-                else
-                {
-                    out[mov_ctr++] = test_idx;
-                }
-            }
 
-            if (is_adj_colrow_valid(adj_col, adj_row - i) && s == 0)
-            {
-                test_idx = get_idx_fr_adj_colrow(adj_col, adj_row - i);
-                if (board[test_idx] != ChessPiece::Empty)
+                if (is_adj_colrow_valid(adj_col, adj_row + i) && n == 0)
                 {
-                    s = 1;
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col, adj_row + i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        n = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
-                else
+
+                if (is_adj_colrow_valid(adj_col, adj_row - i) && s == 0)
                 {
-                    out[mov_ctr++] = test_idx;
+                    test_idx = get_idx_fr_adj_colrow(adj_col, adj_row - i);
+                    if (board[test_idx] != ChessPiece::Empty)
+                    {
+                        s = 1;
+                        out[mov_ctr++] = test_idx;
+                    }
+                    else
+                    {
+                        out[mov_ctr++] = test_idx;
+                    }
                 }
             }
         }
-    }
 
-    break;
+        break;
     default: // Nothing...
         break;
     }
@@ -1819,7 +1819,7 @@ void get_piece_influence(int* board, int piece_idx, int* out)
     // Test in check:
     {
         int check_out[CHESS_MAX_LEGAL_MOVE_CNT];
-        memset(check_out, CHESS_INVALID_VALUE, sizeof(int)* CHESS_MAX_LEGAL_MOVE_CNT);
+        memset(check_out, CHESS_INVALID_VALUE, sizeof(int) * CHESS_MAX_LEGAL_MOVE_CNT);
         int check_mov_ctr = 0;
         int cpy_board[CHESS_BOARD_LEN];
         for (int i = 0; i < mov_ctr; i++)
@@ -1831,11 +1831,11 @@ void get_piece_influence(int* board, int piece_idx, int* out)
             }
         }
 
-        memcpy(out, check_out, sizeof(int)* mov_ctr);
+        memcpy(out, check_out, sizeof(int) * mov_ctr);
     }
 }
 
-void get_influence_board(int* board, float* out)
+void get_influence_board(int *board, float *out)
 {
     int moves[CHESS_MAX_LEGAL_MOVE_CNT];
 
@@ -1901,7 +1901,7 @@ void get_influence_board(int* board, float* out)
     }
 }
 
-void get_piece_legality_mask(int* board, bool white_mov_flg, float* out)
+void get_piece_legality_mask(int *board, bool white_mov_flg, float *out)
 {
     memset(out, 0, sizeof(float) * CHESS_BOARD_LEN);
 
@@ -1937,7 +1937,7 @@ void get_piece_legality_mask(int* board, bool white_mov_flg, float* out)
     }
 }
 
-void get_move_legality_mask(int* board, int piece_idx, float* out)
+void get_move_legality_mask(int *board, int piece_idx, float *out)
 {
     memset(out, 0, sizeof(float) * CHESS_BOARD_LEN);
 
@@ -1957,7 +1957,7 @@ void get_move_legality_mask(int* board, int piece_idx, float* out)
     }
 }
 
-ChessMove get_random_move(int* board, bool white_mov_flg, int* cmp_board)
+ChessMove get_random_move(int *board, bool white_mov_flg, int *cmp_board)
 {
     int sim_board[CHESS_BOARD_LEN];
     int legal_moves[CHESS_MAX_LEGAL_MOVE_CNT];
@@ -2013,7 +2013,7 @@ ChessMove get_random_move(int* board, bool white_mov_flg, int* cmp_board)
         {
             int rand_legal_mov_idx = rand() % legal_mov_ctr;
             simulate_board_change_w_srcdst_idx(board, piece_idxs[rand_piece_idx],
-                legal_moves[rand_legal_mov_idx], sim_board);
+                                               legal_moves[rand_legal_mov_idx], sim_board);
 
             // Make sure the same move was not made.
             if (boardcmp(cmp_board, sim_board) != 0)
@@ -2030,7 +2030,7 @@ ChessMove get_random_move(int* board, bool white_mov_flg, int* cmp_board)
     return src_dst_idx;
 }
 
-ChessMove change_board_w_mov(int* board, const char* immut_mov, bool white_mov_flg)
+ChessMove change_board_w_mov(int *board, const char *immut_mov, bool white_mov_flg)
 {
     char mut_mov[CHESS_MAX_MOVE_LEN];
     memcpy(mut_mov, immut_mov, CHESS_MAX_MOVE_LEN);
@@ -2448,7 +2448,7 @@ ChessMove change_board_w_mov(int* board, const char* immut_mov, bool white_mov_f
     return chess_move;
 }
 
-void translate_srcdst_idx_to_mov(int* board, int src_idx, int dst_idx, char* out)
+void translate_srcdst_idx_to_mov(int *board, int src_idx, int dst_idx, char *out)
 {
     memset(out, 0, CHESS_MAX_MOVE_LEN);
 
@@ -2504,7 +2504,7 @@ void translate_srcdst_idx_to_mov(int* board, int src_idx, int dst_idx, char* out
     }
 }
 
-void simulate_board_change_w_srcdst_idx(int* board, int src_idx, int dst_idx, int* out)
+void simulate_board_change_w_srcdst_idx(int *board, int src_idx, int dst_idx, int *out)
 {
     char mov[CHESS_MAX_MOVE_LEN];
 
@@ -2524,12 +2524,12 @@ void simulate_board_change_w_srcdst_idx(int* board, int src_idx, int dst_idx, in
     }
 }
 
-int boardcmp(int* a, int* b)
+int boardcmp(int *a, int *b)
 {
     return memcmp(a, b, sizeof(int) * CHESS_BOARD_LEN);
 }
 
-void print_board(int* board)
+void print_board(int *board)
 {
     // Print in a more viewable format(a8 at top left of screen).
     printf("   +---+---+---+---+---+---+---+---+");
@@ -2598,7 +2598,7 @@ void print_board(int* board)
     printf("\n\n");
 }
 
-void print_flipped_board(int* board)
+void print_flipped_board(int *board)
 {
     printf("   +---+---+---+---+---+---+---+---+");
     printf("\n");
@@ -2666,7 +2666,7 @@ void print_flipped_board(int* board)
     printf("\n\n");
 }
 
-void print_influence_board(float* board)
+void print_influence_board(float *board)
 {
     // Print in a more viewable format(a8 at top left of screen).
     printf("   +---+---+---+---+---+---+---+---+");
@@ -2739,7 +2739,7 @@ float piece_to_float(ChessPiece piece)
     }
 }
 
-void board_to_float(int* board, float* out)
+void board_to_float(int *board, float *out)
 {
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
@@ -2747,7 +2747,7 @@ void board_to_float(int* board, float* out)
     }
 }
 
-void rotate_board(int* board, int* out, int deg)
+void rotate_board(int *board, int *out, int deg)
 {
     switch (deg)
     {
@@ -2784,7 +2784,7 @@ void rotate_board(int* board, int* out, int deg)
     }
 }
 
-void one_hot_encode_board(int* board, int* out)
+void one_hot_encode_board(int *board, int *out)
 {
     memset(out, 0, sizeof(int) * CHESS_ONE_HOT_ENCODED_BOARD_LEN);
 
@@ -2834,7 +2834,7 @@ void one_hot_encode_board(int* board, int* out)
     }
 }
 
-void one_hot_encode_board(int* board, float* out)
+void one_hot_encode_board(int *board, float *out)
 {
     memset(out, 0, sizeof(float) * CHESS_ONE_HOT_ENCODED_BOARD_LEN);
 
@@ -2884,7 +2884,7 @@ void one_hot_encode_board(int* board, float* out)
     }
 }
 
-float eval_board(int* board)
+float eval_board(int *board)
 {
 
     float material_eval = 0.0f;
@@ -2903,7 +2903,7 @@ float eval_board(int* board)
     return material_eval;
 }
 
-MinimaxResult get_minimax(int* board, bool white_mov_flg, bool cur_white_mov_flg, int max_depth, int cur_depth, float depth_0_minimax_eval, float best_minimax_eval)
+MinimaxResult get_minimax(int *board, bool white_mov_flg, bool cur_white_mov_flg, int max_depth, int cur_depth, float depth_0_minimax_eval, float best_minimax_eval)
 {
     MinimaxResult minimax_res;
 

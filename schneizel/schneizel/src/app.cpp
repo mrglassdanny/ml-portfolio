@@ -1,7 +1,10 @@
 #include <stdio.h>
 
+#include "chess.h"
+
 int main()
 {
-	printf("Hello world!");
+	int *board = init_board();
+	print_board(board);
 	return 0;
 }
