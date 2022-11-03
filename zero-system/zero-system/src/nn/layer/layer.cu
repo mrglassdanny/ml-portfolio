@@ -43,17 +43,17 @@ void Layer::change_batch_size(int batch_size)
     this->dn_->change_dim(0, batch_size);
 }
 
-NdArray *Layer::neurons()
+Tensor *Layer::neurons()
 {
     return this->n_;
 }
 
-void Layer::copy_neurons(NdArray *n)
+void Layer::copy_neurons(Tensor *n)
 {
     this->n_->copy(n);
 }
 
-NdArray *Layer::neuron_gradients()
+Tensor *Layer::neuron_gradients()
 {
     return this->dn_;
 }

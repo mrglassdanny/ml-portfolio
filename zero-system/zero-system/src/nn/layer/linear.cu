@@ -70,8 +70,8 @@ Linear::Linear() {}
 
 Linear::Linear(Shape in_shape, Shape out_shape, ActivationType activation)
 {
-    this->n_ = new NdArray(true, in_shape);
-    this->dn_ = new NdArray(true, in_shape);
+    this->n_ = new Tensor(true, in_shape);
+    this->dn_ = new Tensor(true, in_shape);
 
     int in_cnt = (in_shape.dims_size() / this->batch_size());
     int out_cnt = (out_shape.dims_size() / this->batch_size());
@@ -81,7 +81,7 @@ Linear::Linear(Shape in_shape, Shape out_shape, ActivationType activation)
     this->activation_ = activation;
 }
 
-void Linear::evaluate(NdArray *out)
+void Linear::evaluate(Tensor *out)
 {
     int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
     int grid_col_cnt = (this->out_features() / CUDA_THREADS_PER_BLOCK) + 1;
@@ -89,9 +89,9 @@ void Linear::evaluate(NdArray *out)
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
     dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
-    NdArray *n = this->n_;
-    NdArray *w = this->params_->weights();
-    NdArray *b = this->params_->biases();
+    Tensor *n = this->n_;
+    Tensor *w = this->params_->weights();
+    Tensor *b = this->params_->biases();
 
     k_linear_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(),
                                                  this->batch_size(), this->in_features(), this->out_features());
@@ -99,14 +99,14 @@ void Linear::evaluate(NdArray *out)
     Activation::evaluate(out, this->batch_size(), this->out_features(), this->activation_);
 }
 
-void Linear::derive(NdArray *in, NdArray *in_n)
+void Linear::derive(Tensor *in, Tensor *in_n)
 {
-    NdArray *n = this->n_;
-    NdArray *dn = this->dn_;
-    NdArray *w = this->params_->weights();
-    NdArray *b = this->params_->biases();
-    NdArray *dw = this->params_->weight_gradients();
-    NdArray *db = this->params_->bias_gradients();
+    Tensor *n = this->n_;
+    Tensor *dn = this->dn_;
+    Tensor *w = this->params_->weights();
+    Tensor *b = this->params_->biases();
+    Tensor *dw = this->params_->weight_gradients();
+    Tensor *db = this->params_->bias_gradients();
 
     Activation::derive(in, in_n, this->batch_size(), this->out_features(), this->activation_);
 

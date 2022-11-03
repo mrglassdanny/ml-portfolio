@@ -42,7 +42,7 @@ public:
 	int dims_size();
 };
 
-class NdArray
+class Tensor
 {
 private:
 	bool cuda_;
@@ -53,28 +53,28 @@ private:
 	static void print_mtx(float *data, int row_cnt, int col_cnt, const char *whitespace_str);
 
 public:
-	NdArray(NdArray &src);
-	NdArray(bool cuda, Shape shape);
-	~NdArray();
+	Tensor(Tensor &src);
+	Tensor(bool cuda, Shape shape);
+	~Tensor();
 
-	static NdArray *from_data(Shape shape, float *data);
-	static NdArray *from_csv(const char *path);
-	static void to_csv(const char *path, NdArray *arr);
-	static void to_file(const char *path, NdArray *arr);
+	static Tensor *from_data(Shape shape, float *data);
+	static Tensor *from_csv(const char *path);
+	static void to_csv(const char *path, Tensor *arr);
+	static void to_file(const char *path, Tensor *arr);
 
-	static NdArray *zeros(bool cuda, Shape shape);
-	static NdArray *ones(bool cuda, Shape shape);
-	static NdArray *full(bool cuda, Shape shape, float val);
-	static NdArray *random(bool cuda, Shape shape, float mean, float stddev);
-	static NdArray *random_ints(bool cuda, Shape shape, int upper_bound);
+	static Tensor *zeros(bool cuda, Shape shape);
+	static Tensor *ones(bool cuda, Shape shape);
+	static Tensor *full(bool cuda, Shape shape, float val);
+	static Tensor *random(bool cuda, Shape shape, float mean, float stddev);
+	static Tensor *random_ints(bool cuda, Shape shape, int upper_bound);
 
-	static NdArray *one_hot(NdArray *src, int max_val);
-	static NdArray *pad(NdArray *src, int pad_row_cnt, int pad_col_cnt);
-	static NdArray *unpad(NdArray *src, int pad_row_cnt, int pad_col_cnt);
+	static Tensor *one_hot(Tensor *src, int max_val);
+	static Tensor *pad(Tensor *src, int pad_row_cnt, int pad_col_cnt);
+	static Tensor *unpad(Tensor *src, int pad_row_cnt, int pad_col_cnt);
 
 	void print();
 
-	void copy(NdArray *src);
+	void copy(Tensor *src);
 	void reshape(Shape shape);
 	void change_dim(int dim_idx, int dim);
 

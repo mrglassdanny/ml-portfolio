@@ -9,14 +9,14 @@ namespace nn
         class Layer
         {
         protected:
-            NdArray *n_;
-            NdArray *dn_;
+            Tensor *n_;
+            Tensor *dn_;
 
         public:
             ~Layer();
 
-            virtual void evaluate(NdArray *out) = 0;
-            virtual void derive(NdArray *in, NdArray *in_n) = 0;
+            virtual void evaluate(Tensor *out) = 0;
+            virtual void derive(Tensor *in, Tensor *in_n) = 0;
 
             virtual Shape input_shape() = 0;
             virtual Shape output_shape() = 0;
@@ -31,10 +31,10 @@ namespace nn
             int batch_size();
             void change_batch_size(int batch_size);
 
-            NdArray *neurons();
-            void copy_neurons(NdArray *n);
+            Tensor *neurons();
+            void copy_neurons(Tensor *n);
 
-            NdArray *neuron_gradients();
+            Tensor *neuron_gradients();
             void zero_grad();
         };
     }

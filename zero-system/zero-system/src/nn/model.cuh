@@ -32,10 +32,10 @@ namespace nn
         Model();
         ~Model();
 
-        NdArray *forward(NdArray *x);
-        float loss(NdArray *p, NdArray *y);
-        float accuracy(NdArray *p, NdArray *y);
-        void backward(NdArray *p, NdArray *y);
+        Tensor *forward(Tensor *x);
+        float loss(Tensor *p, Tensor *y);
+        float accuracy(Tensor *p, Tensor *y);
+        void backward(Tensor *p, Tensor *y);
         void step();
 
         Shape input_shape();
@@ -44,9 +44,9 @@ namespace nn
         void validate_layers();
         void validate_loss();
         void validate_optimizer();
-        void validate_input(NdArray *x);
-        void validate_output(NdArray *y);
-        void validate_gradients(NdArray *x, NdArray *y, bool print_params);
+        void validate_input(Tensor *x);
+        void validate_output(Tensor *y);
+        void validate_gradients(Tensor *x, Tensor *y, bool print_params);
 
         void summarize();
 
@@ -73,6 +73,6 @@ namespace nn
 
         Optimizer *optimizer();
 
-        void performance_check(NdArray *x, NdArray *y, int epoch_cnt);
+        void performance_check(Tensor *x, Tensor *y, int epoch_cnt);
     };
 }

@@ -1,4 +1,4 @@
-#include "ndarray.cuh"
+#include "tensor.cuh"
 
 __global__ void k_set_all(float *data, int cnt, float val)
 {
@@ -243,7 +243,7 @@ int Shape::dims_size()
     return size;
 }
 
-NdArray::NdArray(NdArray &src)
+Tensor::Tensor(Tensor &src)
 {
     this->cuda_ = src.cuda_;
     this->shape_ = src.shape_;
@@ -262,7 +262,7 @@ NdArray::NdArray(NdArray &src)
     }
 }
 
-NdArray::NdArray(bool cuda, Shape shape)
+Tensor::Tensor(bool cuda, Shape shape)
 {
     this->cuda_ = cuda;
     this->shape_ = shape;
@@ -279,7 +279,7 @@ NdArray::NdArray(bool cuda, Shape shape)
     }
 }
 
-NdArray::~NdArray()
+Tensor::~Tensor()
 {
     if (this->cuda_)
     {
@@ -291,14 +291,14 @@ NdArray::~NdArray()
     }
 }
 
-NdArray *NdArray::from_data(Shape shape, float *data)
+Tensor *Tensor::from_data(Shape shape, float *data)
 {
-    NdArray *arr = new NdArray(false, shape);
+    Tensor *arr = new Tensor(false, shape);
     cudaMemcpy(arr->data_, data, arr->size(), cudaMemcpyDefault);
     return arr;
 }
 
-NdArray *NdArray::from_csv(const char *path)
+Tensor *Tensor::from_csv(const char *path)
 {
     FILE *file_ptr = fopen(path, "rb");
 
@@ -346,7 +346,7 @@ NdArray *NdArray::from_csv(const char *path)
         row_cnt++;
     }
 
-    NdArray *arr = new NdArray(false, Shape(row_cnt, col_cnt));
+    Tensor *arr = new Tensor(false, Shape(row_cnt, col_cnt));
 
     char temp_buf[64];
     memset(temp_buf, 0, 64);
@@ -398,7 +398,7 @@ NdArray *NdArray::from_csv(const char *path)
     return arr;
 }
 
-void NdArray::to_csv(const char *path, NdArray *arr)
+void Tensor::to_csv(const char *path, Tensor *arr)
 {
     int dim_cnt = arr->num_dims();
 
@@ -462,7 +462,7 @@ void NdArray::to_csv(const char *path, NdArray *arr)
     }
 }
 
-void NdArray::to_file(const char *path, NdArray *arr)
+void Tensor::to_file(const char *path, Tensor *arr)
 {
     bool orig_cuda = arr->cuda_;
 
@@ -480,36 +480,36 @@ void NdArray::to_file(const char *path, NdArray *arr)
     }
 }
 
-NdArray *NdArray::zeros(bool cuda, Shape shape)
+Tensor *Tensor::zeros(bool cuda, Shape shape)
 {
-    NdArray *arr = new NdArray(cuda, shape);
+    Tensor *arr = new Tensor(cuda, shape);
 
     arr->zeros();
 
     return arr;
 }
 
-NdArray *NdArray::ones(bool cuda, Shape shape)
+Tensor *Tensor::ones(bool cuda, Shape shape)
 {
-    NdArray *arr = new NdArray(cuda, shape);
+    Tensor *arr = new Tensor(cuda, shape);
 
     arr->ones();
 
     return arr;
 }
 
-NdArray *NdArray::full(bool cuda, Shape shape, float val)
+Tensor *Tensor::full(bool cuda, Shape shape, float val)
 {
-    NdArray *arr = new NdArray(cuda, shape);
+    Tensor *arr = new Tensor(cuda, shape);
 
     arr->full(val);
 
     return arr;
 }
 
-NdArray *NdArray::random(bool cuda, Shape shape, float mean, float stddev)
+Tensor *Tensor::random(bool cuda, Shape shape, float mean, float stddev)
 {
-    NdArray *arr = new NdArray(false, shape);
+    Tensor *arr = new Tensor(false, shape);
     arr->random(mean, stddev);
 
     if (cuda)
@@ -520,9 +520,9 @@ NdArray *NdArray::random(bool cuda, Shape shape, float mean, float stddev)
     return arr;
 }
 
-NdArray *NdArray::random_ints(bool cuda, Shape shape, int upper_bound)
+Tensor *Tensor::random_ints(bool cuda, Shape shape, int upper_bound)
 {
-    NdArray *arr = new NdArray(false, shape);
+    Tensor *arr = new Tensor(false, shape);
     arr->random_ints(upper_bound);
 
     if (cuda)
@@ -533,7 +533,7 @@ NdArray *NdArray::random_ints(bool cuda, Shape shape, int upper_bound)
     return arr;
 }
 
-NdArray *NdArray::one_hot(NdArray *src, int max_val)
+Tensor *Tensor::one_hot(Tensor *src, int max_val)
 {
     int lst_dim_idx = src->num_dims() - 1;
 
@@ -554,7 +554,7 @@ NdArray *NdArray::one_hot(NdArray *src, int max_val)
     std::vector<int> dst_dims = src->shape().dims();
     dst_dims[lst_dim_idx] = oh_dim;
 
-    NdArray *dst = NdArray::zeros(src->is_cuda(), Shape(dst_dims));
+    Tensor *dst = Tensor::zeros(src->is_cuda(), Shape(dst_dims));
 
     for (int i = 0; i < src->count(); i++)
     {
@@ -565,7 +565,7 @@ NdArray *NdArray::one_hot(NdArray *src, int max_val)
     return dst;
 }
 
-NdArray *NdArray::pad(NdArray *src, int pad_row_cnt, int pad_col_cnt)
+Tensor *Tensor::pad(Tensor *src, int pad_row_cnt, int pad_col_cnt)
 {
     if (src->num_dims() < 2)
     {
@@ -593,7 +593,7 @@ NdArray *NdArray::pad(NdArray *src, int pad_row_cnt, int pad_col_cnt)
     dst_dims.push_back(dst_row_cnt);
     dst_dims.push_back(dst_col_cnt);
 
-    NdArray *dst = NdArray::zeros(src->cuda_, Shape(dst_dims));
+    Tensor *dst = Tensor::zeros(src->cuda_, Shape(dst_dims));
 
     int grid_row_cnt = (src_row_cnt / CUDA_THREADS_PER_BLOCK) + 1;
     int grid_col_cnt = (src_col_cnt / CUDA_THREADS_PER_BLOCK) + 1;
@@ -653,7 +653,7 @@ NdArray *NdArray::pad(NdArray *src, int pad_row_cnt, int pad_col_cnt)
     return dst;
 }
 
-NdArray *NdArray::unpad(NdArray *src, int pad_row_cnt, int pad_col_cnt)
+Tensor *Tensor::unpad(Tensor *src, int pad_row_cnt, int pad_col_cnt)
 {
     if (src->num_dims() < 2)
     {
@@ -691,7 +691,7 @@ NdArray *NdArray::unpad(NdArray *src, int pad_row_cnt, int pad_col_cnt)
     dst_dims.push_back(dst_row_cnt);
     dst_dims.push_back(dst_col_cnt);
 
-    NdArray *dst = NdArray::zeros(src->cuda_, Shape(dst_dims));
+    Tensor *dst = Tensor::zeros(src->cuda_, Shape(dst_dims));
 
     int grid_row_cnt = (dst_row_cnt / CUDA_THREADS_PER_BLOCK) + 1;
     int grid_col_cnt = (dst_col_cnt / CUDA_THREADS_PER_BLOCK) + 1;
@@ -751,7 +751,7 @@ NdArray *NdArray::unpad(NdArray *src, int pad_row_cnt, int pad_col_cnt)
     return dst;
 }
 
-void NdArray::print_vec(float *data, int cnt)
+void Tensor::print_vec(float *data, int cnt)
 {
     printf("[ ");
     for (int i = 0; i < cnt; i++)
@@ -784,21 +784,21 @@ void NdArray::print_vec(float *data, int cnt)
     printf(" ]");
 }
 
-void NdArray::print_mtx(float *data, int row_cnt, int col_cnt, const char *whitespace_str)
+void Tensor::print_mtx(float *data, int row_cnt, int col_cnt, const char *whitespace_str)
 {
     printf("%s[\n", whitespace_str);
     for (int i = 0; i < row_cnt; i++)
     {
         printf("%s   ", whitespace_str);
 
-        NdArray::print_vec(&data[i * col_cnt], col_cnt);
+        Tensor::print_vec(&data[i * col_cnt], col_cnt);
 
         printf("\n");
     }
     printf("%s]\n", whitespace_str);
 }
 
-void NdArray::print()
+void Tensor::print()
 {
     bool orig_cuda = this->cuda_;
     this->to_cpu();
@@ -810,12 +810,12 @@ void NdArray::print()
     {
     case 1:
     {
-        NdArray::print_vec(this->data_, this->count());
+        Tensor::print_vec(this->data_, this->count());
     }
     break;
     case 2:
     {
-        NdArray::print_mtx(this->data_, this->shape_[0], this->shape_[1], "");
+        Tensor::print_mtx(this->data_, this->shape_[0], this->shape_[1], "");
     }
     break;
     case 3:
@@ -827,7 +827,7 @@ void NdArray::print()
         printf("[\n");
         for (int i = 0; i < mtx_cnt; i++)
         {
-            NdArray::print_mtx(&this->data_[i * row_cnt * col_cnt], row_cnt, col_cnt, "   ");
+            Tensor::print_mtx(&this->data_[i * row_cnt * col_cnt], row_cnt, col_cnt, "   ");
         }
         printf("]");
     }
@@ -847,8 +847,8 @@ void NdArray::print()
                 int row_cnt = this->shape_[2];
                 int col_cnt = this->shape_[3];
 
-                NdArray::print_mtx(&this->data_[(i * mtx_cnt * row_cnt * col_cnt) + (j * row_cnt * col_cnt)],
-                                   row_cnt, col_cnt, "      ");
+                Tensor::print_mtx(&this->data_[(i * mtx_cnt * row_cnt * col_cnt) + (j * row_cnt * col_cnt)],
+                                  row_cnt, col_cnt, "      ");
             }
             printf("   ]\n");
         }
@@ -867,7 +867,7 @@ void NdArray::print()
     }
 }
 
-void NdArray::copy(NdArray *src)
+void Tensor::copy(Tensor *src)
 {
     size_t src_size = src->size();
 
@@ -914,7 +914,7 @@ void NdArray::copy(NdArray *src)
     this->shape_ = src->shape_;
 }
 
-void NdArray::reshape(Shape shape)
+void Tensor::reshape(Shape shape)
 {
     this->shape_ = shape;
 
@@ -930,19 +930,19 @@ void NdArray::reshape(Shape shape)
     }
 }
 
-void NdArray::change_dim(int dim_idx, int dim)
+void Tensor::change_dim(int dim_idx, int dim)
 {
     std::vector<int> dims = this->shape_.dims();
     dims[dim_idx] = dim;
     this->reshape(Shape(dims));
 }
 
-bool NdArray::is_cuda()
+bool Tensor::is_cuda()
 {
     return this->cuda_;
 }
 
-void NdArray::to_cpu()
+void Tensor::to_cpu()
 {
     if (this->cuda_)
     {
@@ -955,7 +955,7 @@ void NdArray::to_cpu()
     }
 }
 
-void NdArray::to_cuda()
+void Tensor::to_cuda()
 {
     if (!this->cuda_)
     {
@@ -969,32 +969,32 @@ void NdArray::to_cuda()
     }
 }
 
-Shape NdArray::shape()
+Shape Tensor::shape()
 {
     return this->shape_;
 }
 
-int NdArray::num_dims()
+int Tensor::num_dims()
 {
     return this->shape_.num_dims();
 }
 
-int NdArray::dims_size()
+int Tensor::dims_size()
 {
     return this->shape_.dims_size();
 }
 
-size_t NdArray::size()
+size_t Tensor::size()
 {
     return sizeof(float) * this->dims_size();
 }
 
-int NdArray::count()
+int Tensor::count()
 {
     return this->dims_size();
 }
 
-float NdArray::sum()
+float Tensor::sum()
 {
     float sum_val = 0;
 
@@ -1002,7 +1002,7 @@ float NdArray::sum()
 
     if (this->cuda_)
     {
-        NdArray *temp_sum = NdArray::zeros(true, Shape(1));
+        Tensor *temp_sum = Tensor::zeros(true, Shape(1));
         k_sum<<<cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(this->data_, cnt, &temp_sum->data()[0]);
 
         sum_val = temp_sum->get_val(0);
@@ -1019,7 +1019,7 @@ float NdArray::sum()
     return sum_val;
 }
 
-float NdArray::min()
+float Tensor::min()
 {
     float min_val = FLT_MAX;
 
@@ -1038,7 +1038,7 @@ float NdArray::min()
     return min_val;
 }
 
-float NdArray::max()
+float Tensor::max()
 {
     float max_val = -FLT_MAX;
 
@@ -1057,12 +1057,12 @@ float NdArray::max()
     return max_val;
 }
 
-float NdArray::mean()
+float Tensor::mean()
 {
     return this->sum() / this->count();
 }
 
-float NdArray::variance()
+float Tensor::variance()
 {
     float variance_val = 0.0f;
 
@@ -1071,7 +1071,7 @@ float NdArray::variance()
 
     if (this->cuda_)
     {
-        NdArray *temp_variance = NdArray::zeros(true, Shape(1));
+        Tensor *temp_variance = Tensor::zeros(true, Shape(1));
         k_variance<<<cnt / CUDA_THREADS_PER_BLOCK + 1, CUDA_THREADS_PER_BLOCK>>>(this->data_, cnt, mean_val, &temp_variance->data()[0]);
 
         variance_val = temp_variance->get_val(0);
@@ -1089,29 +1089,29 @@ float NdArray::variance()
     return variance_val /= (float)cnt;
 }
 
-float NdArray::stddev()
+float Tensor::stddev()
 {
     return sqrt(this->variance());
 }
 
-float NdArray::get_val(int idx)
+float Tensor::get_val(int idx)
 {
     float val;
     cudaMemcpy(&val, &this->data_[idx], sizeof(float), cudaMemcpyDefault);
     return val;
 }
 
-void NdArray::set_val(int idx, float val)
+void Tensor::set_val(int idx, float val)
 {
     cudaMemcpy(&this->data_[idx], &val, sizeof(float), cudaMemcpyDefault);
 }
 
-float *NdArray::data()
+float *Tensor::data()
 {
     return this->data_;
 }
 
-void NdArray::zeros()
+void Tensor::zeros()
 {
     size_t size = this->size();
 
@@ -1125,7 +1125,7 @@ void NdArray::zeros()
     }
 }
 
-void NdArray::ones()
+void Tensor::ones()
 {
     if (this->is_cuda())
     {
@@ -1140,7 +1140,7 @@ void NdArray::ones()
     }
 }
 
-void NdArray::full(float val)
+void Tensor::full(float val)
 {
     if (this->cuda_)
     {
@@ -1155,7 +1155,7 @@ void NdArray::full(float val)
     }
 }
 
-void NdArray::random(float mean, float stddev)
+void Tensor::random(float mean, float stddev)
 {
     bool orig_cuda = this->cuda_;
     this->to_cpu();
@@ -1175,7 +1175,7 @@ void NdArray::random(float mean, float stddev)
     }
 }
 
-void NdArray::random_ints(int upper_bound)
+void Tensor::random_ints(int upper_bound)
 {
     bool orig_cuda = this->cuda_;
     this->to_cpu();

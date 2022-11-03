@@ -122,10 +122,10 @@ void SGD::step(int batch_size)
 {
     for (Parameters *params : this->model_params_)
     {
-        NdArray *w = params->weights();
-        NdArray *b = params->biases();
-        NdArray *dw = params->weight_gradients();
-        NdArray *db = params->bias_gradients();
+        Tensor *w = params->weights();
+        Tensor *b = params->biases();
+        Tensor *dw = params->weight_gradients();
+        Tensor *db = params->bias_gradients();
 
         int w_cnt = w->count();
         int b_cnt = b->count();
@@ -146,8 +146,8 @@ SGDMomentum::SGDMomentum(std::vector<Parameters *> model_params, float learning_
 
     for (Parameters *params : model_params)
     {
-        this->mdws_.push_back(NdArray::zeros(true, params->weight_gradients()->shape()));
-        this->mdbs_.push_back(NdArray::zeros(true, params->bias_gradients()->shape()));
+        this->mdws_.push_back(Tensor::zeros(true, params->weight_gradients()->shape()));
+        this->mdbs_.push_back(Tensor::zeros(true, params->bias_gradients()->shape()));
     }
 }
 
@@ -166,12 +166,12 @@ void SGDMomentum::step(int batch_size)
     {
         Parameters *params = this->model_params_[i];
 
-        NdArray *w = params->weights();
-        NdArray *b = params->biases();
-        NdArray *dw = params->weight_gradients();
-        NdArray *db = params->bias_gradients();
-        NdArray *mdw = this->mdws_[i];
-        NdArray *mdb = this->mdbs_[i];
+        Tensor *w = params->weights();
+        Tensor *b = params->biases();
+        Tensor *dw = params->weight_gradients();
+        Tensor *db = params->bias_gradients();
+        Tensor *mdw = this->mdws_[i];
+        Tensor *mdb = this->mdbs_[i];
 
         int w_cnt = w->count();
         int b_cnt = b->count();
@@ -195,10 +195,10 @@ Adam::Adam(std::vector<Parameters *> model_params, float learning_rate, float be
 
     for (Parameters *params : model_params)
     {
-        this->mdws_.push_back(NdArray::zeros(true, params->weight_gradients()->shape()));
-        this->mdbs_.push_back(NdArray::zeros(true, params->bias_gradients()->shape()));
-        this->vdws_.push_back(NdArray::zeros(true, params->weight_gradients()->shape()));
-        this->vdbs_.push_back(NdArray::zeros(true, params->bias_gradients()->shape()));
+        this->mdws_.push_back(Tensor::zeros(true, params->weight_gradients()->shape()));
+        this->mdbs_.push_back(Tensor::zeros(true, params->bias_gradients()->shape()));
+        this->vdws_.push_back(Tensor::zeros(true, params->weight_gradients()->shape()));
+        this->vdbs_.push_back(Tensor::zeros(true, params->bias_gradients()->shape()));
     }
 }
 
@@ -219,14 +219,14 @@ void Adam::step(int batch_size)
     {
         Parameters *params = this->model_params_[i];
 
-        NdArray *w = params->weights();
-        NdArray *b = params->biases();
-        NdArray *dw = params->weight_gradients();
-        NdArray *db = params->bias_gradients();
-        NdArray *mdw = this->mdws_[i];
-        NdArray *mdb = this->mdbs_[i];
-        NdArray *vdw = this->vdws_[i];
-        NdArray *vdb = this->vdbs_[i];
+        Tensor *w = params->weights();
+        Tensor *b = params->biases();
+        Tensor *dw = params->weight_gradients();
+        Tensor *db = params->bias_gradients();
+        Tensor *mdw = this->mdws_[i];
+        Tensor *mdb = this->mdbs_[i];
+        Tensor *vdw = this->vdws_[i];
+        Tensor *vdb = this->vdbs_[i];
 
         int w_cnt = w->count();
         int b_cnt = b->count();

@@ -28,7 +28,7 @@ Model::~Model()
     }
 }
 
-NdArray *Model::forward(NdArray *x)
+Tensor *Model::forward(Tensor *x)
 {
     this->validate_layers();
     this->validate_input(x);
@@ -42,7 +42,7 @@ NdArray *Model::forward(NdArray *x)
         this->lyrs_[i]->neurons()->zeros();
     }
 
-    NdArray *p = NdArray::zeros(true, this->output_shape());
+    Tensor *p = Tensor::zeros(true, this->output_shape());
 
     for (int lyr_idx = 0; lyr_idx < this->lyrs_.size() - 1; lyr_idx++)
     {
@@ -58,7 +58,7 @@ NdArray *Model::forward(NdArray *x)
     return p;
 }
 
-float Model::loss(NdArray *p, NdArray *y)
+float Model::loss(Tensor *p, Tensor *y)
 {
     this->validate_loss();
     this->validate_output(y);
@@ -66,7 +66,7 @@ float Model::loss(NdArray *p, NdArray *y)
     p->to_cuda();
     y->to_cuda();
 
-    NdArray *losses = NdArray::zeros(true, p->shape());
+    Tensor *losses = Tensor::zeros(true, p->shape());
     this->loss_->evaluate(p, y, losses);
     float mean_loss = losses->sum() / this->batch_size();
 
@@ -74,7 +74,7 @@ float Model::loss(NdArray *p, NdArray *y)
     return mean_loss;
 }
 
-float Model::accuracy(NdArray *p, NdArray *y)
+float Model::accuracy(Tensor *p, Tensor *y)
 {
     int correct_cnt = 0;
 
@@ -121,7 +121,7 @@ float Model::accuracy(NdArray *p, NdArray *y)
     return ((float)correct_cnt / (float)batch_size);
 }
 
-void Model::backward(NdArray *p, NdArray *y)
+void Model::backward(Tensor *p, Tensor *y)
 {
     this->validate_layers();
     this->validate_loss();
@@ -130,8 +130,8 @@ void Model::backward(NdArray *p, NdArray *y)
     p->to_cuda();
     y->to_cuda();
 
-    NdArray *loss_gradients = this->loss_->derive(p, y);
-    NdArray *prev_n = p;
+    Tensor *loss_gradients = this->loss_->derive(p, y);
+    Tensor *prev_n = p;
 
     for (int lyr_idx = this->lyrs_.size() - 1; lyr_idx >= 0; lyr_idx--)
     {
@@ -237,7 +237,7 @@ void Model::validate_optimizer()
     this->validations_.optimizer = true;
 }
 
-void Model::validate_input(NdArray *x)
+void Model::validate_input(Tensor *x)
 {
     if (this->input_shape() != x->shape())
     {
@@ -245,7 +245,7 @@ void Model::validate_input(NdArray *x)
     }
 }
 
-void Model::validate_output(NdArray *y)
+void Model::validate_output(Tensor *y)
 {
     if (this->output_shape() != y->shape())
     {
@@ -253,7 +253,7 @@ void Model::validate_output(NdArray *y)
     }
 }
 
-void Model::validate_gradients(NdArray *x, NdArray *y, bool print_params)
+void Model::validate_gradients(Tensor *x, Tensor *y, bool print_params)
 {
     this->validate_layers();
     this->validate_loss();
@@ -267,17 +267,17 @@ void Model::validate_gradients(NdArray *x, NdArray *y, bool print_params)
     float agg_num_grad = 0.0f;
     float agg_grad_diff = 0.0f;
 
-    NdArray *p = this->forward(x);
+    Tensor *p = this->forward(x);
     this->backward(p, y);
     delete p;
 
     int param_idx = 0;
     for (Parameters *params : this->parameters())
     {
-        NdArray *w = params->weights();
-        NdArray *b = params->biases();
-        NdArray *dw = params->weight_gradients();
-        NdArray *db = params->bias_gradients();
+        Tensor *w = params->weights();
+        Tensor *b = params->biases();
+        Tensor *dw = params->weight_gradients();
+        Tensor *db = params->bias_gradients();
 
         for (int i = 0; i < w->count(); i++)
         {
@@ -491,7 +491,7 @@ Optimizer *Model::optimizer()
     return this->optim_;
 }
 
-void Model::performance_check(NdArray *x, NdArray *y, int epoch_cnt)
+void Model::performance_check(Tensor *x, Tensor *y, int epoch_cnt)
 {
     CudaStopWatch *sw = new CudaStopWatch();
 
@@ -499,7 +499,7 @@ void Model::performance_check(NdArray *x, NdArray *y, int epoch_cnt)
 
     for (int i = 0; i < epoch_cnt; i++)
     {
-        NdArray *p = this->forward(x);
+        Tensor *p = this->forward(x);
         this->loss(p, y);
         this->backward(p, y);
         this->step();

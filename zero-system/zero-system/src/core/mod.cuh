@@ -4,6 +4,6 @@
 
 #define CORE_MOD_H 1
 
-#include "ndarray.cuh"
+#include "tensor.cuh"
 
 #endif

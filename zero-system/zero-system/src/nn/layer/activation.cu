@@ -104,7 +104,7 @@ __global__ void k_relu_derive(float *in, float *n, int batch_size, int cnt)
     }
 }
 
-void Activation::evaluate(NdArray *in, int batch_size, int cnt, ActivationType activation)
+void Activation::evaluate(Tensor *in, int batch_size, int cnt, ActivationType activation)
 {
     int grid_row_cnt = (batch_size / CUDA_THREADS_PER_BLOCK) + 1;
     int grid_col_cnt = (cnt / CUDA_THREADS_PER_BLOCK) + 1;
@@ -130,7 +130,7 @@ void Activation::evaluate(NdArray *in, int batch_size, int cnt, ActivationType a
     }
 }
 
-void Activation::derive(NdArray *in, NdArray *n, int batch_size, int cnt, ActivationType activation)
+void Activation::derive(Tensor *in, Tensor *n, int batch_size, int cnt, ActivationType activation)
 {
     int grid_row_cnt = (batch_size / CUDA_THREADS_PER_BLOCK) + 1;
     int grid_col_cnt = (cnt / CUDA_THREADS_PER_BLOCK) + 1;
