@@ -383,16 +383,16 @@ void mnist_conv(int batch_size, int epochs)
 
 	auto model = new nn::Model();
 
-	model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->linear(512, nn::layer::ActivationType::ReLU);
-	model->linear(256, nn::layer::ActivationType::ReLU);
+	model->conv2d(input_shape, Shape(16, 1, 5, 5), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(16, 16, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(16, 16, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
 	model->linear(128, nn::layer::ActivationType::ReLU);
+	model->linear(64, nn::layer::ActivationType::ReLU);
+	model->linear(32, nn::layer::ActivationType::ReLU);
 	model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
 
 	model->set_loss(new nn::loss::CrossEntropy());
-	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 0.15f, BETA_1));
+	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 1.0f, BETA_1));
 
 	model->summarize();
 
@@ -407,7 +407,7 @@ int main(int argc, char **argv)
 	printf("MNIST-ZERO\n\n");
 	srand(time(NULL));
 
-	mnist_conv(50, 30);
+	grad_tests();
 
 	return 0;
 }
