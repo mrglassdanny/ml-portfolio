@@ -9,10 +9,10 @@ namespace nn
         class Parameters
         {
         private:
-            NdArray *w_;
-            NdArray *b_;
-            NdArray *dw_;
-            NdArray *db_;
+            Tensor *w_;
+            Tensor *b_;
+            Tensor *dw_;
+            Tensor *db_;
 
         public:
             Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out);
@@ -21,11 +21,11 @@ namespace nn
             void zero_grad();
 
             size_t count();
-            
-            NdArray *weights();
-            NdArray *biases();
-            NdArray *weight_gradients();
-            NdArray *bias_gradients();
+
+            Tensor *weights();
+            Tensor *biases();
+            Tensor *weight_gradients();
+            Tensor *bias_gradients();
         };
 
         class Learnable : public Layer

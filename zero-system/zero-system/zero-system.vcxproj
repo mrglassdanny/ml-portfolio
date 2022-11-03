@@ -13,7 +13,7 @@
   <ItemGroup>
     <ClInclude Include="src\core\err.cuh" />
     <ClInclude Include="src\core\mod.cuh" />
-    <ClInclude Include="src\core\ndarray.cuh" />
+    <ClInclude Include="src\core\tensor.cuh" />
     <ClInclude Include="src\core\util.cuh" />
     <ClInclude Include="src\nn\layer\activation.cuh" />
     <ClInclude Include="src\nn\layer\conv2d.cuh" />
@@ -29,7 +29,7 @@
     <ClInclude Include="src\nn\optim\optim.cuh" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="src\core\ndarray.cu" />
+    <CudaCompile Include="src\core\tensor.cu" />
     <CudaCompile Include="src\core\util.cu" />
     <CudaCompile Include="src\nn\constants.cuh" />
     <CudaCompile Include="src\nn\layer\activation.cu" />

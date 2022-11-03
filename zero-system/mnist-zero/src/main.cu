@@ -5,8 +5,8 @@
 
 struct Batch
 {
-	NdArray *x;
-	NdArray *y;
+	Tensor *x;
+	Tensor *y;
 };
 
 std::vector<Batch> get_train_dataset(int batch_size)
@@ -49,9 +49,9 @@ std::vector<Batch> get_train_dataset(int batch_size)
 
 	for (int i = 0; i < img_cnt / batch_size; i++)
 	{
-		auto x = NdArray::from_data(Shape(batch_size, 1, img_row_cnt, img_col_cnt), &img_flt_buf[i * batch_size * img_area]);
-		auto y = NdArray::from_data(Shape(batch_size, 1), &lbl_flt_buf[i * batch_size]);
-		auto oh_y = NdArray::one_hot(y, 9);
+		auto x = Tensor::from_data(Shape(batch_size, 1, img_row_cnt, img_col_cnt), &img_flt_buf[i * batch_size * img_area]);
+		auto y = Tensor::from_data(Shape(batch_size, 1), &lbl_flt_buf[i * batch_size]);
+		auto oh_y = Tensor::one_hot(y, 9);
 		delete y;
 
 		batches.push_back({x, oh_y});
@@ -103,9 +103,9 @@ std::vector<Batch> get_test_dataset(int batch_size)
 
 	for (int i = 0; i < img_cnt / batch_size; i++)
 	{
-		auto x = NdArray::from_data(Shape(batch_size, 1, img_row_cnt, img_col_cnt), &img_flt_buf[i * batch_size * img_area]);
-		auto y = NdArray::from_data(Shape(batch_size, 1), &lbl_flt_buf[i * batch_size]);
-		auto oh_y = NdArray::one_hot(y, 9);
+		auto x = Tensor::from_data(Shape(batch_size, 1, img_row_cnt, img_col_cnt), &img_flt_buf[i * batch_size * img_area]);
+		auto y = Tensor::from_data(Shape(batch_size, 1), &lbl_flt_buf[i * batch_size]);
+		auto oh_y = Tensor::one_hot(y, 9);
 		delete y;
 
 		batches.push_back({x, oh_y});
@@ -117,7 +117,7 @@ std::vector<Batch> get_test_dataset(int batch_size)
 	return batches;
 }
 
-float test_mnist(nn::Model *model, int epoch, bool train, bool csv);
+float test_mnist(nn::Model *model, int epoch, bool train, bool to_file);
 
 void train_mnist(nn::Model *model, int batch_size, int epochs, bool test_each_epoch)
 {
@@ -176,7 +176,7 @@ void train_mnist(nn::Model *model, int batch_size, int epochs, bool test_each_ep
 	}
 }
 
-float test_mnist(nn::Model *model, int epoch, bool train, bool csv)
+float test_mnist(nn::Model *model, int epoch, bool train, bool to_file)
 {
 	float test_acc_pct = 0.0f;
 	float train_acc_pct = 0.0f;
@@ -204,9 +204,9 @@ float test_mnist(nn::Model *model, int epoch, bool train, bool csv)
 
 		test_acc_pct = (acc / (float)batch_cnt) * 100.0f;
 
-		if (csv)
+		if (to_file)
 		{
-			FILE *f = fopen("temp/test.csv", "a");
+			FILE *f = fopen("temp/test.txt", "a");
 			fprintf(f, "EPOCH: %d\tTEST LOSS: %f\tTEST ACCURACY: %f%%\n",
 					epoch,
 					(loss / (float)batch_cnt),
@@ -252,9 +252,9 @@ float test_mnist(nn::Model *model, int epoch, bool train, bool csv)
 
 		train_acc_pct = (acc / (float)batch_cnt) * 100.0f;
 
-		if (csv)
+		if (to_file)
 		{
-			FILE *f = fopen("temp/test.csv", "a");
+			FILE *f = fopen("temp/test.txt", "a");
 			fprintf(f, "EPOCH: %d\tTRAIN LOSS: %f\tTRAIN ACCURACY: %f%%\n",
 					epoch,
 					(loss / (float)batch_cnt),
@@ -290,8 +290,8 @@ void grad_tests()
 
 	// m1
 	{
-		auto x = NdArray::random(true, Shape(batch_size, 64), 0.0f, 1.0f);
-		auto y = NdArray::ones(true, Shape(batch_size, 1));
+		auto x = Tensor::random(true, Shape(batch_size, 64), 0.0f, 1.0f);
+		auto y = Tensor::ones(true, Shape(batch_size, 1));
 
 		m1->linear(x->shape(), 16, nn::layer::ActivationType::Sigmoid);
 		m1->linear(16, nn::layer::ActivationType::Tanh);
@@ -309,8 +309,8 @@ void grad_tests()
 
 	// m2
 	{
-		auto x = NdArray::random(true, Shape(batch_size, 64), 0.0f, 1.0f);
-		auto y = NdArray::zeros(true, Shape(batch_size, 10));
+		auto x = Tensor::random(true, Shape(batch_size, 64), 0.0f, 1.0f);
+		auto y = Tensor::zeros(true, Shape(batch_size, 10));
 		y->set_val(3, 1.0f);
 
 		m2->linear(x->shape(), 16, nn::layer::ActivationType::Tanh);
@@ -329,8 +329,8 @@ void grad_tests()
 
 	// m3
 	{
-		auto x = NdArray::random(true, Shape(batch_size, 2, 21, 14), 0.0f, 1.0f);
-		auto y = NdArray::zeros(true, Shape(batch_size, 4));
+		auto x = Tensor::random(true, Shape(batch_size, 2, 21, 14), 0.0f, 1.0f);
+		auto y = Tensor::zeros(true, Shape(batch_size, 4));
 		y->set_val(3, 1.0f);
 
 		m3->conv2d(x->shape(), Shape(4, 2, 3, 2), nn::layer::Stride{3, 2}, nn::layer::ActivationType::Sigmoid);
@@ -350,8 +350,8 @@ void grad_tests()
 
 	// m4
 	{
-		auto x = NdArray::random(true, Shape(batch_size, 1, 12, 12), 0.0f, 1.0f);
-		auto y = NdArray::zeros(true, Shape(batch_size, 4));
+		auto x = Tensor::random(true, Shape(batch_size, 1, 12, 12), 0.0f, 1.0f);
+		auto y = Tensor::zeros(true, Shape(batch_size, 4));
 		y->set_val(3, 1.0f);
 
 		m4->conv2d(x->shape(), Shape(4, 1, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::Sigmoid);
@@ -383,12 +383,20 @@ void mnist_conv(int batch_size, int epochs)
 
 	auto model = new nn::Model();
 
-	model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->linear(512, nn::layer::ActivationType::ReLU);
+	// model->conv2d(input_shape, Shape(64, 1, 5, 5), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	// model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
+	// model->conv2d(Shape(64, 64, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	// model->linear(512, nn::layer::ActivationType::ReLU);
+	// model->linear(256, nn::layer::ActivationType::ReLU);
+	// model->linear(128, nn::layer::ActivationType::ReLU);
+	// model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
+
+	model->conv2d(input_shape, Shape(16, 1, 5, 5), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(16, 16, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
+	model->conv2d(Shape(16, 16, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
 	model->linear(256, nn::layer::ActivationType::ReLU);
 	model->linear(128, nn::layer::ActivationType::ReLU);
+	model->linear(64, nn::layer::ActivationType::ReLU);
 	model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
 
 	model->set_loss(new nn::loss::CrossEntropy());

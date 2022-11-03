@@ -17,8 +17,8 @@ namespace nn
         class Activation
         {
         public:
-            static void evaluate(NdArray *in, int batch_size, int cnt, ActivationType activation);
-            static void derive(NdArray *in, NdArray *n, int batch_size, int cnt, ActivationType activation);
+            static void evaluate(Tensor *in, int batch_size, int cnt, ActivationType activation);
+            static void derive(Tensor *in, Tensor *n, int batch_size, int cnt, ActivationType activation);
             static void summarize(ActivationType activation);
         };
     }

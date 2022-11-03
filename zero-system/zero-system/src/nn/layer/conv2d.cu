@@ -111,8 +111,8 @@ __global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int ba
 
 Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation)
 {
-    this->n_ = new NdArray(true, in_shape);
-    this->dn_ = new NdArray(true, in_shape);
+    this->n_ = new Tensor(true, in_shape);
+    this->dn_ = new Tensor(true, in_shape);
     this->params_ = new Parameters(filter_shape, Shape(filter_shape[0], filter_shape[1]), this->in_feature_rows(), this->in_feature_cols());
     this->stride_ = stride;
 
@@ -122,7 +122,7 @@ Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Stride stride, ActivationType
     this->activation_ = activation;
 }
 
-void Conv2d::evaluate(NdArray *out)
+void Conv2d::evaluate(Tensor *out)
 {
     int grid_row_cnt = (this->batch_size() / CUDA_THREADS_PER_BLOCK) + 1;
     int grid_col_cnt = ((this->filters() * this->out_feature_rows() * this->out_feature_cols()) / CUDA_THREADS_PER_BLOCK) + 1;
@@ -130,9 +130,9 @@ void Conv2d::evaluate(NdArray *out)
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
     dim3 block_dims(CUDA_THREADS_PER_BLOCK, CUDA_THREADS_PER_BLOCK);
 
-    NdArray *n = this->n_;
-    NdArray *w = this->params_->weights();
-    NdArray *b = this->params_->biases();
+    Tensor *n = this->n_;
+    Tensor *w = this->params_->weights();
+    Tensor *b = this->params_->biases();
 
     k_conv2d_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(), this->batch_size(), this->channels(), this->in_feature_rows(), this->in_feature_cols(),
                                                  this->filters(), this->filter_rows(), this->filter_cols(), this->out_feature_rows(), this->out_feature_cols(),
@@ -141,14 +141,14 @@ void Conv2d::evaluate(NdArray *out)
     Activation::evaluate(out, this->batch_size(), this->out_features(), this->activation_);
 }
 
-void Conv2d::derive(NdArray *in, NdArray *in_n)
+void Conv2d::derive(Tensor *in, Tensor *in_n)
 {
-    NdArray *n = this->n_;
-    NdArray *dn = this->dn_;
-    NdArray *w = this->params_->weights();
-    NdArray *b = this->params_->biases();
-    NdArray *dw = this->params_->weight_gradients();
-    NdArray *db = this->params_->bias_gradients();
+    Tensor *n = this->n_;
+    Tensor *dn = this->dn_;
+    Tensor *w = this->params_->weights();
+    Tensor *b = this->params_->biases();
+    Tensor *dw = this->params_->weight_gradients();
+    Tensor *db = this->params_->bias_gradients();
 
     Activation::derive(in, in_n, this->batch_size(), this->out_features(), this->activation_);
 

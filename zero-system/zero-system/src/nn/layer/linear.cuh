@@ -16,8 +16,8 @@ namespace nn
             Linear();
             Linear(Shape in_shape, Shape out_shape, ActivationType activation);
 
-            virtual void evaluate(NdArray *out) override;
-            virtual void derive(NdArray *in, NdArray *in_n) override;
+            virtual void evaluate(Tensor *out) override;
+            virtual void derive(Tensor *in, Tensor *in_n) override;
 
             virtual Shape input_shape() override;
             virtual Shape output_shape() override;

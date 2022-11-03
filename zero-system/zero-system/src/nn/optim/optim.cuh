@@ -41,8 +41,8 @@ namespace nn
         {
         private:
             float beta1_;
-            std::vector<NdArray *> mdws_;
-            std::vector<NdArray *> mdbs_;
+            std::vector<Tensor *> mdws_;
+            std::vector<Tensor *> mdbs_;
 
         public:
             SGDMomentum(std::vector<Parameters *> model_params, float learning_rate, float beta1);
@@ -56,10 +56,10 @@ namespace nn
         private:
             float beta1_;
             float beta2_;
-            std::vector<NdArray *> mdws_;
-            std::vector<NdArray *> mdbs_;
-            std::vector<NdArray *> vdws_;
-            std::vector<NdArray *> vdbs_;
+            std::vector<Tensor *> mdws_;
+            std::vector<Tensor *> mdbs_;
+            std::vector<Tensor *> vdws_;
+            std::vector<Tensor *> vdbs_;
 
         public:
             Adam(std::vector<Parameters *> model_params, float learning_rate, float beta1, float beta2);

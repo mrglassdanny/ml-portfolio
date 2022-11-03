@@ -88,7 +88,7 @@ void Loss::summarize()
     printf("%s", cls_name.c_str());
 }
 
-void MSE::evaluate(NdArray *p, NdArray *y, NdArray *out)
+void MSE::evaluate(Tensor *p, Tensor *y, Tensor *out)
 {
     int batch_size = p->shape()[0];
     int output_cnt = p->shape()[1];
@@ -102,9 +102,9 @@ void MSE::evaluate(NdArray *p, NdArray *y, NdArray *out)
     k_mse_evaluate<<<grid_dims, block_dims>>>(p->data(), y->data(), out->data(), batch_size, output_cnt);
 }
 
-NdArray *MSE::derive(NdArray *p, NdArray *y)
+Tensor *MSE::derive(Tensor *p, Tensor *y)
 {
-    NdArray *out = new NdArray(true, p->shape());
+    Tensor *out = new Tensor(true, p->shape());
 
     int batch_size = p->shape()[0];
     int output_cnt = p->shape()[1];
@@ -120,7 +120,7 @@ NdArray *MSE::derive(NdArray *p, NdArray *y)
     return out;
 }
 
-void CrossEntropy::evaluate(NdArray *p, NdArray *y, NdArray *out)
+void CrossEntropy::evaluate(Tensor *p, Tensor *y, Tensor *out)
 {
     int batch_size = p->shape()[0];
     int output_cnt = p->shape()[1];
@@ -134,9 +134,9 @@ void CrossEntropy::evaluate(NdArray *p, NdArray *y, NdArray *out)
     k_cross_entropy_evaluate<<<grid_dims, block_dims>>>(p->data(), y->data(), out->data(), batch_size, output_cnt);
 }
 
-NdArray *CrossEntropy::derive(NdArray *p, NdArray *y)
+Tensor *CrossEntropy::derive(Tensor *p, Tensor *y)
 {
-    NdArray *out = new NdArray(true, p->shape());
+    Tensor *out = new Tensor(true, p->shape());
 
     int batch_size = p->shape()[0];
     int output_cnt = p->shape()[1];
