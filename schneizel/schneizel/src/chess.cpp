@@ -345,14 +345,6 @@ bool Board::operator!=(const Board &other)
     return !(*this == other);
 }
 
-void Board::to_float()
-{
-    for (int i = 0; i < CHESS_BOARD_LEN; i++)
-    {
-        this->flt_data_[i] = Piece::piece_to_float((PieceType)this->data_[i]);
-    }
-}
-
 void Board::reset()
 {
     memcpy(this->data_, CHESS_START_BOARD, sizeof(int) * (CHESS_BOARD_LEN));
@@ -1458,7 +1450,6 @@ int *Board::get_legal_moves(int piece_idx, bool test_in_check)
         int check_out[CHESS_MAX_LEGAL_MOVE_CNT];
         memset(check_out, CHESS_INVALID_VALUE, sizeof(int) * CHESS_MAX_LEGAL_MOVE_CNT);
         int check_mov_ctr = 0;
-        int cpy_board[CHESS_BOARD_LEN];
         for (int i = 0; i < mov_ctr; i++)
         {
             Board sim = this->simulate(Move{piece_idx, out[i]});
@@ -1477,6 +1468,7 @@ int *Board::get_legal_moves(int piece_idx, bool test_in_check)
 Move Board::get_random_move(bool white, Board *cmp)
 {
     int piece_idxs[CHESS_BOARD_LEN];
+    memset(piece_idxs, 0, sizeof(int) * CHESS_BOARD_LEN);
 
     // Get piece indexes.
 
@@ -1566,12 +1558,12 @@ const char *Board::translate_to_an_move(Move move)
         if ((src_adj_col - dst_adj_col) == -2)
         {
             memcpy(out, "O-O", 3);
-            return;
+            return out;
         }
         else if ((src_adj_col - dst_adj_col) == 2)
         {
             memcpy(out, "O-O-O", 5);
-            return;
+            return out;
         }
     }
 
@@ -1619,10 +1611,8 @@ Move Board::change(const char *an_move, bool white)
     PieceType piece;
     char piece_char;
 
-    int legal_moves[CHESS_MAX_LEGAL_MOVE_CNT];
-
     // Trim '+'/'#'.
-    for (int i = CHESS_MAX_AN_MOVE_LEN; i > 0; i--)
+    for (int i = CHESS_MAX_AN_MOVE_LEN - 1; i > 0; i--)
     {
         if (mut_an_move[i] == '+' || mut_an_move[i] == '#')
         {
@@ -2023,6 +2013,12 @@ Move Board::change(const char *an_move, bool white)
     return chess_move;
 }
 
+Move Board::change(Move move, bool white)
+{
+    const char *an_move = this->translate_to_an_move(move);
+    return this->change(an_move, white);
+}
+
 Board Board::simulate(Move move)
 {
     Board sim;
@@ -2042,6 +2038,100 @@ Board Board::simulate(Move move)
     }
 
     return sim;
+}
+
+std::vector<Board> Board::get_sims(bool white)
+{
+    std::vector<Board> sims;
+
+    for (int i = 0; i < CHESS_BOARD_LEN; i++)
+    {
+        bool check_moves = false;
+        if (white)
+        {
+            if (Piece::is_piece_white((PieceType)this->data_[i]))
+            {
+                check_moves = true;
+            }
+        }
+        else
+        {
+            if (Piece::is_piece_black((PieceType)this->data_[i]))
+            {
+                check_moves = true;
+            }
+        }
+
+        if (check_moves)
+        {
+            int *legal_moves = this->get_legal_moves(i, true);
+            for (int j = 0; j < CHESS_MAX_LEGAL_MOVE_CNT; j++)
+            {
+                if (legal_moves[j] == CHESS_INVALID_VALUE)
+                {
+                    break;
+                }
+
+                Board sim = this->simulate(Move{i, legal_moves[j]});
+
+                sims.push_back(sim);
+            }
+        }
+    }
+
+    return sims;
+}
+
+float *Board::get_float()
+{
+    for (int i = 0; i < CHESS_BOARD_LEN; i++)
+    {
+        this->flt_data_[i] = Piece::piece_to_float((PieceType)this->data_[i]);
+    }
+
+    return this->flt_data_;
+}
+
+void Board::print_float()
+{
+    this->get_float();
+
+    // Print in a more viewable format(a8 at top left of screen).
+    printf("   +---+---+---+---+---+---+---+---+");
+    printf("\n");
+    for (int i = CHESS_BOARD_ROW_CNT - 1; i >= 0; i--)
+    {
+        printf("%d  ", i + 1);
+        printf("|");
+        for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
+        {
+            int val = ceil(this->flt_data_[(i * CHESS_BOARD_COL_CNT) + j]);
+
+            if (val < 0)
+            {
+                printf("%d |", val);
+            }
+            else if (val > 0)
+            {
+                printf(" %d |", val);
+            }
+            else
+            {
+                printf(" %d |", val);
+            }
+        }
+        printf("\n");
+        printf("   +---+---+---+---+---+---+---+---+");
+        printf("\n");
+    }
+
+    printf("    ");
+    for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
+    {
+        printf(" %c  ", Board::get_col_fr_adj_col(j));
+    }
+
+    printf("\n\n");
 }
 
 int *Board::get_piece_influence(int piece_idx)
@@ -2574,7 +2664,6 @@ int *Board::get_piece_influence(int piece_idx)
         int check_out[CHESS_MAX_LEGAL_MOVE_CNT];
         memset(check_out, CHESS_INVALID_VALUE, sizeof(int) * CHESS_MAX_LEGAL_MOVE_CNT);
         int check_mov_ctr = 0;
-        int cpy_board[CHESS_BOARD_LEN];
         for (int i = 0; i < mov_ctr; i++)
         {
             Board sim = this->simulate(Move{piece_idx, out[i]});
@@ -2586,6 +2675,8 @@ int *Board::get_piece_influence(int piece_idx)
 
         memcpy(out, check_out, sizeof(int) * mov_ctr);
     }
+
+    return out;
 }
 
 float *Board::get_influence()

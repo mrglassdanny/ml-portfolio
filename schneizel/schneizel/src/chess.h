@@ -11,7 +11,7 @@
 #define CHESS_BOARD_COL_CNT 8
 #define CHESS_BOARD_LEN (CHESS_BOARD_COL_CNT * CHESS_BOARD_ROW_CNT)
 
-#define CHESS_MAX_LEGAL_MOVE_CNT 64
+#define CHESS_MAX_LEGAL_MOVE_CNT 32
 
 #define CHESS_MAX_AN_MOVE_LEN 8
 #define CHESS_MAX_GAME_MOVE_CNT 500
@@ -92,8 +92,6 @@ public:
     bool operator==(const Board &);
     bool operator!=(const Board &);
 
-    void to_float();
-
     void reset();
     void copy(Board *src);
     void print(bool flip);
@@ -108,7 +106,12 @@ public:
 
     const char *translate_to_an_move(Move move);
     Move change(const char *an_move, bool white);
+    Move change(Move move, bool white);
     Board simulate(Move move);
+    std::vector<Board> get_sims(bool white);
+
+    float *get_float();
+    void print_float();
 
     int *get_piece_influence(int piece_idx);
     float *get_influence();
