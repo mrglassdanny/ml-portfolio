@@ -64,16 +64,13 @@ public:
 class Board
 {
 private:
+    bool white_;
     int data_[CHESS_BOARD_LEN];
-    float flt_data_[CHESS_BOARD_LEN];
-    float influence_data_[CHESS_BOARD_LEN];
+    float temp_flt_data_[CHESS_BOARD_LEN];
+    float temp_influence_data_[CHESS_BOARD_LEN];
     int temp_piece_influence_idxs_[CHESS_MAX_LEGAL_MOVE_CNT];
     int temp_legal_move_idxs_[CHESS_MAX_LEGAL_MOVE_CNT];
     char temp_an_move_[CHESS_MAX_AN_MOVE_LEN];
-
-public:
-    Board();
-    ~Board();
 
     static int get_col_fr_adj_col(int adj_col);
     static int get_adj_col_fr_col(char col);
@@ -88,6 +85,10 @@ public:
     static bool is_row_valid(int row);
     static bool is_adj_colrow_valid(int adj_col, int adj_row);
 
+public:
+    Board();
+    ~Board();
+
     int operator[](int);
     bool operator==(const Board &);
     bool operator!=(const Board &);
@@ -97,18 +98,18 @@ public:
     void print(bool flip);
 
     int *get_legal_moves_for_piece(int piece_idx, bool test_in_check_flg);
-    Move get_random_move(bool white, Board *cmp_board);
+    Move get_random_move(Board *cmp_board);
 
-    bool is_cell_under_attack(int idx, bool white);
-    bool is_in_check(bool white);
-    bool is_in_checkmate(bool white);
-    bool is_in_stalemate(bool white);
+    bool is_cell_under_attack(int idx);
+    bool is_in_check();
+    bool is_in_checkmate();
+    bool is_in_stalemate();
 
     const char *translate_to_an_move(Move move);
-    Move change(const char *an_move, bool white);
-    Move change(Move move, bool white);
+    Move change(const char *an_move);
+    Move change(Move move);
     Board simulate(Move move);
-    std::vector<Board> simulate_all_legal_moves(bool white);
+    std::vector<Board> simulate_all_legal_moves();
 
     float *get_float();
     void print_float();

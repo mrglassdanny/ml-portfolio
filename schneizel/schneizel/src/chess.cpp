@@ -347,11 +347,13 @@ bool Board::operator!=(const Board &other)
 
 void Board::reset()
 {
+    this->white_ = true;
     memcpy(this->data_, CHESS_START_BOARD, sizeof(int) * (CHESS_BOARD_LEN));
 }
 
 void Board::copy(Board *src)
 {
+    this->white_ = src->white_;
     memcpy(this->data_, src->data_, sizeof(int) * CHESS_BOARD_LEN);
 }
 
@@ -494,10 +496,11 @@ void Board::print(bool flip)
     }
 }
 
-bool Board::is_cell_under_attack(int idx, bool white)
+bool Board::is_cell_under_attack(int idx)
 {
     bool under_attack_flg = false;
 
+    bool white = this->white_;
     int *board = this->data_;
 
     if (white)
@@ -562,10 +565,11 @@ bool Board::is_cell_under_attack(int idx, bool white)
     return under_attack_flg;
 }
 
-bool Board::is_in_check(bool white)
+bool Board::is_in_check()
 {
     bool in_check_flg = 0;
 
+    bool white = this->white_;
     int *board = this->data_;
 
     if (white)
@@ -630,13 +634,14 @@ bool Board::is_in_check(bool white)
     return in_check_flg;
 }
 
-bool Board::is_in_checkmate(bool white)
+bool Board::is_in_checkmate()
 {
     bool in_checkmate_flg;
 
+    bool white = this->white_;
     int *board = this->data_;
 
-    if (this->is_in_check(white))
+    if (this->is_in_check())
     {
         in_checkmate_flg = true;
 
@@ -681,13 +686,14 @@ bool Board::is_in_checkmate(bool white)
     return in_checkmate_flg;
 }
 
-bool Board::is_in_stalemate(bool white)
+bool Board::is_in_stalemate()
 {
     bool in_stalemate_flg;
 
+    bool white = this->white_;
     int *board = this->data_;
 
-    if (!this->is_in_check(white))
+    if (!this->is_in_check())
     {
         in_stalemate_flg = true;
 
@@ -1397,7 +1403,7 @@ int *Board::get_legal_moves_for_piece(int piece_idx, bool test_in_check)
                 if (board[Board::get_idx_fr_colrow('a', 1)] == PieceType::WhiteRook)
                 {
                     if (board[Board::get_idx_fr_colrow('b', 1)] == PieceType::Empty && board[Board::get_idx_fr_colrow('c', 1)] == PieceType::Empty && board[Board::get_idx_fr_colrow('d', 1)] == PieceType::Empty &&
-                        !Board::is_cell_under_attack(Board::get_idx_fr_colrow('b', 1), true) && !Board::is_cell_under_attack(Board::get_idx_fr_colrow('c', 1), true) && !Board::is_cell_under_attack(Board::get_idx_fr_colrow('d', 1), true))
+                        !Board::is_cell_under_attack(Board::get_idx_fr_colrow('b', 1)) && !Board::is_cell_under_attack(Board::get_idx_fr_colrow('c', 1)) && !Board::is_cell_under_attack(Board::get_idx_fr_colrow('d', 1)))
                     {
                         out[mov_ctr++] = Board::get_idx_fr_colrow('c', 1);
                     }
@@ -1407,7 +1413,7 @@ int *Board::get_legal_moves_for_piece(int piece_idx, bool test_in_check)
                 if (board[Board::get_idx_fr_colrow('h', 1)] == PieceType::WhiteRook)
                 {
                     if (board[Board::get_idx_fr_colrow('f', 1)] == PieceType::Empty && board[Board::get_idx_fr_colrow('g', 1)] == PieceType::Empty &&
-                        !Board::is_cell_under_attack(Board::get_idx_fr_colrow('f', 1), true) && !Board::is_cell_under_attack(Board::get_idx_fr_colrow('g', 1), true))
+                        !Board::is_cell_under_attack(Board::get_idx_fr_colrow('f', 1)) && !Board::is_cell_under_attack(Board::get_idx_fr_colrow('g', 1)))
                     {
                         out[mov_ctr++] = Board::get_idx_fr_colrow('g', 1);
                     }
@@ -1422,7 +1428,7 @@ int *Board::get_legal_moves_for_piece(int piece_idx, bool test_in_check)
                 if (board[Board::get_idx_fr_colrow('a', 8)] == PieceType::BlackRook)
                 {
                     if (board[Board::get_idx_fr_colrow('b', 8)] == PieceType::Empty && board[Board::get_idx_fr_colrow('c', 8)] == PieceType::Empty && board[Board::get_idx_fr_colrow('d', 8)] == PieceType::Empty &&
-                        !Board::is_cell_under_attack(Board::get_idx_fr_colrow('b', 8), false) && !Board::is_cell_under_attack(Board::get_idx_fr_colrow('c', 8), false) && !Board::is_cell_under_attack(Board::get_idx_fr_colrow('d', 8), false))
+                        !Board::is_cell_under_attack(Board::get_idx_fr_colrow('b', 8)) && !Board::is_cell_under_attack(Board::get_idx_fr_colrow('c', 8)) && !Board::is_cell_under_attack(Board::get_idx_fr_colrow('d', 8)))
                     {
                         out[mov_ctr++] = Board::get_idx_fr_colrow('c', 8);
                     }
@@ -1432,7 +1438,7 @@ int *Board::get_legal_moves_for_piece(int piece_idx, bool test_in_check)
                 if (board[Board::get_idx_fr_colrow('h', 8)] == PieceType::BlackRook)
                 {
                     if (board[Board::get_idx_fr_colrow('f', 8)] == PieceType::Empty && board[Board::get_idx_fr_colrow('g', 8)] == PieceType::Empty &&
-                        !Board::is_cell_under_attack(Board::get_idx_fr_colrow('f', 8), false) && !Board::is_cell_under_attack(Board::get_idx_fr_colrow('g', 8), false))
+                        !Board::is_cell_under_attack(Board::get_idx_fr_colrow('f', 8)) && !Board::is_cell_under_attack(Board::get_idx_fr_colrow('g', 8)))
                     {
                         out[mov_ctr++] = Board::get_idx_fr_colrow('g', 8);
                     }
@@ -1453,7 +1459,7 @@ int *Board::get_legal_moves_for_piece(int piece_idx, bool test_in_check)
         for (int i = 0; i < mov_ctr; i++)
         {
             Board sim = this->simulate(Move{piece_idx, out[i]});
-            if (!sim.is_in_check(white))
+            if (!sim.is_in_check())
             {
                 check_out[check_mov_ctr++] = out[i];
             }
@@ -1465,10 +1471,12 @@ int *Board::get_legal_moves_for_piece(int piece_idx, bool test_in_check)
     return out;
 }
 
-Move Board::get_random_move(bool white, Board *cmp)
+Move Board::get_random_move(Board *cmp)
 {
     int piece_idxs[CHESS_BOARD_LEN];
     memset(piece_idxs, 0, sizeof(int) * CHESS_BOARD_LEN);
+
+    bool white = this->white_;
 
     // Get piece indexes.
 
@@ -1595,11 +1603,12 @@ const char *Board::translate_to_an_move(Move move)
     return out;
 }
 
-Move Board::change(const char *an_move, bool white)
+Move Board::change(const char *an_move)
 {
     char mut_an_move[CHESS_MAX_AN_MOVE_LEN];
     memcpy(mut_an_move, an_move, CHESS_MAX_AN_MOVE_LEN);
 
+    bool white = this->white_;
     int *board = this->data_;
 
     int src_idx = CHESS_INVALID_VALUE;
@@ -2007,16 +2016,18 @@ Move Board::change(const char *an_move, bool white)
         break;
     }
 
+    this->white_ = !this->white_;
+
     Move chess_move;
     chess_move.src_idx = src_idx;
     chess_move.dst_idx = dst_idx;
     return chess_move;
 }
 
-Move Board::change(Move move, bool white)
+Move Board::change(Move move)
 {
     const char *an_move = this->translate_to_an_move(move);
-    return this->change(an_move, white);
+    return this->change(an_move);
 }
 
 Board Board::simulate(Move move)
@@ -2026,23 +2037,16 @@ Board Board::simulate(Move move)
 
     const char *an_move = this->translate_to_an_move(move);
 
-    PieceType piece = (PieceType)sim.data_[move.src_idx];
-
-    if (Piece::is_piece_white(piece))
-    {
-        sim.change(an_move, true);
-    }
-    else
-    {
-        sim.change(an_move, false);
-    }
+    sim.change(an_move);
 
     return sim;
 }
 
-std::vector<Board> Board::simulate_all_legal_moves(bool white)
+std::vector<Board> Board::simulate_all_legal_moves()
 {
     std::vector<Board> sims;
+
+    bool white = this->white_;
 
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
@@ -2086,10 +2090,10 @@ float *Board::get_float()
 {
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
-        this->flt_data_[i] = Piece::piece_to_float((PieceType)this->data_[i]);
+        this->temp_flt_data_[i] = Piece::piece_to_float((PieceType)this->data_[i]);
     }
 
-    return this->flt_data_;
+    return this->temp_flt_data_;
 }
 
 void Board::print_float()
@@ -2105,7 +2109,7 @@ void Board::print_float()
         printf("|");
         for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
         {
-            int val = ceil(this->flt_data_[(i * CHESS_BOARD_COL_CNT) + j]);
+            int val = ceil(this->temp_flt_data_[(i * CHESS_BOARD_COL_CNT) + j]);
 
             if (val < 0)
             {
@@ -2151,8 +2155,6 @@ int *Board::get_piece_influence(int piece_idx)
     int adj_col = get_adj_col_fr_idx(piece_idx);
     int adj_row = get_adj_row_fr_idx(piece_idx);
 
-    bool white = Piece::is_piece_white(piece);
-
     int test_idx;
 
     switch (piece)
@@ -2160,14 +2162,14 @@ int *Board::get_piece_influence(int piece_idx)
     case PieceType::WhitePawn:
         // TODO: au passant
         {
-            test_idx = get_idx_fr_adj_colrow(adj_col - 1, adj_row + 1);
-            if (is_adj_colrow_valid(adj_col - 1, adj_row + 1))
+            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row + 1);
+            if (Board::is_adj_colrow_valid(adj_col - 1, adj_row + 1))
             {
                 out[mov_ctr++] = test_idx;
             }
 
-            test_idx = get_idx_fr_adj_colrow(adj_col + 1, adj_row + 1);
-            if (is_adj_colrow_valid(adj_col + 1, adj_row + 1))
+            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row + 1);
+            if (Board::is_adj_colrow_valid(adj_col + 1, adj_row + 1))
             {
                 out[mov_ctr++] = test_idx;
             }
@@ -2177,14 +2179,14 @@ int *Board::get_piece_influence(int piece_idx)
     case PieceType::BlackPawn:
         // TODO: au passant
         {
-            test_idx = get_idx_fr_adj_colrow(adj_col - 1, adj_row - 1);
-            if (is_adj_colrow_valid(adj_col - 1, adj_row - 1))
+            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row - 1);
+            if (Board::is_adj_colrow_valid(adj_col - 1, adj_row - 1))
             {
                 out[mov_ctr++] = test_idx;
             }
 
-            test_idx = get_idx_fr_adj_colrow(adj_col + 1, adj_row - 1);
-            if (is_adj_colrow_valid(adj_col + 1, adj_row - 1))
+            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row - 1);
+            if (Board::is_adj_colrow_valid(adj_col + 1, adj_row - 1))
             {
                 out[mov_ctr++] = test_idx;
             }
@@ -2195,51 +2197,51 @@ int *Board::get_piece_influence(int piece_idx)
     case PieceType::BlackKnight:
     {
 
-        if (is_adj_colrow_valid(adj_col + 1, adj_row + 2))
+        if (Board::is_adj_colrow_valid(adj_col + 1, adj_row + 2))
         {
-            test_idx = get_idx_fr_adj_colrow(adj_col + 1, adj_row + 2);
+            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row + 2);
             out[mov_ctr++] = test_idx;
         }
 
-        if (is_adj_colrow_valid(adj_col + 1, adj_row - 2))
+        if (Board::is_adj_colrow_valid(adj_col + 1, adj_row - 2))
         {
-            test_idx = get_idx_fr_adj_colrow(adj_col + 1, adj_row - 2);
+            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row - 2);
             out[mov_ctr++] = test_idx;
         }
 
-        if (is_adj_colrow_valid(adj_col - 1, adj_row + 2))
+        if (Board::is_adj_colrow_valid(adj_col - 1, adj_row + 2))
         {
-            test_idx = get_idx_fr_adj_colrow(adj_col - 1, adj_row + 2);
+            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row + 2);
             out[mov_ctr++] = test_idx;
         }
 
-        if (is_adj_colrow_valid(adj_col - 1, adj_row - 2))
+        if (Board::is_adj_colrow_valid(adj_col - 1, adj_row - 2))
         {
-            test_idx = get_idx_fr_adj_colrow(adj_col - 1, adj_row - 2);
+            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row - 2);
             out[mov_ctr++] = test_idx;
         }
 
-        if (is_adj_colrow_valid(adj_col + 2, adj_row + 1))
+        if (Board::is_adj_colrow_valid(adj_col + 2, adj_row + 1))
         {
-            test_idx = get_idx_fr_adj_colrow(adj_col + 2, adj_row + 1);
+            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 2, adj_row + 1);
             out[mov_ctr++] = test_idx;
         }
 
-        if (is_adj_colrow_valid(adj_col + 2, adj_row - 1))
+        if (Board::is_adj_colrow_valid(adj_col + 2, adj_row - 1))
         {
-            test_idx = get_idx_fr_adj_colrow(adj_col + 2, adj_row - 1);
+            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 2, adj_row - 1);
             out[mov_ctr++] = test_idx;
         }
 
-        if (is_adj_colrow_valid(adj_col - 2, adj_row + 1))
+        if (Board::is_adj_colrow_valid(adj_col - 2, adj_row + 1))
         {
-            test_idx = get_idx_fr_adj_colrow(adj_col - 2, adj_row + 1);
+            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 2, adj_row + 1);
             out[mov_ctr++] = test_idx;
         }
 
-        if (is_adj_colrow_valid(adj_col - 2, adj_row - 1))
+        if (Board::is_adj_colrow_valid(adj_col - 2, adj_row - 1))
         {
-            test_idx = get_idx_fr_adj_colrow(adj_col - 2, adj_row - 1);
+            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 2, adj_row - 1);
             out[mov_ctr++] = test_idx;
         }
     }
@@ -2255,9 +2257,9 @@ int *Board::get_piece_influence(int piece_idx)
         for (int i = 1; i < 8; i++)
         {
 
-            if (is_adj_colrow_valid(adj_col + i, adj_row + i) && ne == 0)
+            if (Board::is_adj_colrow_valid(adj_col + i, adj_row + i) && ne == 0)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
+                test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
                 if (board[test_idx] != PieceType::Empty)
                 {
                     ne = 1;
@@ -2269,9 +2271,9 @@ int *Board::get_piece_influence(int piece_idx)
                 }
             }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row - i) && sw == 0)
+            if (Board::is_adj_colrow_valid(adj_col - i, adj_row - i) && sw == 0)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
+                test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
                 if (board[test_idx] != PieceType::Empty)
                 {
                     sw = 1;
@@ -2283,9 +2285,9 @@ int *Board::get_piece_influence(int piece_idx)
                 }
             }
 
-            if (is_adj_colrow_valid(adj_col + i, adj_row - i) && se == 0)
+            if (Board::is_adj_colrow_valid(adj_col + i, adj_row - i) && se == 0)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
+                test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
                 if (board[test_idx] != PieceType::Empty)
                 {
                     se = 1;
@@ -2297,9 +2299,9 @@ int *Board::get_piece_influence(int piece_idx)
                 }
             }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row + i) && nw == 0)
+            if (Board::is_adj_colrow_valid(adj_col - i, adj_row + i) && nw == 0)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
+                test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
                 if (board[test_idx] != PieceType::Empty)
                 {
                     nw = 1;
@@ -2324,9 +2326,9 @@ int *Board::get_piece_influence(int piece_idx)
         for (int i = 1; i < 8; i++)
         {
 
-            if (is_adj_colrow_valid(adj_col + i, adj_row) && e == 0)
+            if (Board::is_adj_colrow_valid(adj_col + i, adj_row) && e == 0)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row);
+                test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row);
                 if (board[test_idx] != PieceType::Empty)
                 {
                     e = 1;
@@ -2338,9 +2340,9 @@ int *Board::get_piece_influence(int piece_idx)
                 }
             }
 
-            if (is_adj_colrow_valid(adj_col - i, adj_row) && w == 0)
+            if (Board::is_adj_colrow_valid(adj_col - i, adj_row) && w == 0)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row);
+                test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row);
                 if (board[test_idx] != PieceType::Empty)
                 {
                     w = 1;
@@ -2352,9 +2354,9 @@ int *Board::get_piece_influence(int piece_idx)
                 }
             }
 
-            if (is_adj_colrow_valid(adj_col, adj_row + i) && n == 0)
+            if (Board::is_adj_colrow_valid(adj_col, adj_row + i) && n == 0)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col, adj_row + i);
+                test_idx = Board::get_idx_fr_adj_colrow(adj_col, adj_row + i);
                 if (board[test_idx] != PieceType::Empty)
                 {
                     n = 1;
@@ -2366,9 +2368,9 @@ int *Board::get_piece_influence(int piece_idx)
                 }
             }
 
-            if (is_adj_colrow_valid(adj_col, adj_row - i) && s == 0)
+            if (Board::is_adj_colrow_valid(adj_col, adj_row - i) && s == 0)
             {
-                test_idx = get_idx_fr_adj_colrow(adj_col, adj_row - i);
+                test_idx = Board::get_idx_fr_adj_colrow(adj_col, adj_row - i);
                 if (board[test_idx] != PieceType::Empty)
                 {
                     s = 1;
@@ -2394,9 +2396,9 @@ int *Board::get_piece_influence(int piece_idx)
             for (int i = 1; i < 8; i++)
             {
 
-                if (is_adj_colrow_valid(adj_col + i, adj_row + i) && ne == 0)
+                if (Board::is_adj_colrow_valid(adj_col + i, adj_row + i) && ne == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         ne = 1;
@@ -2408,9 +2410,9 @@ int *Board::get_piece_influence(int piece_idx)
                     }
                 }
 
-                if (is_adj_colrow_valid(adj_col - i, adj_row - i) && sw == 0)
+                if (Board::is_adj_colrow_valid(adj_col - i, adj_row - i) && sw == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         sw = 1;
@@ -2422,9 +2424,9 @@ int *Board::get_piece_influence(int piece_idx)
                     }
                 }
 
-                if (is_adj_colrow_valid(adj_col + i, adj_row - i) && se == 0)
+                if (Board::is_adj_colrow_valid(adj_col + i, adj_row - i) && se == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         se = 1;
@@ -2436,9 +2438,9 @@ int *Board::get_piece_influence(int piece_idx)
                     }
                 }
 
-                if (is_adj_colrow_valid(adj_col - i, adj_row + i) && nw == 0)
+                if (Board::is_adj_colrow_valid(adj_col - i, adj_row + i) && nw == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         nw = 1;
@@ -2460,9 +2462,9 @@ int *Board::get_piece_influence(int piece_idx)
             for (int i = 1; i < 8; i++)
             {
 
-                if (is_adj_colrow_valid(adj_col + i, adj_row) && e == 0)
+                if (Board::is_adj_colrow_valid(adj_col + i, adj_row) && e == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         e = 1;
@@ -2474,9 +2476,9 @@ int *Board::get_piece_influence(int piece_idx)
                     }
                 }
 
-                if (is_adj_colrow_valid(adj_col - i, adj_row) && w == 0)
+                if (Board::is_adj_colrow_valid(adj_col - i, adj_row) && w == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         w = 1;
@@ -2488,9 +2490,9 @@ int *Board::get_piece_influence(int piece_idx)
                     }
                 }
 
-                if (is_adj_colrow_valid(adj_col, adj_row + i) && n == 0)
+                if (Board::is_adj_colrow_valid(adj_col, adj_row + i) && n == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col, adj_row + i);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col, adj_row + i);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         n = 1;
@@ -2502,9 +2504,9 @@ int *Board::get_piece_influence(int piece_idx)
                     }
                 }
 
-                if (is_adj_colrow_valid(adj_col, adj_row - i) && s == 0)
+                if (Board::is_adj_colrow_valid(adj_col, adj_row - i) && s == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col, adj_row - i);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col, adj_row - i);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         s = 1;
@@ -2530,9 +2532,9 @@ int *Board::get_piece_influence(int piece_idx)
             for (int i = 1; i < 2; i++)
             {
 
-                if (is_adj_colrow_valid(adj_col + i, adj_row + i) && ne == 0)
+                if (Board::is_adj_colrow_valid(adj_col + i, adj_row + i) && ne == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         ne = 1;
@@ -2544,9 +2546,9 @@ int *Board::get_piece_influence(int piece_idx)
                     }
                 }
 
-                if (is_adj_colrow_valid(adj_col - i, adj_row - i) && sw == 0)
+                if (Board::is_adj_colrow_valid(adj_col - i, adj_row - i) && sw == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         sw = 1;
@@ -2558,9 +2560,9 @@ int *Board::get_piece_influence(int piece_idx)
                     }
                 }
 
-                if (is_adj_colrow_valid(adj_col + i, adj_row - i) && se == 0)
+                if (Board::is_adj_colrow_valid(adj_col + i, adj_row - i) && se == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         se = 1;
@@ -2572,9 +2574,9 @@ int *Board::get_piece_influence(int piece_idx)
                     }
                 }
 
-                if (is_adj_colrow_valid(adj_col - i, adj_row + i) && nw == 0)
+                if (Board::is_adj_colrow_valid(adj_col - i, adj_row + i) && nw == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         nw = 1;
@@ -2596,9 +2598,9 @@ int *Board::get_piece_influence(int piece_idx)
             for (int i = 1; i < 2; i++)
             {
 
-                if (is_adj_colrow_valid(adj_col + i, adj_row) && e == 0)
+                if (Board::is_adj_colrow_valid(adj_col + i, adj_row) && e == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col + i, adj_row);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         e = 1;
@@ -2610,9 +2612,9 @@ int *Board::get_piece_influence(int piece_idx)
                     }
                 }
 
-                if (is_adj_colrow_valid(adj_col - i, adj_row) && w == 0)
+                if (Board::is_adj_colrow_valid(adj_col - i, adj_row) && w == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col - i, adj_row);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         w = 1;
@@ -2624,9 +2626,9 @@ int *Board::get_piece_influence(int piece_idx)
                     }
                 }
 
-                if (is_adj_colrow_valid(adj_col, adj_row + i) && n == 0)
+                if (Board::is_adj_colrow_valid(adj_col, adj_row + i) && n == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col, adj_row + i);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col, adj_row + i);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         n = 1;
@@ -2638,9 +2640,9 @@ int *Board::get_piece_influence(int piece_idx)
                     }
                 }
 
-                if (is_adj_colrow_valid(adj_col, adj_row - i) && s == 0)
+                if (Board::is_adj_colrow_valid(adj_col, adj_row - i) && s == 0)
                 {
-                    test_idx = get_idx_fr_adj_colrow(adj_col, adj_row - i);
+                    test_idx = Board::get_idx_fr_adj_colrow(adj_col, adj_row - i);
                     if (board[test_idx] != PieceType::Empty)
                     {
                         s = 1;
@@ -2667,7 +2669,7 @@ int *Board::get_piece_influence(int piece_idx)
         for (int i = 0; i < mov_ctr; i++)
         {
             Board sim = this->simulate(Move{piece_idx, out[i]});
-            if (!sim.is_in_check(white))
+            if (!sim.is_in_check())
             {
                 check_out[check_mov_ctr++] = out[i];
             }
@@ -2681,7 +2683,7 @@ int *Board::get_piece_influence(int piece_idx)
 
 float *Board::get_influence()
 {
-    float *out = this->influence_data_;
+    float *out = this->temp_influence_data_;
     memset(out, 0, sizeof(int) * CHESS_BOARD_LEN);
 
     for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
@@ -2759,7 +2761,7 @@ void Board::print_influence()
         printf("|");
         for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
         {
-            int val = ceil(this->influence_data_[(i * CHESS_BOARD_COL_CNT) + j]);
+            int val = ceil(this->temp_influence_data_[(i * CHESS_BOARD_COL_CNT) + j]);
 
             if (val < 0)
             {
