@@ -506,7 +506,7 @@ bool Board::is_cell_under_attack(int idx, bool white)
         {
             if (Piece::is_piece_black((PieceType)board[piece_idx]) && (PieceType)board[piece_idx] != PieceType::BlackKing)
             {
-                int *legal_moves = this->get_legal_moves(piece_idx, false);
+                int *legal_moves = this->get_legal_moves_for_piece(piece_idx, false);
 
                 for (int mov_idx = 0; mov_idx < CHESS_MAX_LEGAL_MOVE_CNT; mov_idx++)
                 {
@@ -535,7 +535,7 @@ bool Board::is_cell_under_attack(int idx, bool white)
         {
             if (Piece::is_piece_white((PieceType)board[piece_idx]) && (PieceType)board[piece_idx] != PieceType::WhiteKing)
             {
-                int *legal_moves = this->get_legal_moves(piece_idx, false);
+                int *legal_moves = this->get_legal_moves_for_piece(piece_idx, false);
 
                 for (int mov_idx = 0; mov_idx < CHESS_MAX_LEGAL_MOVE_CNT; mov_idx++)
                 {
@@ -574,7 +574,7 @@ bool Board::is_in_check(bool white)
         {
             if (Piece::is_piece_black((PieceType)board[piece_idx]))
             {
-                int *legal_moves = this->get_legal_moves(piece_idx, false);
+                int *legal_moves = this->get_legal_moves_for_piece(piece_idx, false);
 
                 for (int mov_idx = 0; mov_idx < CHESS_MAX_LEGAL_MOVE_CNT; mov_idx++)
                 {
@@ -603,7 +603,7 @@ bool Board::is_in_check(bool white)
         {
             if (Piece::is_piece_white((PieceType)board[piece_idx]))
             {
-                int *legal_moves = this->get_legal_moves(piece_idx, false);
+                int *legal_moves = this->get_legal_moves_for_piece(piece_idx, false);
 
                 for (int mov_idx = 0; mov_idx < CHESS_MAX_LEGAL_MOVE_CNT; mov_idx++)
                 {
@@ -646,7 +646,7 @@ bool Board::is_in_checkmate(bool white)
             {
                 if (Piece::is_piece_white((PieceType)board[piece_idx]))
                 {
-                    int *legal_moves = this->get_legal_moves(piece_idx, true);
+                    int *legal_moves = this->get_legal_moves_for_piece(piece_idx, true);
 
                     if (legal_moves[0] != CHESS_INVALID_VALUE)
                     {
@@ -662,7 +662,7 @@ bool Board::is_in_checkmate(bool white)
             {
                 if (Piece::is_piece_black((PieceType)board[piece_idx]))
                 {
-                    int *legal_moves = this->get_legal_moves(piece_idx, true);
+                    int *legal_moves = this->get_legal_moves_for_piece(piece_idx, true);
 
                     if (legal_moves[0] != CHESS_INVALID_VALUE)
                     {
@@ -697,7 +697,7 @@ bool Board::is_in_stalemate(bool white)
             {
                 if (Piece::is_piece_white((PieceType)board[piece_idx]))
                 {
-                    int *legal_moves = this->get_legal_moves(piece_idx, true);
+                    int *legal_moves = this->get_legal_moves_for_piece(piece_idx, true);
 
                     if (legal_moves[0] != CHESS_INVALID_VALUE)
                     {
@@ -713,7 +713,7 @@ bool Board::is_in_stalemate(bool white)
             {
                 if (Piece::is_piece_black((PieceType)board[piece_idx]))
                 {
-                    int *legal_moves = this->get_legal_moves(piece_idx, true);
+                    int *legal_moves = this->get_legal_moves_for_piece(piece_idx, true);
 
                     if (legal_moves[0] != CHESS_INVALID_VALUE)
                     {
@@ -732,7 +732,7 @@ bool Board::is_in_stalemate(bool white)
     return in_stalemate_flg;
 }
 
-int *Board::get_legal_moves(int piece_idx, bool test_in_check)
+int *Board::get_legal_moves_for_piece(int piece_idx, bool test_in_check)
 {
     int *out = this->temp_legal_move_idxs_;
 
@@ -1501,7 +1501,7 @@ Move Board::get_random_move(bool white, Board *cmp)
 
         // Got our piece; now get moves.
         int legal_mov_ctr = 0;
-        int *legal_moves = this->get_legal_moves(piece_idxs[rand_piece_idx], true);
+        int *legal_moves = this->get_legal_moves_for_piece(piece_idxs[rand_piece_idx], true);
         for (int i = 0; i < CHESS_MAX_LEGAL_MOVE_CNT; i++)
         {
             if (legal_moves[i] == CHESS_INVALID_VALUE)
@@ -1730,7 +1730,7 @@ Move Board::change(const char *an_move, bool white)
                 {
                     if (board[i] == piece)
                     {
-                        int *legal_moves = this->get_legal_moves(i, true);
+                        int *legal_moves = this->get_legal_moves_for_piece(i, true);
                         for (int j = 0; j < CHESS_MAX_LEGAL_MOVE_CNT; j++)
                         {
                             if (legal_moves[j] == dst_idx)
@@ -1867,7 +1867,7 @@ Move Board::change(const char *an_move, bool white)
                 {
                     if (board[i] == piece)
                     {
-                        int *legal_moves = this->get_legal_moves(i, true);
+                        int *legal_moves = this->get_legal_moves_for_piece(i, true);
                         for (int j = 0; j < CHESS_MAX_LEGAL_MOVE_CNT; j++)
                         {
                             if (legal_moves[j] == dst_idx)
@@ -2040,7 +2040,7 @@ Board Board::simulate(Move move)
     return sim;
 }
 
-std::vector<Board> Board::get_sims(bool white)
+std::vector<Board> Board::simulate_all_legal_moves(bool white)
 {
     std::vector<Board> sims;
 
@@ -2064,7 +2064,7 @@ std::vector<Board> Board::get_sims(bool white)
 
         if (check_moves)
         {
-            int *legal_moves = this->get_legal_moves(i, true);
+            int *legal_moves = this->get_legal_moves_for_piece(i, true);
             for (int j = 0; j < CHESS_MAX_LEGAL_MOVE_CNT; j++)
             {
                 if (legal_moves[j] == CHESS_INVALID_VALUE)

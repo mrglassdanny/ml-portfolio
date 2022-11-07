@@ -96,7 +96,7 @@ public:
     void copy(Board *src);
     void print(bool flip);
 
-    int *get_legal_moves(int piece_idx, bool test_in_check_flg);
+    int *get_legal_moves_for_piece(int piece_idx, bool test_in_check_flg);
     Move get_random_move(bool white, Board *cmp_board);
 
     bool is_cell_under_attack(int idx, bool white);
@@ -108,7 +108,7 @@ public:
     Move change(const char *an_move, bool white);
     Move change(Move move, bool white);
     Board simulate(Move move);
-    std::vector<Board> get_sims(bool white);
+    std::vector<Board> simulate_all_legal_moves(bool white);
 
     float *get_float();
     void print_float();
