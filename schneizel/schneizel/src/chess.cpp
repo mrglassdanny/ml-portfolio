@@ -500,10 +500,9 @@ bool Board::is_cell_under_attack(int idx)
 {
     bool under_attack_flg = false;
 
-    bool white = this->white_;
     int *board = this->data_;
 
-    if (white)
+    if (this->white_)
     {
         for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
         {
@@ -567,12 +566,11 @@ bool Board::is_cell_under_attack(int idx)
 
 bool Board::is_in_check()
 {
-    bool in_check_flg = 0;
+    bool in_check_flg = false;
 
-    bool white = this->white_;
     int *board = this->data_;
 
-    if (white)
+    if (this->white_)
     {
         for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
         {
@@ -638,14 +636,13 @@ bool Board::is_in_checkmate()
 {
     bool in_checkmate_flg;
 
-    bool white = this->white_;
     int *board = this->data_;
 
     if (this->is_in_check())
     {
         in_checkmate_flg = true;
 
-        if (white)
+        if (this->white_)
         {
             for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
             {
@@ -690,14 +687,13 @@ bool Board::is_in_stalemate()
 {
     bool in_stalemate_flg;
 
-    bool white = this->white_;
     int *board = this->data_;
 
     if (!this->is_in_check())
     {
         in_stalemate_flg = true;
 
-        if (white)
+        if (this->white_)
         {
             for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
             {
@@ -754,8 +750,6 @@ int *Board::get_legal_moves_for_piece(int piece_idx, bool test_in_check)
 
     int adj_col = Board::get_adj_col_fr_idx(piece_idx);
     int adj_row = Board::get_adj_row_fr_idx(piece_idx);
-
-    bool white = Piece::is_piece_white(piece);
 
     int test_idx;
 
@@ -1476,14 +1470,12 @@ Move Board::get_random_move(Board *cmp)
     int piece_idxs[CHESS_BOARD_LEN];
     memset(piece_idxs, 0, sizeof(int) * CHESS_BOARD_LEN);
 
-    bool white = this->white_;
-
     // Get piece indexes.
 
     int piece_ctr = 0;
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
-        if (white)
+        if (this->white_)
         {
             if (Piece::is_piece_white((PieceType)this->data_[i]))
             {
@@ -2046,12 +2038,10 @@ std::vector<Board> Board::simulate_all_legal_moves()
 {
     std::vector<Board> sims;
 
-    bool white = this->white_;
-
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
         bool check_moves = false;
-        if (white)
+        if (this->white_)
         {
             if (Piece::is_piece_white((PieceType)this->data_[i]))
             {
