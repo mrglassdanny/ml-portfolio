@@ -4,7 +4,10 @@
 
 int main()
 {
-	int *board = init_board();
-	print_board(board);
+
+	Board board;
+	board.print(false);
+	board.print(true);
+
 	return 0;
 }
