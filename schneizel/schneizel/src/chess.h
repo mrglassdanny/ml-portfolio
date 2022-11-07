@@ -116,7 +116,7 @@ public:
     int *get_piece_influence(int piece_idx);
     float *get_influence();
     void print_influence();
-};
 
-void one_hot_encode_board(int *board, int *out);
-void one_hot_encode_board(int *board, float *out);
+    void one_hot_encode(int *out);
+    void one_hot_encode(float *out);
+};

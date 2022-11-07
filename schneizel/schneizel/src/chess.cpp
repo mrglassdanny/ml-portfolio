@@ -2788,13 +2788,13 @@ void Board::print_influence()
     printf("\n\n");
 }
 
-void one_hot_encode_board(int *board, int *out)
+void Board::one_hot_encode(int *out)
 {
     memset(out, 0, sizeof(int) * CHESS_ONE_HOT_ENCODED_BOARD_LEN);
 
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
-        switch ((PieceType)board[i])
+        switch ((PieceType)this->data_[i])
         {
         case PieceType::WhitePawn:
             out[i] = 1;
@@ -2838,13 +2838,13 @@ void one_hot_encode_board(int *board, int *out)
     }
 }
 
-void one_hot_encode_board(int *board, float *out)
+void Board::one_hot_encode(float *out)
 {
     memset(out, 0, sizeof(float) * CHESS_ONE_HOT_ENCODED_BOARD_LEN);
 
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
-        switch ((PieceType)board[i])
+        switch ((PieceType)this->data_[i])
         {
         case PieceType::WhitePawn:
             out[i] = 1.0f;
