@@ -25,7 +25,7 @@ int main()
 	auto vec = board.simulate_all_legal_moves();
 	for (Board b : vec)
 	{
-		// b.print(false);
+		b.print(false);
 	}
 
 	return 0;
