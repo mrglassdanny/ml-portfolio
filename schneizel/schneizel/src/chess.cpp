@@ -2139,11 +2139,11 @@ int *Board::get_piece_influence(int piece_idx)
 
     PieceType piece = (PieceType)board[piece_idx];
 
-    char col = get_col_fr_idx(piece_idx);
-    int row = get_row_fr_idx(piece_idx);
+    char col = Board::get_col_fr_idx(piece_idx);
+    int row = Board::get_row_fr_idx(piece_idx);
 
-    int adj_col = get_adj_col_fr_idx(piece_idx);
-    int adj_row = get_adj_row_fr_idx(piece_idx);
+    int adj_col = Board::get_adj_col_fr_idx(piece_idx);
+    int adj_row = Board::get_adj_row_fr_idx(piece_idx);
 
     int test_idx;
 
