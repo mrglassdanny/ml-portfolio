@@ -1,32 +1,16 @@
 #include <stdio.h>
 
+#include <ATen/ATen.h>
+
 #include "chess.h"
 
 int main()
 {
-
 	Board board;
 
-	board.change("d4");
-	board.print(false);
-	board.change("d5");
-	board.print(false);
-	board.change(board.get_random_move(&board));
-	board.print(false);
-	board.change(board.get_random_move(&board));
-	board.print(false);
-	board.change(board.get_random_move(&board));
-	board.print(false);
-	board.change(board.get_random_move(&board));
-	board.print(false);
-	board.change(board.get_random_move(&board));
-	board.print(false);
-
-	auto vec = board.simulate_all_legal_moves();
-	for (Board b : vec)
-	{
-		b.print(false);
-	}
+	at::Tensor a = at::ones({ 2, 2 }, at::kInt);
+	at::Tensor b = at::randn({ 2, 2 });
+	auto c = a + b.to(at::kInt);
 
 	return 0;
 }
