@@ -64,7 +64,7 @@ __global__ void k_adam_weight_step(float *w, float *dw, float *mdw, float *vdw, 
         float corrected_mdw = mdw[w_elem_idx] / (1.0f - pow(beta1, step_num));
         float corrected_vdw = vdw[w_elem_idx] / (1.0f - pow(beta2, step_num));
 
-        w[w_elem_idx] -= (lr * (corrected_mdw / (sqrt(corrected_vdw) + EPSILON)) / batch_size);
+        w[w_elem_idx] -= (lr * (corrected_mdw / (sqrt(corrected_vdw) + ZERO_NN_EPSILON)) / batch_size);
     }
 }
 
@@ -80,7 +80,7 @@ __global__ void k_adam_bias_step(float *b, float *db, float *mdb, float *vdb, in
         float corrected_mdb = mdb[b_elem_idx] / (1.0f - pow(beta1, step_num));
         float corrected_vdb = vdb[b_elem_idx] / (1.0f - pow(beta2, step_num));
 
-        b[b_elem_idx] -= (lr * (corrected_mdb / (sqrt(corrected_vdb) + EPSILON)) / batch_size);
+        b[b_elem_idx] -= (lr * (corrected_mdb / (sqrt(corrected_vdb) + ZERO_NN_EPSILON)) / batch_size);
     }
 }
 

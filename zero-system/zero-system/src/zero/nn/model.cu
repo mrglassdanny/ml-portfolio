@@ -284,19 +284,19 @@ void Model::validate_gradients(Tensor *x, Tensor *y, bool print_params)
         {
             float w_val = w->get_val(i);
 
-            w->set_val(i, w_val - EPSILON);
+            w->set_val(i, w_val - ZERO_NN_EPSILON);
             p = this->forward(x);
             float left_loss = this->loss(p, y);
             delete p;
 
-            w->set_val(i, w_val + EPSILON);
+            w->set_val(i, w_val + ZERO_NN_EPSILON);
             p = this->forward(x);
             float right_loss = this->loss(p, y);
             delete p;
 
             w->set_val(i, w_val);
 
-            float num_grad = (right_loss - left_loss) / (2.0f * EPSILON);
+            float num_grad = (right_loss - left_loss) / (2.0f * ZERO_NN_EPSILON);
             float ana_grad = dw->get_val(i);
 
             if (print_params)
@@ -313,19 +313,19 @@ void Model::validate_gradients(Tensor *x, Tensor *y, bool print_params)
         {
             float b_val = b->get_val(i);
 
-            b->set_val(i, b_val - EPSILON);
+            b->set_val(i, b_val - ZERO_NN_EPSILON);
             p = this->forward(x);
             float left_loss = this->loss(p, y);
             delete p;
 
-            b->set_val(i, b_val + EPSILON);
+            b->set_val(i, b_val + ZERO_NN_EPSILON);
             p = this->forward(x);
             float right_loss = this->loss(p, y);
             delete p;
 
             b->set_val(i, b_val);
 
-            float num_grad = (right_loss - left_loss) / (2.0f * EPSILON);
+            float num_grad = (right_loss - left_loss) / (2.0f * ZERO_NN_EPSILON);
             float ana_grad = db->get_val(i);
 
             if (print_params)
@@ -349,7 +349,7 @@ void Model::validate_gradients(Tensor *x, Tensor *y, bool print_params)
     {
         printf("GRADIENT CHECK RESULT: %f\n", (agg_grad_diff) / (agg_ana_grad + agg_num_grad));
 
-        if ((agg_grad_diff) / (agg_ana_grad + agg_num_grad) > EPSILON)
+        if ((agg_grad_diff) / (agg_ana_grad + agg_num_grad) > ZERO_NN_EPSILON)
         {
             ZERO_CORE_THROW_ERROR("MODEL GRADIENTS VALIDATION FAILED");
         }
