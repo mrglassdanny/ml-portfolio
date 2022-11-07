@@ -1,7 +1,10 @@
 #include <stdio.h>
 #include <conio.h>
 
-#include <nn/mod.cuh>
+#include <zero/mod.cuh>
+
+using namespace zero::core;
+using namespace zero::nn;
 
 struct Batch
 {
@@ -117,9 +120,9 @@ std::vector<Batch> get_test_dataset(int batch_size)
 	return batches;
 }
 
-float test_mnist(nn::Model *model, int epoch, bool train, bool to_file);
+float test_mnist(Model *model, int epoch, bool train, bool to_file);
 
-void train_mnist(nn::Model *model, int batch_size, int epochs, bool test_each_epoch)
+void train_mnist(Model *model, int batch_size, int epochs, bool test_each_epoch)
 {
 	auto train_ds = get_train_dataset(batch_size);
 
@@ -176,7 +179,7 @@ void train_mnist(nn::Model *model, int batch_size, int epochs, bool test_each_ep
 	}
 }
 
-float test_mnist(nn::Model *model, int epoch, bool train, bool to_file)
+float test_mnist(Model *model, int epoch, bool train, bool to_file)
 {
 	float test_acc_pct = 0.0f;
 	float train_acc_pct = 0.0f;
@@ -281,10 +284,10 @@ float test_mnist(nn::Model *model, int epoch, bool train, bool to_file)
 
 void grad_tests()
 {
-	auto m1 = new nn::Model();
-	auto m2 = new nn::Model();
-	auto m3 = new nn::Model();
-	auto m4 = new nn::Model();
+	auto m1 = new Model();
+	auto m2 = new Model();
+	auto m3 = new Model();
+	auto m4 = new Model();
 
 	int batch_size = 1;
 
@@ -293,12 +296,12 @@ void grad_tests()
 		auto x = Tensor::random(true, Shape(batch_size, 64), 0.0f, 1.0f);
 		auto y = Tensor::ones(true, Shape(batch_size, 1));
 
-		m1->linear(x->shape(), 16, nn::layer::ActivationType::Sigmoid);
-		m1->linear(16, nn::layer::ActivationType::Tanh);
-		m1->linear(y->shape(), nn::layer::ActivationType::Sigmoid);
+		m1->linear(x->shape(), 16, layer::ActivationType::Sigmoid);
+		m1->linear(16, layer::ActivationType::Tanh);
+		m1->linear(y->shape(), layer::ActivationType::Sigmoid);
 
-		m1->set_loss(new nn::loss::MSE());
-		m1->set_optimizer(new nn::optim::SGD(m1->parameters(), 0.01f));
+		m1->set_loss(new loss::MSE());
+		m1->set_optimizer(new optim::SGD(m1->parameters(), 0.01f));
 
 		m1->summarize();
 		m1->validate_gradients(x, y, false);
@@ -313,12 +316,12 @@ void grad_tests()
 		auto y = Tensor::zeros(true, Shape(batch_size, 10));
 		y->set_val(3, 1.0f);
 
-		m2->linear(x->shape(), 16, nn::layer::ActivationType::Tanh);
-		m2->linear(16, nn::layer::ActivationType::Sigmoid);
-		m2->linear(y->shape(), nn::layer::ActivationType::Sigmoid);
+		m2->linear(x->shape(), 16, layer::ActivationType::Tanh);
+		m2->linear(16, layer::ActivationType::Sigmoid);
+		m2->linear(y->shape(), layer::ActivationType::Sigmoid);
 
-		m2->set_loss(new nn::loss::CrossEntropy());
-		m2->set_optimizer(new nn::optim::SGD(m2->parameters(), 0.01f));
+		m2->set_loss(new loss::CrossEntropy());
+		m2->set_optimizer(new optim::SGD(m2->parameters(), 0.01f));
 
 		m2->summarize();
 		m2->validate_gradients(x, y, false);
@@ -333,13 +336,13 @@ void grad_tests()
 		auto y = Tensor::zeros(true, Shape(batch_size, 4));
 		y->set_val(3, 1.0f);
 
-		m3->conv2d(x->shape(), Shape(4, 2, 3, 2), nn::layer::Stride{3, 2}, nn::layer::ActivationType::Sigmoid);
-		m3->conv2d(Shape(4, 4, 2, 2), nn::layer::Stride{1, 1}, nn::layer::ActivationType::Sigmoid);
-		m3->linear(16, nn::layer::ActivationType::Sigmoid);
-		m3->linear(y->shape(), nn::layer::ActivationType::Sigmoid);
+		m3->conv2d(x->shape(), Shape(4, 2, 3, 2), layer::Stride{3, 2}, layer::ActivationType::Sigmoid);
+		m3->conv2d(Shape(4, 4, 2, 2), layer::Stride{1, 1}, layer::ActivationType::Sigmoid);
+		m3->linear(16, layer::ActivationType::Sigmoid);
+		m3->linear(y->shape(), layer::ActivationType::Sigmoid);
 
-		m3->set_loss(new nn::loss::MSE());
-		m3->set_optimizer(new nn::optim::SGD(m3->parameters(), 0.01f));
+		m3->set_loss(new loss::MSE());
+		m3->set_optimizer(new optim::SGD(m3->parameters(), 0.01f));
 
 		m3->summarize();
 		m3->validate_gradients(x, y, false);
@@ -354,14 +357,14 @@ void grad_tests()
 		auto y = Tensor::zeros(true, Shape(batch_size, 4));
 		y->set_val(3, 1.0f);
 
-		m4->conv2d(x->shape(), Shape(4, 1, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::Sigmoid);
-		m4->conv2d(Shape(4, 4, 4, 4), nn::layer::Stride{1, 1}, nn::layer::ActivationType::Tanh);
-		m4->conv2d(Shape(4, 4, 2, 2), nn::layer::Stride{1, 1}, nn::layer::ActivationType::None);
-		m4->linear(16, nn::layer::ActivationType::Sigmoid);
-		m4->linear(y->shape(), nn::layer::ActivationType::Sigmoid);
+		m4->conv2d(x->shape(), Shape(4, 1, 3, 3), layer::Stride{1, 1}, layer::ActivationType::Sigmoid);
+		m4->conv2d(Shape(4, 4, 4, 4), layer::Stride{1, 1}, layer::ActivationType::Tanh);
+		m4->conv2d(Shape(4, 4, 2, 2), layer::Stride{1, 1}, layer::ActivationType::None);
+		m4->linear(16, layer::ActivationType::Sigmoid);
+		m4->linear(y->shape(), layer::ActivationType::Sigmoid);
 
-		m4->set_loss(new nn::loss::CrossEntropy());
-		m4->set_optimizer(new nn::optim::SGD(m4->parameters(), 0.01f));
+		m4->set_loss(new loss::CrossEntropy());
+		m4->set_optimizer(new optim::SGD(m4->parameters(), 0.01f));
 
 		m4->summarize();
 		m4->validate_gradients(x, y, false);
@@ -381,18 +384,18 @@ void mnist_conv(int batch_size, int epochs)
 	Shape input_shape = Shape(batch_size, 1, 28, 28);
 	Shape output_shape = Shape(batch_size, 10);
 
-	auto model = new nn::Model();
+	auto model = new Model();
 
-	model->conv2d(input_shape, Shape(16, 1, 5, 5), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(16, 16, 3, 3), nn::layer::Stride{3, 3}, nn::layer::ActivationType::ReLU);
-	model->conv2d(Shape(16, 16, 3, 3), nn::layer::Stride{1, 1}, nn::layer::ActivationType::ReLU);
-	model->linear(128, nn::layer::ActivationType::ReLU);
-	model->linear(64, nn::layer::ActivationType::ReLU);
-	model->linear(32, nn::layer::ActivationType::ReLU);
-	model->linear(output_shape, nn::layer::ActivationType::Sigmoid);
+	model->conv2d(input_shape, Shape(16, 1, 5, 5), layer::Stride{1, 1}, layer::ActivationType::ReLU);
+	model->conv2d(Shape(16, 16, 3, 3), layer::Stride{3, 3}, layer::ActivationType::ReLU);
+	model->conv2d(Shape(16, 16, 3, 3), layer::Stride{1, 1}, layer::ActivationType::ReLU);
+	model->linear(128, layer::ActivationType::ReLU);
+	model->linear(64, layer::ActivationType::ReLU);
+	model->linear(32, layer::ActivationType::ReLU);
+	model->linear(output_shape, layer::ActivationType::Sigmoid);
 
-	model->set_loss(new nn::loss::CrossEntropy());
-	model->set_optimizer(new nn::optim::SGDMomentum(model->parameters(), 1.0f, BETA_1));
+	model->set_loss(new loss::CrossEntropy());
+	model->set_optimizer(new optim::SGDMomentum(model->parameters(), 1.0f, BETA_1));
 
 	model->summarize();
 

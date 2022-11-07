@@ -11,35 +11,36 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\core\err.cuh" />
-    <ClInclude Include="src\core\mod.cuh" />
-    <ClInclude Include="src\core\tensor.cuh" />
-    <ClInclude Include="src\core\util.cuh" />
-    <ClInclude Include="src\nn\layer\activation.cuh" />
-    <ClInclude Include="src\nn\layer\conv2d.cuh" />
-    <ClInclude Include="src\nn\layer\layer.cuh" />
-    <ClInclude Include="src\nn\layer\learnable.cuh" />
-    <ClInclude Include="src\nn\layer\linear.cuh" />
-    <ClInclude Include="src\nn\layer\mod.cuh" />
-    <ClInclude Include="src\nn\loss\loss.cuh" />
-    <ClInclude Include="src\nn\loss\mod.cuh" />
-    <ClInclude Include="src\nn\mod.cuh" />
-    <ClInclude Include="src\nn\model.cuh" />
-    <ClInclude Include="src\nn\optim\mod.cuh" />
-    <ClInclude Include="src\nn\optim\optim.cuh" />
+    <ClInclude Include="src\zero\core\err.cuh" />
+    <ClInclude Include="src\zero\core\mod.cuh" />
+    <ClInclude Include="src\zero\core\tensor.cuh" />
+    <ClInclude Include="src\zero\core\util.cuh" />
+    <ClInclude Include="src\zero\mod.cuh" />
+    <ClInclude Include="src\zero\nn\layer\activation.cuh" />
+    <ClInclude Include="src\zero\nn\layer\conv2d.cuh" />
+    <ClInclude Include="src\zero\nn\layer\layer.cuh" />
+    <ClInclude Include="src\zero\nn\layer\learnable.cuh" />
+    <ClInclude Include="src\zero\nn\layer\linear.cuh" />
+    <ClInclude Include="src\zero\nn\layer\mod.cuh" />
+    <ClInclude Include="src\zero\nn\loss\loss.cuh" />
+    <ClInclude Include="src\zero\nn\loss\mod.cuh" />
+    <ClInclude Include="src\zero\nn\mod.cuh" />
+    <ClInclude Include="src\zero\nn\model.cuh" />
+    <ClInclude Include="src\zero\nn\optim\mod.cuh" />
+    <ClInclude Include="src\zero\nn\optim\optim.cuh" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="src\core\tensor.cu" />
-    <CudaCompile Include="src\core\util.cu" />
-    <CudaCompile Include="src\nn\constants.cuh" />
-    <CudaCompile Include="src\nn\layer\activation.cu" />
-    <CudaCompile Include="src\nn\layer\conv2d.cu" />
-    <CudaCompile Include="src\nn\layer\layer.cu" />
-    <CudaCompile Include="src\nn\layer\learnable.cu" />
-    <CudaCompile Include="src\nn\layer\linear.cu" />
-    <CudaCompile Include="src\nn\loss\loss.cu" />
-    <CudaCompile Include="src\nn\model.cu" />
-    <CudaCompile Include="src\nn\optim\optim.cu" />
+    <CudaCompile Include="src\zero\core\tensor.cu" />
+    <CudaCompile Include="src\zero\core\util.cu" />
+    <CudaCompile Include="src\zero\nn\constants.cuh" />
+    <CudaCompile Include="src\zero\nn\layer\activation.cu" />
+    <CudaCompile Include="src\zero\nn\layer\conv2d.cu" />
+    <CudaCompile Include="src\zero\nn\layer\layer.cu" />
+    <CudaCompile Include="src\zero\nn\layer\learnable.cu" />
+    <CudaCompile Include="src\zero\nn\layer\linear.cu" />
+    <CudaCompile Include="src\zero\nn\loss\loss.cu" />
+    <CudaCompile Include="src\zero\nn\model.cu" />
+    <CudaCompile Include="src\zero\nn\optim\optim.cu" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{11C2CC46-0537-4E2B-8145-433C34DBC7ED}</ProjectGuid>
