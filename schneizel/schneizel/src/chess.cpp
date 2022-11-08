@@ -1,5 +1,7 @@
 #include "chess.h"
 
+using namespace chess;
+
 int CHESS_START_BOARD[CHESS_BOARD_LEN] = {
     PieceType::WhiteRook, PieceType::WhiteKnight, PieceType::WhiteBishop, PieceType::WhiteQueen, PieceType::WhiteKing, PieceType::WhiteBishop, PieceType::WhiteKnight, PieceType::WhiteRook,
     PieceType::WhitePawn, PieceType::WhitePawn, PieceType::WhitePawn, PieceType::WhitePawn, PieceType::WhitePawn, PieceType::WhitePawn, PieceType::WhitePawn, PieceType::WhitePawn,
@@ -330,11 +332,6 @@ bool Board::is_adj_colrow_valid(int adj_col, int adj_row)
     }
 }
 
-int Board::operator[](int idx)
-{
-    return this->data_[idx];
-}
-
 bool Board::operator==(const Board &other)
 {
     return memcmp(this->data_, other.data_, sizeof(int) * CHESS_BOARD_LEN) == 0;
@@ -357,143 +354,144 @@ void Board::copy(Board *src)
     memcpy(this->data_, src->data_, sizeof(int) * CHESS_BOARD_LEN);
 }
 
-void Board::print(bool flip)
+void Board::print()
 {
-    if (!flip)
+    // Print in a more viewable format(a8 at top left of screen).
+    printf("   +---+---+---+---+---+---+---+---+");
+    printf("\n");
+    for (int i = CHESS_BOARD_ROW_CNT - 1; i >= 0; i--)
     {
-        // Print in a more viewable format(a8 at top left of screen).
-        printf("   +---+---+---+---+---+---+---+---+");
-        printf("\n");
-        for (int i = CHESS_BOARD_ROW_CNT - 1; i >= 0; i--)
-        {
-            printf("%d  ", i + 1);
-            printf("|");
-            for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
-            {
-
-                switch ((PieceType)this->data_[(i * CHESS_BOARD_COL_CNT) + j])
-                {
-                case PieceType::WhitePawn:
-                    printf(" P |");
-                    break;
-                case PieceType::BlackPawn:
-                    printf(" p |");
-                    break;
-                case PieceType::WhiteKnight:
-                    printf(" N |");
-                    break;
-                case PieceType::BlackKnight:
-                    printf(" n |");
-                    break;
-                case PieceType::WhiteBishop:
-                    printf(" B |");
-                    break;
-                case PieceType::BlackBishop:
-                    printf(" b |");
-                    break;
-                case PieceType::WhiteRook:
-                    printf(" R |");
-                    break;
-                case PieceType::BlackRook:
-                    printf(" r |");
-                    break;
-                case PieceType::WhiteQueen:
-                    printf(" Q |");
-                    break;
-                case PieceType::BlackQueen:
-                    printf(" q |");
-                    break;
-                case PieceType::WhiteKing:
-                    printf(" K |");
-                    break;
-                case PieceType::BlackKing:
-                    printf(" k |");
-                    break;
-                default:
-                    printf("   |");
-                    break;
-                }
-            }
-            printf("\n");
-            printf("   +---+---+---+---+---+---+---+---+");
-            printf("\n");
-        }
-
-        printf("    ");
+        printf("%d  ", i + 1);
+        printf("|");
         for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
         {
-            printf(" %c  ", get_col_fr_adj_col(j));
+            switch ((PieceType)this->data_[(i * CHESS_BOARD_COL_CNT) + j])
+            {
+            case PieceType::WhitePawn:
+                printf(" P |");
+                break;
+            case PieceType::BlackPawn:
+                printf(" p |");
+                break;
+            case PieceType::WhiteKnight:
+                printf(" N |");
+                break;
+            case PieceType::BlackKnight:
+                printf(" n |");
+                break;
+            case PieceType::WhiteBishop:
+                printf(" B |");
+                break;
+            case PieceType::BlackBishop:
+                printf(" b |");
+                break;
+            case PieceType::WhiteRook:
+                printf(" R |");
+                break;
+            case PieceType::BlackRook:
+                printf(" r |");
+                break;
+            case PieceType::WhiteQueen:
+                printf(" Q |");
+                break;
+            case PieceType::BlackQueen:
+                printf(" q |");
+                break;
+            case PieceType::WhiteKing:
+                printf(" K |");
+                break;
+            case PieceType::BlackKing:
+                printf(" k |");
+                break;
+            default:
+                printf("   |");
+                break;
+            }
         }
-
-        printf("\n\n");
-    }
-    else
-    {
+        printf("\n");
         printf("   +---+---+---+---+---+---+---+---+");
         printf("\n");
-        for (int i = 0; i < CHESS_BOARD_ROW_CNT; i++)
-        {
-            printf("%d  ", i + 1);
-            printf("|");
-            for (int j = CHESS_BOARD_COL_CNT - 1; j >= 0; j--)
-            {
+    }
 
-                switch ((PieceType)this->data_[(i * CHESS_BOARD_COL_CNT) + j])
-                {
-                case PieceType::WhitePawn:
-                    printf(" P |");
-                    break;
-                case PieceType::BlackPawn:
-                    printf(" p |");
-                    break;
-                case PieceType::WhiteKnight:
-                    printf(" N |");
-                    break;
-                case PieceType::BlackKnight:
-                    printf(" n |");
-                    break;
-                case PieceType::WhiteBishop:
-                    printf(" B |");
-                    break;
-                case PieceType::BlackBishop:
-                    printf(" b |");
-                    break;
-                case PieceType::WhiteRook:
-                    printf(" R |");
-                    break;
-                case PieceType::BlackRook:
-                    printf(" r |");
-                    break;
-                case PieceType::WhiteQueen:
-                    printf(" Q |");
-                    break;
-                case PieceType::BlackQueen:
-                    printf(" q |");
-                    break;
-                case PieceType::WhiteKing:
-                    printf(" K |");
-                    break;
-                case PieceType::BlackKing:
-                    printf(" k |");
-                    break;
-                default:
-                    printf("   |");
-                    break;
-                }
-            }
-            printf("\n");
-            printf("   +---+---+---+---+---+---+---+---+");
-            printf("\n");
-        }
+    printf("    ");
+    for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
+    {
+        printf(" %c  ", get_col_fr_adj_col(j));
+    }
 
-        printf("    ");
+    printf("\n\n");
+}
+
+void Board::print_flipped()
+{
+    printf("   +---+---+---+---+---+---+---+---+");
+    printf("\n");
+    for (int i = 0; i < CHESS_BOARD_ROW_CNT; i++)
+    {
+        printf("%d  ", i + 1);
+        printf("|");
         for (int j = CHESS_BOARD_COL_CNT - 1; j >= 0; j--)
         {
-            printf(" %c  ", get_col_fr_adj_col(j));
+            switch ((PieceType)this->data_[(i * CHESS_BOARD_COL_CNT) + j])
+            {
+            case PieceType::WhitePawn:
+                printf(" P |");
+                break;
+            case PieceType::BlackPawn:
+                printf(" p |");
+                break;
+            case PieceType::WhiteKnight:
+                printf(" N |");
+                break;
+            case PieceType::BlackKnight:
+                printf(" n |");
+                break;
+            case PieceType::WhiteBishop:
+                printf(" B |");
+                break;
+            case PieceType::BlackBishop:
+                printf(" b |");
+                break;
+            case PieceType::WhiteRook:
+                printf(" R |");
+                break;
+            case PieceType::BlackRook:
+                printf(" r |");
+                break;
+            case PieceType::WhiteQueen:
+                printf(" Q |");
+                break;
+            case PieceType::BlackQueen:
+                printf(" q |");
+                break;
+            case PieceType::WhiteKing:
+                printf(" K |");
+                break;
+            case PieceType::BlackKing:
+                printf(" k |");
+                break;
+            default:
+                printf("   |");
+                break;
+            }
         }
-
-        printf("\n\n");
+        printf("\n");
+        printf("   +---+---+---+---+---+---+---+---+");
+        printf("\n");
     }
+
+    printf("    ");
+    for (int j = CHESS_BOARD_COL_CNT - 1; j >= 0; j--)
+    {
+        printf(" %c  ", get_col_fr_adj_col(j));
+    }
+
+    printf("\n\n");
+}
+
+bool Board::is_white_turn()
+{
+    return this->white_;
 }
 
 bool Board::is_cell_under_attack(int idx)
@@ -564,13 +562,17 @@ bool Board::is_cell_under_attack(int idx)
     return under_attack_flg;
 }
 
-bool Board::is_in_check()
+bool Board::check()
+{
+    return this->check(this->white_);
+}
+
+bool Board::check(bool white)
 {
     bool in_check_flg = false;
-
     int *board = this->data_;
 
-    if (this->white_)
+    if (white)
     {
         for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
         {
@@ -632,17 +634,22 @@ bool Board::is_in_check()
     return in_check_flg;
 }
 
-bool Board::is_in_checkmate()
+bool Board::checkmate()
+{
+    return this->checkmate(this->white_);
+}
+
+bool Board::checkmate(bool white)
 {
     bool in_checkmate_flg;
 
     int *board = this->data_;
 
-    if (this->is_in_check())
+    if (this->check(white))
     {
         in_checkmate_flg = true;
 
-        if (this->white_)
+        if (white)
         {
             for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
             {
@@ -683,17 +690,22 @@ bool Board::is_in_checkmate()
     return in_checkmate_flg;
 }
 
-bool Board::is_in_stalemate()
+bool Board::stalemate()
+{
+    return this->stalemate(this->white_);
+}
+
+bool Board::stalemate(bool white)
 {
     bool in_stalemate_flg;
 
     int *board = this->data_;
 
-    if (!this->is_in_check())
+    if (!this->check(white))
     {
         in_stalemate_flg = true;
 
-        if (this->white_)
+        if (white)
         {
             for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
             {
@@ -732,6 +744,184 @@ bool Board::is_in_stalemate()
     }
 
     return in_stalemate_flg;
+}
+
+bool Board::insufficient_material()
+{
+    return this->insufficient_material(this->white_);
+}
+
+bool Board::insufficient_material(bool white)
+{
+    bool pawn_found = false;
+    int knight_cnt = 0;
+    int bishop_cnt = 0;
+    bool rook_or_queen_found = false;
+
+    for (int i = 0; i < CHESS_BOARD_LEN; i++)
+    {
+        PieceType typ = (PieceType)this->data_[i];
+
+        switch (typ)
+        {
+        case PieceType::WhitePawn:
+            if (white)
+            {
+                pawn_found = true;
+            }
+            break;
+        case PieceType::BlackPawn:
+            if (!white)
+            {
+                pawn_found = true;
+            }
+            break;
+        case PieceType::WhiteKnight:
+            if (white)
+            {
+                knight_cnt++;
+            }
+            break;
+        case PieceType::BlackKnight:
+            if (!white)
+            {
+                knight_cnt++;
+            }
+            break;
+        case PieceType::WhiteBishop:
+            if (white)
+            {
+                bishop_cnt++;
+            }
+            break;
+        case PieceType::BlackBishop:
+            if (!white)
+            {
+                bishop_cnt++;
+            }
+            break;
+        case PieceType::WhiteRook:
+        case PieceType::WhiteQueen:
+            if (white)
+            {
+                rook_or_queen_found = true;
+                return false;
+            }
+        case PieceType::BlackRook:
+        case PieceType::BlackQueen:
+            if (!white)
+            {
+                rook_or_queen_found = true;
+                return false;
+            }
+        default:
+            break;
+        }
+    }
+
+    if (knight_cnt < 2 && bishop_cnt == 0 &&
+        !rook_or_queen_found && !pawn_found)
+    {
+        return true;
+    }
+    else if (knight_cnt == 0 && bishop_cnt < 2 &&
+             !rook_or_queen_found && !pawn_found)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+BoardStatus Board::get_status()
+{
+    if (this->check(true))
+    {
+        return BoardStatus::WhiteInCheck;
+    }
+    else if (this->check(false))
+    {
+        return BoardStatus::BlackInCheck;
+    }
+    else if (this->checkmate(true))
+    {
+        return BoardStatus::WhiteInCheckmate;
+    }
+    else if (this->checkmate(false))
+    {
+        return BoardStatus::BlackInCheckmate;
+    }
+    else if (this->stalemate(true))
+    {
+        return BoardStatus::WhiteInStalemate;
+    }
+    else if (this->stalemate(false))
+    {
+        return BoardStatus::BlackInStalemate;
+    }
+    else if (this->insufficient_material(true))
+    {
+        return BoardStatus::WhiteInsufficientMaterial;
+    }
+    else if (this->insufficient_material(false))
+    {
+        return BoardStatus::BlackInsufficientMaterial;
+    }
+    else
+    {
+        return BoardStatus::Normal;
+    }
+}
+
+void Board::print_status()
+{
+    switch (this->get_status())
+    {
+    case BoardStatus::Normal:
+        printf("STATUS: Normal\n");
+        break;
+    case BoardStatus::WhiteInCheck:
+        printf("STATUS: WhiteInCheck\n");
+        break;
+    case BoardStatus::BlackInCheck:
+        printf("STATUS: BlackInCheck\n");
+        break;
+    case BoardStatus::WhiteInCheckmate:
+        printf("STATUS: WhiteInCheckmate\n");
+        break;
+    case BoardStatus::BlackInCheckmate:
+        printf("STATUS: BlackInCheckmate\n");
+        break;
+    case BoardStatus::WhiteInStalemate:
+        printf("STATUS: WhiteInStalemate\n");
+        break;
+    case BoardStatus::BlackInStalemate:
+        printf("STATUS: BlackInStalemate\n");
+        break;
+    case BoardStatus::WhiteInsufficientMaterial:
+        printf("STATUS: WhiteInsufficientMaterial\n");
+        break;
+    case BoardStatus::BlackInsufficientMaterial:
+        printf("STATUS: BlackInsufficientMaterial\n");
+        break;
+    default:
+        break;
+    }
+}
+
+bool Board::game_over()
+{
+    BoardStatus sts = this->get_status();
+    if (sts == BoardStatus::Normal || sts == BoardStatus::WhiteInCheck || sts == BoardStatus::BlackInCheck)
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
 }
 
 int *Board::get_legal_moves_for_piece(int piece_idx, bool test_in_check)
@@ -1453,7 +1643,7 @@ int *Board::get_legal_moves_for_piece(int piece_idx, bool test_in_check)
         for (int i = 0; i < mov_ctr; i++)
         {
             Board sim = this->simulate(Move{piece_idx, out[i]});
-            if (!sim.is_in_check())
+            if (!sim.check(this->white_))
             {
                 check_out[check_mov_ctr++] = out[i];
             }
@@ -1463,6 +1653,11 @@ int *Board::get_legal_moves_for_piece(int piece_idx, bool test_in_check)
     }
 
     return out;
+}
+
+Move Board::get_random_move()
+{
+    return this->get_random_move(this);
 }
 
 Move Board::get_random_move(Board *cmp)
@@ -2022,6 +2217,11 @@ Move Board::change(Move move)
     return this->change(an_move);
 }
 
+Move Board::change()
+{
+    return this->change(this->get_random_move());
+}
+
 Board Board::simulate(Move move)
 {
     Board sim;
@@ -2076,65 +2276,19 @@ std::vector<Board> Board::simulate_all_legal_moves()
     return sims;
 }
 
-float *Board::get_float()
+void Board::get_material(float *out)
 {
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
-        this->temp_flt_data_[i] = Piece::piece_to_float((PieceType)this->data_[i]);
+        out[i] = Piece::piece_to_float((PieceType)this->data_[i]);
     }
-
-    return this->temp_flt_data_;
 }
 
-void Board::print_float()
+void Board::get_piece_influence(int piece_idx, int *out)
 {
-    this->get_float();
-
-    // Print in a more viewable format(a8 at top left of screen).
-    printf("   +---+---+---+---+---+---+---+---+");
-    printf("\n");
-    for (int i = CHESS_BOARD_ROW_CNT - 1; i >= 0; i--)
-    {
-        printf("%d  ", i + 1);
-        printf("|");
-        for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
-        {
-            int val = ceil(this->temp_flt_data_[(i * CHESS_BOARD_COL_CNT) + j]);
-
-            if (val < 0)
-            {
-                printf("%d |", val);
-            }
-            else if (val > 0)
-            {
-                printf(" %d |", val);
-            }
-            else
-            {
-                printf(" %d |", val);
-            }
-        }
-        printf("\n");
-        printf("   +---+---+---+---+---+---+---+---+");
-        printf("\n");
-    }
-
-    printf("    ");
-    for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
-    {
-        printf(" %c  ", Board::get_col_fr_adj_col(j));
-    }
-
-    printf("\n\n");
-}
-
-int *Board::get_piece_influence(int piece_idx)
-{
-    int *out = this->temp_piece_influence_idxs_;
-
     memset(out, CHESS_INVALID_VALUE, sizeof(int) * CHESS_MAX_LEGAL_MOVE_CNT);
-    int mov_ctr = 0;
 
+    int mov_ctr = 0;
     int *board = this->data_;
 
     PieceType piece = (PieceType)board[piece_idx];
@@ -2659,7 +2813,7 @@ int *Board::get_piece_influence(int piece_idx)
         for (int i = 0; i < mov_ctr; i++)
         {
             Board sim = this->simulate(Move{piece_idx, out[i]});
-            if (!sim.is_in_check())
+            if (!sim.check())
             {
                 check_out[check_mov_ctr++] = out[i];
             }
@@ -2667,14 +2821,13 @@ int *Board::get_piece_influence(int piece_idx)
 
         memcpy(out, check_out, sizeof(int) * mov_ctr);
     }
-
-    return out;
 }
 
-float *Board::get_influence()
+void Board::get_influence(float *out)
 {
-    float *out = this->temp_influence_data_;
     memset(out, 0, sizeof(int) * CHESS_BOARD_LEN);
+
+    int dst_idxs[CHESS_MAX_LEGAL_MOVE_CNT];
 
     for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
     {
@@ -2682,11 +2835,11 @@ float *Board::get_influence()
 
         if (piece != PieceType::Empty)
         {
-            int *moves = this->get_piece_influence(piece_idx);
+            this->get_piece_influence(piece_idx, dst_idxs);
 
             for (int mov_idx = 0; mov_idx < CHESS_MAX_LEGAL_MOVE_CNT; mov_idx++)
             {
-                int mov_dst_idx = moves[mov_idx];
+                int mov_dst_idx = dst_idxs[mov_idx];
 
                 if (mov_dst_idx == CHESS_INVALID_VALUE)
                 {
@@ -2734,50 +2887,6 @@ float *Board::get_influence()
             }
         }
     }
-
-    return out;
-}
-
-void Board::print_influence()
-{
-    this->get_influence();
-
-    // Print in a more viewable format(a8 at top left of screen).
-    printf("   +---+---+---+---+---+---+---+---+");
-    printf("\n");
-    for (int i = CHESS_BOARD_ROW_CNT - 1; i >= 0; i--)
-    {
-        printf("%d  ", i + 1);
-        printf("|");
-        for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
-        {
-            int val = ceil(this->temp_influence_data_[(i * CHESS_BOARD_COL_CNT) + j]);
-
-            if (val < 0)
-            {
-                printf("%d |", val);
-            }
-            else if (val > 0)
-            {
-                printf(" %d |", val);
-            }
-            else
-            {
-                printf(" %d |", val);
-            }
-        }
-        printf("\n");
-        printf("   +---+---+---+---+---+---+---+---+");
-        printf("\n");
-    }
-
-    printf("    ");
-    for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
-    {
-        printf(" %c  ", Board::get_col_fr_adj_col(j));
-    }
-
-    printf("\n\n");
 }
 
 void Board::one_hot_encode(int *out)
