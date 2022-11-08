@@ -392,7 +392,7 @@ void mnist_conv(int batch_size, int epochs)
 	model->linear(output_shape, zero::nn::layer::ActivationType::Sigmoid);
 
 	model->set_loss(new zero::nn::loss::CrossEntropy());
-	model->set_optimizer(new zero::nn::optim::SGDMomentum(model->parameters(), 1.0f, ZERO_NN_BETA_1));
+	model->set_optimizer(new zero::nn::optim::SGDMomentum(model->parameters(), 0.15f, ZERO_NN_BETA_1));
 
 	model->summarize();
 
@@ -407,7 +407,9 @@ int main(int argc, char **argv)
 	printf("MNIST-ZERO\n\n");
 	srand(time(NULL));
 
-	grad_tests();
+	// grad_tests();
+
+	mnist_conv(50, 30);
 
 	return 0;
 }
