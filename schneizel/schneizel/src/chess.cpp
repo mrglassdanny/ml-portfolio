@@ -718,6 +718,7 @@ void Board::reset()
 void Board::copy(Board *src)
 {
     this->white_ = src->white_;
+    this->move_cnt_ = src->move_cnt_;
     memcpy(this->data_, src->data_, sizeof(int) * CHESS_BOARD_LEN);
 }
 
@@ -2194,41 +2195,45 @@ BoardStatus Board::get_status()
 
 void Board::print_status()
 {
+    printf("Status: ");
+
     switch (this->get_status())
     {
     case BoardStatus::Normal:
-        printf("STATUS: Normal\n");
+        printf("Normal");
         break;
     case BoardStatus::WhiteInCheck:
-        printf("STATUS: WhiteInCheck\n");
+        printf("WhiteInCheck");
         break;
     case BoardStatus::BlackInCheck:
-        printf("STATUS: BlackInCheck\n");
+        printf("BlackInCheck");
         break;
     case BoardStatus::WhiteInCheckmate:
-        printf("STATUS: WhiteInCheckmate\n");
+        printf("WhiteInCheckmate");
         break;
     case BoardStatus::BlackInCheckmate:
-        printf("STATUS: BlackInCheckmate\n");
+        printf("BlackInCheckmate");
         break;
     case BoardStatus::WhiteInStalemate:
-        printf("STATUS: WhiteInStalemate\n");
+        printf("WhiteInStalemate");
         break;
     case BoardStatus::BlackInStalemate:
-        printf("STATUS: BlackInStalemate\n");
+        printf("BlackInStalemate");
         break;
     case BoardStatus::WhiteInsufficientMaterial:
-        printf("STATUS: WhiteInsufficientMaterial\n");
+        printf("WhiteInsufficientMaterial");
         break;
     case BoardStatus::BlackInsufficientMaterial:
-        printf("STATUS: BlackInsufficientMaterial\n");
+        printf("BlackInsufficientMaterial");
         break;
     case BoardStatus::MoveLimitExceeded:
-        printf("STATUS: MoveLimitExceeded\n");
+        printf("MoveLimitExceeded");
         break;
     default:
         break;
     }
+
+    printf("\tMove count: %d\n", this->move_cnt_);
 }
 
 void Board::one_hot_encode(int *out)

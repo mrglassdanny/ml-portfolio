@@ -14,10 +14,11 @@ int main()
 
 	while (!board.game_over())
 	{
-		board.change();
-		board.print();
+		auto move = board.change();
+		printf("=================================\n");
 		board.print_status();
-		printf("=== === === === === === === === ===\n");
+		printf("Move: %s\n", board.convert_move_to_an_move(move).c_str());
+		board.print();
 	}
 
 	// at::Tensor a = at::ones({2, 2}, at::kInt);
