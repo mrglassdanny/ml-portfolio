@@ -1809,9 +1809,7 @@ Move Board::change(std::string an_move)
     this->white_ = !this->white_;
     this->move_cnt_++;
 
-    Move chess_move;
-    chess_move.src_idx = src_idx;
-    chess_move.dst_idx = dst_idx;
+    Move chess_move{src_idx, dst_idx};
     return chess_move;
 }
 
