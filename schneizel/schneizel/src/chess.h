@@ -5,16 +5,14 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <iostream>
 #include <vector>
 
 #define CHESS_BOARD_ROW_CNT 8
 #define CHESS_BOARD_COL_CNT 8
 #define CHESS_BOARD_LEN (CHESS_BOARD_COL_CNT * CHESS_BOARD_ROW_CNT)
 
-#define CHESS_MAX_LEGAL_MOVE_CNT 32
-
-#define CHESS_MAX_AN_MOVE_LEN 8
-#define CHESS_MAX_GAME_MOVE_CNT 500
+#define CHESS_MOVE_LIMIT 500
 
 #define CHESS_INVALID_VALUE -1
 
@@ -73,16 +71,16 @@ namespace chess
         WhiteInStalemate,
         BlackInStalemate,
         WhiteInsufficientMaterial,
-        BlackInsufficientMaterial
+        BlackInsufficientMaterial,
+        MoveLimitExceeded
     };
 
     class Board
     {
     private:
         bool white_;
+        int move_cnt_;
         int data_[CHESS_BOARD_LEN];
-        int temp_legal_move_idxs_[CHESS_MAX_LEGAL_MOVE_CNT];
-        char temp_an_move_[CHESS_MAX_AN_MOVE_LEN];
 
         static int get_col_fr_adj_col(int adj_col);
         static int get_adj_col_fr_col(char col);
@@ -97,10 +95,12 @@ namespace chess
         static bool is_row_valid(int row);
         static bool is_adj_colrow_valid(int adj_col, int adj_row);
 
-        bool is_cell_under_attack(int idx);
-        int *get_legal_moves_for_piece(int piece_idx, bool test_in_check_flg);
-        const char *translate_to_an_move(Move move);
-        void get_piece_influence(int piece_idx, int *out);
+        bool is_square_under_attack(int idx);
+
+        void get_piece_straight_moves(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out);
+        void get_piece_straight_influence(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out);
+        void get_piece_diagonal_moves(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out);
+        void get_piece_diagonal_influence(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out);
 
     public:
         Board();
@@ -111,19 +111,23 @@ namespace chess
 
         void reset();
         void copy(Board *src);
+
         void print();
         void print_flipped();
 
         bool is_white_turn();
 
-        Move get_random_move();
-        Move get_random_move(Board *cmp_board);
+        std::vector<int> get_piece_moves(int piece_idx, bool test_in_check_flg);
+        std::vector<int> get_piece_influence(int piece_idx);
 
-        Move change(const char *an_move);
+        Move get_random_move();
+        std::string convert_move_to_an_move(Move move);
+
+        Move change(std::string an_move);
         Move change(Move move);
         Move change();
         Board simulate(Move move);
-        std::vector<Board> simulate_all_legal_moves();
+        std::vector<Board> simulate_all_moves();
 
         bool check();
         bool check(bool white);
@@ -137,9 +141,6 @@ namespace chess
 
         BoardStatus get_status();
         void print_status();
-
-        void get_material(float *out);
-        void get_influence(float *out);
 
         void one_hot_encode(int *out);
         void one_hot_encode(float *out);
