@@ -19,20 +19,15 @@
 #define CHESS_ONE_HOT_ENCODE_COMBINATION_CNT 6
 #define CHESS_ONE_HOT_ENCODED_BOARD_LEN (CHESS_BOARD_LEN * CHESS_ONE_HOT_ENCODE_COMBINATION_CNT)
 
+#define CHESS_OPENING_E4 1000
+#define CHESS_OPENING_E4_CNT 13
+#define CHESS_OPENING_D4 2000
+#define CHESS_OPENING_D4_CNT 13
+#define CHESS_OPENING_OTHER 3000
+#define CHESS_OPENING_OTHER_CNT 12
+
 namespace chess
 {
-    struct Move
-    {
-        int src_idx;
-        int dst_idx;
-    };
-
-    struct MinimaxResult
-    {
-        float eval;
-        bool prune_flg;
-    };
-
     enum PieceType
     {
         Empty = 0,
@@ -59,6 +54,12 @@ namespace chess
         static bool is_piece_black(PieceType piece);
         static bool is_piece_same_color(PieceType a, PieceType b);
         static float piece_to_float(PieceType piece);
+    };
+
+    struct Move
+    {
+        int src_idx;
+        int dst_idx;
     };
 
     enum BoardStatus
@@ -144,5 +145,43 @@ namespace chess
 
         void one_hot_encode(int *out);
         void one_hot_encode(float *out);
+    };
+
+    enum OpeningType
+    {
+        SicilianDefense = CHESS_OPENING_E4,
+        FrenchDefense = CHESS_OPENING_E4 + 1,
+        RuyLopezOpening = CHESS_OPENING_E4 + 2,
+        CaroKannDefense = CHESS_OPENING_E4 + 3,
+        ItalianGame = CHESS_OPENING_E4 + 4,
+        SicilianDefenseClosed = CHESS_OPENING_E4 + 5,
+        ScandinavianDefense = CHESS_OPENING_E4 + 6,
+        PircDefense = CHESS_OPENING_E4 + 7,
+        SicilianDefenseAlapinVariation = CHESS_OPENING_E4 + 8,
+        AlekhinesDefense = CHESS_OPENING_E4 + 9,
+        KingsGambit = CHESS_OPENING_E4 + 10,
+        ScotchGame = CHESS_OPENING_E4 + 11,
+        ViennaGame = CHESS_OPENING_E4 + 12,
+        QueensGambit = CHESS_OPENING_D4,
+        SlavDefense = CHESS_OPENING_D4 + 1,
+        KingsIndianDefense = CHESS_OPENING_D4 + 2,
+        NimzoIndianDefense = CHESS_OPENING_D4 + 3,
+        QueensIndianDefense = CHESS_OPENING_D4 + 4,
+        CatalanOpening = CHESS_OPENING_D4 + 5,
+        BogoIndianDefense = CHESS_OPENING_D4 + 6,
+        GrunfeldDefense = CHESS_OPENING_D4 + 7,
+        DutchDefense = CHESS_OPENING_D4 + 8,
+        TrompowskyAttack = CHESS_OPENING_D4 + 9,
+        BenkoGambit = CHESS_OPENING_D4 + 10,
+        LondonSystem = CHESS_OPENING_D4 + 11,
+        BenoniDefense = CHESS_OPENING_D4 + 12,
+    };
+
+    class Openings
+    {
+    public:
+        static Board create(OpeningType typ);
+        static Board create_rand_e4();
+        static Board create_rand_d4();
     };
 }

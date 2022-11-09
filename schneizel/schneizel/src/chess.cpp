@@ -1419,31 +1419,13 @@ Move Board::change(std::string an_move)
     char piece_char;
 
     // Trim '+'/'#'.
-    for (int i = an_move.size() - 1; i > 0; i--)
-    {
-        if (mut_an_move[i] == '+' || mut_an_move[i] == '#')
-        {
-            // Can safely just 0 out since we know '+'/'#' will be at the end of the move string.
-            mut_an_move[i] = 0;
-        }
-    }
+    mut_an_move.erase(remove(mut_an_move.begin(), mut_an_move.end(), '+'), mut_an_move.end());
+    mut_an_move.erase(remove(mut_an_move.begin(), mut_an_move.end(), '#'), mut_an_move.end());
 
     // Remove 'x'.
-    for (int i = 0; i < an_move.size(); i++)
-    {
-        if (mut_an_move[i] == 'x')
-        {
-            for (int j = i; j < an_move.size() - 1; j++)
-            {
-                mut_an_move[j] = mut_an_move[j + 1];
-            }
-            break;
-        }
-    }
+    mut_an_move.erase(remove(mut_an_move.begin(), mut_an_move.end(), 'x'), mut_an_move.end());
 
-    int mut_mov_len = mut_an_move.size();
-
-    switch (mut_mov_len)
+    switch (mut_an_move.size())
     {
     case 2:
         // Pawn move.
@@ -1778,28 +1760,25 @@ Move Board::change(std::string an_move)
             }
         }
         break;
-    case 7: // 7 is chess-zero custom move format.
-        if (mut_mov_len == 7)
-        {
-            piece = Piece::get_piece_fr_char(mut_an_move[0], white);
-            src_col = mut_an_move[1];
-            src_row = get_row_fr_char(mut_an_move[2]);
-            src_idx = get_idx_fr_colrow(src_col, src_row);
-            dst_col = mut_an_move[3];
-            dst_row = get_row_fr_char(mut_an_move[4]);
-            dst_idx = get_idx_fr_colrow(dst_col, dst_row);
+    case 7: // schneizel custom move format.
+        piece = Piece::get_piece_fr_char(mut_an_move[0], white);
+        src_col = mut_an_move[1];
+        src_row = get_row_fr_char(mut_an_move[2]);
+        src_idx = get_idx_fr_colrow(src_col, src_row);
+        dst_col = mut_an_move[3];
+        dst_row = get_row_fr_char(mut_an_move[4]);
+        dst_idx = get_idx_fr_colrow(dst_col, dst_row);
 
-            if (mut_an_move[5] == '=')
-            {
-                PieceType promo_piece = Piece::get_piece_fr_char(mut_an_move[6], white);
-                board[dst_idx] = promo_piece;
-                board[src_idx] = PieceType::Empty;
-            }
-            else
-            {
-                board[dst_idx] = piece;
-                board[src_idx] = PieceType::Empty;
-            }
+        if (mut_an_move[5] == '=')
+        {
+            PieceType promo_piece = Piece::get_piece_fr_char(mut_an_move[6], white);
+            board[dst_idx] = promo_piece;
+            board[src_idx] = PieceType::Empty;
+        }
+        else
+        {
+            board[dst_idx] = piece;
+            board[src_idx] = PieceType::Empty;
         }
         break;
     default: // Nothing..
@@ -2332,4 +2311,188 @@ void Board::one_hot_encode(float *out)
             break;
         }
     }
+}
+
+Board Openings::create(OpeningType typ)
+{
+    Board board;
+
+    switch (typ)
+    {
+    case SicilianDefense:
+        board.change("e4");
+        board.change("c5");
+        break;
+    case FrenchDefense:
+        board.change("e4");
+        board.change("e6");
+        break;
+    case RuyLopezOpening:
+        board.change("e4");
+        board.change("e5");
+        board.change("Nf3");
+        board.change("Nc6");
+        board.change("Bb5");
+        break;
+    case CaroKannDefense:
+        board.change("e4");
+        board.change("c6");
+        break;
+    case ItalianGame:
+        board.change("e4");
+        board.change("e5");
+        board.change("Nf3");
+        board.change("Nc6");
+        board.change("Bc4");
+        break;
+    case SicilianDefenseClosed:
+        board.change("e4");
+        board.change("c5");
+        board.change("Nc3");
+        break;
+    case ScandinavianDefense:
+        board.change("e4");
+        board.change("d5");
+        break;
+    case PircDefense:
+        board.change("e4");
+        board.change("d6");
+        board.change("d4");
+        board.change("Nf6");
+        break;
+    case SicilianDefenseAlapinVariation:
+        board.change("e4");
+        board.change("c5");
+        board.change("c3");
+        break;
+    case AlekhinesDefense:
+        board.change("e4");
+        board.change("Nf6");
+        break;
+    case KingsGambit:
+        board.change("e4");
+        board.change("e5");
+        board.change("f4");
+        break;
+    case ScotchGame:
+        board.change("e4");
+        board.change("e5");
+        board.change("Nf3");
+        board.change("Nc6");
+        board.change("d4");
+        break;
+    case ViennaGame:
+        board.change("e4");
+        board.change("e5");
+        board.change("Nc3");
+        break;
+    case QueensGambit:
+        board.change("d4");
+        board.change("d5");
+        board.change("c4");
+        break;
+    case SlavDefense:
+        board.change("d4");
+        board.change("d5");
+        board.change("c4");
+        board.change("c6");
+        break;
+    case KingsIndianDefense:
+        board.change("d4");
+        board.change("Nf6");
+        board.change("c4");
+        board.change("g6");
+        break;
+    case NimzoIndianDefense:
+        board.change("d4");
+        board.change("Nf6");
+        board.change("c4");
+        board.change("e6");
+        board.change("Nc3");
+        board.change("Bb4");
+        break;
+    case QueensIndianDefense:
+        board.change("d4");
+        board.change("Nf6");
+        board.change("c4");
+        board.change("e6");
+        board.change("Nf3");
+        board.change("b6");
+        break;
+    case CatalanOpening:
+        board.change("d4");
+        board.change("Nf6");
+        board.change("c4");
+        board.change("e6");
+        board.change("g3");
+        break;
+    case BogoIndianDefense:
+        board.change("d4");
+        board.change("Nf6");
+        board.change("c4");
+        board.change("e6");
+        board.change("Nf3");
+        board.change("Bb4+");
+        break;
+    case GrunfeldDefense:
+        board.change("d4");
+        board.change("Nf6");
+        board.change("c4");
+        board.change("g6");
+        board.change("Nc3");
+        board.change("d5");
+        break;
+    case DutchDefense:
+        board.change("d4");
+        board.change("f5");
+        break;
+    case TrompowskyAttack:
+        board.change("d4");
+        board.change("Nf6");
+        board.change("Bg5");
+        break;
+    case BenkoGambit:
+        board.change("d4");
+        board.change("Nf6");
+        board.change("c4");
+        board.change("c5");
+        board.change("d5");
+        board.change("b5");
+        break;
+    case LondonSystem:
+        board.change("d4");
+        board.change("d5");
+        board.change("Nf3");
+        board.change("Nf6");
+        board.change("Bf4");
+        break;
+    case BenoniDefense:
+        board.change("d4");
+        board.change("Nf6");
+        board.change("c4");
+        board.change("c5");
+        board.change("d5");
+        board.change("e6");
+        board.change("Nc3");
+        board.change("exd5");
+        board.change("cxd5");
+        board.change("d6");
+        break;
+    default:
+        break;
+    }
+
+    return board;
+}
+
+Board Openings::create_rand_e4()
+{
+    OpeningType typ = (OpeningType)((rand() % CHESS_OPENING_E4_CNT) + CHESS_OPENING_E4);
+    return Openings::create(typ);
+}
+
+Board Openings::create_rand_d4()
+{
+    OpeningType typ = (OpeningType)((rand() % CHESS_OPENING_D4_CNT) + CHESS_OPENING_D4);
+    return Openings::create(typ);
 }
