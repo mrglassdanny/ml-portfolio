@@ -50,12 +50,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(SolutionDir)\$(ProjectName)\bin\$(Platform)-$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)\$(ProjectName)\bin-int\$(Platform)-$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)$(ProjectName)\bin\$(Platform)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)$(ProjectName)\bin-int\$(Platform)-$(Configuration)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)\$(ProjectName)\bin\$(Platform)-$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)\$(ProjectName)\bin-int\$(Platform)-$(Configuration)\</IntDir>
+    <OutDir>$(SolutionDir)$(ProjectName)\bin\$(Platform)-$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)$(ProjectName)\bin-int\$(Platform)-$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -70,7 +70,7 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CompileOut>$(SolutionDir)\$(ProjectName)\bin\$(Platform)-$(Configuration)\%(Filename)%(Extension).obj</CompileOut>
+      <CompileOut>$(SolutionDir)$(ProjectName)\bin\$(Platform)-$(Configuration)\%(Filename)%(Extension).obj</CompileOut>
       <Include>$(SolutionDir)zero-system\src\;%(Include)</Include>
     </CudaCompile>
   </ItemDefinitionGroup>
@@ -91,7 +91,7 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <CompileOut>$(SolutionDir)\$(ProjectName)\bin\$(Platform)-$(Configuration)\%(Filename)%(Extension).obj</CompileOut>
+      <CompileOut>$(SolutionDir)$(ProjectName)\bin\$(Platform)-$(Configuration)\%(Filename)%(Extension).obj</CompileOut>
       <Include>$(SolutionDir)zero-system\src\;%(Include)</Include>
     </CudaCompile>
   </ItemDefinitionGroup>
