@@ -10,14 +10,27 @@ int main()
 {
 	srand(time(NULL));
 
-	Board board;
+	// Board board;
 
-	while (!board.game_over())
+	// while (!board.game_over())
+	// {
+	// 	printf("\n================================= =================================\n");
+	// 	board.print_status();
+	// 	board.change();
+	// 	board.print();
+	// 	board.print_status();
+	// 	printf("================================= =================================\n");
+	// }
+
+	auto board = Openings::create_rand_d4();
+	board.print();
+
+	for (int i = 0; i < 10; i++)
 	{
-		board.change();
+		auto move = board.convert_move_to_an_move(board.get_random_move());
+		printf("%s\n", move.c_str());
+		board.change(move);
 		board.print();
-		board.print_status();
-		printf("=== === === === === === === === ===\n");
 	}
 
 	// at::Tensor a = at::ones({2, 2}, at::kInt);

@@ -5,36 +5,29 @@
 #include <string.h>
 #include <ctype.h>
 
+#include <iostream>
 #include <vector>
 
 #define CHESS_BOARD_ROW_CNT 8
 #define CHESS_BOARD_COL_CNT 8
 #define CHESS_BOARD_LEN (CHESS_BOARD_COL_CNT * CHESS_BOARD_ROW_CNT)
 
-#define CHESS_MAX_LEGAL_MOVE_CNT 32
-
-#define CHESS_MAX_AN_MOVE_LEN 8
-#define CHESS_MAX_GAME_MOVE_CNT 500
+#define CHESS_MOVE_LIMIT 250
 
 #define CHESS_INVALID_VALUE -1
 
 #define CHESS_ONE_HOT_ENCODE_COMBINATION_CNT 6
 #define CHESS_ONE_HOT_ENCODED_BOARD_LEN (CHESS_BOARD_LEN * CHESS_ONE_HOT_ENCODE_COMBINATION_CNT)
 
+#define CHESS_OPENING_E4 1000
+#define CHESS_OPENING_E4_CNT 13
+#define CHESS_OPENING_D4 2000
+#define CHESS_OPENING_D4_CNT 13
+#define CHESS_OPENING_OTHER 3000
+#define CHESS_OPENING_OTHER_CNT 12
+
 namespace chess
 {
-    struct Move
-    {
-        int src_idx;
-        int dst_idx;
-    };
-
-    struct MinimaxResult
-    {
-        float eval;
-        bool prune_flg;
-    };
-
     enum PieceType
     {
         Empty = 0,
@@ -63,6 +56,12 @@ namespace chess
         static float piece_to_float(PieceType piece);
     };
 
+    struct Move
+    {
+        int src_idx;
+        int dst_idx;
+    };
+
     enum BoardStatus
     {
         Normal,
@@ -73,16 +72,16 @@ namespace chess
         WhiteInStalemate,
         BlackInStalemate,
         WhiteInsufficientMaterial,
-        BlackInsufficientMaterial
+        BlackInsufficientMaterial,
+        MoveLimitExceeded
     };
 
     class Board
     {
     private:
         bool white_;
+        int move_cnt_;
         int data_[CHESS_BOARD_LEN];
-        int temp_legal_move_idxs_[CHESS_MAX_LEGAL_MOVE_CNT];
-        char temp_an_move_[CHESS_MAX_AN_MOVE_LEN];
 
         static int get_col_fr_adj_col(int adj_col);
         static int get_adj_col_fr_col(char col);
@@ -97,10 +96,12 @@ namespace chess
         static bool is_row_valid(int row);
         static bool is_adj_colrow_valid(int adj_col, int adj_row);
 
-        bool is_cell_under_attack(int idx);
-        int *get_legal_moves_for_piece(int piece_idx, bool test_in_check_flg);
-        const char *translate_to_an_move(Move move);
-        void get_piece_influence(int piece_idx, int *out);
+        bool is_square_under_attack(int idx);
+
+        void get_piece_straight_moves(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out);
+        void get_piece_straight_influence(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out);
+        void get_piece_diagonal_moves(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out);
+        void get_piece_diagonal_influence(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out);
 
     public:
         Board();
@@ -111,19 +112,23 @@ namespace chess
 
         void reset();
         void copy(Board *src);
+
         void print();
         void print_flipped();
 
         bool is_white_turn();
 
-        Move get_random_move();
-        Move get_random_move(Board *cmp_board);
+        std::vector<int> get_piece_moves(int piece_idx, bool test_in_check_flg);
+        std::vector<int> get_piece_influence(int piece_idx);
 
-        Move change(const char *an_move);
+        Move get_random_move();
+        std::string convert_move_to_an_move(Move move);
+
+        Move change(std::string an_move);
         Move change(Move move);
         Move change();
         Board simulate(Move move);
-        std::vector<Board> simulate_all_legal_moves();
+        std::vector<Board> simulate_all_moves();
 
         bool check();
         bool check(bool white);
@@ -138,10 +143,45 @@ namespace chess
         BoardStatus get_status();
         void print_status();
 
-        void get_material(float *out);
-        void get_influence(float *out);
-
         void one_hot_encode(int *out);
         void one_hot_encode(float *out);
+    };
+
+    enum OpeningType
+    {
+        SicilianDefense = CHESS_OPENING_E4,
+        FrenchDefense = CHESS_OPENING_E4 + 1,
+        RuyLopezOpening = CHESS_OPENING_E4 + 2,
+        CaroKannDefense = CHESS_OPENING_E4 + 3,
+        ItalianGame = CHESS_OPENING_E4 + 4,
+        SicilianDefenseClosed = CHESS_OPENING_E4 + 5,
+        ScandinavianDefense = CHESS_OPENING_E4 + 6,
+        PircDefense = CHESS_OPENING_E4 + 7,
+        SicilianDefenseAlapinVariation = CHESS_OPENING_E4 + 8,
+        AlekhinesDefense = CHESS_OPENING_E4 + 9,
+        KingsGambit = CHESS_OPENING_E4 + 10,
+        ScotchGame = CHESS_OPENING_E4 + 11,
+        ViennaGame = CHESS_OPENING_E4 + 12,
+        QueensGambit = CHESS_OPENING_D4,
+        SlavDefense = CHESS_OPENING_D4 + 1,
+        KingsIndianDefense = CHESS_OPENING_D4 + 2,
+        NimzoIndianDefense = CHESS_OPENING_D4 + 3,
+        QueensIndianDefense = CHESS_OPENING_D4 + 4,
+        CatalanOpening = CHESS_OPENING_D4 + 5,
+        BogoIndianDefense = CHESS_OPENING_D4 + 6,
+        GrunfeldDefense = CHESS_OPENING_D4 + 7,
+        DutchDefense = CHESS_OPENING_D4 + 8,
+        TrompowskyAttack = CHESS_OPENING_D4 + 9,
+        BenkoGambit = CHESS_OPENING_D4 + 10,
+        LondonSystem = CHESS_OPENING_D4 + 11,
+        BenoniDefense = CHESS_OPENING_D4 + 12,
+    };
+
+    class Openings
+    {
+    public:
+        static Board create(OpeningType typ);
+        static Board create_rand_e4();
+        static Board create_rand_d4();
     };
 }
