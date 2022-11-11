@@ -365,13 +365,13 @@ bool Board::is_adj_colrow_valid(int adj_col, int adj_row)
     }
 }
 
-bool Board::is_square_under_attack(int idx)
+bool Board::is_square_under_attack(int idx, bool white)
 {
     bool under_attack_flg = false;
 
     int *board = this->data_;
 
-    if (this->white_)
+    if (white)
     {
         for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
         {
@@ -743,15 +743,11 @@ bool Board::operator!=(const Board &other)
 
 void Board::reset()
 {
-    this->white_ = true;
-    this->move_cnt_ = 0;
     memcpy(this->data_, CHESS_START_BOARD, sizeof(int) * (CHESS_BOARD_LEN));
 }
 
 void Board::copy(Board *src)
 {
-    this->white_ = src->white_;
-    this->move_cnt_ = src->move_cnt_;
     memcpy(this->data_, src->data_, sizeof(int) * CHESS_BOARD_LEN);
 }
 
@@ -831,16 +827,11 @@ void Board::print(BoardAnalysisType typ)
     default:
         this->print_status();
         printf("\n    Material: %d", this->sum_material());
-        printf("\tInfluence: %d", this->sum_influence());
+        printf("\n    Influence: %d", this->sum_influence());
         break;
     }
 
     printf("\n\n");
-}
-
-bool Board::is_white_turn()
-{
-    return this->white_;
 }
 
 std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
@@ -851,7 +842,8 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
 
     int *board = this->data_;
 
-    PieceType piece = (PieceType)board[piece_idx];
+    PieceType piece_typ = (PieceType)board[piece_idx];
+    bool white = Piece::is_white(piece_typ);
 
     char col = Board::get_col_fr_idx(piece_idx);
     int row = Board::get_row_fr_idx(piece_idx);
@@ -861,7 +853,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
 
     int test_idx;
 
-    switch (piece)
+    switch (piece_typ)
     {
     case PieceType::WhitePawn:
         // TODO: au passant
@@ -873,13 +865,13 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
             }
 
             test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row + 1);
-            if (Board::is_adj_colrow_valid(adj_col - 1, adj_row + 1) && board[test_idx] != PieceType::Empty && !Piece::is_same_color(piece, (PieceType)board[test_idx]))
+            if (Board::is_adj_colrow_valid(adj_col - 1, adj_row + 1) && board[test_idx] != PieceType::Empty && !Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
             {
                 out.push_back(test_idx);
             }
 
             test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row + 1);
-            if (Board::is_adj_colrow_valid(adj_col + 1, adj_row + 1) && board[test_idx] != PieceType::Empty && !Piece::is_same_color(piece, (PieceType)board[test_idx]))
+            if (Board::is_adj_colrow_valid(adj_col + 1, adj_row + 1) && board[test_idx] != PieceType::Empty && !Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
             {
                 out.push_back(test_idx);
             }
@@ -910,13 +902,13 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
             }
 
             test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row - 1);
-            if (Board::is_adj_colrow_valid(adj_col - 1, adj_row - 1) && board[test_idx] != PieceType::Empty && !Piece::is_same_color(piece, (PieceType)board[test_idx]))
+            if (Board::is_adj_colrow_valid(adj_col - 1, adj_row - 1) && board[test_idx] != PieceType::Empty && !Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
             {
                 out.push_back(test_idx);
             }
 
             test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row - 1);
-            if (Board::is_adj_colrow_valid(adj_col + 1, adj_row - 1) && board[test_idx] != PieceType::Empty && !Piece::is_same_color(piece, (PieceType)board[test_idx]))
+            if (Board::is_adj_colrow_valid(adj_col + 1, adj_row - 1) && board[test_idx] != PieceType::Empty && !Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
             {
                 out.push_back(test_idx);
             }
@@ -943,7 +935,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
         if (Board::is_adj_colrow_valid(adj_col + 1, adj_row + 2))
         {
             test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row + 2);
-            if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
+            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
             {
                 out.push_back(test_idx);
             }
@@ -952,7 +944,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
         if (Board::is_adj_colrow_valid(adj_col + 1, adj_row - 2))
         {
             test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row - 2);
-            if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
+            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
             {
                 out.push_back(test_idx);
             }
@@ -961,7 +953,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
         if (Board::is_adj_colrow_valid(adj_col - 1, adj_row + 2))
         {
             test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row + 2);
-            if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
+            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
             {
                 out.push_back(test_idx);
             }
@@ -970,7 +962,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
         if (Board::is_adj_colrow_valid(adj_col - 1, adj_row - 2))
         {
             test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row - 2);
-            if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
+            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
             {
                 out.push_back(test_idx);
             }
@@ -979,7 +971,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
         if (Board::is_adj_colrow_valid(adj_col + 2, adj_row + 1))
         {
             test_idx = Board::get_idx_fr_adj_colrow(adj_col + 2, adj_row + 1);
-            if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
+            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
             {
                 out.push_back(test_idx);
             }
@@ -988,7 +980,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
         if (Board::is_adj_colrow_valid(adj_col + 2, adj_row - 1))
         {
             test_idx = Board::get_idx_fr_adj_colrow(adj_col + 2, adj_row - 1);
-            if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
+            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
             {
                 out.push_back(test_idx);
             }
@@ -997,7 +989,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
         if (Board::is_adj_colrow_valid(adj_col - 2, adj_row + 1))
         {
             test_idx = Board::get_idx_fr_adj_colrow(adj_col - 2, adj_row + 1);
-            if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
+            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
             {
                 out.push_back(test_idx);
             }
@@ -1006,7 +998,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
         if (Board::is_adj_colrow_valid(adj_col - 2, adj_row - 1))
         {
             test_idx = Board::get_idx_fr_adj_colrow(adj_col - 2, adj_row - 1);
-            if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
+            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
             {
                 out.push_back(test_idx);
             }
@@ -1017,33 +1009,33 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
     case PieceType::WhiteBishop:
     case PieceType::BlackBishop:
     {
-        this->get_piece_diagonal_moves(piece, adj_col, adj_row, 8, &out);
+        this->get_piece_diagonal_moves(piece_typ, adj_col, adj_row, 8, &out);
     }
 
     break;
     case PieceType::WhiteRook:
     case PieceType::BlackRook:
     {
-        this->get_piece_straight_moves(piece, adj_col, adj_row, 8, &out);
+        this->get_piece_straight_moves(piece_typ, adj_col, adj_row, 8, &out);
     }
 
     break;
     case PieceType::WhiteQueen:
     case PieceType::BlackQueen:
     {
-        this->get_piece_diagonal_moves(piece, adj_col, adj_row, 8, &out);
-        this->get_piece_straight_moves(piece, adj_col, adj_row, 8, &out);
+        this->get_piece_diagonal_moves(piece_typ, adj_col, adj_row, 8, &out);
+        this->get_piece_straight_moves(piece_typ, adj_col, adj_row, 8, &out);
     }
 
     break;
     case PieceType::WhiteKing:
     case PieceType::BlackKing:
     {
-        this->get_piece_diagonal_moves(piece, adj_col, adj_row, 2, &out);
-        this->get_piece_straight_moves(piece, adj_col, adj_row, 2, &out);
+        this->get_piece_diagonal_moves(piece_typ, adj_col, adj_row, 2, &out);
+        this->get_piece_straight_moves(piece_typ, adj_col, adj_row, 2, &out);
 
         // Castles.
-        if (piece == PieceType::WhiteKing)
+        if (piece_typ == PieceType::WhiteKing)
         {
             if (col == 'e' && row == 1)
             {
@@ -1051,7 +1043,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
                 if (board[Board::get_idx_fr_colrow('a', 1)] == PieceType::WhiteRook)
                 {
                     if (board[Board::get_idx_fr_colrow('b', 1)] == PieceType::Empty && board[Board::get_idx_fr_colrow('c', 1)] == PieceType::Empty && board[Board::get_idx_fr_colrow('d', 1)] == PieceType::Empty &&
-                        !Board::is_square_under_attack(Board::get_idx_fr_colrow('b', 1)) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('c', 1)) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('d', 1)))
+                        !Board::is_square_under_attack(Board::get_idx_fr_colrow('b', 1), white) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('c', 1), white) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('d', 1), white))
                     {
                         out.push_back(Board::get_idx_fr_colrow('c', 1));
                     }
@@ -1061,7 +1053,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
                 if (board[Board::get_idx_fr_colrow('h', 1)] == PieceType::WhiteRook)
                 {
                     if (board[Board::get_idx_fr_colrow('f', 1)] == PieceType::Empty && board[Board::get_idx_fr_colrow('g', 1)] == PieceType::Empty &&
-                        !Board::is_square_under_attack(Board::get_idx_fr_colrow('f', 1)) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('g', 1)))
+                        !Board::is_square_under_attack(Board::get_idx_fr_colrow('f', 1), white) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('g', 1), white))
                     {
                         out.push_back(Board::get_idx_fr_colrow('g', 1));
                     }
@@ -1076,7 +1068,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
                 if (board[Board::get_idx_fr_colrow('a', 8)] == PieceType::BlackRook)
                 {
                     if (board[Board::get_idx_fr_colrow('b', 8)] == PieceType::Empty && board[Board::get_idx_fr_colrow('c', 8)] == PieceType::Empty && board[Board::get_idx_fr_colrow('d', 8)] == PieceType::Empty &&
-                        !Board::is_square_under_attack(Board::get_idx_fr_colrow('b', 8)) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('c', 8)) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('d', 8)))
+                        !Board::is_square_under_attack(Board::get_idx_fr_colrow('b', 8), white) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('c', 8), white) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('d', 8), white))
                     {
                         out.push_back(Board::get_idx_fr_colrow('c', 8));
                     }
@@ -1086,7 +1078,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
                 if (board[Board::get_idx_fr_colrow('h', 8)] == PieceType::BlackRook)
                 {
                     if (board[Board::get_idx_fr_colrow('f', 8)] == PieceType::Empty && board[Board::get_idx_fr_colrow('g', 8)] == PieceType::Empty &&
-                        !Board::is_square_under_attack(Board::get_idx_fr_colrow('f', 8)) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('g', 8)))
+                        !Board::is_square_under_attack(Board::get_idx_fr_colrow('f', 8), white) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('g', 8), white))
                     {
                         out.push_back(Board::get_idx_fr_colrow('g', 8));
                     }
@@ -1105,8 +1097,8 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
         std::vector<int> upd_out;
         for (int i = 0; i < out.size(); i++)
         {
-            Board sim = this->simulate(Move{piece_idx, out[i]});
-            if (!sim.check(this->white_))
+            Board sim = this->simulate(Move{piece_idx, out[i]}, white);
+            if (!sim.check(white))
             {
                 upd_out.push_back(out[i]);
             }
@@ -1123,7 +1115,8 @@ std::vector<int> Board::get_piece_influence(int piece_idx)
 
     int *board = this->data_;
 
-    PieceType piece = (PieceType)board[piece_idx];
+    PieceType piece_typ = (PieceType)board[piece_idx];
+    bool white = Piece::is_white(piece_typ);
 
     char col = Board::get_col_fr_idx(piece_idx);
     int row = Board::get_row_fr_idx(piece_idx);
@@ -1133,7 +1126,7 @@ std::vector<int> Board::get_piece_influence(int piece_idx)
 
     int test_idx;
 
-    switch (piece)
+    switch (piece_typ)
     {
     case PieceType::WhitePawn:
         // TODO: au passant
@@ -1225,30 +1218,30 @@ std::vector<int> Board::get_piece_influence(int piece_idx)
     case PieceType::WhiteBishop:
     case PieceType::BlackBishop:
     {
-        this->get_piece_diagonal_influence(piece, adj_col, adj_row, 8, &out);
+        this->get_piece_diagonal_influence(piece_typ, adj_col, adj_row, 8, &out);
     }
 
     break;
     case PieceType::WhiteRook:
     case PieceType::BlackRook:
     {
-        this->get_piece_straight_influence(piece, adj_col, adj_row, 8, &out);
+        this->get_piece_straight_influence(piece_typ, adj_col, adj_row, 8, &out);
     }
 
     break;
     case PieceType::WhiteQueen:
     case PieceType::BlackQueen:
     {
-        this->get_piece_diagonal_influence(piece, adj_col, adj_row, 8, &out);
-        this->get_piece_straight_influence(piece, adj_col, adj_row, 8, &out);
+        this->get_piece_diagonal_influence(piece_typ, adj_col, adj_row, 8, &out);
+        this->get_piece_straight_influence(piece_typ, adj_col, adj_row, 8, &out);
     }
 
     break;
     case PieceType::WhiteKing:
     case PieceType::BlackKing:
     {
-        this->get_piece_diagonal_influence(piece, adj_col, adj_row, 2, &out);
-        this->get_piece_straight_influence(piece, adj_col, adj_row, 2, &out);
+        this->get_piece_diagonal_influence(piece_typ, adj_col, adj_row, 2, &out);
+        this->get_piece_straight_influence(piece_typ, adj_col, adj_row, 2, &out);
     }
 
     break;
@@ -1261,8 +1254,9 @@ std::vector<int> Board::get_piece_influence(int piece_idx)
         std::vector<int> upd_out;
         for (int i = 0; i < out.size(); i++)
         {
-            Board sim = this->simulate(Move{piece_idx, out[i]});
-            if (!sim.check(this->white_))
+            Board sim = this->simulate(Move{piece_idx, out[i]}, white);
+
+            if (!sim.check(white))
             {
                 upd_out.push_back(out[i]);
             }
@@ -1273,7 +1267,7 @@ std::vector<int> Board::get_piece_influence(int piece_idx)
     return out;
 }
 
-Move Board::get_random_move()
+Move Board::get_random_move(bool white)
 {
     std::vector<int> piece_idxs;
 
@@ -1281,7 +1275,7 @@ Move Board::get_random_move()
 
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
-        if (this->white_)
+        if (white)
         {
             if (Piece::is_white((PieceType)this->data_[i]))
             {
@@ -1312,7 +1306,7 @@ Move Board::get_random_move()
         if (legal_moves.size() > 0)
         {
             int rand_legal_mov_idx = rand() % legal_moves.size();
-            Board sim = this->simulate(Move{piece_idxs[rand_piece_idx], legal_moves[rand_legal_mov_idx]});
+            Board sim = this->simulate(Move{piece_idxs[rand_piece_idx], legal_moves[rand_legal_mov_idx]}, white);
 
             move.src_idx = piece_idxs[rand_piece_idx];
             move.dst_idx = legal_moves[rand_legal_mov_idx];
@@ -1383,11 +1377,10 @@ std::string Board::convert_move_to_an_move(Move move)
     return out;
 }
 
-Move Board::change(std::string an_move)
+Move Board::change(std::string an_move, bool white)
 {
     std::string mut_an_move = an_move;
 
-    bool white = this->white_;
     int *board = this->data_;
 
     int src_idx = CHESS_INVALID_VALUE;
@@ -1766,42 +1759,39 @@ Move Board::change(std::string an_move)
         break;
     }
 
-    this->white_ = !this->white_;
-    this->move_cnt_++;
-
     Move chess_move{src_idx, dst_idx};
     return chess_move;
 }
 
-Move Board::change(Move move)
+Move Board::change(Move move, bool white)
 {
     auto an_move = this->convert_move_to_an_move(move);
-    return this->change(an_move);
+    return this->change(an_move, white);
 }
 
-Move Board::change()
+Move Board::change(bool white)
 {
-    return this->change(this->get_random_move());
+    return this->change(this->get_random_move(white), white);
 }
 
-Board Board::simulate(Move move)
+Board Board::simulate(Move move, bool white)
 {
     Board sim;
     sim.copy(this);
 
-    sim.change(this->convert_move_to_an_move(move));
+    sim.change(move, white);
 
     return sim;
 }
 
-std::vector<Board> Board::simulate_all_moves()
+std::vector<Board> Board::simulate_all_moves(bool white)
 {
     std::vector<Board> sims;
 
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
         bool check_moves = false;
-        if (this->white_)
+        if (white)
         {
             if (Piece::is_white((PieceType)this->data_[i]))
             {
@@ -1821,19 +1811,13 @@ std::vector<Board> Board::simulate_all_moves()
             std::vector<int> legal_moves = this->get_piece_moves(i, true);
             for (int j = 0; j < legal_moves.size(); j++)
             {
-                Board sim = this->simulate(Move{i, legal_moves[j]});
-
+                Board sim = this->simulate(Move{i, legal_moves[j]}, white);
                 sims.push_back(sim);
             }
         }
     }
 
     return sims;
-}
-
-bool Board::check()
-{
-    return this->check(this->white_);
 }
 
 bool Board::check(bool white)
@@ -1893,11 +1877,6 @@ bool Board::check(bool white)
     return in_check_flg;
 }
 
-bool Board::checkmate()
-{
-    return this->checkmate(this->white_);
-}
-
 bool Board::checkmate(bool white)
 {
     bool in_checkmate_flg;
@@ -1949,11 +1928,6 @@ bool Board::checkmate(bool white)
     return in_checkmate_flg;
 }
 
-bool Board::stalemate()
-{
-    return this->stalemate(this->white_);
-}
-
 bool Board::stalemate(bool white)
 {
     bool in_stalemate_flg;
@@ -2003,11 +1977,6 @@ bool Board::stalemate(bool white)
     }
 
     return in_stalemate_flg;
-}
-
-bool Board::insufficient_material()
-{
-    return this->insufficient_material(this->white_);
 }
 
 bool Board::insufficient_material(bool white)
@@ -2141,10 +2110,6 @@ BoardStatus Board::get_status()
     {
         return BoardStatus::BlackInsufficientMaterial;
     }
-    else if (this->move_cnt_ >= CHESS_MOVE_LIMIT)
-    {
-        return BoardStatus::MoveLimitExceeded;
-    }
     else
     {
         return BoardStatus::Normal;
@@ -2184,14 +2149,9 @@ void Board::print_status()
     case BoardStatus::BlackInsufficientMaterial:
         printf("BlackInsufficientMaterial");
         break;
-    case BoardStatus::MoveLimitExceeded:
-        printf("MoveLimitExceeded");
-        break;
     default:
         break;
     }
-
-    printf("\tMove count: %d", this->move_cnt_);
 }
 
 int *Board::get_material()
@@ -2222,9 +2182,9 @@ int *Board::get_influence()
 
     for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
     {
-        PieceType typ = (PieceType)this->data_[piece_idx];
+        PieceType piece_typ = (PieceType)this->data_[piece_idx];
 
-        if (typ != PieceType::Empty)
+        if (piece_typ != PieceType::Empty)
         {
             auto piece_inf = this->get_piece_influence(piece_idx);
 
@@ -2232,13 +2192,13 @@ int *Board::get_influence()
             {
                 int dst_idx = piece_inf[piece_inf_idx];
 
-                int val;
+                int val = 0;
 
-                if (Piece::is_white(typ))
+                if (Piece::is_white(piece_typ))
                 {
                     val = 1;
                 }
-                else if (Piece::is_black(typ))
+                else if (Piece::is_black(piece_typ))
                 {
                     val = -1;
                 }
@@ -2370,163 +2330,163 @@ Board Openings::create(OpeningType typ)
     switch (typ)
     {
     case SicilianDefense:
-        board.change("e4");
-        board.change("c5");
+        board.change("e4", true);
+        board.change("c5", false);
         break;
     case FrenchDefense:
-        board.change("e4");
-        board.change("e6");
+        board.change("e4", true);
+        board.change("e6", false);
         break;
     case RuyLopezOpening:
-        board.change("e4");
-        board.change("e5");
-        board.change("Nf3");
-        board.change("Nc6");
-        board.change("Bb5");
+        board.change("e4", true);
+        board.change("e5", false);
+        board.change("Nf3", true);
+        board.change("Nc6", false);
+        board.change("Bb5", true);
         break;
     case CaroKannDefense:
-        board.change("e4");
-        board.change("c6");
+        board.change("e4", true);
+        board.change("c6", false);
         break;
     case ItalianGame:
-        board.change("e4");
-        board.change("e5");
-        board.change("Nf3");
-        board.change("Nc6");
-        board.change("Bc4");
+        board.change("e4", true);
+        board.change("e5", false);
+        board.change("Nf3", true);
+        board.change("Nc6", false);
+        board.change("Bc4", true);
         break;
     case SicilianDefenseClosed:
-        board.change("e4");
-        board.change("c5");
-        board.change("Nc3");
+        board.change("e4", true);
+        board.change("c5", false);
+        board.change("Nc3", true);
         break;
     case ScandinavianDefense:
-        board.change("e4");
-        board.change("d5");
+        board.change("e4", true);
+        board.change("d5", false);
         break;
     case PircDefense:
-        board.change("e4");
-        board.change("d6");
-        board.change("d4");
-        board.change("Nf6");
+        board.change("e4", true);
+        board.change("d6", false);
+        board.change("d4", true);
+        board.change("Nf6", false);
         break;
     case SicilianDefenseAlapinVariation:
-        board.change("e4");
-        board.change("c5");
-        board.change("c3");
+        board.change("e4", true);
+        board.change("c5", false);
+        board.change("c3", true);
         break;
     case AlekhinesDefense:
-        board.change("e4");
-        board.change("Nf6");
+        board.change("e4", true);
+        board.change("Nf6", false);
         break;
     case KingsGambit:
-        board.change("e4");
-        board.change("e5");
-        board.change("f4");
+        board.change("e4", true);
+        board.change("e5", false);
+        board.change("f4", true);
         break;
     case ScotchGame:
-        board.change("e4");
-        board.change("e5");
-        board.change("Nf3");
-        board.change("Nc6");
-        board.change("d4");
+        board.change("e4", true);
+        board.change("e5", false);
+        board.change("Nf3", true);
+        board.change("Nc6", false);
+        board.change("d4", true);
         break;
     case ViennaGame:
-        board.change("e4");
-        board.change("e5");
-        board.change("Nc3");
+        board.change("e4", true);
+        board.change("e5", false);
+        board.change("Nc3", true);
         break;
     case QueensGambit:
-        board.change("d4");
-        board.change("d5");
-        board.change("c4");
+        board.change("d4", true);
+        board.change("d5", false);
+        board.change("c4", true);
         break;
     case SlavDefense:
-        board.change("d4");
-        board.change("d5");
-        board.change("c4");
-        board.change("c6");
+        board.change("d4", true);
+        board.change("d5", false);
+        board.change("c4", true);
+        board.change("c6", false);
         break;
     case KingsIndianDefense:
-        board.change("d4");
-        board.change("Nf6");
-        board.change("c4");
-        board.change("g6");
+        board.change("d4", true);
+        board.change("Nf6", false);
+        board.change("c4", true);
+        board.change("g6", false);
         break;
     case NimzoIndianDefense:
-        board.change("d4");
-        board.change("Nf6");
-        board.change("c4");
-        board.change("e6");
-        board.change("Nc3");
-        board.change("Bb4");
+        board.change("d4", true);
+        board.change("Nf6", false);
+        board.change("c4", true);
+        board.change("e6", false);
+        board.change("Nc3", true);
+        board.change("Bb4", false);
         break;
     case QueensIndianDefense:
-        board.change("d4");
-        board.change("Nf6");
-        board.change("c4");
-        board.change("e6");
-        board.change("Nf3");
-        board.change("b6");
+        board.change("d4", true);
+        board.change("Nf6", false);
+        board.change("c4", true);
+        board.change("e6", false);
+        board.change("Nf3", true);
+        board.change("b6", false);
         break;
     case CatalanOpening:
-        board.change("d4");
-        board.change("Nf6");
-        board.change("c4");
-        board.change("e6");
-        board.change("g3");
+        board.change("d4", true);
+        board.change("Nf6", false);
+        board.change("c4", true);
+        board.change("e6", false);
+        board.change("g3", true);
         break;
     case BogoIndianDefense:
-        board.change("d4");
-        board.change("Nf6");
-        board.change("c4");
-        board.change("e6");
-        board.change("Nf3");
-        board.change("Bb4+");
+        board.change("d4", true);
+        board.change("Nf6", false);
+        board.change("c4", true);
+        board.change("e6", false);
+        board.change("Nf3", true);
+        board.change("Bb4+", false);
         break;
     case GrunfeldDefense:
-        board.change("d4");
-        board.change("Nf6");
-        board.change("c4");
-        board.change("g6");
-        board.change("Nc3");
-        board.change("d5");
+        board.change("d4", true);
+        board.change("Nf6", false);
+        board.change("c4", true);
+        board.change("g6", false);
+        board.change("Nc3", true);
+        board.change("d5", false);
         break;
     case DutchDefense:
-        board.change("d4");
-        board.change("f5");
+        board.change("d4", true);
+        board.change("f5", false);
         break;
     case TrompowskyAttack:
-        board.change("d4");
-        board.change("Nf6");
-        board.change("Bg5");
+        board.change("d4", true);
+        board.change("Nf6", false);
+        board.change("Bg5", true);
         break;
     case BenkoGambit:
-        board.change("d4");
-        board.change("Nf6");
-        board.change("c4");
-        board.change("c5");
-        board.change("d5");
-        board.change("b5");
+        board.change("d4", true);
+        board.change("Nf6", false);
+        board.change("c4", true);
+        board.change("c5", false);
+        board.change("d5", true);
+        board.change("b5", false);
         break;
     case LondonSystem:
-        board.change("d4");
-        board.change("d5");
-        board.change("Nf3");
-        board.change("Nf6");
-        board.change("Bf4");
+        board.change("d4", true);
+        board.change("d5", false);
+        board.change("Nf3", true);
+        board.change("Nf6", false);
+        board.change("Bf4", true);
         break;
     case BenoniDefense:
-        board.change("d4");
-        board.change("Nf6");
-        board.change("c4");
-        board.change("c5");
-        board.change("d5");
-        board.change("e6");
-        board.change("Nc3");
-        board.change("exd5");
-        board.change("cxd5");
-        board.change("d6");
+        board.change("d4", true);
+        board.change("Nf6", false);
+        board.change("c4", true);
+        board.change("c5", false);
+        board.change("d5", true);
+        board.change("e6", false);
+        board.change("Nc3", true);
+        board.change("exd5", false);
+        board.change("cxd5", true);
+        board.change("d6", false);
         break;
     default:
         break;

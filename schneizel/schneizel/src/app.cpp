@@ -24,18 +24,20 @@ int main()
 
 	auto board = Openings::create(OpeningType::SlavDefense);
 	board.print(BoardAnalysisType::PieceTypes);
-	board.print(BoardAnalysisType::Material);
 	board.print(BoardAnalysisType::Influence);
 
-	for (int i = 0; i < 3; i++)
-	{
-		auto move = board.convert_move_to_an_move(board.get_random_move());
-		printf("%s\n", move.c_str());
-		board.change(move);
-		board.print(BoardAnalysisType::PieceTypes);
-		board.print(BoardAnalysisType::Material);
-		board.print(BoardAnalysisType::Influence);
-	}
+	board.change("g3", true);
+	board.print(BoardAnalysisType::PieceTypes);
+	board.print(BoardAnalysisType::Influence);
+
+	// for (int i = 0; i < 3; i++)
+	// {
+	// 	auto move = board.convert_move_to_an_move(board.get_random_move());
+	// 	printf("%s\n", move.c_str());
+	// 	board.change(move);
+	// 	board.print(BoardAnalysisType::PieceTypes);
+	// 	board.print(BoardAnalysisType::Influence);
+	// }
 
 	// at::Tensor a = at::ones({2, 2}, at::kInt);
 	// at::Tensor b = at::randn({2, 2});

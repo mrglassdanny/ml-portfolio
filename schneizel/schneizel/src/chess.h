@@ -73,8 +73,7 @@ namespace chess
         WhiteInStalemate,
         BlackInStalemate,
         WhiteInsufficientMaterial,
-        BlackInsufficientMaterial,
-        MoveLimitExceeded
+        BlackInsufficientMaterial
     };
 
     enum BoardAnalysisType
@@ -87,8 +86,6 @@ namespace chess
     class Board
     {
     private:
-        bool white_;
-        int move_cnt_;
         int data_[CHESS_BOARD_LEN];
         int material_data_[CHESS_BOARD_LEN];
         int influence_data_[CHESS_BOARD_LEN];
@@ -106,7 +103,7 @@ namespace chess
         static bool is_row_valid(int row);
         static bool is_adj_colrow_valid(int adj_col, int adj_row);
 
-        bool is_square_under_attack(int idx);
+        bool is_square_under_attack(int idx, bool white);
 
         void get_piece_straight_moves(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out);
         void get_piece_straight_influence(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out);
@@ -126,27 +123,21 @@ namespace chess
         void print();
         void print(BoardAnalysisType typ);
 
-        bool is_white_turn();
-
         std::vector<int> get_piece_moves(int piece_idx, bool test_in_check_flg);
         std::vector<int> get_piece_influence(int piece_idx);
 
-        Move get_random_move();
+        Move get_random_move(bool white);
         std::string convert_move_to_an_move(Move move);
 
-        Move change(std::string an_move);
-        Move change(Move move);
-        Move change();
-        Board simulate(Move move);
-        std::vector<Board> simulate_all_moves();
+        Move change(std::string an_move, bool white);
+        Move change(Move move, bool white);
+        Move change(bool white);
+        Board simulate(Move move, bool white);
+        std::vector<Board> simulate_all_moves(bool white);
 
-        bool check();
         bool check(bool white);
-        bool checkmate();
         bool checkmate(bool white);
-        bool stalemate();
         bool stalemate(bool white);
-        bool insufficient_material();
         bool insufficient_material(bool white);
         bool game_over();
 
