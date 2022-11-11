@@ -22,15 +22,19 @@ int main()
 	// 	printf("================================= =================================\n");
 	// }
 
-	auto board = Openings::create_rand_d4();
-	board.print();
+	auto board = Openings::create(OpeningType::SlavDefense);
+	board.print(BoardAnalysisType::PieceTypes);
+	board.print(BoardAnalysisType::Material);
+	board.print(BoardAnalysisType::Influence);
 
-	for (int i = 0; i < 10; i++)
+	for (int i = 0; i < 3; i++)
 	{
 		auto move = board.convert_move_to_an_move(board.get_random_move());
 		printf("%s\n", move.c_str());
 		board.change(move);
-		board.print();
+		board.print(BoardAnalysisType::PieceTypes);
+		board.print(BoardAnalysisType::Material);
+		board.print(BoardAnalysisType::Influence);
 	}
 
 	// at::Tensor a = at::ones({2, 2}, at::kInt);

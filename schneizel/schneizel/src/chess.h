@@ -32,28 +32,29 @@ namespace chess
     {
         Empty = 0,
         WhitePawn = 1,
-        WhiteKnight = 3,
-        WhiteBishop = 4,
-        WhiteRook = 6,
-        WhiteQueen = 9,
-        WhiteKing = 10,
+        WhiteKnight = 2,
+        WhiteBishop = 3,
+        WhiteRook = 4,
+        WhiteQueen = 5,
+        WhiteKing = 6,
         BlackPawn = -1,
-        BlackKnight = -3,
-        BlackBishop = -4,
-        BlackRook = -6,
-        BlackQueen = -9,
-        BlackKing = -10
+        BlackKnight = -2,
+        BlackBishop = -3,
+        BlackRook = -4,
+        BlackQueen = -5,
+        BlackKing = -6
     };
 
     class Piece
     {
     public:
-        static PieceType get_piece_fr_char(char piece_id, bool white);
-        static char get_char_fr_piece(PieceType piece);
-        static bool is_piece_white(PieceType piece);
-        static bool is_piece_black(PieceType piece);
-        static bool is_piece_same_color(PieceType a, PieceType b);
-        static float piece_to_float(PieceType piece);
+        static PieceType fr_char(char piece_id, bool white);
+        static char fr_piece(PieceType piece);
+        static bool is_white(PieceType piece);
+        static bool is_black(PieceType piece);
+        static bool is_same_color(PieceType a, PieceType b);
+        static int to_int(PieceType typ);
+        static const char *to_str(PieceType typ);
     };
 
     struct Move
@@ -76,12 +77,21 @@ namespace chess
         MoveLimitExceeded
     };
 
+    enum BoardAnalysisType
+    {
+        PieceTypes,
+        Material,
+        Influence
+    };
+
     class Board
     {
     private:
         bool white_;
         int move_cnt_;
         int data_[CHESS_BOARD_LEN];
+        int material_data_[CHESS_BOARD_LEN];
+        int influence_data_[CHESS_BOARD_LEN];
 
         static int get_col_fr_adj_col(int adj_col);
         static int get_adj_col_fr_col(char col);
@@ -114,7 +124,7 @@ namespace chess
         void copy(Board *src);
 
         void print();
-        void print_flipped();
+        void print(BoardAnalysisType typ);
 
         bool is_white_turn();
 
@@ -142,6 +152,11 @@ namespace chess
 
         BoardStatus get_status();
         void print_status();
+
+        int *get_material();
+        int sum_material();
+        int *get_influence();
+        int sum_influence();
 
         void one_hot_encode(int *out);
         void one_hot_encode(float *out);
