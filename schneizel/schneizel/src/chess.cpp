@@ -915,7 +915,7 @@ void Board::pretty_print()
             {
                 if (white_first)
                 {
-                    background = 7;
+                    background = 11;
                 }
                 else
                 {
@@ -930,7 +930,7 @@ void Board::pretty_print()
                 }
                 else
                 {
-                    background = 7;
+                    background = 11;
                 }
             }
 
