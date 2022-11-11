@@ -22,22 +22,25 @@ int main()
 	// 	printf("================================= =================================\n");
 	// }
 
-	auto board = Openings::create(OpeningType::SlavDefense);
+	auto board = Openings::create(OpeningType::GrunfeldDefense);
 	board.print(BoardAnalysisType::PieceTypes);
-	board.print(BoardAnalysisType::Influence);
 
-	board.change("g3", true);
-	board.print(BoardAnalysisType::PieceTypes);
-	board.print(BoardAnalysisType::Influence);
-
-	// for (int i = 0; i < 3; i++)
+	bool white = true;
+	// for (int i = 0; i < 10; i++)
 	// {
-	// 	auto move = board.convert_move_to_an_move(board.get_random_move());
+	// 	auto move = board.convert_move_to_an_move(board.get_random_move(white));
 	// 	printf("%s\n", move.c_str());
-	// 	board.change(move);
+	// 	board.change(move, white);
 	// 	board.print(BoardAnalysisType::PieceTypes);
-	// 	board.print(BoardAnalysisType::Influence);
+
+	// 	white = !white;
 	// }
+
+	board.change("Qa4", white);
+	board.pretty_print();
+	// board.print(BoardAnalysisType::Material);
+	// board.print(BoardAnalysisType::Influence);
+	// board.print(BoardAnalysisType::MaterialInfluencePieceWise);
 
 	// at::Tensor a = at::ones({2, 2}, at::kInt);
 	// at::Tensor b = at::randn({2, 2});

@@ -8,6 +8,8 @@
 #include <iostream>
 #include <vector>
 
+#include <windows.h>
+
 #define CHESS_BOARD_ROW_CNT 8
 #define CHESS_BOARD_COL_CNT 8
 #define CHESS_BOARD_LEN (CHESS_BOARD_COL_CNT * CHESS_BOARD_ROW_CNT)
@@ -55,6 +57,7 @@ namespace chess
         static bool is_same_color(PieceType a, PieceType b);
         static int to_int(PieceType typ);
         static const char *to_str(PieceType typ);
+        static const char *to_pretty_str(PieceType typ);
     };
 
     struct Move
@@ -80,7 +83,9 @@ namespace chess
     {
         PieceTypes,
         Material,
-        Influence
+        Influence,
+        MaterialInfluenceMatrixMult,
+        MaterialInfluencePieceWise
     };
 
     class Board
@@ -89,6 +94,8 @@ namespace chess
         int data_[CHESS_BOARD_LEN];
         int material_data_[CHESS_BOARD_LEN];
         int influence_data_[CHESS_BOARD_LEN];
+        int matinf_mtxmul_data_[CHESS_BOARD_LEN];
+        int matinf_piecewise_data_[CHESS_BOARD_LEN];
 
         static int get_col_fr_adj_col(int adj_col);
         static int get_adj_col_fr_col(char col);
@@ -122,6 +129,7 @@ namespace chess
 
         void print();
         void print(BoardAnalysisType typ);
+        void pretty_print();
 
         std::vector<int> get_piece_moves(int piece_idx, bool test_in_check_flg);
         std::vector<int> get_piece_influence(int piece_idx);
@@ -148,6 +156,8 @@ namespace chess
         int sum_material();
         int *get_influence();
         int sum_influence();
+        int *get_matinf_mtxmul();
+        int *get_matinf_piecewise();
 
         void one_hot_encode(int *out);
         void one_hot_encode(float *out);

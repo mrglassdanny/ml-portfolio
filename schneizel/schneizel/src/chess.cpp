@@ -201,6 +201,39 @@ const char *Piece::to_str(PieceType typ)
     }
 }
 
+const char *Piece::to_pretty_str(PieceType typ)
+{
+    switch (typ)
+    {
+    case PieceType::WhitePawn:
+        return " P ";
+    case PieceType::BlackPawn:
+        return " p ";
+    case PieceType::WhiteKnight:
+        return " N ";
+    case PieceType::BlackKnight:
+        return " n ";
+    case PieceType::WhiteBishop:
+        return " B ";
+    case PieceType::BlackBishop:
+        return " b ";
+    case PieceType::WhiteRook:
+        return " R ";
+    case PieceType::BlackRook:
+        return " r ";
+    case PieceType::WhiteQueen:
+        return " Q ";
+    case PieceType::BlackQueen:
+        return " q ";
+    case PieceType::WhiteKing:
+        return " K ";
+    case PieceType::BlackKing:
+        return " k ";
+    default:
+        return "   ";
+    }
+}
+
 Board::Board()
 {
     this->reset();
@@ -769,6 +802,12 @@ void Board::print(BoardAnalysisType typ)
     case BoardAnalysisType::Influence:
         board = this->get_influence();
         break;
+    case BoardAnalysisType::MaterialInfluenceMatrixMult:
+        board = this->get_matinf_mtxmul();
+        break;
+    case BoardAnalysisType::MaterialInfluencePieceWise:
+        board = this->get_matinf_piecewise();
+        break;
     default:
         board = this->data_;
         break;
@@ -788,6 +827,8 @@ void Board::print(BoardAnalysisType typ)
             {
             case BoardAnalysisType::Material:
             case BoardAnalysisType::Influence:
+            case BoardAnalysisType::MaterialInfluenceMatrixMult:
+            case BoardAnalysisType::MaterialInfluencePieceWise:
                 if (val < 0)
                 {
                     printf(" %d  |", val);
@@ -818,6 +859,11 @@ void Board::print(BoardAnalysisType typ)
 
     switch (typ)
     {
+    case BoardAnalysisType::PieceTypes:
+        this->print_status();
+        printf("\n    Material: %d", this->sum_material());
+        printf("\n    Influence: %d", this->sum_influence());
+        break;
     case BoardAnalysisType::Material:
         printf("\n    Material: %d", this->sum_material());
         break;
@@ -825,11 +871,95 @@ void Board::print(BoardAnalysisType typ)
         printf("\n    Influence: %d", this->sum_influence());
         break;
     default:
-        this->print_status();
-        printf("\n    Material: %d", this->sum_material());
-        printf("\n    Influence: %d", this->sum_influence());
         break;
     }
+
+    printf("\n\n");
+}
+
+void Board::pretty_print()
+{
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    int *board = this->data_;
+
+    printf("\n");
+
+    bool white_first = true;
+
+    int foreground = 0;
+    int background = 0;
+
+    for (int i = CHESS_BOARD_ROW_CNT - 1; i >= 0; i--)
+    {
+        printf("%d  ", i + 1);
+        printf("");
+
+        for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
+        {
+            auto piece_typ = (PieceType)this->data_[i * CHESS_BOARD_COL_CNT + j];
+            if (Piece::is_white(piece_typ))
+            {
+                foreground = 15;
+            }
+            else if (Piece::is_black(piece_typ))
+            {
+                foreground = 0;
+            }
+            else
+            {
+                foreground = 15;
+            }
+
+            if (j % 2 == 0)
+            {
+                if (white_first)
+                {
+                    background = 7;
+                }
+                else
+                {
+                    background = 8;
+                }
+            }
+            else
+            {
+                if (white_first)
+                {
+                    background = 8;
+                }
+                else
+                {
+                    background = 7;
+                }
+            }
+
+            FlushConsoleInputBuffer(hConsole);
+            SetConsoleTextAttribute(hConsole, foreground + background * 16);
+
+            printf("%s", Piece::to_pretty_str((PieceType)board[(i * CHESS_BOARD_COL_CNT) + j]));
+        }
+
+        white_first = !white_first;
+
+        FlushConsoleInputBuffer(hConsole);
+        SetConsoleTextAttribute(hConsole, 15);
+
+        printf("\n");
+    }
+
+    FlushConsoleInputBuffer(hConsole);
+    SetConsoleTextAttribute(hConsole, 15);
+
+    printf("   ");
+    for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
+    {
+        printf(" %c ", Board::get_col_fr_adj_col(j));
+    }
+
+    this->print_status();
+    printf("\n    Material: %d", this->sum_material());
+    printf("\n    Influence: %d", this->sum_influence());
 
     printf("\n\n");
 }
@@ -2221,6 +2351,51 @@ int Board::sum_influence()
         sum += this->influence_data_[i];
     }
     return sum;
+}
+
+int *Board::get_matinf_mtxmul()
+{
+    int *mat = this->get_material();
+    int *inf = this->get_influence();
+
+    memset(this->matinf_mtxmul_data_, 0, sizeof(int) * CHESS_BOARD_LEN);
+
+    for (int i = 0; i < CHESS_BOARD_ROW_CNT; i++)
+    {
+        for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
+        {
+            for (int k = 0; k < CHESS_BOARD_COL_CNT; k++)
+            {
+                this->matinf_mtxmul_data_[i * CHESS_BOARD_COL_CNT + j] +=
+                    mat[i * CHESS_BOARD_COL_CNT + k] *
+                    inf[k * CHESS_BOARD_COL_CNT + j];
+            }
+        }
+    }
+
+    return this->matinf_mtxmul_data_;
+}
+
+int *Board::get_matinf_piecewise()
+{
+    int *mat = this->get_material();
+    int *inf = this->get_influence();
+
+    memset(this->matinf_piecewise_data_, 0, sizeof(int) * CHESS_BOARD_LEN);
+
+    for (int i = 0; i < CHESS_BOARD_LEN; i++)
+    {
+        if (mat[i] > 0 && inf[i] < 0)
+        {
+            this->matinf_piecewise_data_[i] = -(abs(mat[i] * inf[i]));
+        }
+        else if (mat[i] < 0 && inf[i] > 0)
+        {
+            this->matinf_piecewise_data_[i] = abs(mat[i] * inf[i]);
+        }
+    }
+
+    return this->matinf_piecewise_data_;
 }
 
 void Board::one_hot_encode(int *out)
