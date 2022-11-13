@@ -10,37 +10,56 @@ int main()
 {
 	srand(time(NULL));
 
-	// Board board;
-
-	// while (!board.game_over())
-	// {
-	// 	printf("\n================================= =================================\n");
-	// 	board.print_status();
-	// 	board.change();
-	// 	board.print();
-	// 	board.print_status();
-	// 	printf("================================= =================================\n");
-	// }
+	MoveOpportunities opps;
 
 	auto board = Openings::create(OpeningType::GrunfeldDefense);
 	board.print(BoardAnalysisType::PieceTypes);
+	board.print(BoardAnalysisType::Material);
+	board.print(BoardAnalysisType::Influence);
+	board.print(BoardAnalysisType::AttackOpportunities);
 
-	bool white = true;
-	// for (int i = 0; i < 10; i++)
-	// {
-	// 	auto move = board.convert_move_to_an_move(board.get_random_move(white));
-	// 	printf("%s\n", move.c_str());
-	// 	board.change(move, white);
-	// 	board.print(BoardAnalysisType::PieceTypes);
+	board.change("Qa4", true);
+	board.print(BoardAnalysisType::PieceTypes);
+	board.print(BoardAnalysisType::Material);
+	board.print(BoardAnalysisType::Influence);
+	board.print(BoardAnalysisType::AttackOpportunities);
 
-	// 	white = !white;
-	// }
+	board.change("b5", false);
+	board.print(BoardAnalysisType::PieceTypes);
+	board.print(BoardAnalysisType::Material);
+	board.print(BoardAnalysisType::Influence);
+	board.print(BoardAnalysisType::AttackOpportunities);
 
-	board.change("Qa4", white);
-	board.pretty_print();
-	// board.print(BoardAnalysisType::Material);
-	// board.print(BoardAnalysisType::Influence);
-	// board.print(BoardAnalysisType::MaterialInfluencePieceWise);
+	board.change("Qxb5", true);
+	board.print(BoardAnalysisType::PieceTypes);
+	board.print(BoardAnalysisType::Material);
+	board.print(BoardAnalysisType::Influence);
+	board.print(BoardAnalysisType::AttackOpportunities);
+
+	board.change("c6", false);
+	board.print(BoardAnalysisType::PieceTypes);
+	board.print(BoardAnalysisType::Material);
+	board.print(BoardAnalysisType::Influence);
+	board.print(BoardAnalysisType::AttackOpportunities);
+
+	board.change("Qb7", true);
+	board.print(BoardAnalysisType::PieceTypes);
+	board.print(BoardAnalysisType::Material);
+	board.print(BoardAnalysisType::Influence);
+	board.print(BoardAnalysisType::AttackOpportunities);
+
+	board.change("Na6", false);
+	board.print(BoardAnalysisType::PieceTypes);
+	board.print(BoardAnalysisType::Material);
+	board.print(BoardAnalysisType::Influence);
+	board.print(BoardAnalysisType::AttackOpportunities);
+
+	board.change("Qxc6", true);
+	board.print(BoardAnalysisType::PieceTypes);
+	board.print(BoardAnalysisType::Material);
+	board.print(BoardAnalysisType::Influence);
+	board.print(BoardAnalysisType::AttackOpportunities);
+	board.print_move_opportunities(&opps);
 
 	// at::Tensor a = at::ones({2, 2}, at::kInt);
 	// at::Tensor b = at::randn({2, 2});

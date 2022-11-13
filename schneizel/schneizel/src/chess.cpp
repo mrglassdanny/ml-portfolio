@@ -802,11 +802,8 @@ void Board::print(BoardAnalysisType typ)
     case BoardAnalysisType::Influence:
         board = this->get_influence();
         break;
-    case BoardAnalysisType::MaterialInfluenceMatrixMult:
-        board = this->get_matinf_mtxmul();
-        break;
-    case BoardAnalysisType::MaterialInfluencePieceWise:
-        board = this->get_matinf_piecewise();
+    case BoardAnalysisType::AttackOpportunities:
+        board = this->get_attack_opportunities();
         break;
     default:
         board = this->data_;
@@ -827,8 +824,7 @@ void Board::print(BoardAnalysisType typ)
             {
             case BoardAnalysisType::Material:
             case BoardAnalysisType::Influence:
-            case BoardAnalysisType::MaterialInfluenceMatrixMult:
-            case BoardAnalysisType::MaterialInfluencePieceWise:
+            case BoardAnalysisType::AttackOpportunities:
                 if (val < 0)
                 {
                     printf(" %d  |", val);
@@ -958,8 +954,46 @@ void Board::pretty_print()
     }
 
     this->print_status();
-    printf("\n    Material: %d", this->sum_material());
-    printf("\n    Influence: %d", this->sum_influence());
+
+    printf("\n\n");
+}
+
+void Board::print(int *board)
+{
+    const char *boundary = "\n   +-----+-----+-----+-----+-----+-----+-----+-----+\n";
+
+    printf("%s", boundary);
+
+    for (int i = CHESS_BOARD_ROW_CNT - 1; i >= 0; i--)
+    {
+        printf("%d  ", i + 1);
+        printf("|");
+
+        for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
+        {
+            int val = board[(i * CHESS_BOARD_COL_CNT) + j];
+            if (val < 0)
+            {
+                printf(" %d  |", val);
+            }
+            else if (val > 0)
+            {
+                printf("  %d  |", val);
+            }
+            else
+            {
+                printf("     |");
+            }
+        }
+
+        printf("%s", boundary);
+    }
+
+    printf("    ");
+    for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
+    {
+        printf("  %c   ", Board::get_col_fr_adj_col(j));
+    }
 
     printf("\n\n");
 }
@@ -2289,10 +2323,10 @@ int *Board::get_material()
 {
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
-        this->material_data_[i] = Piece::to_int((PieceType)this->data_[i]);
+        this->analysis_material_data_[i] = Piece::to_int((PieceType)this->data_[i]);
     }
 
-    return this->material_data_;
+    return this->analysis_material_data_;
 }
 
 int Board::sum_material()
@@ -2302,14 +2336,14 @@ int Board::sum_material()
     int sum = 0;
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
-        sum += this->material_data_[i];
+        sum += this->analysis_material_data_[i];
     }
     return sum;
 }
 
 int *Board::get_influence()
 {
-    memset(this->influence_data_, 0, sizeof(int) * CHESS_BOARD_LEN);
+    memset(this->analysis_influence_data_, 0, sizeof(int) * CHESS_BOARD_LEN);
 
     for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
     {
@@ -2334,12 +2368,12 @@ int *Board::get_influence()
                     val = -1;
                 }
 
-                this->influence_data_[dst_idx] += val;
+                this->analysis_influence_data_[dst_idx] += val;
             }
         }
     }
 
-    return this->influence_data_;
+    return this->analysis_influence_data_;
 }
 
 int Board::sum_influence()
@@ -2349,54 +2383,31 @@ int Board::sum_influence()
     int sum = 0;
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
-        sum += this->influence_data_[i];
+        sum += this->analysis_influence_data_[i];
     }
     return sum;
 }
 
-int *Board::get_matinf_mtxmul()
+int *Board::get_attack_opportunities()
 {
     int *mat = this->get_material();
     int *inf = this->get_influence();
 
-    memset(this->matinf_mtxmul_data_, 0, sizeof(int) * CHESS_BOARD_LEN);
-
-    for (int i = 0; i < CHESS_BOARD_ROW_CNT; i++)
-    {
-        for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
-        {
-            for (int k = 0; k < CHESS_BOARD_COL_CNT; k++)
-            {
-                this->matinf_mtxmul_data_[i * CHESS_BOARD_COL_CNT + j] +=
-                    mat[i * CHESS_BOARD_COL_CNT + k] *
-                    inf[k * CHESS_BOARD_COL_CNT + j];
-            }
-        }
-    }
-
-    return this->matinf_mtxmul_data_;
-}
-
-int *Board::get_matinf_piecewise()
-{
-    int *mat = this->get_material();
-    int *inf = this->get_influence();
-
-    memset(this->matinf_piecewise_data_, 0, sizeof(int) * CHESS_BOARD_LEN);
+    memset(this->analysis_attack_opportunities_data_, 0, sizeof(int) * CHESS_BOARD_LEN);
 
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
         if (mat[i] > 0 && inf[i] < 0)
         {
-            this->matinf_piecewise_data_[i] = -(abs(mat[i] * inf[i]));
+            this->analysis_attack_opportunities_data_[i] = -(abs(mat[i] * inf[i]));
         }
         else if (mat[i] < 0 && inf[i] > 0)
         {
-            this->matinf_piecewise_data_[i] = abs(mat[i] * inf[i]);
+            this->analysis_attack_opportunities_data_[i] = abs(mat[i] * inf[i]);
         }
     }
 
-    return this->matinf_piecewise_data_;
+    return this->analysis_attack_opportunities_data_;
 }
 
 void Board::one_hot_encode(int *out)
@@ -2497,6 +2508,131 @@ void Board::one_hot_encode(float *out)
             break;
         }
     }
+}
+
+void Board::get_move_opportunities(MoveOpportunities *move_opps)
+{
+    memset(move_opps->white_pawn, 0, sizeof(int) * CHESS_BOARD_LEN);
+    memset(move_opps->white_knight, 0, sizeof(int) * CHESS_BOARD_LEN);
+    memset(move_opps->white_bishop, 0, sizeof(int) * CHESS_BOARD_LEN);
+    memset(move_opps->white_rook, 0, sizeof(int) * CHESS_BOARD_LEN);
+    memset(move_opps->white_queen, 0, sizeof(int) * CHESS_BOARD_LEN);
+    memset(move_opps->white_king, 0, sizeof(int) * CHESS_BOARD_LEN);
+    memset(move_opps->black_pawn, 0, sizeof(int) * CHESS_BOARD_LEN);
+    memset(move_opps->black_knight, 0, sizeof(int) * CHESS_BOARD_LEN);
+    memset(move_opps->black_bishop, 0, sizeof(int) * CHESS_BOARD_LEN);
+    memset(move_opps->black_rook, 0, sizeof(int) * CHESS_BOARD_LEN);
+    memset(move_opps->black_queen, 0, sizeof(int) * CHESS_BOARD_LEN);
+    memset(move_opps->black_king, 0, sizeof(int) * CHESS_BOARD_LEN);
+
+    for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
+    {
+        PieceType piece_typ = (PieceType)this->data_[piece_idx];
+        int val;
+        if (Piece::is_white(piece_typ))
+        {
+            val = 1;
+        }
+        else
+        {
+            val = -1;
+        }
+
+        int *board;
+
+        switch (piece_typ)
+        {
+        case PieceType::WhitePawn:
+            board = move_opps->white_pawn;
+            break;
+        case PieceType::BlackPawn:
+            board = move_opps->black_pawn;
+            break;
+        case PieceType::WhiteKnight:
+            board = move_opps->white_knight;
+            break;
+        case PieceType::BlackKnight:
+            board = move_opps->black_knight;
+            break;
+        case PieceType::WhiteBishop:
+            board = move_opps->white_bishop;
+            break;
+        case PieceType::BlackBishop:
+            board = move_opps->black_bishop;
+            break;
+        case PieceType::WhiteRook:
+            board = move_opps->white_rook;
+            break;
+        case PieceType::BlackRook:
+            board = move_opps->black_rook;
+            break;
+        case PieceType::WhiteQueen:
+            board = move_opps->white_queen;
+            break;
+        case PieceType::BlackQueen:
+            board = move_opps->black_queen;
+            break;
+        case PieceType::WhiteKing:
+            board = move_opps->white_king;
+            break;
+        case PieceType::BlackKing:
+            board = move_opps->black_king;
+            break;
+        default:
+            board = nullptr;
+            break;
+        }
+
+        if (board != nullptr)
+        {
+            auto move_idxs = this->get_piece_moves(piece_idx, true);
+            for (int move_idx : move_idxs)
+            {
+                board[move_idx] += val;
+            }
+        }
+    }
+}
+
+void Board::print_move_opportunities(MoveOpportunities *move_opps)
+{
+    this->get_move_opportunities(move_opps);
+
+    printf("WhitePawn:\n");
+    Board::print(move_opps->white_pawn);
+
+    printf("WhiteKnight:\n");
+    Board::print(move_opps->white_knight);
+
+    printf("WhiteBishop:\n");
+    Board::print(move_opps->white_bishop);
+
+    printf("WhiteRook:\n");
+    Board::print(move_opps->white_rook);
+
+    printf("WhiteQueen:\n");
+    Board::print(move_opps->white_queen);
+
+    printf("WhiteKing:\n");
+    Board::print(move_opps->white_king);
+
+    printf("BlackPawn:\n");
+    Board::print(move_opps->black_pawn);
+
+    printf("BlackKnight:\n");
+    Board::print(move_opps->black_knight);
+
+    printf("BlackBishop:\n");
+    Board::print(move_opps->black_bishop);
+
+    printf("BlackRook:\n");
+    Board::print(move_opps->black_rook);
+
+    printf("BlackQueen:\n");
+    Board::print(move_opps->black_queen);
+
+    printf("BlackKing:\n");
+    Board::print(move_opps->black_king);
 }
 
 Board Openings::create(OpeningType typ)
