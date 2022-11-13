@@ -131,8 +131,8 @@ namespace chess
         void print(BoardAnalysisType typ);
         void pretty_print();
 
-        std::vector<int> get_piece_moves(int piece_idx, bool test_in_check_flg);
-        std::vector<int> get_piece_influence(int piece_idx);
+        std::vector<int> get_piece_moves(int piece_idx, bool test_check);
+        std::vector<int> get_piece_influence(int piece_idx, bool test_check);
 
         Move get_random_move(bool white);
         std::string convert_move_to_an_move(Move move);

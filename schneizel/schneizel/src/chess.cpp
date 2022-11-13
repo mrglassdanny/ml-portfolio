@@ -964,7 +964,7 @@ void Board::pretty_print()
     printf("\n\n");
 }
 
-std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
+std::vector<int> Board::get_piece_moves(int piece_idx, bool test_check)
 {
     std::vector<int> out;
 
@@ -1222,7 +1222,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
         break;
     }
 
-    if (test_in_check)
+    if (test_check)
     {
         std::vector<int> upd_out;
         for (int i = 0; i < out.size(); i++)
@@ -1239,7 +1239,7 @@ std::vector<int> Board::get_piece_moves(int piece_idx, bool test_in_check)
     return out;
 }
 
-std::vector<int> Board::get_piece_influence(int piece_idx)
+std::vector<int> Board::get_piece_influence(int piece_idx, bool test_check)
 {
     std::vector<int> out;
 
@@ -1380,6 +1380,7 @@ std::vector<int> Board::get_piece_influence(int piece_idx)
     }
 
     // Test in check:
+    if (test_check)
     {
         std::vector<int> upd_out;
         for (int i = 0; i < out.size(); i++)
@@ -2316,7 +2317,7 @@ int *Board::get_influence()
 
         if (piece_typ != PieceType::Empty)
         {
-            auto piece_inf = this->get_piece_influence(piece_idx);
+            auto piece_inf = this->get_piece_influence(piece_idx, false);
 
             for (int piece_inf_idx = 0; piece_inf_idx < piece_inf.size(); piece_inf_idx++)
             {
