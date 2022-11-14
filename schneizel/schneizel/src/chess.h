@@ -83,9 +83,7 @@ namespace chess
     {
         PieceTypes,
         Material,
-        Influence,
-        AttackOpportunities,
-        MoveOpportunities
+        Influence
     };
 
     class Board
@@ -95,21 +93,6 @@ namespace chess
         int material_data_[CHESS_BOARD_LEN];
         int influence_data_[CHESS_BOARD_LEN];
         int attack_opportunities_data_[CHESS_BOARD_LEN];
-        struct MoveOpportunities
-        {
-            int white_pawn[CHESS_BOARD_LEN];
-            int white_knight[CHESS_BOARD_LEN];
-            int white_bishop[CHESS_BOARD_LEN];
-            int white_rook[CHESS_BOARD_LEN];
-            int white_queen[CHESS_BOARD_LEN];
-            int white_king[CHESS_BOARD_LEN];
-            int black_pawn[CHESS_BOARD_LEN];
-            int black_knight[CHESS_BOARD_LEN];
-            int black_bishop[CHESS_BOARD_LEN];
-            int black_rook[CHESS_BOARD_LEN];
-            int black_queen[CHESS_BOARD_LEN];
-            int black_king[CHESS_BOARD_LEN];
-        } move_opportunities_data_;
 
         static int get_col_fr_adj_col(int adj_col);
         static int get_adj_col_fr_col(char col);
@@ -144,7 +127,7 @@ namespace chess
         static void print(int *board);
         void print();
         void pretty_print();
-        void print_analysis(BoardAnalysisType typ, bool white);
+        void print_analysis(BoardAnalysisType typ);
 
         std::vector<int> get_piece_moves(int piece_idx, bool test_check);
         std::vector<int> get_piece_influence(int piece_idx, bool test_check);
@@ -171,12 +154,12 @@ namespace chess
         int sum_material();
         int *get_influence(bool test_check);
         int sum_influence(bool test_check);
-        int *get_attack_opportunities(bool white);
-        int sum_attack_opportunities(bool white);
-        void get_move_opportunities();
 
         void one_hot_encode(int *out);
         void one_hot_encode(float *out);
+
+        float evaluate();
+        float minimax(int depth, bool white, float alpha, float beta);
     };
 
     enum OpeningType
