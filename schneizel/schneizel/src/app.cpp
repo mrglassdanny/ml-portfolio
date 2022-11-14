@@ -43,14 +43,25 @@ int main()
 	white = !white;
 	board.print_analysis(BoardAnalysisType::PieceTypes);
 
-	{
-		auto sims = board.simulate_all_moves(white);
-		for (auto sim : sims)
-		{
-			printf("%f\n", sim.minimax(3, white, -1000.f, 1000.f));
-			sim.print_analysis(BoardAnalysisType::PieceTypes);
-		}
-	}
+	board.change_minimax(white, 3);
+	white = !white;
+	board.print_analysis(BoardAnalysisType::PieceTypes);
+
+	board.change_minimax(white, 3);
+	white = !white;
+	board.print_analysis(BoardAnalysisType::PieceTypes);
+
+	board.change_minimax(white, 3);
+	white = !white;
+	board.print_analysis(BoardAnalysisType::PieceTypes);
+
+	board.change_minimax(white, 3);
+	white = !white;
+	board.print_analysis(BoardAnalysisType::PieceTypes);
+
+	board.change_minimax(white, 3);
+	white = !white;
+	board.print_analysis(BoardAnalysisType::PieceTypes);
 
 	// at::Tensor a = at::ones({2, 2}, at::kInt);
 	// at::Tensor b = at::randn({2, 2});

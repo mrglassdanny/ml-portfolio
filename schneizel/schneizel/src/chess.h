@@ -160,6 +160,7 @@ namespace chess
 
         float evaluate();
         float minimax(int depth, bool white, float alpha, float beta);
+        void change_minimax(bool white, int depth);
     };
 
     enum OpeningType

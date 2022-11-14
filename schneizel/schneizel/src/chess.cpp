@@ -2487,9 +2487,10 @@ void Board::one_hot_encode(float *out)
 float Board::evaluate()
 {
     int mat_sum = this->sum_material();
-    int inf_sum = this->sum_influence(false);
+    // int inf_sum = this->sum_influence(false);
 
-    return (mat_sum + inf_sum) / 2.0f;
+    // return (mat_sum + inf_sum) / 2.0f;
+    return (mat_sum);
 }
 
 float Board::minimax(int depth, bool white, float alpha, float beta)
@@ -2518,7 +2519,6 @@ float Board::minimax(int depth, bool white, float alpha, float beta)
             alpha = eval > alpha ? eval : alpha;
             if (beta <= alpha)
             {
-                printf("PRUNED\n");
                 break;
             }
         }
@@ -2539,13 +2539,41 @@ float Board::minimax(int depth, bool white, float alpha, float beta)
             beta = eval < beta ? eval : beta;
             if (beta <= alpha)
             {
-                printf("PRUNED\n");
                 break;
             }
         }
 
         return val;
     }
+}
+
+void Board::change_minimax(bool white, int depth)
+{
+    auto sims = this->simulate_all_moves(white);
+
+    float min = -1000.0f;
+    float max = 1000.0f;
+
+    float best_val = white ? min : max;
+    Board best_board;
+
+    for (auto sim : sims)
+    {
+        float val = sim.minimax(depth, white, min, max);
+
+        if (white && val > best_val)
+        {
+            best_val = val;
+            best_board = sim;
+        }
+        else if (!white && val < best_val)
+        {
+            best_val = val;
+            best_board = sim;
+        }
+    }
+
+    this->copy(&best_board);
 }
 
 Board Openings::create(OpeningType typ)
