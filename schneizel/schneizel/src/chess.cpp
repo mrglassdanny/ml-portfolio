@@ -2549,6 +2549,9 @@ float Board::minimax(int depth, bool white, float alpha, float beta)
 
 void Board::change_minimax(bool white, int depth)
 {
+    auto sw = new CpuStopWatch();
+    sw->start();
+
     auto sims = this->simulate_all_moves(white);
 
     float min = -1000.0f;
@@ -2574,6 +2577,11 @@ void Board::change_minimax(bool white, int depth)
     }
 
     this->copy(&best_board);
+    sw->stop();
+
+    sw->print_elapsed_seconds();
+
+    delete sw;
 }
 
 Board Openings::create(OpeningType typ)
@@ -2758,4 +2766,35 @@ Board Openings::create_rand_d4()
 {
     OpeningType typ = (OpeningType)((rand() % CHESS_OPENING_D4_CNT) + CHESS_OPENING_D4);
     return Openings::create(typ);
+}
+
+CpuStopWatch::CpuStopWatch()
+{
+    this->beg_ = 0;
+    this->end_ = 0;
+}
+
+CpuStopWatch::~CpuStopWatch()
+{
+}
+
+void CpuStopWatch::start()
+{
+    this->beg_ = clock();
+    this->end_ = this->beg_;
+}
+
+void CpuStopWatch::stop()
+{
+    this->end_ = clock();
+}
+
+double CpuStopWatch::get_elapsed_seconds()
+{
+    return ((double)(this->end_ - this->beg_)) / CLOCKS_PER_SEC;
+}
+
+void CpuStopWatch::print_elapsed_seconds()
+{
+    printf("ELAPSED SECONDS: %f\n", this->get_elapsed_seconds());
 }
