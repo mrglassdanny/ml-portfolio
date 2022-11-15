@@ -75,8 +75,7 @@ namespace chess
         BlackInCheckmate,
         WhiteInStalemate,
         BlackInStalemate,
-        WhiteInsufficientMaterial,
-        BlackInsufficientMaterial
+        InsufficientMaterial
     };
 
     enum BoardAnalysisType
@@ -144,7 +143,7 @@ namespace chess
         bool check(bool white);
         bool checkmate(bool white);
         bool stalemate(bool white);
-        bool insufficient_material(bool white);
+        bool insufficient_material();
         bool game_over();
 
         BoardStatus get_status();
@@ -196,9 +195,9 @@ namespace chess
     class Openings
     {
     public:
-        static Board create(OpeningType typ);
-        static Board create_rand_e4();
-        static Board create_rand_d4();
+        static Board create(OpeningType typ, bool *white);
+        static Board create_rand_e4(bool *white);
+        static Board create_rand_d4(bool *white);
     };
 
     class StopWatch

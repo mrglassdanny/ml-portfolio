@@ -12,56 +12,15 @@ int main()
 
 	bool white = true;
 
-	auto board = Openings::create(OpeningType::GrunfeldDefense);
+	auto board = Openings::create_rand_d4(&white);
 	board.print_analysis(BoardAnalysisType::PieceTypes);
 
-	board.change("Qa4", white);
-	white = !white;
-	board.print_analysis(BoardAnalysisType::PieceTypes);
-
-	board.change("b5", white);
-	white = !white;
-	board.print_analysis(BoardAnalysisType::PieceTypes);
-
-	board.change("Qxb5", white);
-	white = !white;
-	board.print_analysis(BoardAnalysisType::PieceTypes);
-
-	board.change("c6", white);
-	white = !white;
-	board.print_analysis(BoardAnalysisType::PieceTypes);
-
-	board.change("Qb7", white);
-	white = !white;
-	board.print_analysis(BoardAnalysisType::PieceTypes);
-
-	board.change("Na6", white);
-	white = !white;
-	board.print_analysis(BoardAnalysisType::PieceTypes);
-
-	board.change("Qxc6", white);
-	white = !white;
-	board.print_analysis(BoardAnalysisType::PieceTypes);
-
-	board.change_minimax(white, 3);
-	white = !white;
-	board.print_analysis(BoardAnalysisType::PieceTypes);
-
-	board.change_minimax(white, 3);
-	white = !white;
-	board.print_analysis(BoardAnalysisType::PieceTypes);
-
-	board.change_minimax(white, 3);
-	white = !white;
-	board.print_analysis(BoardAnalysisType::PieceTypes);
-
-	board.change_minimax(white, 3);
-	white = !white;
-	board.print_analysis(BoardAnalysisType::PieceTypes);
-
-	board.change_minimax(white, 3);
-	white = !white;
-	board.print_analysis(BoardAnalysisType::PieceTypes);
+	while (!board.game_over())
+	{
+		board.change_minimax(white, 2);
+		white = !white;
+		board.print_analysis(BoardAnalysisType::PieceTypes);
+	}
 
 	// at::Tensor a = at::ones({2, 2}, at::kInt);
 	// at::Tensor b = at::randn({2, 2});

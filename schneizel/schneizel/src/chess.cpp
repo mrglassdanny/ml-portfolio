@@ -1949,21 +1949,42 @@ std::vector<Board> Board::simulate_all_moves(bool white)
 {
     std::vector<Board> sims;
 
+    int white_king_idx = 0;
+    int black_king_idx = 0;
+
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
         bool check_moves = false;
+
+        PieceType piece_typ = (PieceType)this->data_[i];
+
         if (white)
         {
-            if (Piece::is_white((PieceType)this->data_[i]))
+            if (Piece::is_white(piece_typ) && piece_typ)
             {
-                check_moves = true;
+
+                if (piece_typ == PieceType::WhiteKing)
+                {
+                    white_king_idx = i;
+                }
+                else
+                {
+                    check_moves = true;
+                }
             }
         }
         else
         {
-            if (Piece::is_black((PieceType)this->data_[i]))
+            if (Piece::is_black(piece_typ))
             {
-                check_moves = true;
+                if (piece_typ == PieceType::BlackKing)
+                {
+                    black_king_idx = i;
+                }
+                else
+                {
+                    check_moves = true;
+                }
             }
         }
 
@@ -1973,6 +1994,28 @@ std::vector<Board> Board::simulate_all_moves(bool white)
             for (int j = 0; j < legal_moves.size(); j++)
             {
                 Board sim = this->simulate(Move{i, legal_moves[j]}, white);
+                sims.push_back(sim);
+            }
+        }
+    }
+
+    if (sims.size() == 0)
+    {
+        if (white)
+        {
+            std::vector<int> legal_moves = this->get_piece_moves(white_king_idx, true);
+            for (int j = 0; j < legal_moves.size(); j++)
+            {
+                Board sim = this->simulate(Move{white_king_idx, legal_moves[j]}, white);
+                sims.push_back(sim);
+            }
+        }
+        else
+        {
+            std::vector<int> legal_moves = this->get_piece_moves(black_king_idx, true);
+            for (int j = 0; j < legal_moves.size(); j++)
+            {
+                Board sim = this->simulate(Move{black_king_idx, legal_moves[j]}, white);
                 sims.push_back(sim);
             }
         }
@@ -2140,81 +2183,51 @@ bool Board::stalemate(bool white)
     return in_stalemate_flg;
 }
 
-bool Board::insufficient_material(bool white)
+bool Board::insufficient_material()
 {
-    bool pawn_found = false;
-    int knight_cnt = 0;
-    int bishop_cnt = 0;
-    bool rook_or_queen_found = false;
+    int white_knight_cnt = 0;
+    int white_bishop_cnt = 0;
+    int black_knight_cnt = 0;
+    int black_bishop_cnt = 0;
 
     for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
-        PieceType typ = (PieceType)this->data_[i];
+        PieceType piece_typ = (PieceType)this->data_[i];
 
-        switch (typ)
+        switch (piece_typ)
         {
         case PieceType::WhitePawn:
-            if (white)
-            {
-                pawn_found = true;
-            }
-            break;
         case PieceType::BlackPawn:
-            if (!white)
-            {
-                pawn_found = true;
-            }
-            break;
+            return false;
         case PieceType::WhiteKnight:
-            if (white)
-            {
-                knight_cnt++;
-            }
+            white_knight_cnt++;
             break;
         case PieceType::BlackKnight:
-            if (!white)
-            {
-                knight_cnt++;
-            }
+            black_knight_cnt++;
             break;
         case PieceType::WhiteBishop:
-            if (white)
-            {
-                bishop_cnt++;
-            }
+            white_bishop_cnt++;
             break;
         case PieceType::BlackBishop:
-            if (!white)
-            {
-                bishop_cnt++;
-            }
+            black_bishop_cnt++;
             break;
         case PieceType::WhiteRook:
         case PieceType::WhiteQueen:
-            if (white)
-            {
-                rook_or_queen_found = true;
-                return false;
-            }
         case PieceType::BlackRook:
         case PieceType::BlackQueen:
-            if (!white)
-            {
-                rook_or_queen_found = true;
-                return false;
-            }
+            return false;
         default:
             break;
         }
     }
 
-    if (knight_cnt < 2 && bishop_cnt == 0 &&
-        !rook_or_queen_found && !pawn_found)
+    if (white_knight_cnt < 2 && white_bishop_cnt == 0 &&
+        black_knight_cnt < 2 && black_bishop_cnt == 0)
     {
         return true;
     }
-    else if (knight_cnt == 0 && bishop_cnt < 2 &&
-             !rook_or_queen_found && !pawn_found)
+    else if (white_knight_cnt == 0 && white_bishop_cnt < 2 &&
+             black_knight_cnt == 0 && black_bishop_cnt < 2)
     {
         return true;
     }
@@ -2239,15 +2252,7 @@ bool Board::game_over()
 
 BoardStatus Board::get_status()
 {
-    if (this->check(true))
-    {
-        return BoardStatus::WhiteInCheck;
-    }
-    else if (this->check(false))
-    {
-        return BoardStatus::BlackInCheck;
-    }
-    else if (this->checkmate(true))
+    if (this->checkmate(true))
     {
         return BoardStatus::WhiteInCheckmate;
     }
@@ -2263,13 +2268,17 @@ BoardStatus Board::get_status()
     {
         return BoardStatus::BlackInStalemate;
     }
-    else if (this->insufficient_material(true))
+    else if (this->insufficient_material())
     {
-        return BoardStatus::WhiteInsufficientMaterial;
+        return BoardStatus::InsufficientMaterial;
     }
-    else if (this->insufficient_material(false))
+    else if (this->check(true))
     {
-        return BoardStatus::BlackInsufficientMaterial;
+        return BoardStatus::WhiteInCheck;
+    }
+    else if (this->check(false))
+    {
+        return BoardStatus::BlackInCheck;
     }
     else
     {
@@ -2304,11 +2313,8 @@ void Board::print_status()
     case BoardStatus::BlackInStalemate:
         printf("BlackInStalemate");
         break;
-    case BoardStatus::WhiteInsufficientMaterial:
-        printf("WhiteInsufficientMaterial");
-        break;
-    case BoardStatus::BlackInsufficientMaterial:
-        printf("BlackInsufficientMaterial");
+    case BoardStatus::InsufficientMaterial:
+        printf("InsufficientMaterial");
         break;
     default:
         break;
@@ -2487,10 +2493,12 @@ void Board::one_hot_encode(float *out)
 float Board::evaluate()
 {
     int mat_sum = this->sum_material();
-    // int inf_sum = this->sum_influence(false);
+    int inf_sum = this->sum_influence(true);
 
-    // return (mat_sum + inf_sum) / 2.0f;
-    return (mat_sum);
+    float mat = mat_sum * 1.0f;
+    float inf = inf_sum * 0.01f;
+
+    return mat + inf;
 }
 
 float Board::minimax(int depth, bool white, float alpha, float beta)
@@ -2560,9 +2568,11 @@ void Board::change_minimax(bool white, int depth)
     float best_val = white ? min : max;
     Board best_board;
 
+    printf("SIMS: %d\n", sims.size());
+
     for (auto sim : sims)
     {
-        float val = sim.minimax(depth, white, min, max);
+        float val = sim.minimax(depth - 1, white, min, max);
 
         if (white && val > best_val)
         {
@@ -2584,170 +2594,277 @@ void Board::change_minimax(bool white, int depth)
     delete sw;
 }
 
-Board Openings::create(OpeningType typ)
+Board Openings::create(OpeningType typ, bool *white)
 {
     Board board;
 
     switch (typ)
     {
     case SicilianDefense:
-        board.change("e4", true);
-        board.change("c5", false);
+        board.change("e4", *white);
+        *white = !*white;
+        board.change("c5", *white);
+        *white = !*white;
         break;
     case FrenchDefense:
-        board.change("e4", true);
-        board.change("e6", false);
+        board.change("e4", *white);
+        *white = !*white;
+        board.change("e6", *white);
+        *white = !*white;
         break;
     case RuyLopezOpening:
-        board.change("e4", true);
-        board.change("e5", false);
-        board.change("Nf3", true);
-        board.change("Nc6", false);
-        board.change("Bb5", true);
+        board.change("e4", *white);
+        *white = !*white;
+        board.change("e5", *white);
+        *white = !*white;
+        board.change("Nf3", *white);
+        *white = !*white;
+        board.change("Nc6", *white);
+        *white = !*white;
+        board.change("Bb5", *white);
+        *white = !*white;
         break;
     case CaroKannDefense:
-        board.change("e4", true);
-        board.change("c6", false);
+        board.change("e4", *white);
+        *white = !*white;
+        board.change("c6", *white);
+        *white = !*white;
         break;
     case ItalianGame:
-        board.change("e4", true);
-        board.change("e5", false);
-        board.change("Nf3", true);
-        board.change("Nc6", false);
-        board.change("Bc4", true);
+        board.change("e4", *white);
+        *white = !*white;
+        board.change("e5", *white);
+        *white = !*white;
+        board.change("Nf3", *white);
+        *white = !*white;
+        board.change("Nc6", *white);
+        *white = !*white;
+        board.change("Bc4", *white);
+        *white = !*white;
         break;
     case SicilianDefenseClosed:
-        board.change("e4", true);
-        board.change("c5", false);
-        board.change("Nc3", true);
+        board.change("e4", *white);
+        *white = !*white;
+        board.change("c5", *white);
+        *white = !*white;
+        board.change("Nc3", *white);
+        *white = !*white;
         break;
     case ScandinavianDefense:
-        board.change("e4", true);
-        board.change("d5", false);
+        board.change("e4", *white);
+        *white = !*white;
+        board.change("d5", *white);
+        *white = !*white;
         break;
     case PircDefense:
-        board.change("e4", true);
-        board.change("d6", false);
-        board.change("d4", true);
-        board.change("Nf6", false);
+        board.change("e4", *white);
+        *white = !*white;
+        board.change("d6", *white);
+        *white = !*white;
+        board.change("d4", *white);
+        *white = !*white;
+        board.change("Nf6", *white);
+        *white = !*white;
         break;
     case SicilianDefenseAlapinVariation:
-        board.change("e4", true);
-        board.change("c5", false);
-        board.change("c3", true);
+        board.change("e4", *white);
+        *white = !*white;
+        board.change("c5", *white);
+        *white = !*white;
+        board.change("c3", *white);
+        *white = !*white;
         break;
     case AlekhinesDefense:
-        board.change("e4", true);
-        board.change("Nf6", false);
+        board.change("e4", *white);
+        *white = !*white;
+        board.change("Nf6", *white);
+        *white = !*white;
         break;
     case KingsGambit:
-        board.change("e4", true);
-        board.change("e5", false);
-        board.change("f4", true);
+        board.change("e4", *white);
+        *white = !*white;
+        board.change("e5", *white);
+        *white = !*white;
+        board.change("f4", *white);
+        *white = !*white;
         break;
     case ScotchGame:
-        board.change("e4", true);
-        board.change("e5", false);
-        board.change("Nf3", true);
-        board.change("Nc6", false);
-        board.change("d4", true);
+        board.change("e4", *white);
+        *white = !*white;
+        board.change("e5", *white);
+        *white = !*white;
+        board.change("Nf3", *white);
+        *white = !*white;
+        board.change("Nc6", *white);
+        *white = !*white;
+        board.change("d4", *white);
+        *white = !*white;
         break;
     case ViennaGame:
-        board.change("e4", true);
-        board.change("e5", false);
-        board.change("Nc3", true);
+        board.change("e4", *white);
+        *white = !*white;
+        board.change("e5", *white);
+        *white = !*white;
+        board.change("Nc3", *white);
+        *white = !*white;
         break;
     case QueensGambit:
-        board.change("d4", true);
-        board.change("d5", false);
-        board.change("c4", true);
+        board.change("d4", *white);
+        *white = !*white;
+        board.change("d5", *white);
+        *white = !*white;
+        board.change("c4", *white);
+        *white = !*white;
         break;
     case SlavDefense:
-        board.change("d4", true);
-        board.change("d5", false);
-        board.change("c4", true);
-        board.change("c6", false);
+        board.change("d4", *white);
+        *white = !*white;
+        board.change("d5", *white);
+        *white = !*white;
+        board.change("c4", *white);
+        *white = !*white;
+        board.change("c6", *white);
+        *white = !*white;
         break;
     case KingsIndianDefense:
-        board.change("d4", true);
-        board.change("Nf6", false);
-        board.change("c4", true);
-        board.change("g6", false);
+        board.change("d4", *white);
+        *white = !*white;
+        board.change("Nf6", *white);
+        *white = !*white;
+        board.change("c4", *white);
+        *white = !*white;
+        board.change("g6", *white);
+        *white = !*white;
         break;
     case NimzoIndianDefense:
-        board.change("d4", true);
-        board.change("Nf6", false);
-        board.change("c4", true);
-        board.change("e6", false);
-        board.change("Nc3", true);
-        board.change("Bb4", false);
+        board.change("d4", *white);
+        *white = !*white;
+        board.change("Nf6", *white);
+        *white = !*white;
+        board.change("c4", *white);
+        *white = !*white;
+        board.change("e6", *white);
+        *white = !*white;
+        board.change("Nc3", *white);
+        *white = !*white;
+        board.change("Bb4", *white);
+        *white = !*white;
         break;
     case QueensIndianDefense:
-        board.change("d4", true);
-        board.change("Nf6", false);
-        board.change("c4", true);
-        board.change("e6", false);
-        board.change("Nf3", true);
-        board.change("b6", false);
+        board.change("d4", *white);
+        *white = !*white;
+        board.change("Nf6", *white);
+        *white = !*white;
+        board.change("c4", *white);
+        *white = !*white;
+        board.change("e6", *white);
+        *white = !*white;
+        board.change("Nf3", *white);
+        *white = !*white;
+        board.change("b6", *white);
+        *white = !*white;
         break;
     case CatalanOpening:
-        board.change("d4", true);
-        board.change("Nf6", false);
-        board.change("c4", true);
-        board.change("e6", false);
-        board.change("g3", true);
+        board.change("d4", *white);
+        *white = !*white;
+        board.change("Nf6", *white);
+        *white = !*white;
+        board.change("c4", *white);
+        *white = !*white;
+        board.change("e6", *white);
+        *white = !*white;
+        board.change("g3", *white);
+        *white = !*white;
         break;
     case BogoIndianDefense:
-        board.change("d4", true);
-        board.change("Nf6", false);
-        board.change("c4", true);
-        board.change("e6", false);
-        board.change("Nf3", true);
-        board.change("Bb4+", false);
+        board.change("d4", *white);
+        *white = !*white;
+        board.change("Nf6", *white);
+        *white = !*white;
+        board.change("c4", *white);
+        *white = !*white;
+        board.change("e6", *white);
+        *white = !*white;
+        board.change("Nf3", *white);
+        *white = !*white;
+        board.change("Bb4+", *white);
+        *white = !*white;
         break;
     case GrunfeldDefense:
-        board.change("d4", true);
-        board.change("Nf6", false);
-        board.change("c4", true);
-        board.change("g6", false);
-        board.change("Nc3", true);
-        board.change("d5", false);
+        board.change("d4", *white);
+        *white = !*white;
+        board.change("Nf6", *white);
+        *white = !*white;
+        board.change("c4", *white);
+        *white = !*white;
+        board.change("g6", *white);
+        *white = !*white;
+        board.change("Nc3", *white);
+        *white = !*white;
+        board.change("d5", *white);
+        *white = !*white;
         break;
     case DutchDefense:
-        board.change("d4", true);
-        board.change("f5", false);
+        board.change("d4", *white);
+        *white = !*white;
+        board.change("f5", *white);
+        *white = !*white;
         break;
     case TrompowskyAttack:
-        board.change("d4", true);
-        board.change("Nf6", false);
-        board.change("Bg5", true);
+        board.change("d4", *white);
+        *white = !*white;
+        board.change("Nf6", *white);
+        *white = !*white;
+        board.change("Bg5", *white);
+        *white = !*white;
         break;
     case BenkoGambit:
-        board.change("d4", true);
-        board.change("Nf6", false);
-        board.change("c4", true);
-        board.change("c5", false);
-        board.change("d5", true);
-        board.change("b5", false);
+        board.change("d4", *white);
+        *white = !*white;
+        board.change("Nf6", *white);
+        *white = !*white;
+        board.change("c4", *white);
+        *white = !*white;
+        board.change("c5", *white);
+        *white = !*white;
+        board.change("d5", *white);
+        *white = !*white;
+        board.change("b5", *white);
+        *white = !*white;
         break;
     case LondonSystem:
-        board.change("d4", true);
-        board.change("d5", false);
-        board.change("Nf3", true);
-        board.change("Nf6", false);
-        board.change("Bf4", true);
+        board.change("d4", *white);
+        *white = !*white;
+        board.change("d5", *white);
+        *white = !*white;
+        board.change("Nf3", *white);
+        *white = !*white;
+        board.change("Nf6", *white);
+        *white = !*white;
+        board.change("Bf4", *white);
+        *white = !*white;
         break;
     case BenoniDefense:
-        board.change("d4", true);
-        board.change("Nf6", false);
-        board.change("c4", true);
-        board.change("c5", false);
-        board.change("d5", true);
-        board.change("e6", false);
-        board.change("Nc3", true);
-        board.change("exd5", false);
-        board.change("cxd5", true);
-        board.change("d6", false);
+        board.change("d4", *white);
+        *white = !*white;
+        board.change("Nf6", *white);
+        *white = !*white;
+        board.change("c4", *white);
+        *white = !*white;
+        board.change("c5", *white);
+        *white = !*white;
+        board.change("d5", *white);
+        *white = !*white;
+        board.change("e6", *white);
+        *white = !*white;
+        board.change("Nc3", *white);
+        *white = !*white;
+        board.change("exd5", *white);
+        *white = !*white;
+        board.change("cxd5", *white);
+        *white = !*white;
+        board.change("d6", *white);
+        *white = !*white;
         break;
     default:
         break;
@@ -2756,16 +2873,16 @@ Board Openings::create(OpeningType typ)
     return board;
 }
 
-Board Openings::create_rand_e4()
+Board Openings::create_rand_e4(bool *white)
 {
     OpeningType typ = (OpeningType)((rand() % CHESS_OPENING_E4_CNT) + CHESS_OPENING_E4);
-    return Openings::create(typ);
+    return Openings::create(typ, white);
 }
 
-Board Openings::create_rand_d4()
+Board Openings::create_rand_d4(bool *white)
 {
     OpeningType typ = (OpeningType)((rand() % CHESS_OPENING_D4_CNT) + CHESS_OPENING_D4);
-    return Openings::create(typ);
+    return Openings::create(typ, white);
 }
 
 CpuStopWatch::CpuStopWatch()
