@@ -327,7 +327,7 @@ int Board::get_adj_col_fr_idx(int idx)
 
 int Board::get_adj_row_fr_idx(int idx)
 {
-    return idx / CHESS_BOARD_ROW_CNT;
+    return idx / CHESS_BOARD_COL_CNT;
 }
 
 char Board::get_col_fr_idx(int idx)
