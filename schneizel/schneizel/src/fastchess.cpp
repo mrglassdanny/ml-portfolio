@@ -536,7 +536,7 @@ std::vector<Move> Board::get_moves(int square)
 {
     std::vector<Move> moves;
 
-    char piece = this->data_[square];
+    char piece = this->get_piece(square);
 
     if (piece == MT)
     {
@@ -828,8 +828,47 @@ std::vector<Move> Board::get_moves(int square)
     return moves;
 }
 
-std::vector<Move> Board::get_moves(bool white)
+void Board::get_moves_parallel(int square)
 {
+    auto moves = this->get_moves(square);
+
+    this->mutx.lock();
+    this->all_moves.insert(all_moves.end(), moves.begin(), moves.end());
+    this->mutx.unlock();
+}
+
+std::vector<Move> Board::get_all_moves(bool white)
+{
+    this->all_moves.clear();
+    std::vector<std::thread> threads;
+
+    if (white)
+    {
+        for (int i = 0; i < BOARD_LEN; i++)
+        {
+            if (Piece::is_white(this->get_piece(i)))
+            {
+                threads.push_back(std::thread(&Board::get_moves_parallel, this, i));
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < BOARD_LEN; i++)
+        {
+            if (Piece::is_black(this->get_piece(i)))
+            {
+                threads.push_back(std::thread(&Board::get_moves_parallel, this, i));
+            }
+        }
+    }
+
+    for (auto &th : threads)
+    {
+        th.join();
+    }
+
+    return this->all_moves;
 }
 
 void Board::change(Move move)

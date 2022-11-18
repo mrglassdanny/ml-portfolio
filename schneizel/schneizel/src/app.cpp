@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include <ATen/ATen.h>
+//#include <ATen/ATen.h>
 
 #include "fastchess.h"
 
@@ -12,14 +12,10 @@ int main()
 
 	Board board;
 
-	board.print();
-
-	board.change(Move{11, 19});
-	board.print();
-
-	for (auto move : board.get_moves(2))
+	auto ms = board.get_all_moves(true);
+	for (auto m : ms)
 	{
-		board.change(move);
+		board.change(m);
 		board.print();
 		board.reset();
 	}
