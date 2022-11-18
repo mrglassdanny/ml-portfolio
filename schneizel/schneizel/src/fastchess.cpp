@@ -108,11 +108,6 @@ int Board::get_col(int square)
     return square % COL_CNT;
 }
 
-int Board::get_square(int row, int col)
-{
-    return row * COL_CNT + col;
-}
-
 char Board::get_alpha_col(int col)
 {
     switch (col)
@@ -134,6 +129,11 @@ char Board::get_alpha_col(int col)
     default:
         return 'h';
     }
+}
+
+int Board::get_square(int row, int col)
+{
+    return row * COL_CNT + col;
 }
 
 bool Board::is_row_valid(int row)
@@ -873,7 +873,7 @@ std::vector<Move> Board::get_all_moves(bool white)
 
 void Board::change(Move move)
 {
-    char src_piece = this->data_[move.src_square];
+    char src_piece = this->get_piece(move.src_square);
     char dst_piece = src_piece;
 
     int src_row = Board::get_row(move.src_square);
@@ -893,7 +893,7 @@ void Board::change(Move move)
         }
         else if (src_col != dst_col)
         {
-            this->data_[(dst_row - 1) * COL_CNT + dst_col] = MT;
+            this->data_[Board::get_square(dst_row - 1, dst_col)] = MT;
         }
     }
     break;
@@ -907,7 +907,7 @@ void Board::change(Move move)
         }
         else if (src_col != dst_col)
         {
-            this->data_[(dst_row + 1) * COL_CNT + dst_col] = MT;
+            this->data_[Board::get_square(dst_row + 1, dst_col)] = MT;
         }
     }
     break;

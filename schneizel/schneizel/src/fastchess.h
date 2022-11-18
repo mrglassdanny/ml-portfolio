@@ -62,9 +62,8 @@ namespace fastchess
 
         static int get_row(int square);
         static int get_col(int square);
-        static int get_square(int row, int col);
-
         static char get_alpha_col(int col);
+        static int get_square(int row, int col);
 
         static bool is_row_valid(int row);
         static bool is_col_valid(int col);
