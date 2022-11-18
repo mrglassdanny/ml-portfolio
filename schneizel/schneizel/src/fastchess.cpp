@@ -91,6 +91,39 @@ const char *Piece::to_str(char piece)
     }
 }
 
+float Piece::get_value(char piece)
+{
+    switch (piece)
+    {
+    case WP:
+        return 1.0f;
+    case BP:
+        return -1.0f;
+    case WN:
+        return 3.0f;
+    case BN:
+        return -3.0f;
+    case WB:
+        return 3.33f;
+    case BB:
+        return -3.33f;
+    case WR:
+        return 5.0f;
+    case BR:
+        return -5.0f;
+    case WQ:
+        return 9.0f;
+    case BQ:
+        return -9.0f;
+    case WK:
+        return 2.0f;
+    case BK:
+        return -2.0f;
+    default:
+        return 0.0f;
+    }
+}
+
 Board::Board()
 {
     this->reset();
@@ -977,4 +1010,176 @@ void Board::change(Move move)
 
     this->data_[move.src_square] = MT;
     this->data_[move.dst_square] = dst_piece;
+}
+
+void Board::change_random(bool white)
+{
+    auto all_moves = this->get_all_moves(white);
+
+    int rand_move_idx = rand() % all_moves.size();
+
+    this->change(all_moves[rand_move_idx]);
+}
+
+Board *Board::simulate(Move move)
+{
+    Board *sim = new Board();
+    sim->copy(this);
+    sim->change(move);
+    return sim;
+}
+
+std::vector<Board *> Board::simulate_all(bool white)
+{
+    std::vector<Board *> sims;
+
+    auto all_moves = this->get_all_moves(white);
+
+    for (auto move : all_moves)
+    {
+        auto sim = this->simulate(move);
+        sims.push_back(sim);
+    }
+
+    return sims;
+}
+
+float Board::evaluate_material()
+{
+    float mat_eval = 0.0f;
+
+    for (int i = 0; i < BOARD_LEN; i++)
+    {
+        mat_eval += Piece::get_value(this->get_piece(i));
+    }
+
+    return mat_eval;
+}
+
+float Board::minimax(bool white, int depth, float alpha, float beta)
+{
+    if (depth == 0)
+    {
+        return this->evaluate_material();
+    }
+
+    if (white)
+    {
+        float best_eval = -1000.0f;
+        auto sims = this->simulate_all(false);
+
+        for (auto sim : sims)
+        {
+            float eval = sim->minimax(depth - 1, false, alpha, beta);
+
+            best_eval = eval > best_eval ? eval : best_eval;
+
+            alpha = eval > alpha ? eval : alpha;
+            if (beta <= alpha)
+            {
+                break;
+            }
+        }
+
+        for (auto sim : sims)
+        {
+            delete sim;
+        }
+
+        return best_eval;
+    }
+    else
+    {
+        float best_eval = 1000.0f;
+        auto sims = this->simulate_all(true);
+
+        for (auto sim : sims)
+        {
+            float eval = sim->minimax(depth - 1, true, alpha, beta);
+
+            best_eval = eval < best_eval ? eval : best_eval;
+
+            beta = eval < beta ? eval : beta;
+            if (beta <= alpha)
+            {
+                break;
+            }
+        }
+
+        for (auto sim : sims)
+        {
+            delete sim;
+        }
+
+        return best_eval;
+    }
+}
+
+void Board::change_minimax(bool white, int depth)
+{
+    auto sw = new CpuStopWatch();
+    sw->start();
+
+    auto sims = this->simulate_all(white);
+
+    float min = -1000.0f;
+    float max = 1000.0f;
+
+    float best_eval = white ? min : max;
+    Board *best_sim = this;
+
+    for (auto sim : sims)
+    {
+        float eval = sim->minimax(white, depth - 1, min, max);
+
+        if ((white && eval > best_eval) ||
+            (!white && eval < best_eval))
+        {
+            best_eval = eval;
+            best_sim = sim;
+        }
+    }
+
+    this->copy(best_sim);
+
+    for (auto sim : sims)
+    {
+        delete sim;
+    }
+
+    sw->stop();
+
+    sw->print_elapsed_seconds();
+    delete sw;
+}
+
+CpuStopWatch::CpuStopWatch()
+{
+    this->beg_ = 0;
+    this->end_ = 0;
+}
+
+CpuStopWatch::~CpuStopWatch()
+{
+}
+
+void CpuStopWatch::start()
+{
+    this->beg_ = clock();
+    this->end_ = this->beg_;
+}
+
+void CpuStopWatch::stop()
+{
+    this->end_ = clock();
+}
+
+double CpuStopWatch::get_elapsed_seconds()
+{
+    return ((double)(this->end_ - this->beg_)) / CLOCKS_PER_SEC;
+}
+
+void CpuStopWatch::print_elapsed_seconds()
+{
+    printf("ELAPSED SECONDS: %f\n", this->get_elapsed_seconds());
 }

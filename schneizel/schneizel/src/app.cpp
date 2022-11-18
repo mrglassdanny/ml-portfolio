@@ -1,28 +1,20 @@
 #include <stdio.h>
 
-//#include <ATen/ATen.h>
-
+#include "chess.h"
 #include "fastchess.h"
-
-using namespace fastchess;
 
 int main()
 {
 	srand(time(NULL));
 
-	Board board;
+	chess::Board c_board;
+	fastchess::Board fc_board;
 
-	auto ms = board.get_all_moves(true);
-	for (auto m : ms)
-	{
-		board.change(m);
-		board.print();
-		board.reset();
-	}
+	c_board.change_minimax(true, 5);
+	c_board.pretty_print();
 
-	// at::Tensor a = at::ones({2, 2}, at::kInt);
-	// at::Tensor b = at::randn({2, 2});
-	// auto c = a + b.to(at::kInt);
+	fc_board.change_minimax(true, 5);
+	fc_board.print();
 
 	return 0;
 }

@@ -40,6 +40,7 @@ namespace fastchess
         static bool is_black(char piece);
         static bool is_same_color(char piece_a, char piece_b);
         static const char *to_str(char piece);
+        static float get_value(char piece);
     };
 
     struct CastleState
@@ -64,7 +65,6 @@ namespace fastchess
         static int get_col(int square);
         static char get_alpha_col(int col);
         static int get_square(int row, int col);
-
         static bool is_row_valid(int row);
         static bool is_col_valid(int col);
 
@@ -90,5 +90,41 @@ namespace fastchess
         std::vector<Move> get_all_moves(bool white);
 
         void change(Move move);
+        void change_random(bool white);
+
+        Board *simulate(Move move);
+        std::vector<Board *> simulate_all(bool white);
+
+        float evaluate_material();
+
+        float minimax(bool white, int depth, float alpha, float beta);
+        void change_minimax(bool white, int depth);
+    };
+
+    class StopWatch
+    {
+    public:
+        virtual void start() = 0;
+        virtual void stop() = 0;
+
+        virtual double get_elapsed_seconds() = 0;
+        virtual void print_elapsed_seconds() = 0;
+    };
+
+    class CpuStopWatch : public StopWatch
+    {
+    private:
+        clock_t beg_;
+        clock_t end_;
+
+    public:
+        CpuStopWatch();
+        ~CpuStopWatch();
+
+        virtual void start();
+        virtual void stop();
+
+        virtual double get_elapsed_seconds();
+        virtual void print_elapsed_seconds();
     };
 }

@@ -909,8 +909,6 @@ void Board::pretty_print()
         printf(" %c ", Board::get_col_fr_adj_col(j));
     }
 
-    this->print_status();
-
     printf("\n\n");
 }
 
@@ -2493,12 +2491,8 @@ void Board::one_hot_encode(float *out)
 float Board::evaluate()
 {
     int mat_sum = this->sum_material();
-    int inf_sum = this->sum_influence(true);
 
-    float mat = mat_sum * 1.0f;
-    float inf = inf_sum * 0.01f;
-
-    return mat + inf;
+    return mat_sum * 1.0f;
 }
 
 float Board::minimax(int depth, bool white, float alpha, float beta)
@@ -2567,8 +2561,6 @@ void Board::change_minimax(bool white, int depth)
 
     float best_val = white ? min : max;
     Board best_board;
-
-    printf("SIMS: %d\n", sims.size());
 
     for (auto sim : sims)
     {
