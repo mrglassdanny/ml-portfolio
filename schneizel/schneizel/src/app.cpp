@@ -2,24 +2,26 @@
 
 #include <ATen/ATen.h>
 
-#include "chess.h"
+#include "fastchess.h"
 
-using namespace chess;
+using namespace fastchess;
 
 int main()
 {
 	srand(time(NULL));
 
-	bool white = true;
+	Board board;
 
-	auto board = Openings::create_rand_d4(&white);
-	board.print_analysis(BoardAnalysisType::PieceTypes);
+	board.print();
 
-	while (!board.game_over())
+	board.change(Move{11, 19});
+	board.print();
+
+	for (auto move : board.get_moves(2))
 	{
-		board.change_minimax(white, 2);
-		white = !white;
-		board.print_analysis(BoardAnalysisType::PieceTypes);
+		board.change(move);
+		board.print();
+		board.reset();
 	}
 
 	// at::Tensor a = at::ones({2, 2}, at::kInt);

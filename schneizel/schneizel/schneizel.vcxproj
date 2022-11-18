@@ -88,9 +88,11 @@
   <ItemGroup>
     <ClCompile Include="src\app.cpp" />
     <ClCompile Include="src\chess.cpp" />
+    <ClCompile Include="src\fastchess.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\chess.h" />
+    <ClInclude Include="src\fastchess.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
