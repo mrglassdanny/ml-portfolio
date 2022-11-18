@@ -33,6 +33,12 @@ namespace fastchess
         int dst_square;
     };
 
+    struct SimEval
+    {
+        char board_data[BOARD_LEN];
+        float eval;
+    };
+
     class Piece
     {
     public:
@@ -98,6 +104,7 @@ namespace fastchess
         float evaluate_material();
 
         float minimax(bool white, int depth, float alpha, float beta);
+        void minimax_parallel(bool white, int depth, float alpha, float beta, std::vector<SimEval> *sim_evals, std::mutex *mutx);
         void change_minimax(bool white, int depth);
     };
 

@@ -187,6 +187,7 @@ void Board::reset()
 void Board::copy(Board *src)
 {
     memcpy(this->data_, src->data_, sizeof(char) * BOARD_LEN);
+    this->castle_state_ = src->castle_state_;
 }
 
 void Board::print()
@@ -1070,7 +1071,7 @@ float Board::minimax(bool white, int depth, float alpha, float beta)
 
         for (auto sim : sims)
         {
-            float eval = sim->minimax(depth - 1, false, alpha, beta);
+            float eval = sim->minimax(false, depth - 1, alpha, beta);
 
             best_eval = eval > best_eval ? eval : best_eval;
 
@@ -1095,7 +1096,7 @@ float Board::minimax(bool white, int depth, float alpha, float beta)
 
         for (auto sim : sims)
         {
-            float eval = sim->minimax(depth - 1, true, alpha, beta);
+            float eval = sim->minimax(true, depth - 1, alpha, beta);
 
             best_eval = eval < best_eval ? eval : best_eval;
 
@@ -1115,6 +1116,19 @@ float Board::minimax(bool white, int depth, float alpha, float beta)
     }
 }
 
+void Board::minimax_parallel(bool white, int depth, float alpha, float beta, std::vector<SimEval> *sim_evals, std::mutex *mutx)
+{
+    float eval = this->minimax(white, depth, alpha, beta);
+
+    SimEval sim_eval;
+    memcpy(sim_eval.board_data, this->data_, sizeof(char) * BOARD_LEN);
+    sim_eval.eval = eval;
+
+    mutx->lock();
+    sim_evals->push_back(sim_eval);
+    mutx->unlock();
+}
+
 void Board::change_minimax(bool white, int depth)
 {
     auto sw = new CpuStopWatch();
@@ -1122,30 +1136,42 @@ void Board::change_minimax(bool white, int depth)
 
     auto sims = this->simulate_all(white);
 
+    std::vector<SimEval> sim_evals;
+    std::mutex mutx2;
+    std::vector<std::thread> threads;
+
     float min = -1000.0f;
     float max = 1000.0f;
 
     float best_eval = white ? min : max;
-    Board *best_sim = this;
+    char *best_board_data = this->data_;
 
     for (auto sim : sims)
     {
-        float eval = sim->minimax(white, depth - 1, min, max);
-
-        if ((white && eval > best_eval) ||
-            (!white && eval < best_eval))
-        {
-            best_eval = eval;
-            best_sim = sim;
-        }
+        threads.push_back(std::thread(&Board::minimax_parallel, sim, white, depth - 1, min, max, &sim_evals, &mutx2));
     }
 
-    this->copy(best_sim);
+    for (auto &th : threads)
+    {
+        th.join();
+    }
 
     for (auto sim : sims)
     {
         delete sim;
     }
+
+    for (auto sim_eval : sim_evals)
+    {
+        if ((white && sim_eval.eval > best_eval) ||
+            (!white && sim_eval.eval < best_eval))
+        {
+            best_eval = sim_eval.eval;
+            best_board_data = sim_eval.board_data;
+        }
+    }
+
+    memcpy(this->data_, best_board_data, sizeof(char) * BOARD_LEN);
 
     sw->stop();
 
