@@ -769,9 +769,9 @@ std::vector<Move> Board::get_moves(int square)
         auto straight_moves = this->get_straight_moves(square, piece, row, col);
         moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
 
-        if (piece == WK && !this->castle_state.white_king_moved)
+        if (piece == WK && !this->castle_state_.white_king_moved)
         {
-            if (!this->castle_state.white_left_rook_moved)
+            if (!this->castle_state_.white_left_rook_moved)
             {
                 if (this->get_piece(1) == MT && this->get_piece(2) == MT && this->get_piece(3) == MT)
                 {
@@ -783,7 +783,7 @@ std::vector<Move> Board::get_moves(int square)
                 }
             }
 
-            if (!this->castle_state.white_right_rook_moved)
+            if (!this->castle_state_.white_right_rook_moved)
             {
                 if (this->get_piece(5) == MT && this->get_piece(6) == MT)
                 {
@@ -794,9 +794,9 @@ std::vector<Move> Board::get_moves(int square)
                 }
             }
         }
-        else if (piece == BK && !this->castle_state.black_king_moved)
+        else if (piece == BK && !this->castle_state_.black_king_moved)
         {
-            if (!this->castle_state.black_left_rook_moved)
+            if (!this->castle_state_.black_left_rook_moved)
             {
                 if (this->get_piece(57) == MT && this->get_piece(58) == MT && this->get_piece(59) == MT)
                 {
@@ -808,7 +808,7 @@ std::vector<Move> Board::get_moves(int square)
                 }
             }
 
-            if (!this->castle_state.black_right_rook_moved)
+            if (!this->castle_state_.black_right_rook_moved)
             {
                 if (this->get_piece(61) == MT && this->get_piece(62) == MT)
                 {
@@ -832,14 +832,14 @@ void Board::get_moves_parallel(int square)
 {
     auto moves = this->get_moves(square);
 
-    this->mutx.lock();
-    this->all_moves.insert(all_moves.end(), moves.begin(), moves.end());
-    this->mutx.unlock();
+    this->mutx_.lock();
+    this->all_moves_.insert(all_moves_.end(), moves.begin(), moves.end());
+    this->mutx_.unlock();
 }
 
 std::vector<Move> Board::get_all_moves(bool white)
 {
-    this->all_moves.clear();
+    this->all_moves_.clear();
     std::vector<std::thread> threads;
 
     if (white)
@@ -868,7 +868,7 @@ std::vector<Move> Board::get_all_moves(bool white)
         th.join();
     }
 
-    return this->all_moves;
+    return this->all_moves_;
 }
 
 void Board::change(Move move)
@@ -915,11 +915,11 @@ void Board::change(Move move)
     {
         if (src_col == 0)
         {
-            this->castle_state.white_left_rook_moved = true;
+            this->castle_state_.white_left_rook_moved = true;
         }
         else if (src_col == 7)
         {
-            this->castle_state.white_right_rook_moved = true;
+            this->castle_state_.white_right_rook_moved = true;
         }
     }
     break;
@@ -927,11 +927,11 @@ void Board::change(Move move)
     {
         if (src_col == 0)
         {
-            this->castle_state.black_left_rook_moved = true;
+            this->castle_state_.black_left_rook_moved = true;
         }
         else if (src_col == 7)
         {
-            this->castle_state.black_right_rook_moved = true;
+            this->castle_state_.black_right_rook_moved = true;
         }
     }
     break;
@@ -950,7 +950,7 @@ void Board::change(Move move)
             this->data_[5] = WR;
         }
 
-        this->castle_state.white_king_moved = true;
+        this->castle_state_.white_king_moved = true;
     }
     break;
     case BK:
@@ -968,7 +968,7 @@ void Board::change(Move move)
             this->data_[61] = BR;
         }
 
-        this->castle_state.black_king_moved = true;
+        this->castle_state_.black_king_moved = true;
     }
     break;
     default:

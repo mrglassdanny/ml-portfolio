@@ -56,11 +56,10 @@ namespace fastchess
     {
     private:
         char data_[BOARD_LEN];
-        CastleState castle_state;
-        std::vector<Move> all_moves;
-        std::mutex mutx;
+        CastleState castle_state_;
+        std::vector<Move> all_moves_;
+        std::mutex mutx_;
 
-    public:
         static int get_row(int square);
         static int get_col(int square);
         static int get_square(int row, int col);
@@ -75,6 +74,9 @@ namespace fastchess
         std::vector<Move> get_diagonal_moves(int square, char piece, int row, int col);
         std::vector<Move> get_straight_moves(int square, char piece, int row, int col);
 
+        void get_moves_parallel(int square);
+
+    public:
         Board();
         ~Board();
 
@@ -86,7 +88,6 @@ namespace fastchess
         char get_piece(int square);
 
         std::vector<Move> get_moves(int square);
-        void get_moves_parallel(int square);
         std::vector<Move> get_all_moves(bool white);
 
         void change(Move move);
