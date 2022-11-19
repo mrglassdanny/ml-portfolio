@@ -64,8 +64,6 @@ namespace fastchess
     private:
         char data_[BOARD_LEN];
         CastleState castle_state_;
-        std::vector<Move> all_moves_;
-        std::mutex mutx_;
 
         static int get_row(int square);
         static int get_col(int square);
@@ -74,12 +72,11 @@ namespace fastchess
         static bool is_row_valid(int row);
         static bool is_col_valid(int col);
 
-        bool is_square_influenced(int square, bool by_white);
+        bool is_square_under_attack(int square, bool by_white);
+        bool is_discovered_check(bool by_white);
 
         std::vector<Move> get_diagonal_moves(int square, char piece, int row, int col);
         std::vector<Move> get_straight_moves(int square, char piece, int row, int col);
-
-        void get_moves_parallel(int square);
 
     public:
         Board();
@@ -92,19 +89,18 @@ namespace fastchess
 
         char get_piece(int square);
 
-        std::vector<Move> get_moves(int square);
+        std::vector<Move> get_moves(int square, bool allow_recursive);
         std::vector<Move> get_all_moves(bool white);
 
         void change(Move move);
         void change_random(bool white);
 
-        Board *simulate(Move move);
-        std::vector<Board *> simulate_all(bool white);
+        Board simulate(Move move);
+        std::vector<Board> simulate_all(bool white);
 
         float evaluate_material();
 
         float minimax(bool white, int depth, float alpha, float beta);
-        void minimax_parallel(bool white, int depth, float alpha, float beta, std::vector<SimEval> *sim_evals, std::mutex *mutx);
         void change_minimax(bool white, int depth);
     };
 

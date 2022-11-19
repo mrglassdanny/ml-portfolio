@@ -277,7 +277,7 @@ char Board::get_piece(int square)
     return this->data_[square];
 }
 
-bool Board::is_square_influenced(int square, bool by_white)
+bool Board::is_square_under_attack(int square, bool by_white)
 {
     for (int i = 0; i < BOARD_LEN; i++)
     {
@@ -285,7 +285,7 @@ bool Board::is_square_influenced(int square, bool by_white)
 
         if (by_white && Piece::is_white(piece))
         {
-            auto moves = this->get_moves(i);
+            auto moves = this->get_moves(i, false);
             for (auto move : moves)
             {
                 if (move.dst_square == square)
@@ -296,13 +296,91 @@ bool Board::is_square_influenced(int square, bool by_white)
         }
         else if (!by_white && Piece::is_black(piece))
         {
-            auto moves = this->get_moves(i);
+            auto moves = this->get_moves(i, false);
             for (auto move : moves)
             {
                 if (move.dst_square == square)
                 {
                     return true;
                 }
+            }
+        }
+    }
+
+    return false;
+}
+
+bool Board::is_discovered_check(bool by_white)
+{
+    // For discovered check, we only need to look at moves for opposing bishops, rooks, and queens.
+
+    if (by_white)
+    {
+        int black_king_square;
+        for (int i = BOARD_LEN - 1; i >= 0; i--)
+        {
+            if (this->get_piece(i) == BK)
+            {
+                black_king_square = i;
+                break;
+            }
+        }
+
+        for (int i = 0; i < BOARD_LEN; i++)
+        {
+            switch (this->get_piece(i))
+            {
+            case WB:
+            case WR:
+            case WQ:
+            {
+                auto moves = this->get_moves(i, false);
+                for (auto move : moves)
+                {
+                    if (move.dst_square == black_king_square)
+                    {
+                        return true;
+                    }
+                }
+            }
+            break;
+            default:
+                break;
+            }
+        }
+    }
+    else
+    {
+        int white_king_square;
+        for (int i = 0; i < BOARD_LEN; i++)
+        {
+            if (this->get_piece(i) == WK)
+            {
+                white_king_square = i;
+                break;
+            }
+        }
+
+        for (int i = 0; i < BOARD_LEN; i++)
+        {
+            switch (this->get_piece(i))
+            {
+            case BB:
+            case BR:
+            case BQ:
+            {
+                auto moves = this->get_moves(i, false);
+                for (auto move : moves)
+                {
+                    if (move.dst_square == white_king_square)
+                    {
+                        return true;
+                    }
+                }
+            }
+            break;
+            default:
+                break;
             }
         }
     }
@@ -566,7 +644,7 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
     return moves;
 }
 
-std::vector<Move> Board::get_moves(int square)
+std::vector<Move> Board::get_moves(int square, bool allow_recursive)
 {
     std::vector<Move> moves;
 
@@ -803,52 +881,55 @@ std::vector<Move> Board::get_moves(int square)
         auto straight_moves = this->get_straight_moves(square, piece, row, col);
         moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
 
-        if (piece == WK && !this->castle_state_.white_king_moved)
+        if (allow_recursive)
         {
-            if (!this->castle_state_.white_left_rook_moved)
+            if (piece == WK && !this->castle_state_.white_king_moved)
             {
-                if (this->get_piece(1) == MT && this->get_piece(2) == MT && this->get_piece(3) == MT)
+                if (!this->castle_state_.white_left_rook_moved)
                 {
-                    if (!this->is_square_influenced(1, false) && !this->is_square_influenced(2, false) &&
-                        !this->is_square_influenced(3, false))
+                    if (this->get_piece(1) == MT && this->get_piece(2) == MT && this->get_piece(3) == MT)
                     {
-                        moves.push_back(Move{square, 2});
+                        if (!this->is_square_under_attack(1, false) && !this->is_square_under_attack(2, false) &&
+                            !this->is_square_under_attack(3, false))
+                        {
+                            moves.push_back(Move{square, 2});
+                        }
                     }
                 }
-            }
 
-            if (!this->castle_state_.white_right_rook_moved)
-            {
-                if (this->get_piece(5) == MT && this->get_piece(6) == MT)
+                if (!this->castle_state_.white_right_rook_moved)
                 {
-                    if (!this->is_square_influenced(5, false) && !this->is_square_influenced(6, false))
+                    if (this->get_piece(5) == MT && this->get_piece(6) == MT)
                     {
-                        moves.push_back(Move{square, 6});
+                        if (!this->is_square_under_attack(5, false) && !this->is_square_under_attack(6, false))
+                        {
+                            moves.push_back(Move{square, 6});
+                        }
                     }
                 }
             }
-        }
-        else if (piece == BK && !this->castle_state_.black_king_moved)
-        {
-            if (!this->castle_state_.black_left_rook_moved)
+            else if (piece == BK && !this->castle_state_.black_king_moved)
             {
-                if (this->get_piece(57) == MT && this->get_piece(58) == MT && this->get_piece(59) == MT)
+                if (!this->castle_state_.black_left_rook_moved)
                 {
-                    if (!this->is_square_influenced(57, true) && !this->is_square_influenced(58, true) &&
-                        !this->is_square_influenced(59, true))
+                    if (this->get_piece(57) == MT && this->get_piece(58) == MT && this->get_piece(59) == MT)
                     {
-                        moves.push_back(Move{square, 58});
+                        if (!this->is_square_under_attack(57, true) && !this->is_square_under_attack(58, true) &&
+                            !this->is_square_under_attack(59, true))
+                        {
+                            moves.push_back(Move{square, 58});
+                        }
                     }
                 }
-            }
 
-            if (!this->castle_state_.black_right_rook_moved)
-            {
-                if (this->get_piece(61) == MT && this->get_piece(62) == MT)
+                if (!this->castle_state_.black_right_rook_moved)
                 {
-                    if (!this->is_square_influenced(61, true) && !this->is_square_influenced(62, true))
+                    if (this->get_piece(61) == MT && this->get_piece(62) == MT)
                     {
-                        moves.push_back(Move{square, 62});
+                        if (!this->is_square_under_attack(61, true) && !this->is_square_under_attack(62, true))
+                        {
+                            moves.push_back(Move{square, 62});
+                        }
                     }
                 }
             }
@@ -859,22 +940,29 @@ std::vector<Move> Board::get_moves(int square)
         break;
     }
 
+    if (allow_recursive)
+    {
+        std::vector<Move> tested_moves;
+
+        for (auto move : moves)
+        {
+            auto sim = this->simulate(move);
+
+            if (!sim.is_discovered_check(!white))
+            {
+                tested_moves.push_back(move);
+            }
+        }
+
+        moves = tested_moves;
+    }
+
     return moves;
-}
-
-void Board::get_moves_parallel(int square)
-{
-    auto moves = this->get_moves(square);
-
-    this->mutx_.lock();
-    this->all_moves_.insert(all_moves_.end(), moves.begin(), moves.end());
-    this->mutx_.unlock();
 }
 
 std::vector<Move> Board::get_all_moves(bool white)
 {
-    this->all_moves_.clear();
-    std::vector<std::thread> threads;
+    std::vector<Move> all_moves;
 
     if (white)
     {
@@ -882,7 +970,8 @@ std::vector<Move> Board::get_all_moves(bool white)
         {
             if (Piece::is_white(this->get_piece(i)))
             {
-                threads.push_back(std::thread(&Board::get_moves_parallel, this, i));
+                auto moves = this->get_moves(i, true);
+                all_moves.insert(all_moves.end(), moves.begin(), moves.end());
             }
         }
     }
@@ -892,17 +981,13 @@ std::vector<Move> Board::get_all_moves(bool white)
         {
             if (Piece::is_black(this->get_piece(i)))
             {
-                threads.push_back(std::thread(&Board::get_moves_parallel, this, i));
+                auto moves = this->get_moves(i, true);
+                all_moves.insert(all_moves.end(), moves.begin(), moves.end());
             }
         }
     }
 
-    for (auto &th : threads)
-    {
-        th.join();
-    }
-
-    return this->all_moves_;
+    return all_moves;
 }
 
 void Board::change(Move move)
@@ -1022,17 +1107,17 @@ void Board::change_random(bool white)
     this->change(all_moves[rand_move_idx]);
 }
 
-Board *Board::simulate(Move move)
+Board Board::simulate(Move move)
 {
-    Board *sim = new Board();
-    sim->copy(this);
-    sim->change(move);
+    Board sim;
+    sim.copy(this);
+    sim.change(move);
     return sim;
 }
 
-std::vector<Board *> Board::simulate_all(bool white)
+std::vector<Board> Board::simulate_all(bool white)
 {
-    std::vector<Board *> sims;
+    std::vector<Board> sims;
 
     auto all_moves = this->get_all_moves(white);
 
@@ -1071,7 +1156,7 @@ float Board::minimax(bool white, int depth, float alpha, float beta)
 
         for (auto sim : sims)
         {
-            float eval = sim->minimax(false, depth - 1, alpha, beta);
+            float eval = sim.minimax(false, depth - 1, alpha, beta);
 
             best_eval = eval > best_eval ? eval : best_eval;
 
@@ -1080,11 +1165,6 @@ float Board::minimax(bool white, int depth, float alpha, float beta)
             {
                 break;
             }
-        }
-
-        for (auto sim : sims)
-        {
-            delete sim;
         }
 
         return best_eval;
@@ -1096,7 +1176,7 @@ float Board::minimax(bool white, int depth, float alpha, float beta)
 
         for (auto sim : sims)
         {
-            float eval = sim->minimax(true, depth - 1, alpha, beta);
+            float eval = sim.minimax(true, depth - 1, alpha, beta);
 
             best_eval = eval < best_eval ? eval : best_eval;
 
@@ -1107,26 +1187,8 @@ float Board::minimax(bool white, int depth, float alpha, float beta)
             }
         }
 
-        for (auto sim : sims)
-        {
-            delete sim;
-        }
-
         return best_eval;
     }
-}
-
-void Board::minimax_parallel(bool white, int depth, float alpha, float beta, std::vector<SimEval> *sim_evals, std::mutex *mutx)
-{
-    float eval = this->minimax(white, depth, alpha, beta);
-
-    SimEval sim_eval;
-    memcpy(sim_eval.board_data, this->data_, sizeof(char) * BOARD_LEN);
-    sim_eval.eval = eval;
-
-    mutx->lock();
-    sim_evals->push_back(sim_eval);
-    mutx->unlock();
 }
 
 void Board::change_minimax(bool white, int depth)
@@ -1136,45 +1198,26 @@ void Board::change_minimax(bool white, int depth)
 
     auto sims = this->simulate_all(white);
 
-    std::vector<SimEval> sim_evals;
-    std::mutex mutx2;
-    std::vector<std::thread> threads;
-
     float min = -1000.0f;
     float max = 1000.0f;
 
     float best_eval = white ? min : max;
-    char *best_board_data = this->data_;
+    Board *best_sim = this;
 
     for (auto sim : sims)
     {
-        threads.push_back(std::thread(&Board::minimax_parallel, sim, white, depth - 1, min, max, &sim_evals, &mutx2));
-    }
+        float eval = sim.minimax(white, depth, min, max);
 
-    for (auto &th : threads)
-    {
-        th.join();
-    }
-
-    for (auto sim : sims)
-    {
-        delete sim;
-    }
-
-    for (auto sim_eval : sim_evals)
-    {
-        if ((white && sim_eval.eval > best_eval) ||
-            (!white && sim_eval.eval < best_eval))
+        if ((white && eval > best_eval) || (!white && eval < best_eval))
         {
-            best_eval = sim_eval.eval;
-            best_board_data = sim_eval.board_data;
+            best_eval = eval;
+            best_sim = &sim;
         }
     }
 
-    memcpy(this->data_, best_board_data, sizeof(char) * BOARD_LEN);
+    this->copy(best_sim);
 
     sw->stop();
-
     sw->print_elapsed_seconds();
     delete sw;
 }
