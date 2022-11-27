@@ -310,13 +310,11 @@ bool Board::is_square_under_attack(int square, bool by_white)
     return false;
 }
 
-bool Board::is_discovered_check(bool by_white)
+bool Board::is_check(bool by_white)
 {
-    // For discovered check, we only need to look at moves for opposing bishops, rooks, and queens.
-
     if (by_white)
     {
-        int black_king_square;
+        int black_king_square = -1;
         for (int i = BOARD_LEN - 1; i >= 0; i--)
         {
             if (this->get_piece(i) == BK)
@@ -330,9 +328,12 @@ bool Board::is_discovered_check(bool by_white)
         {
             switch (this->get_piece(i))
             {
+            case WP:
+            case WN:
             case WB:
             case WR:
             case WQ:
+            case WK:
             {
                 auto moves = this->get_moves(i, false);
                 for (auto move : moves)
@@ -351,7 +352,7 @@ bool Board::is_discovered_check(bool by_white)
     }
     else
     {
-        int white_king_square;
+        int white_king_square = -1;
         for (int i = 0; i < BOARD_LEN; i++)
         {
             if (this->get_piece(i) == WK)
@@ -365,9 +366,12 @@ bool Board::is_discovered_check(bool by_white)
         {
             switch (this->get_piece(i))
             {
+            case BP:
+            case BN:
             case BB:
             case BR:
             case BQ:
+            case BK:
             {
                 auto moves = this->get_moves(i, false);
                 for (auto move : moves)
@@ -644,7 +648,7 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
     return moves;
 }
 
-std::vector<Move> Board::get_moves(int square, bool allow_recursive)
+std::vector<Move> Board::get_moves(int square, bool test_check)
 {
     std::vector<Move> moves;
 
@@ -730,7 +734,7 @@ std::vector<Move> Board::get_moves(int square, bool allow_recursive)
         test_col = col - 1;
         test_square = Board::get_square(test_row, test_col);
 
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) && Piece::is_black(this->get_piece(test_square)))
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) && Piece::is_white(this->get_piece(test_square)))
         {
             moves.push_back(Move{square, test_square});
         }
@@ -739,7 +743,7 @@ std::vector<Move> Board::get_moves(int square, bool allow_recursive)
         test_col = col + 1;
         test_square = Board::get_square(test_row, test_col);
 
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) && Piece::is_black(this->get_piece(test_square)))
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) && Piece::is_white(this->get_piece(test_square)))
         {
             moves.push_back(Move{square, test_square});
         }
@@ -881,7 +885,7 @@ std::vector<Move> Board::get_moves(int square, bool allow_recursive)
         auto straight_moves = this->get_straight_moves(square, piece, row, col);
         moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
 
-        if (allow_recursive)
+        if (test_check)
         {
             if (piece == WK && !this->castle_state_.white_king_moved)
             {
@@ -940,7 +944,7 @@ std::vector<Move> Board::get_moves(int square, bool allow_recursive)
         break;
     }
 
-    if (allow_recursive)
+    if (test_check)
     {
         std::vector<Move> tested_moves;
 
@@ -948,7 +952,7 @@ std::vector<Move> Board::get_moves(int square, bool allow_recursive)
         {
             auto sim = this->simulate(move);
 
-            if (!sim.board.is_discovered_check(!white))
+            if (!sim.board.is_check(!white))
             {
                 tested_moves.push_back(move);
             }
@@ -1010,10 +1014,6 @@ void Board::change(Move move)
         {
             dst_piece = WQ;
         }
-        else if (src_col != dst_col)
-        {
-            this->data_[Board::get_square(dst_row - 1, dst_col)] = MT;
-        }
     }
     break;
     case BP:
@@ -1023,10 +1023,6 @@ void Board::change(Move move)
         if (Board::get_row(move.dst_square) == 0)
         {
             dst_piece = BQ;
-        }
-        else if (src_col != dst_col)
-        {
-            this->data_[Board::get_square(dst_row + 1, dst_col)] = MT;
         }
     }
     break;
@@ -1124,10 +1120,15 @@ std::vector<Simulation> Board::simulate_all(bool white)
 
     auto all_moves = this->get_all_moves(white);
 
+    int move_idx = 0;
+
     for (auto move : all_moves)
     {
         auto sim = this->simulate(move);
+        sim.idx = move_idx;
         sims.push_back(sim);
+
+        move_idx++;
     }
 
     return sims;
@@ -1145,21 +1146,21 @@ int Board::evaluate_material()
     return mat_eval;
 }
 
-float Board::minimax(bool white, int depth, float alpha, float beta)
+float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha, float beta)
 {
     if (depth == 0)
     {
-        return (float)this->evaluate_material();
+        return (float)sim.board.evaluate_material();
     }
 
     if (white)
     {
         float best_eval = -1000.0f;
-        auto sims = this->simulate_all(false);
+        auto sim_sims = sim.board.simulate_all(false);
 
-        for (auto sim : sims)
+        for (auto sim_sim : sim_sims)
         {
-            float eval = sim.board.minimax(false, depth - 1, alpha, beta);
+            float eval = Board::sim_minimax_sync(sim_sim, false, depth - 1, alpha, beta);
 
             best_eval = eval > best_eval ? eval : best_eval;
 
@@ -1175,11 +1176,11 @@ float Board::minimax(bool white, int depth, float alpha, float beta)
     else
     {
         float best_eval = 1000.0f;
-        auto sims = this->simulate_all(true);
+        auto sim_sims = sim.board.simulate_all(true);
 
-        for (auto sim : sims)
+        for (auto sim_sim : sim_sims)
         {
-            float eval = sim.board.minimax(true, depth - 1, alpha, beta);
+            float eval = Board::sim_minimax_sync(sim_sim, true, depth - 1, alpha, beta);
 
             best_eval = eval < best_eval ? eval : best_eval;
 
@@ -1194,14 +1195,13 @@ float Board::minimax(bool white, int depth, float alpha, float beta)
     }
 }
 
-void Board::minimax_async(bool white, int depth, float alpha, float beta, int sim_idx, Evaluation *evals, Move move)
+void Board::sim_minimax_async(Simulation sim, bool white, int depth, float alpha, float beta, Evaluation *evals)
 {
-    float eval = this->minimax(white, depth, alpha, beta);
-
-    evals[sim_idx] = Evaluation{eval, move};
+    float eval = Board::sim_minimax_sync(sim, white, depth, alpha, beta);
+    evals[sim.idx] = Evaluation{eval, sim.move};
 }
 
-void Board::change_minimax(bool white, int depth)
+void Board::change_minimax_sync(bool white, int depth)
 {
     auto sw = new CpuStopWatch();
     sw->start();
@@ -1216,7 +1216,7 @@ void Board::change_minimax(bool white, int depth)
 
     for (auto sim : sims)
     {
-        float eval = sim.board.minimax(white, depth, min, max);
+        float eval = Board::sim_minimax_sync(sim, white, depth, min, max);
 
         printf("SYNC: %d->%d\t%f\n", sim.move.src_square, sim.move.dst_square, eval);
 
@@ -1251,12 +1251,9 @@ void Board::change_minimax_async(bool white, int depth)
 
     std::vector<std::thread> threads;
 
-    int sim_cnt = sims.size();
-    int sim_idx = 0;
-
     for (auto sim : sims)
     {
-        threads.push_back(std::thread(&Board::minimax_async, &sim.board, white, depth, min, max, sim_idx++, evals, sim.move));
+        threads.push_back(std::thread(Board::sim_minimax_async, sim, white, depth, min, max, evals));
     }
 
     for (auto &th : threads)
@@ -1264,7 +1261,7 @@ void Board::change_minimax_async(bool white, int depth)
         th.join();
     }
 
-    for (int i = 0; i < sim_cnt; i++)
+    for (int i = 0; i < sims.size(); i++)
     {
         auto eval = evals[i];
 

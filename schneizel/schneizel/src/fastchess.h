@@ -75,10 +75,13 @@ namespace fastchess
         static bool is_col_valid(int col);
 
         bool is_square_under_attack(int square, bool by_white);
-        bool is_discovered_check(bool by_white);
+        bool is_check(bool by_white);
 
         std::vector<Move> get_diagonal_moves(int square, char piece, int row, int col);
         std::vector<Move> get_straight_moves(int square, char piece, int row, int col);
+
+        static float sim_minimax_sync(Simulation sim, bool white, int depth, float alpha, float beta);
+        static void sim_minimax_async(Simulation sim, bool white, int depth, float alpha, float beta, Evaluation *evals);
 
     public:
         Board();
@@ -91,7 +94,7 @@ namespace fastchess
 
         char get_piece(int square);
 
-        std::vector<Move> get_moves(int square, bool allow_recursive);
+        std::vector<Move> get_moves(int square, bool test_check);
         std::vector<Move> get_all_moves(bool white);
 
         void change(Move move);
@@ -102,14 +105,13 @@ namespace fastchess
 
         int evaluate_material();
 
-        float minimax(bool white, int depth, float alpha, float beta);
-        void minimax_async(bool white, int depth, float alpha, float beta, int sim_idx, Evaluation *evals, Move move);
-        void change_minimax(bool white, int depth);
+        void change_minimax_sync(bool white, int depth);
         void change_minimax_async(bool white, int depth);
     };
 
     struct Simulation
     {
+        int idx = -1;
         Move move;
         Board board;
     };

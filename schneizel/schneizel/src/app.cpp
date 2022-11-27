@@ -7,34 +7,27 @@ int main()
 {
 	srand(time(NULL));
 
-	chess::Board c_board;
 	fastchess::Board fc_board;
 
-	// c_board.change_minimax(true, 6);
-	// c_board.pretty_print();
+	for (int i = 0; i < 4; i++)
+	{
+		fc_board.change_minimax_async(true, 4);
+		fc_board.print();
 
-	fc_board.change_minimax_async(true, 6);
-	fc_board.print();
-
-	fc_board.change_minimax_async(false, 6);
-	fc_board.print();
+		fc_board.change_minimax_async(false, 4);
+		fc_board.print();
+	}
 
 	fc_board.reset();
 
-	fc_board.change_minimax(true, 6);
-	fc_board.print();
+	for (int i = 0; i < 4; i++)
+	{
+		fc_board.change_minimax_sync(true, 4);
+		fc_board.print();
 
-	fc_board.change_minimax(false, 6);
-	fc_board.print();
-
-	// for (int i = 0; i < 100; i++)
-	// {
-	// 	fc_board.change_minimax(true, 5);
-	// 	fc_board.print();
-
-	// 	fc_board.change_random(false);
-	// 	fc_board.print();
-	// }
+		fc_board.change_minimax_sync(false, 4);
+		fc_board.print();
+	}
 
 	return 0;
 }
