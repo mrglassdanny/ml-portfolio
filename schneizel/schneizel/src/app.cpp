@@ -11,10 +11,10 @@ int main()
 
 	for (int i = 0; i < 4; i++)
 	{
-		fc_board.change_minimax_async(true, 4);
+		fc_board.change_minimax_async(true, 6);
 		fc_board.print();
 
-		fc_board.change_minimax_async(false, 4);
+		fc_board.change_minimax_async(false, 6);
 		fc_board.print();
 	}
 
@@ -22,10 +22,10 @@ int main()
 
 	for (int i = 0; i < 4; i++)
 	{
-		fc_board.change_minimax_sync(true, 4);
+		fc_board.change_minimax_sync(true, 6);
 		fc_board.print();
 
-		fc_board.change_minimax_sync(false, 4);
+		fc_board.change_minimax_sync(false, 6);
 		fc_board.print();
 	}
 

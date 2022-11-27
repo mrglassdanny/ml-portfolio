@@ -1218,8 +1218,6 @@ void Board::change_minimax_sync(bool white, int depth)
     {
         float eval = Board::sim_minimax_sync(sim, white, depth, min, max);
 
-        printf("SYNC: %d->%d\t%f\n", sim.move.src_square, sim.move.dst_square, eval);
-
         if ((white && eval > best_eval) || (!white && eval < best_eval))
         {
             best_eval = eval;
@@ -1264,8 +1262,6 @@ void Board::change_minimax_async(bool white, int depth)
     for (int i = 0; i < sims.size(); i++)
     {
         auto eval = evals[i];
-
-        printf("ASYNC: %d->%d\t%f\n", eval.move.src_square, eval.move.dst_square, eval.value);
 
         if ((white && eval.value > best_eval) || (!white && eval.value < best_eval))
         {
