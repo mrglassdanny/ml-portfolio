@@ -1194,13 +1194,11 @@ float Board::minimax(bool white, int depth, float alpha, float beta)
     }
 }
 
-void Board::minimax_async(bool white, int depth, float alpha, float beta, std::mutex *mutx, std::vector<Evaluation> *evals, Move move)
+void Board::minimax_async(bool white, int depth, float alpha, float beta, int sim_idx, Evaluation *evals, Move move)
 {
     float eval = this->minimax(white, depth, alpha, beta);
 
-    mutx->lock();
-    evals->push_back(Evaluation{eval, move});
-    mutx->unlock();
+    evals[sim_idx] = Evaluation{eval, move};
 }
 
 void Board::change_minimax(bool white, int depth)
@@ -1219,6 +1217,8 @@ void Board::change_minimax(bool white, int depth)
     for (auto sim : sims)
     {
         float eval = sim.board.minimax(white, depth, min, max);
+
+        printf("SYNC: %d->%d\t%f\n", sim.move.src_square, sim.move.dst_square, eval);
 
         if ((white && eval > best_eval) || (!white && eval < best_eval))
         {
@@ -1239,8 +1239,7 @@ void Board::change_minimax_async(bool white, int depth)
     auto sw = new CpuStopWatch();
     sw->start();
 
-    std::vector<Evaluation> evals;
-    std::mutex mutx;
+    Evaluation evals[BOARD_LEN];
 
     auto sims = this->simulate_all(white);
 
@@ -1252,9 +1251,12 @@ void Board::change_minimax_async(bool white, int depth)
 
     std::vector<std::thread> threads;
 
+    int sim_cnt = sims.size();
+    int sim_idx = 0;
+
     for (auto sim : sims)
     {
-        threads.push_back(std::thread(&Board::minimax_async, &sim.board, white, depth, min, max, &mutx, &evals, sim.move));
+        threads.push_back(std::thread(&Board::minimax_async, &sim.board, white, depth, min, max, sim_idx++, evals, sim.move));
     }
 
     for (auto &th : threads)
@@ -1262,8 +1264,12 @@ void Board::change_minimax_async(bool white, int depth)
         th.join();
     }
 
-    for (auto eval : evals)
+    for (int i = 0; i < sim_cnt; i++)
     {
+        auto eval = evals[i];
+
+        printf("ASYNC: %d->%d\t%f\n", eval.move.src_square, eval.move.dst_square, eval.value);
+
         if ((white && eval.value > best_eval) || (!white && eval.value < best_eval))
         {
             best_eval = eval.value;

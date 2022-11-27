@@ -103,7 +103,7 @@ namespace fastchess
         int evaluate_material();
 
         float minimax(bool white, int depth, float alpha, float beta);
-        void minimax_async(bool white, int depth, float alpha, float beta, std::mutex *mutx, std::vector<Evaluation> *evals, Move move);
+        void minimax_async(bool white, int depth, float alpha, float beta, int sim_idx, Evaluation *evals, Move move);
         void change_minimax(bool white, int depth);
         void change_minimax_async(bool white, int depth);
     };
