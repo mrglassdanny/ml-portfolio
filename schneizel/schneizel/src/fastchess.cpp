@@ -91,36 +91,36 @@ const char *Piece::to_str(char piece)
     }
 }
 
-float Piece::get_value(char piece)
+int Piece::get_value(char piece)
 {
     switch (piece)
     {
     case WP:
-        return 1.0f;
+        return 1;
     case BP:
-        return -1.0f;
+        return -1;
     case WN:
-        return 3.0f;
+        return 3;
     case BN:
-        return -3.0f;
+        return -3;
     case WB:
-        return 3.33f;
+        return 3;
     case BB:
-        return -3.33f;
+        return -3;
     case WR:
-        return 5.0f;
+        return 5;
     case BR:
-        return -5.0f;
+        return -5;
     case WQ:
-        return 9.0f;
+        return 9;
     case BQ:
-        return -9.0f;
+        return -9;
     case WK:
-        return 2.0f;
+        return 2;
     case BK:
-        return -2.0f;
+        return -2;
     default:
-        return 0.0f;
+        return 0;
     }
 }
 
@@ -948,7 +948,7 @@ std::vector<Move> Board::get_moves(int square, bool allow_recursive)
         {
             auto sim = this->simulate(move);
 
-            if (!sim.is_discovered_check(!white))
+            if (!sim.board.is_discovered_check(!white))
             {
                 tested_moves.push_back(move);
             }
@@ -1107,17 +1107,20 @@ void Board::change_random(bool white)
     this->change(all_moves[rand_move_idx]);
 }
 
-Board Board::simulate(Move move)
+Simulation Board::simulate(Move move)
 {
-    Board sim;
-    sim.copy(this);
-    sim.change(move);
+    Simulation sim;
+
+    sim.move = move;
+    sim.board.copy(this);
+    sim.board.change(move);
+
     return sim;
 }
 
-std::vector<Board> Board::simulate_all(bool white)
+std::vector<Simulation> Board::simulate_all(bool white)
 {
-    std::vector<Board> sims;
+    std::vector<Simulation> sims;
 
     auto all_moves = this->get_all_moves(white);
 
@@ -1130,9 +1133,9 @@ std::vector<Board> Board::simulate_all(bool white)
     return sims;
 }
 
-float Board::evaluate_material()
+int Board::evaluate_material()
 {
-    float mat_eval = 0.0f;
+    int mat_eval = 0.0f;
 
     for (int i = 0; i < BOARD_LEN; i++)
     {
@@ -1146,7 +1149,7 @@ float Board::minimax(bool white, int depth, float alpha, float beta)
 {
     if (depth == 0)
     {
-        return this->evaluate_material();
+        return (float)this->evaluate_material();
     }
 
     if (white)
@@ -1156,7 +1159,7 @@ float Board::minimax(bool white, int depth, float alpha, float beta)
 
         for (auto sim : sims)
         {
-            float eval = sim.minimax(false, depth - 1, alpha, beta);
+            float eval = sim.board.minimax(false, depth - 1, alpha, beta);
 
             best_eval = eval > best_eval ? eval : best_eval;
 
@@ -1176,7 +1179,7 @@ float Board::minimax(bool white, int depth, float alpha, float beta)
 
         for (auto sim : sims)
         {
-            float eval = sim.minimax(true, depth - 1, alpha, beta);
+            float eval = sim.board.minimax(true, depth - 1, alpha, beta);
 
             best_eval = eval < best_eval ? eval : best_eval;
 
@@ -1191,6 +1194,15 @@ float Board::minimax(bool white, int depth, float alpha, float beta)
     }
 }
 
+void Board::minimax_async(bool white, int depth, float alpha, float beta, std::mutex *mutx, std::vector<Evaluation> *evals, Move move)
+{
+    float eval = this->minimax(white, depth, alpha, beta);
+
+    mutx->lock();
+    evals->push_back(Evaluation{eval, move});
+    mutx->unlock();
+}
+
 void Board::change_minimax(bool white, int depth)
 {
     auto sw = new CpuStopWatch();
@@ -1202,20 +1214,64 @@ void Board::change_minimax(bool white, int depth)
     float max = 1000.0f;
 
     float best_eval = white ? min : max;
-    Board *best_sim = this;
+    Move best_move;
 
     for (auto sim : sims)
     {
-        float eval = sim.minimax(white, depth, min, max);
+        float eval = sim.board.minimax(white, depth, min, max);
 
         if ((white && eval > best_eval) || (!white && eval < best_eval))
         {
             best_eval = eval;
-            best_sim = &sim;
+            best_move = sim.move;
         }
     }
 
-    this->copy(best_sim);
+    this->change(best_move);
+
+    sw->stop();
+    sw->print_elapsed_seconds();
+    delete sw;
+}
+
+void Board::change_minimax_async(bool white, int depth)
+{
+    auto sw = new CpuStopWatch();
+    sw->start();
+
+    std::vector<Evaluation> evals;
+    std::mutex mutx;
+
+    auto sims = this->simulate_all(white);
+
+    float min = -1000.0f;
+    float max = 1000.0f;
+
+    float best_eval = white ? min : max;
+    Move best_move;
+
+    std::vector<std::thread> threads;
+
+    for (auto sim : sims)
+    {
+        threads.push_back(std::thread(&Board::minimax_async, &sim.board, white, depth, min, max, &mutx, &evals, sim.move));
+    }
+
+    for (auto &th : threads)
+    {
+        th.join();
+    }
+
+    for (auto eval : evals)
+    {
+        if ((white && eval.value > best_eval) || (!white && eval.value < best_eval))
+        {
+            best_eval = eval.value;
+            best_move = eval.move;
+        }
+    }
+
+    this->change(best_move);
 
     sw->stop();
     sw->print_elapsed_seconds();

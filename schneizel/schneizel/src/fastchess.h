@@ -33,10 +33,10 @@ namespace fastchess
         int dst_square;
     };
 
-    struct SimEval
+    struct Evaluation
     {
-        char board_data[BOARD_LEN];
-        float eval;
+        float value;
+        Move move;
     };
 
     class Piece
@@ -46,7 +46,7 @@ namespace fastchess
         static bool is_black(char piece);
         static bool is_same_color(char piece_a, char piece_b);
         static const char *to_str(char piece);
-        static float get_value(char piece);
+        static int get_value(char piece);
     };
 
     struct CastleState
@@ -58,6 +58,8 @@ namespace fastchess
         bool black_right_rook_moved = false;
         bool black_left_rook_moved = false;
     };
+
+    struct Simulation;
 
     class Board
     {
@@ -95,13 +97,21 @@ namespace fastchess
         void change(Move move);
         void change_random(bool white);
 
-        Board simulate(Move move);
-        std::vector<Board> simulate_all(bool white);
+        Simulation simulate(Move move);
+        std::vector<Simulation> simulate_all(bool white);
 
-        float evaluate_material();
+        int evaluate_material();
 
         float minimax(bool white, int depth, float alpha, float beta);
+        void minimax_async(bool white, int depth, float alpha, float beta, std::mutex *mutx, std::vector<Evaluation> *evals, Move move);
         void change_minimax(bool white, int depth);
+        void change_minimax_async(bool white, int depth);
+    };
+
+    struct Simulation
+    {
+        Move move;
+        Board board;
     };
 
     class StopWatch
