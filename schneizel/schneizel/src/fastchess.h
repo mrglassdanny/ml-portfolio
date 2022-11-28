@@ -76,6 +76,7 @@ namespace fastchess
 
         bool is_square_under_attack(int square, bool by_white);
         bool is_check(bool by_white);
+        bool is_checkmate(bool by_white, bool assume_check);
 
         std::vector<Move> get_diagonal_moves(int square, char piece, int row, int col);
         std::vector<Move> get_straight_moves(int square, char piece, int row, int col);

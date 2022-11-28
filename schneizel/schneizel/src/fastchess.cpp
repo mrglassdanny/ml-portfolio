@@ -392,6 +392,20 @@ bool Board::is_check(bool by_white)
     return false;
 }
 
+bool Board::is_checkmate(bool by_white, bool assume_check)
+{
+    if (!assume_check)
+    {
+        if (!this->is_check(by_white))
+        {
+            return false;
+        }
+    }
+
+    auto sims = this->simulate_all(!by_white);
+    return sims.size() == 0;
+}
+
 std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int col)
 {
     std::vector<Move> moves;
@@ -1148,9 +1162,26 @@ int Board::evaluate_material()
 
 float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha, float beta)
 {
+    if (sim.board.is_checkmate(white, false))
+    {
+        if (white)
+        {
+            return -1000.0f;
+        }
+        else
+        {
+            return 1000.0f;
+        }
+    }
+
     if (depth == 0)
     {
         return (float)sim.board.evaluate_material();
+    }
+
+    if (depth == 2)
+    {
+        int asdkjf = 0;
     }
 
     if (white)
@@ -1167,7 +1198,7 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha
             alpha = eval > alpha ? eval : alpha;
             if (beta <= alpha)
             {
-                break;
+                // break;
             }
         }
 
@@ -1187,7 +1218,7 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha
             beta = eval < beta ? eval : beta;
             if (beta <= alpha)
             {
-                break;
+                // break;
             }
         }
 
@@ -1216,11 +1247,13 @@ void Board::change_minimax_sync(bool white, int depth)
 
     for (auto sim : sims)
     {
-        float eval = Board::sim_minimax_sync(sim, white, depth, min, max);
+        float eval_val = Board::sim_minimax_sync(sim, white, depth, min, max);
 
-        if ((white && eval > best_eval) || (!white && eval < best_eval))
+        printf("MOVE: %d->%d\tEVAL: %f\n", sim.move.src_square, sim.move.dst_square, eval_val);
+
+        if ((white && eval_val > best_eval) || (!white && eval_val < best_eval))
         {
-            best_eval = eval;
+            best_eval = eval_val;
             best_move = sim.move;
         }
     }
@@ -1262,6 +1295,8 @@ void Board::change_minimax_async(bool white, int depth)
     for (int i = 0; i < sims.size(); i++)
     {
         auto eval = evals[i];
+
+        printf("MOVE: %d->%d\tEVAL: %f\n", eval.move.src_square, eval.move.dst_square, eval.value);
 
         if ((white && eval.value > best_eval) || (!white && eval.value < best_eval))
         {
