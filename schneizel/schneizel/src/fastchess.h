@@ -115,8 +115,6 @@ namespace fastchess
         int evaluate_material();
 
         // NOTE: depth should be EVEN number!
-        Move change_minimax_sync(bool white, int depth);
-        // NOTE: depth should be EVEN number!
         Move change_minimax_async(bool white, int depth);
     };
 

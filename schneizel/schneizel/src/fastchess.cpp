@@ -356,7 +356,7 @@ void Board::print(Move move)
 
             if (square == move.src_square || square == move.dst_square)
             {
-                background = 3;
+                background = 4;
             }
 
             FlushConsoleInputBuffer(hConsole);
@@ -1385,45 +1385,6 @@ void Board::sim_minimax_async(Simulation sim, bool white, int depth, float alpha
 {
     float eval_val = Board::sim_minimax_sync(sim, white, depth, alpha, beta);
     evals[sim.idx] = Evaluation{eval_val, sim.move};
-}
-
-Move Board::change_minimax_sync(bool white, int depth)
-{
-    auto sw = new CpuStopWatch();
-    sw->start();
-
-    auto sims = this->simulate_all(white);
-
-    float min = EVAL_MIN_VAL;
-    float max = EVAL_MAX_VAL;
-
-    float best_eval_val = white ? min : max;
-    Move best_move;
-
-    for (auto sim : sims)
-    {
-        float eval_val = Board::sim_minimax_sync(sim, white, depth, min, max);
-
-        printf("MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_algnote_move(sim.move).c_str(),
-               sim.move.src_square, sim.move.dst_square, eval_val);
-
-        if ((white && eval_val > best_eval_val) || (!white && eval_val < best_eval_val))
-        {
-            best_eval_val = eval_val;
-            best_move = sim.move;
-        }
-    }
-
-    printf("BEST MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_algnote_move(best_move).c_str(),
-           best_move.src_square, best_move.dst_square, best_eval_val);
-
-    this->change(best_move);
-
-    sw->stop();
-    sw->print_elapsed_seconds();
-    delete sw;
-
-    return best_move;
 }
 
 Move Board::change_minimax_async(bool white, int depth)
