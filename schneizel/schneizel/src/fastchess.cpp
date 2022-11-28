@@ -296,6 +296,95 @@ void Board::print()
     printf("\n\n");
 }
 
+void Board::print(Move move)
+{
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+
+    printf("\n");
+
+    bool white_first = true;
+
+    int foreground = 0;
+    int background = 0;
+
+    for (int row = ROW_CNT - 1; row >= 0; row--)
+    {
+        printf("%d  ", row + 1);
+        printf("");
+
+        for (int col = 0; col < COL_CNT; col++)
+        {
+            char piece = this->get_piece(Board::get_square(row, col));
+
+            int square = this->get_square(row, col);
+
+            if (Piece::is_white(piece))
+            {
+                foreground = 15;
+            }
+            else if (Piece::is_black(piece))
+            {
+                foreground = 0;
+            }
+            else
+            {
+                foreground = 15;
+            }
+
+            if (col % 2 == 0)
+            {
+                if (white_first)
+                {
+                    background = 11;
+                }
+                else
+                {
+                    background = 8;
+                }
+            }
+            else
+            {
+                if (white_first)
+                {
+                    background = 8;
+                }
+                else
+                {
+                    background = 11;
+                }
+            }
+
+            if (square == move.src_square || square == move.dst_square)
+            {
+                background = 3;
+            }
+
+            FlushConsoleInputBuffer(hConsole);
+            SetConsoleTextAttribute(hConsole, foreground + background * 16);
+
+            printf("%s", Piece::to_str(piece));
+        }
+
+        white_first = !white_first;
+
+        FlushConsoleInputBuffer(hConsole);
+        SetConsoleTextAttribute(hConsole, 15);
+
+        printf("\n");
+    }
+
+    FlushConsoleInputBuffer(hConsole);
+    SetConsoleTextAttribute(hConsole, 15);
+
+    printf("   ");
+    for (int col = 0; col < COL_CNT; col++)
+    {
+        printf(" %c ", Board::get_alpha_col(col));
+    }
+
+    printf("\n\n");
+}
+
 char Board::get_piece(int square)
 {
     return this->data_[square];
@@ -927,7 +1016,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
         {
             if (piece == WK && !this->castle_state_.white_king_moved)
             {
-                if (!this->castle_state_.white_left_rook_moved)
+                if (!this->castle_state_.white_left_rook_moved && this->get_piece(0) == WR)
                 {
                     if (this->get_piece(1) == MT && this->get_piece(2) == MT && this->get_piece(3) == MT)
                     {
@@ -939,7 +1028,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                     }
                 }
 
-                if (!this->castle_state_.white_right_rook_moved)
+                if (!this->castle_state_.white_right_rook_moved && this->get_piece(7) == WR)
                 {
                     if (this->get_piece(5) == MT && this->get_piece(6) == MT)
                     {
@@ -952,7 +1041,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
             }
             else if (piece == BK && !this->castle_state_.black_king_moved)
             {
-                if (!this->castle_state_.black_left_rook_moved)
+                if (!this->castle_state_.black_left_rook_moved && this->get_piece(56) == BR)
                 {
                     if (this->get_piece(57) == MT && this->get_piece(58) == MT && this->get_piece(59) == MT)
                     {
@@ -964,7 +1053,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                     }
                 }
 
-                if (!this->castle_state_.black_right_rook_moved)
+                if (!this->castle_state_.black_right_rook_moved && this->get_piece(63) == BR)
                 {
                     if (this->get_piece(61) == MT && this->get_piece(62) == MT)
                     {
@@ -1139,12 +1228,12 @@ void Board::change(Move move)
     {
         // Look for castle.
 
-        if (src_col - dst_col == -2)
+        if (src_col - dst_col == 2)
         {
             this->data_[0] = MT;
             this->data_[3] = WR;
         }
-        else if (src_col - dst_col == 2)
+        else if (src_col - dst_col == -2)
         {
             this->data_[7] = MT;
             this->data_[5] = WR;
@@ -1157,12 +1246,12 @@ void Board::change(Move move)
     {
         // Look for castle.
 
-        if (src_col - dst_col == -2)
+        if (src_col - dst_col == 2)
         {
             this->data_[56] = MT;
             this->data_[59] = BR;
         }
-        else if (src_col - dst_col == 2)
+        else if (src_col - dst_col == -2)
         {
             this->data_[63] = MT;
             this->data_[61] = BR;
@@ -1298,7 +1387,7 @@ void Board::sim_minimax_async(Simulation sim, bool white, int depth, float alpha
     evals[sim.idx] = Evaluation{eval_val, sim.move};
 }
 
-void Board::change_minimax_sync(bool white, int depth)
+Move Board::change_minimax_sync(bool white, int depth)
 {
     auto sw = new CpuStopWatch();
     sw->start();
@@ -1315,7 +1404,7 @@ void Board::change_minimax_sync(bool white, int depth)
     {
         float eval_val = Board::sim_minimax_sync(sim, white, depth, min, max);
 
-        printf("MOVE: %s (%d->%d)\tEVAL: %f\n", Board::convert_move_to_algnote_move(sim.move).c_str(),
+        printf("MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_algnote_move(sim.move).c_str(),
                sim.move.src_square, sim.move.dst_square, eval_val);
 
         if ((white && eval_val > best_eval_val) || (!white && eval_val < best_eval_val))
@@ -1325,7 +1414,7 @@ void Board::change_minimax_sync(bool white, int depth)
         }
     }
 
-    printf("BEST MOVE: %s (%d->%d)\tEVAL: %f\n", Board::convert_move_to_algnote_move(best_move).c_str(),
+    printf("BEST MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_algnote_move(best_move).c_str(),
            best_move.src_square, best_move.dst_square, best_eval_val);
 
     this->change(best_move);
@@ -1333,9 +1422,11 @@ void Board::change_minimax_sync(bool white, int depth)
     sw->stop();
     sw->print_elapsed_seconds();
     delete sw;
+
+    return best_move;
 }
 
-void Board::change_minimax_async(bool white, int depth)
+Move Board::change_minimax_async(bool white, int depth)
 {
     auto sw = new CpuStopWatch();
     sw->start();
@@ -1362,21 +1453,36 @@ void Board::change_minimax_async(bool white, int depth)
         th.join();
     }
 
+    std::vector<Evaluation> ties;
+
     for (int i = 0; i < sims.size(); i++)
     {
         auto eval = evals[i];
 
-        printf("MOVE: %s (%d->%d)\tEVAL: %f\n", Board::convert_move_to_algnote_move(eval.move).c_str(),
+        printf("MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_algnote_move(eval.move).c_str(),
                eval.move.src_square, eval.move.dst_square, eval.value);
 
         if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
         {
             best_eval_val = eval.value;
             best_move = eval.move;
+
+            ties.clear();
+        }
+        else if (eval.value == best_eval_val)
+        {
+            ties.push_back(eval);
         }
     }
 
-    printf("BEST MOVE: %s (%d->%d)\tEVAL: %f\n", Board::convert_move_to_algnote_move(best_move).c_str(),
+    printf("TIES: %d\n", ties.size());
+    if (ties.size() > 0)
+    {
+        int rand_idx = rand() % ties.size();
+        best_move = ties[rand_idx].move;
+    }
+
+    printf("BEST MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_algnote_move(best_move).c_str(),
            best_move.src_square, best_move.dst_square, best_eval_val);
 
     this->change(best_move);
@@ -1384,6 +1490,8 @@ void Board::change_minimax_async(bool white, int depth)
     sw->stop();
     sw->print_elapsed_seconds();
     delete sw;
+
+    return best_move;
 }
 
 CpuStopWatch::CpuStopWatch()

@@ -96,6 +96,7 @@ namespace fastchess
         void copy(Board *src);
 
         void print();
+        void print(Move move);
 
         char get_piece(int square);
 
@@ -114,9 +115,9 @@ namespace fastchess
         int evaluate_material();
 
         // NOTE: depth should be EVEN number!
-        void change_minimax_sync(bool white, int depth);
+        Move change_minimax_sync(bool white, int depth);
         // NOTE: depth should be EVEN number!
-        void change_minimax_async(bool white, int depth);
+        Move change_minimax_async(bool white, int depth);
     };
 
     struct Simulation
