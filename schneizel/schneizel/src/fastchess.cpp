@@ -1221,7 +1221,7 @@ std::vector<Simulation> Board::simulate_all(bool white)
 
 int Board::evaluate_material()
 {
-    int mat_eval = 0.0f;
+    int mat_eval = 0;
 
     for (int i = 0; i < BOARD_LEN; i++)
     {
