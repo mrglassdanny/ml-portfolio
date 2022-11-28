@@ -1166,11 +1166,11 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha
     {
         if (white)
         {
-            return -1000.0f;
+            return EVAL_MIN_VAL;
         }
         else
         {
-            return 1000.0f;
+            return EVAL_MAX_VAL;
         }
     }
 
@@ -1181,7 +1181,7 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha
 
     if (!white)
     {
-        float best_eval = -1000.0f;
+        float best_eval = EVAL_MIN_VAL;
         auto sim_sims = sim.board.simulate_all(true);
 
         for (auto sim_sim : sim_sims)
@@ -1201,7 +1201,7 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha
     }
     else
     {
-        float best_eval = 1000.0f;
+        float best_eval = EVAL_MAX_VAL;
         auto sim_sims = sim.board.simulate_all(false);
 
         for (auto sim_sim : sim_sims)
@@ -1234,8 +1234,8 @@ void Board::change_minimax_sync(bool white, int depth)
 
     auto sims = this->simulate_all(white);
 
-    float min = -1000.0f;
-    float max = 1000.0f;
+    float min = EVAL_MIN_VAL;
+    float max = EVAL_MAX_VAL;
 
     float best_eval = white ? min : max;
     Move best_move;
@@ -1269,8 +1269,8 @@ void Board::change_minimax_async(bool white, int depth)
 
     auto sims = this->simulate_all(white);
 
-    float min = -1000.0f;
-    float max = 1000.0f;
+    float min = EVAL_MIN_VAL;
+    float max = EVAL_MAX_VAL;
 
     float best_eval = white ? min : max;
     Move best_move;
@@ -1301,6 +1301,8 @@ void Board::change_minimax_async(bool white, int depth)
     }
 
     this->change(best_move);
+
+    printf("BEST MOVE: %d->%d\tEVAL: %f\n", best_move.src_square, best_move.dst_square, best_eval);
 
     sw->stop();
     sw->print_elapsed_seconds();

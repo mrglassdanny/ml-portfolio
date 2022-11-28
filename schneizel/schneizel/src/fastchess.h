@@ -25,6 +25,9 @@
 #define BQ 'q'
 #define BK 'k'
 
+#define EVAL_MIN_VAL -1000.0f
+#define EVAL_MAX_VAL 1000.0f
+
 namespace fastchess
 {
     struct Move
@@ -106,7 +109,9 @@ namespace fastchess
 
         int evaluate_material();
 
+        // NOTE: depth should be EVEN number!
         void change_minimax_sync(bool white, int depth);
+        // NOTE: depth should be EVEN number!
         void change_minimax_async(bool white, int depth);
     };
 
