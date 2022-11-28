@@ -1315,8 +1315,8 @@ void Board::change_minimax_sync(bool white, int depth)
     {
         float eval_val = Board::sim_minimax_sync(sim, white, depth, min, max);
 
-        printf("MOVE: %s (%d->%d)\tEVAL: %f\n", Board::convert_move_to_algnote_move(best_move),
-               best_move.src_square, best_move.dst_square, best_eval);
+        printf("MOVE: %s (%d->%d)\tEVAL: %f\n", Board::convert_move_to_algnote_move(sim.move),
+               sim.move.src_square, sim.move.dst_square, eval_val);
 
         if ((white && eval_val > best_eval) || (!white && eval_val < best_eval))
         {
@@ -1366,8 +1366,8 @@ void Board::change_minimax_async(bool white, int depth)
     {
         auto eval = evals[i];
 
-        printf("MOVE: %s (%d->%d)\tEVAL: %f\n", Board::convert_move_to_algnote_move(best_move),
-               best_move.src_square, best_move.dst_square, best_eval);
+        printf("MOVE: %s (%d->%d)\tEVAL: %f\n", Board::convert_move_to_algnote_move(eval.move),
+               eval.move.src_square, eval.move.dst_square, eval.value);
 
         if ((white && eval.value > best_eval) || (!white && eval.value < best_eval))
         {
