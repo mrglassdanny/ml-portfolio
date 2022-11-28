@@ -124,6 +124,30 @@ int Piece::get_value(char piece)
     }
 }
 
+char Piece::get_algnote_id(char piece)
+{
+    switch (piece)
+    {
+    case WN:
+    case BN:
+        return 'N';
+    case WB:
+    case BB:
+        return 'B';
+    case WR:
+    case BR:
+        return 'R';
+    case WQ:
+    case BQ:
+        return 'Q';
+    case WK:
+    case BK:
+        return 'K';
+    default:
+        return 'P';
+    }
+}
+
 Board::Board()
 {
     this->reset();
@@ -1008,6 +1032,53 @@ std::vector<Move> Board::get_all_moves(bool white)
     return all_moves;
 }
 
+std::string Board::convert_move_to_algnote_move(Move move)
+{
+    std::string algnote_move;
+
+    char piece = this->data_[move.src_square];
+    char piece_algnote_id = Piece::get_algnote_id(piece);
+    int src_col = Board::get_col(move.src_square);
+    int src_row = Board::get_row(move.src_square);
+    int dst_col = Board::get_col(move.dst_square);
+    int dst_row = Board::get_row(move.dst_square);
+
+    // Check for castle.
+    if (piece == WK || piece == BK)
+    {
+        if ((src_col - dst_col) == -2)
+        {
+            algnote_move = "O-O";
+            return algnote_move;
+        }
+        else if ((src_col - dst_col) == 2)
+        {
+            algnote_move = "O-O-O";
+            return algnote_move;
+        }
+    }
+
+    // Example format going forward: piece id|src col|src row|dst col|dst row|promo ind|promo piece id
+    // ^always 7 chars
+
+    algnote_move += piece_algnote_id;
+
+    algnote_move += Board::get_alpha_col(src_col);
+    algnote_move += (char)(src_row + 1 + '0');
+
+    algnote_move += Board::get_alpha_col(dst_col);
+    algnote_move += (char)(dst_row + 1 + '0');
+
+    // Check for pawn promotion.
+    if ((piece == WP && dst_row == 7) || (piece == BP && dst_row == 0))
+    {
+        algnote_move += '=';
+        algnote_move += 'Q';
+    }
+
+    return algnote_move;
+}
+
 void Board::change(Move move)
 {
     char src_piece = this->get_piece(move.src_square);
@@ -1300,9 +1371,10 @@ void Board::change_minimax_async(bool white, int depth)
         }
     }
 
-    this->change(best_move);
+    printf("BEST MOVE: %s (%d->%d)\tEVAL: %f\n", Board::convert_move_to_algnote_move(best_move),
+           best_move.src_square, best_move.dst_square, best_eval);
 
-    printf("BEST MOVE: %d->%d\tEVAL: %f\n", best_move.src_square, best_move.dst_square, best_eval);
+    this->change(best_move);
 
     sw->stop();
     sw->print_elapsed_seconds();

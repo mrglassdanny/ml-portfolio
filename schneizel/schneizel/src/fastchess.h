@@ -50,6 +50,7 @@ namespace fastchess
         static bool is_same_color(char piece_a, char piece_b);
         static const char *to_str(char piece);
         static int get_value(char piece);
+        static char get_algnote_id(char piece);
     };
 
     struct CastleState
@@ -100,6 +101,9 @@ namespace fastchess
 
         std::vector<Move> get_moves(int square, bool test_check);
         std::vector<Move> get_all_moves(bool white);
+
+        // NOTE: this will only work if invoked BEFORE move is made to board.
+        std::string convert_move_to_algnote_move(Move move);
 
         void change(Move move);
         void change_random(bool white);
