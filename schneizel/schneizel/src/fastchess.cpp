@@ -565,8 +565,8 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
     int cnt;
     switch (piece)
     {
-    case WB:
-    case BB:
+    case WR:
+    case BR:
     case WQ:
     case BQ:
         cnt = 8;
