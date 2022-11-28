@@ -1179,26 +1179,21 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha
         return (float)sim.board.evaluate_material();
     }
 
-    if (depth == 2)
-    {
-        int asdkjf = 0;
-    }
-
-    if (white)
+    if (!white)
     {
         float best_eval = -1000.0f;
-        auto sim_sims = sim.board.simulate_all(false);
+        auto sim_sims = sim.board.simulate_all(true);
 
         for (auto sim_sim : sim_sims)
         {
-            float eval = Board::sim_minimax_sync(sim_sim, false, depth - 1, alpha, beta);
+            float eval = Board::sim_minimax_sync(sim_sim, true, depth - 1, alpha, beta);
 
             best_eval = eval > best_eval ? eval : best_eval;
 
             alpha = eval > alpha ? eval : alpha;
             if (beta <= alpha)
             {
-                // break;
+                break;
             }
         }
 
@@ -1207,18 +1202,18 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha
     else
     {
         float best_eval = 1000.0f;
-        auto sim_sims = sim.board.simulate_all(true);
+        auto sim_sims = sim.board.simulate_all(false);
 
         for (auto sim_sim : sim_sims)
         {
-            float eval = Board::sim_minimax_sync(sim_sim, true, depth - 1, alpha, beta);
+            float eval = Board::sim_minimax_sync(sim_sim, false, depth - 1, alpha, beta);
 
             best_eval = eval < best_eval ? eval : best_eval;
 
             beta = eval < beta ? eval : beta;
             if (beta <= alpha)
             {
-                // break;
+                break;
             }
         }
 
