@@ -1233,15 +1233,15 @@ int Board::evaluate_material()
 
 float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha, float beta)
 {
-    if (sim.board.is_checkmate(white, false))
+    if (sim.board.is_checkmate(!white, false))
     {
         if (white)
         {
-            return EVAL_MIN_VAL;
+            return EVAL_MAX_VAL;
         }
         else
         {
-            return EVAL_MAX_VAL;
+            return EVAL_MIN_VAL;
         }
     }
 
