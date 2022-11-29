@@ -915,7 +915,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
         {
             if (piece == WK && !this->castle_state_.white_king_moved)
             {
-                if (!this->castle_state_.white_left_rook_moved && this->get_piece(0) == WR)
+                if (this->get_piece(0) == WR && !this->castle_state_.white_left_rook_moved)
                 {
                     if (this->get_piece(1) == MT && this->get_piece(2) == MT && this->get_piece(3) == MT)
                     {
@@ -927,7 +927,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                     }
                 }
 
-                if (!this->castle_state_.white_right_rook_moved && this->get_piece(7) == WR)
+                if (this->get_piece(7) == WR && !this->castle_state_.white_right_rook_moved)
                 {
                     if (this->get_piece(5) == MT && this->get_piece(6) == MT)
                     {
@@ -940,7 +940,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
             }
             else if (piece == BK && !this->castle_state_.black_king_moved)
             {
-                if (!this->castle_state_.black_left_rook_moved && this->get_piece(56) == BR)
+                if (this->get_piece(56) == BR && !this->castle_state_.black_left_rook_moved)
                 {
                     if (this->get_piece(57) == MT && this->get_piece(58) == MT && this->get_piece(59) == MT)
                     {
@@ -952,7 +952,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                     }
                 }
 
-                if (!this->castle_state_.black_right_rook_moved && this->get_piece(63) == BR)
+                if (this->get_piece(63) == BR && !this->castle_state_.black_right_rook_moved)
                 {
                     if (this->get_piece(61) == MT && this->get_piece(62) == MT)
                     {
