@@ -92,7 +92,7 @@ int main()
 {
 	srand(time(NULL));
 
-	self_play(4);
+	self_play(6);
 
 	return 0;
 }
