@@ -1,18 +1,17 @@
 #include <stdio.h>
 
 #include "chess.h"
-#include "fastchess.h"
 
 void self_play(int depth)
 {
-	fastchess::Board board;
-	fastchess::Move prev_move;
+	chess::Board board;
+	chess::Move prev_move;
 
 	int move_cnt = 0;
 
 	while (true)
 	{
-		printf("\n\nWHITE TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
+		printf("\nWHITE TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
 
 		if (move_cnt == 0)
 		{
@@ -27,7 +26,7 @@ void self_play(int depth)
 
 		move_cnt++;
 
-		printf("\n\BLACK TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
+		printf("\nBLACK TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
 		board.print(prev_move);
 
 		prev_move = board.change_minimax_async(false, depth);
@@ -38,14 +37,14 @@ void self_play(int depth)
 
 void play(bool white, int depth)
 {
-	fastchess::Board board;
-	fastchess::Move prev_move;
+	chess::Board board;
+	chess::Move prev_move;
 
 	int move_cnt = 0;
 
 	while (true)
 	{
-		printf("\n\nWHITE TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
+		printf("\nWHITE TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
 
 		if (move_cnt == 0)
 		{
@@ -61,18 +60,14 @@ void play(bool white, int depth)
 			auto moves = board.get_all_moves(true);
 			for (auto move : moves)
 			{
-				printf("MOVE: %s (%d->%d)\n", board.convert_move_to_algnote_move(move).c_str(),
+				printf("MOVE: %s (%d->%d)\n", board.convert_move_to_move_str(move).c_str(),
 					   move.src_square, move.dst_square);
 			}
 
-			fastchess::Move move;
-			printf("Source square: ");
-			std::cin >> move.src_square;
-			printf("Destination square: ");
-			std::cin >> move.dst_square;
-			board.change(move);
-
-			prev_move = move;
+			std::string move_str;
+			printf("Move: ");
+			std::cin >> move_str;
+			prev_move = board.change(move_str, true);
 		}
 		else
 		{
@@ -81,7 +76,7 @@ void play(bool white, int depth)
 
 		move_cnt++;
 
-		printf("\n\BLACK TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
+		printf("\nBLACK TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
 		board.print(prev_move);
 
 		if (!white)
@@ -89,18 +84,14 @@ void play(bool white, int depth)
 			auto moves = board.get_all_moves(false);
 			for (auto move : moves)
 			{
-				printf("MOVE: %s (%d->%d)\n", board.convert_move_to_algnote_move(move).c_str(),
+				printf("MOVE: %s (%d->%d)\n", board.convert_move_to_move_str(move).c_str(),
 					   move.src_square, move.dst_square);
 			}
 
-			fastchess::Move move;
-			printf("Source square: ");
-			std::cin >> move.src_square;
-			printf("Destination square: ");
-			std::cin >> move.dst_square;
-			board.change(move);
-
-			prev_move = move;
+			std::string move_str;
+			printf("Move: ");
+			std::cin >> move_str;
+			prev_move = board.change(move_str, false);
 		}
 		else
 		{

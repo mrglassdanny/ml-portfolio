@@ -2,106 +2,53 @@
 
 using namespace chess;
 
-int CHESS_START_BOARD[CHESS_BOARD_LEN] = {
-    PieceType::WhiteRook, PieceType::WhiteKnight, PieceType::WhiteBishop, PieceType::WhiteQueen, PieceType::WhiteKing, PieceType::WhiteBishop, PieceType::WhiteKnight, PieceType::WhiteRook,
-    PieceType::WhitePawn, PieceType::WhitePawn, PieceType::WhitePawn, PieceType::WhitePawn, PieceType::WhitePawn, PieceType::WhitePawn, PieceType::WhitePawn, PieceType::WhitePawn,
-    PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty,
-    PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty,
-    PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty,
-    PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty, PieceType::Empty,
-    PieceType::BlackPawn, PieceType::BlackPawn, PieceType::BlackPawn, PieceType::BlackPawn, PieceType::BlackPawn, PieceType::BlackPawn, PieceType::BlackPawn, PieceType::BlackPawn,
-    PieceType::BlackRook, PieceType::BlackKnight, PieceType::BlackBishop, PieceType::BlackQueen, PieceType::BlackKing, PieceType::BlackBishop, PieceType::BlackKnight, PieceType::BlackRook};
-
-PieceType Piece::fr_char(char piece_id, bool white)
-{
-    switch (piece_id)
+char BOARD_START_STATE[BOARD_LEN] =
     {
-    case 'N':
-        if (white)
-        {
-            return PieceType::WhiteKnight;
-        }
-        else
-        {
-            return PieceType::BlackKnight;
-        }
-    case 'B':
-        if (white)
-        {
-            return PieceType::WhiteBishop;
-        }
-        else
-        {
-            return PieceType::BlackBishop;
-        }
-    case 'R':
-        if (white)
-        {
-            return PieceType::WhiteRook;
-        }
-        else
-        {
-            return PieceType::BlackRook;
-        }
-    case 'Q':
-        if (white)
-        {
-            return PieceType::WhiteQueen;
-        }
-        else
-        {
-            return PieceType::BlackQueen;
-        }
-    case 'K':
-        if (white)
-        {
-            return PieceType::WhiteKing;
-        }
-        else
-        {
-            return PieceType::BlackKing;
-        }
-    default:
-        // Pawn will be 'P' (optional).
-        if (white)
-        {
-            return PieceType::WhitePawn;
-        }
-        else
-        {
-            return PieceType::BlackPawn;
-        }
-    }
-}
+        WR, WN, WB, WQ, WK, WB, WN, WR,
+        WP, WP, WP, WP, WP, WP, WP, WP,
+        MT, MT, MT, MT, MT, MT, MT, MT,
+        MT, MT, MT, MT, MT, MT, MT, MT,
+        MT, MT, MT, MT, MT, MT, MT, MT,
+        MT, MT, MT, MT, MT, MT, MT, MT,
+        BP, BP, BP, BP, BP, BP, BP, BP,
+        BR, BN, BB, BQ, BK, BB, BN, BR};
 
-char Piece::fr_piece(PieceType piece)
+bool Piece::is_white(char piece)
 {
     switch (piece)
     {
-    case PieceType::WhiteKnight:
-    case PieceType::BlackKnight:
-        return 'N';
-    case PieceType::WhiteBishop:
-    case PieceType::BlackBishop:
-        return 'B';
-    case PieceType::WhiteRook:
-    case PieceType::BlackRook:
-        return 'R';
-    case PieceType::WhiteQueen:
-    case PieceType::BlackQueen:
-        return 'Q';
-    case PieceType::WhiteKing:
-    case PieceType::BlackKing:
-        return 'K';
+    case WP:
+    case WN:
+    case WB:
+    case WR:
+    case WQ:
+    case WK:
+        return true;
     default:
-        // Pawn.
-        return 'P';
+        return false;
     }
 }
 
-bool Piece::is_white(PieceType piece)
+bool Piece::is_black(char piece)
 {
-    if (piece > 0)
+    switch (piece)
+    {
+    case BP:
+    case BN:
+    case BB:
+    case BR:
+    case BQ:
+    case BK:
+        return true;
+    default:
+        return false;
+    }
+}
+
+bool Piece::is_same_color(char piece_a, char piece_b)
+{
+    if ((Piece::is_white(piece_a) && Piece::is_white(piece_b)) ||
+        (Piece::is_black(piece_a) && Piece::is_black(piece_b)))
     {
         return true;
     }
@@ -111,126 +58,93 @@ bool Piece::is_white(PieceType piece)
     }
 }
 
-bool Piece::is_black(PieceType piece)
+const char *Piece::to_str(char piece)
 {
-    if (piece < 0)
+    switch (piece)
     {
-        return true;
-    }
-    else
-    {
-        return false;
+    case WP:
+        return " P ";
+    case BP:
+        return " p ";
+    case WN:
+        return " N ";
+    case BN:
+        return " n ";
+    case WB:
+        return " B ";
+    case BB:
+        return " b ";
+    case WR:
+        return " R ";
+    case BR:
+        return " r ";
+    case WQ:
+        return " Q ";
+    case BQ:
+        return " q ";
+    case WK:
+        return " K ";
+    case BK:
+        return " k ";
+    default:
+        return "   ";
     }
 }
 
-bool Piece::is_same_color(PieceType a, PieceType b)
+int Piece::get_value(char piece)
 {
-    if ((is_white(a) && is_white(b)) || (is_black(a) && is_black(b)))
+    switch (piece)
     {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-int Piece::to_int(PieceType typ)
-{
-    switch (typ)
-    {
-    case PieceType::WhitePawn:
+    case WP:
         return 1;
-    case PieceType::WhiteKnight:
-        return 3;
-    case PieceType::WhiteBishop:
-        return 3;
-    case PieceType::WhiteRook:
-        return 5;
-    case PieceType::WhiteQueen:
-        return 9;
-    case PieceType::WhiteKing:
-        return 3;
-    case PieceType::BlackPawn:
+    case BP:
         return -1;
-    case PieceType::BlackKnight:
+    case WN:
+        return 3;
+    case BN:
         return -3;
-    case PieceType::BlackBishop:
+    case WB:
+        return 3;
+    case BB:
         return -3;
-    case PieceType::BlackRook:
+    case WR:
+        return 5;
+    case BR:
         return -5;
-    case PieceType::BlackQueen:
+    case WQ:
+        return 9;
+    case BQ:
         return -9;
-    case PieceType::BlackKing:
-        return -3;
+    case WK:
+        return 2;
+    case BK:
+        return -2;
     default:
         return 0;
     }
 }
 
-const char *Piece::to_str(PieceType typ)
+char Piece::get_str_id(char piece)
 {
-    switch (typ)
+    switch (piece)
     {
-    case PieceType::WhitePawn:
-        return "  P  |";
-    case PieceType::BlackPawn:
-        return "  p  |";
-    case PieceType::WhiteKnight:
-        return "  N  |";
-    case PieceType::BlackKnight:
-        return "  n  |";
-    case PieceType::WhiteBishop:
-        return "  B  |";
-    case PieceType::BlackBishop:
-        return "  b  |";
-    case PieceType::WhiteRook:
-        return "  R  |";
-    case PieceType::BlackRook:
-        return "  r  |";
-    case PieceType::WhiteQueen:
-        return "  Q  |";
-    case PieceType::BlackQueen:
-        return "  q  |";
-    case PieceType::WhiteKing:
-        return "  K  |";
-    case PieceType::BlackKing:
-        return "  k  |";
+    case WN:
+    case BN:
+        return 'N';
+    case WB:
+    case BB:
+        return 'B';
+    case WR:
+    case BR:
+        return 'R';
+    case WQ:
+    case BQ:
+        return 'Q';
+    case WK:
+    case BK:
+        return 'K';
     default:
-        return "     |";
-    }
-}
-
-const char *Piece::to_pretty_str(PieceType typ)
-{
-    switch (typ)
-    {
-    case PieceType::WhitePawn:
-        return " P ";
-    case PieceType::BlackPawn:
-        return " p ";
-    case PieceType::WhiteKnight:
-        return " N ";
-    case PieceType::BlackKnight:
-        return " n ";
-    case PieceType::WhiteBishop:
-        return " B ";
-    case PieceType::BlackBishop:
-        return " b ";
-    case PieceType::WhiteRook:
-        return " R ";
-    case PieceType::BlackRook:
-        return " r ";
-    case PieceType::WhiteQueen:
-        return " Q ";
-    case PieceType::BlackQueen:
-        return " q ";
-    case PieceType::WhiteKing:
-        return " K ";
-    case PieceType::BlackKing:
-        return " k ";
-    default:
-        return "   ";
+        return 'P';
     }
 }
 
@@ -241,99 +155,47 @@ Board::Board()
 
 Board::~Board() {}
 
-int Board::get_col_fr_adj_col(int adj_col)
+int Board::get_row(int square)
 {
-    char col;
-
-    switch (adj_col)
-    {
-    case 0:
-        col = 'a';
-        break;
-    case 1:
-        col = 'b';
-        break;
-    case 2:
-        col = 'c';
-        break;
-    case 3:
-        col = 'd';
-        break;
-    case 4:
-        col = 'e';
-        break;
-    case 5:
-        col = 'f';
-        break;
-    case 6:
-        col = 'g';
-        break;
-    default:
-        col = 'h';
-        break;
-    }
-
-    return col;
+    return square / COL_CNT;
 }
 
-int Board::get_adj_col_fr_col(char col)
+int Board::get_row(char alpha_row)
 {
-    int adj_col = 0;
-    switch (col)
+    return (alpha_row - '0') - 1;
+}
+
+int Board::get_col(int square)
+{
+    return square % COL_CNT;
+}
+
+int Board::get_col(char alpha_col)
+{
+    switch (alpha_col)
     {
     case 'a':
-        adj_col = 0;
-        break;
+        return 0;
     case 'b':
-        adj_col = 1;
-        break;
+        return 1;
     case 'c':
-        adj_col = 2;
-        break;
+        return 2;
     case 'd':
-        adj_col = 3;
-        break;
+        return 3;
     case 'e':
-        adj_col = 4;
-        break;
+        return 4;
     case 'f':
-        adj_col = 5;
-        break;
+        return 5;
     case 'g':
-        adj_col = 6;
-        break;
+        return 6;
     default:
-        adj_col = 7;
-        break;
+        return 7;
     }
-
-    return adj_col;
 }
 
-int Board::get_row_fr_char(char row)
+char Board::get_alpha_col(int col)
 {
-    return (row - '0');
-}
-
-int Board::get_adj_row_fr_row(int row)
-{
-    return row - 1;
-}
-
-int Board::get_adj_col_fr_idx(int idx)
-{
-    return idx % CHESS_BOARD_COL_CNT;
-}
-
-int Board::get_adj_row_fr_idx(int idx)
-{
-    return idx / CHESS_BOARD_COL_CNT;
-}
-
-char Board::get_col_fr_idx(int idx)
-{
-    int adj_col = get_adj_col_fr_idx(idx);
-    switch (adj_col)
+    switch (col)
     {
     case 0:
         return 'a';
@@ -354,486 +216,35 @@ char Board::get_col_fr_idx(int idx)
     }
 }
 
-int Board::get_row_fr_idx(int idx)
+int Board::get_square(int row, int col)
 {
-    return get_adj_row_fr_idx(idx) + 1;
-}
-
-int Board::get_idx_fr_colrow(char col, int row)
-{
-    int adj_col = get_adj_col_fr_col(col);
-
-    int adj_row = get_adj_row_fr_row(row);
-
-    return (adj_row * CHESS_BOARD_COL_CNT) + adj_col;
-}
-
-int Board::get_idx_fr_adj_colrow(int adj_col, int adj_row)
-{
-    return (adj_row * CHESS_BOARD_COL_CNT) + adj_col;
+    return row * COL_CNT + col;
 }
 
 bool Board::is_row_valid(int row)
 {
-    if (row >= 1 && row <= CHESS_BOARD_ROW_CNT)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
+    return row >= 0 && row < ROW_CNT;
 }
 
-bool Board::is_adj_colrow_valid(int adj_col, int adj_row)
+bool Board::is_col_valid(int col)
 {
-    if (adj_col >= 0 && adj_col < CHESS_BOARD_COL_CNT &&
-        adj_row >= 0 && adj_row < CHESS_BOARD_ROW_CNT)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-bool Board::is_square_under_attack(int idx, bool white)
-{
-    bool under_attack_flg = false;
-
-    int *board = this->data_;
-
-    if (white)
-    {
-        for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
-        {
-            if (Piece::is_black((PieceType)board[piece_idx]) && (PieceType)board[piece_idx] != PieceType::BlackKing)
-            {
-                std::vector<int> legal_moves = this->get_piece_moves(piece_idx, false);
-
-                for (int mov_idx = 0; mov_idx < legal_moves.size(); mov_idx++)
-                {
-                    if (legal_moves[mov_idx] == idx)
-                    {
-                        under_attack_flg = true;
-                        break;
-                    }
-                }
-            }
-
-            if (under_attack_flg)
-            {
-                break;
-            }
-        }
-    }
-    else
-    {
-        for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
-        {
-            if (Piece::is_white((PieceType)board[piece_idx]) && (PieceType)board[piece_idx] != PieceType::WhiteKing)
-            {
-                std::vector<int> legal_moves = this->get_piece_moves(piece_idx, false);
-
-                for (int mov_idx = 0; mov_idx < legal_moves.size(); mov_idx++)
-                {
-                    if (legal_moves[mov_idx] == idx)
-                    {
-                        under_attack_flg = true;
-                        break;
-                    }
-                }
-            }
-
-            if (under_attack_flg)
-            {
-                break;
-            }
-        }
-    }
-
-    return under_attack_flg;
-}
-
-void Board::get_piece_straight_moves(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out)
-{
-    int test_idx;
-
-    int *board = this->data_;
-
-    bool n = false;
-    bool s = false;
-    bool e = false;
-    bool w = false;
-
-    for (int i = 1; i < cnt; i++)
-    {
-        if (Board::is_adj_colrow_valid(adj_col + i, adj_row) && !e)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                e = true;
-                if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
-                {
-                    out->push_back(test_idx);
-                }
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col - i, adj_row) && !w)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                w = true;
-                if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
-                {
-                    out->push_back(test_idx);
-                }
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col, adj_row + i) && !n)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col, adj_row + i);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                n = true;
-                if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
-                {
-                    out->push_back(test_idx);
-                }
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col, adj_row - i) && !s)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col, adj_row - i);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                s = true;
-                if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
-                {
-                    out->push_back(test_idx);
-                }
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-    }
-}
-
-void Board::get_piece_straight_influence(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out)
-{
-    int test_idx;
-
-    int *board = this->data_;
-
-    bool n = false;
-    bool s = false;
-    bool e = false;
-    bool w = false;
-
-    for (int i = 1; i < cnt; i++)
-    {
-        if (Board::is_adj_colrow_valid(adj_col + i, adj_row) && !e)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                e = true;
-                out->push_back(test_idx);
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col - i, adj_row) && !w)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                w = true;
-                out->push_back(test_idx);
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col, adj_row + i) && !n)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col, adj_row + i);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                n = true;
-                out->push_back(test_idx);
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col, adj_row - i) && !s)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col, adj_row - i);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                s = true;
-                out->push_back(test_idx);
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-    }
-}
-
-void Board::get_piece_diagonal_moves(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out)
-{
-    int test_idx;
-
-    int *board = this->data_;
-
-    bool ne = false;
-    bool sw = false;
-    bool se = false;
-    bool nw = false;
-
-    for (int i = 1; i < cnt; i++)
-    {
-        if (Board::is_adj_colrow_valid(adj_col + i, adj_row + i) && !ne)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                ne = true;
-                if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
-                {
-                    out->push_back(test_idx);
-                }
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col - i, adj_row - i) && !sw)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                sw = true;
-                if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
-                {
-                    out->push_back(test_idx);
-                }
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col + i, adj_row - i) && !se)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                se = true;
-                if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
-                {
-                    out->push_back(test_idx);
-                }
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col - i, adj_row + i) && !nw)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                nw = true;
-                if (!Piece::is_same_color(piece, (PieceType)board[test_idx]))
-                {
-                    out->push_back(test_idx);
-                }
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-    }
-}
-
-void Board::get_piece_diagonal_influence(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out)
-{
-    int test_idx;
-
-    int *board = this->data_;
-
-    bool ne = false;
-    bool sw = false;
-    bool se = false;
-    bool nw = false;
-
-    for (int i = 1; i < cnt; i++)
-    {
-        if (Board::is_adj_colrow_valid(adj_col + i, adj_row + i) && !ne)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row + i);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                ne = true;
-                out->push_back(test_idx);
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col - i, adj_row - i) && !sw)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row - i);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                sw = true;
-                out->push_back(test_idx);
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col + i, adj_row - i) && !se)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + i, adj_row - i);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                se = true;
-                out->push_back(test_idx);
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col - i, adj_row + i) && !nw)
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - i, adj_row + i);
-            if (board[test_idx] != PieceType::Empty)
-            {
-                nw = true;
-                out->push_back(test_idx);
-            }
-            else
-            {
-                out->push_back(test_idx);
-            }
-        }
-    }
-}
-
-bool Board::operator==(const Board &other)
-{
-    return memcmp(this->data_, other.data_, sizeof(int) * CHESS_BOARD_LEN) == 0;
-}
-
-bool Board::operator!=(const Board &other)
-{
-    return !(*this == other);
+    return col >= 0 && col < COL_CNT;
 }
 
 void Board::reset()
 {
-    memcpy(this->data_, CHESS_START_BOARD, sizeof(int) * (CHESS_BOARD_LEN));
+    memcpy(this->data_, BOARD_START_STATE, sizeof(char) * BOARD_LEN);
 }
 
 void Board::copy(Board *src)
 {
-    memcpy(this->data_, src->data_, sizeof(int) * CHESS_BOARD_LEN);
-}
-
-void Board::print(int *board)
-{
-    const char *boundary = "\n   +-----+-----+-----+-----+-----+-----+-----+-----+\n";
-
-    printf("%s", boundary);
-
-    for (int i = CHESS_BOARD_ROW_CNT - 1; i >= 0; i--)
-    {
-        printf("%d  ", i + 1);
-        printf("|");
-
-        for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
-        {
-            int val = board[(i * CHESS_BOARD_COL_CNT) + j];
-            if (val < 0)
-            {
-                printf(" %d  |", val);
-            }
-            else if (val > 0)
-            {
-                printf("  %d  |", val);
-            }
-            else
-            {
-                printf("     |");
-            }
-        }
-
-        printf("%s", boundary);
-    }
-
-    printf("    ");
-    for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
-    {
-        printf("  %c   ", Board::get_col_fr_adj_col(j));
-    }
-
-    printf("\n\n");
+    memcpy(this->data_, src->data_, sizeof(char) * BOARD_LEN);
+    this->castle_state_ = src->castle_state_;
 }
 
 void Board::print()
 {
-    Board::print(this->data_);
-}
-
-void Board::pretty_print()
-{
     HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-
-    int *board = this->data_;
 
     printf("\n");
 
@@ -842,19 +253,20 @@ void Board::pretty_print()
     int foreground = 0;
     int background = 0;
 
-    for (int i = CHESS_BOARD_ROW_CNT - 1; i >= 0; i--)
+    for (int row = ROW_CNT - 1; row >= 0; row--)
     {
-        printf("%d  ", i + 1);
+        printf("%d  ", row + 1);
         printf("");
 
-        for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
+        for (int col = 0; col < COL_CNT; col++)
         {
-            auto piece_typ = (PieceType)this->data_[i * CHESS_BOARD_COL_CNT + j];
-            if (Piece::is_white(piece_typ))
+            char piece = this->get_piece(Board::get_square(row, col));
+
+            if (Piece::is_white(piece))
             {
                 foreground = 15;
             }
-            else if (Piece::is_black(piece_typ))
+            else if (Piece::is_black(piece))
             {
                 foreground = 0;
             }
@@ -863,7 +275,7 @@ void Board::pretty_print()
                 foreground = 15;
             }
 
-            if (j % 2 == 0)
+            if (col % 2 == 0)
             {
                 if (white_first)
                 {
@@ -889,7 +301,7 @@ void Board::pretty_print()
             FlushConsoleInputBuffer(hConsole);
             SetConsoleTextAttribute(hConsole, foreground + background * 16);
 
-            printf("%s", Piece::to_pretty_str((PieceType)board[(i * CHESS_BOARD_COL_CNT) + j]));
+            printf("%s", Piece::to_str(piece));
         }
 
         white_first = !white_first;
@@ -904,1977 +316,1228 @@ void Board::pretty_print()
     SetConsoleTextAttribute(hConsole, 15);
 
     printf("   ");
-    for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
+    for (int col = 0; col < COL_CNT; col++)
     {
-        printf(" %c ", Board::get_col_fr_adj_col(j));
+        printf(" %c ", Board::get_alpha_col(col));
     }
 
     printf("\n\n");
 }
 
-void Board::print_analysis(BoardAnalysisType board_analysis_typ)
+void Board::print(Move move)
 {
-    const char *boundary = "\n   +-----+-----+-----+-----+-----+-----+-----+-----+\n";
+    HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
-    int *board;
-    switch (board_analysis_typ)
+    printf("\n");
+
+    bool white_first = true;
+
+    int foreground = 0;
+    int background = 0;
+
+    for (int row = ROW_CNT - 1; row >= 0; row--)
     {
-    case BoardAnalysisType::Material:
-        board = this->get_material();
-        break;
-    case BoardAnalysisType::Influence:
-        board = this->get_influence(false);
-        break;
-    default:
-        board = this->data_;
-        break;
-    }
+        printf("%d  ", row + 1);
+        printf("");
 
-    printf("%s", boundary);
-
-    for (int i = CHESS_BOARD_ROW_CNT - 1; i >= 0; i--)
-    {
-        printf("%d  ", i + 1);
-        printf("|");
-
-        for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
+        for (int col = 0; col < COL_CNT; col++)
         {
-            int val = board[(i * CHESS_BOARD_COL_CNT) + j];
-            switch (board_analysis_typ)
+            char piece = this->get_piece(Board::get_square(row, col));
+
+            int square = this->get_square(row, col);
+
+            if (Piece::is_white(piece))
             {
-            case BoardAnalysisType::Material:
-            case BoardAnalysisType::Influence:
-                if (val < 0)
+                foreground = 15;
+            }
+            else if (Piece::is_black(piece))
+            {
+                foreground = 0;
+            }
+            else
+            {
+                foreground = 15;
+            }
+
+            if (col % 2 == 0)
+            {
+                if (white_first)
                 {
-                    printf(" %d  |", val);
-                }
-                else if (val > 0)
-                {
-                    printf("  %d  |", val);
+                    background = 11;
                 }
                 else
                 {
-                    printf("     |");
+                    background = 8;
                 }
-                break;
-            default:
-                printf("%s", Piece::to_str((PieceType)val));
-                break;
             }
+            else
+            {
+                if (white_first)
+                {
+                    background = 8;
+                }
+                else
+                {
+                    background = 11;
+                }
+            }
+
+            if (square == move.src_square || square == move.dst_square)
+            {
+                background = 4;
+            }
+
+            FlushConsoleInputBuffer(hConsole);
+            SetConsoleTextAttribute(hConsole, foreground + background * 16);
+
+            printf("%s", Piece::to_str(piece));
         }
 
-        printf("%s", boundary);
+        white_first = !white_first;
+
+        FlushConsoleInputBuffer(hConsole);
+        SetConsoleTextAttribute(hConsole, 15);
+
+        printf("\n");
     }
 
-    printf("    ");
-    for (int j = 0; j < CHESS_BOARD_COL_CNT; j++)
-    {
-        printf("  %c   ", Board::get_col_fr_adj_col(j));
-    }
+    FlushConsoleInputBuffer(hConsole);
+    SetConsoleTextAttribute(hConsole, 15);
 
-    switch (board_analysis_typ)
+    printf("   ");
+    for (int col = 0; col < COL_CNT; col++)
     {
-    case BoardAnalysisType::PieceTypes:
-        this->print_status();
-        printf("\n    Material: %d", this->sum_material());
-        printf("\n    Influence: %d", this->sum_influence(false));
-        break;
-    case BoardAnalysisType::Material:
-        printf("\n    Material: %d", this->sum_material());
-        break;
-    case BoardAnalysisType::Influence:
-        printf("\n    Influence: %d", this->sum_influence(false));
-        break;
-    default:
-        break;
+        printf(" %c ", Board::get_alpha_col(col));
     }
 
     printf("\n\n");
 }
 
-std::vector<int> Board::get_piece_moves(int piece_idx, bool test_check)
+char Board::get_piece(int square)
 {
-    std::vector<int> out;
+    return this->data_[square];
+}
 
-    int mov_ctr = 0;
-
-    int *board = this->data_;
-
-    PieceType piece_typ = (PieceType)board[piece_idx];
-    bool white = Piece::is_white(piece_typ);
-
-    char col = Board::get_col_fr_idx(piece_idx);
-    int row = Board::get_row_fr_idx(piece_idx);
-
-    int adj_col = Board::get_adj_col_fr_idx(piece_idx);
-    int adj_row = Board::get_adj_row_fr_idx(piece_idx);
-
-    int test_idx;
-
-    switch (piece_typ)
+bool Board::is_square_under_attack(int square, bool by_white)
+{
+    for (int i = 0; i < BOARD_LEN; i++)
     {
-    case PieceType::WhitePawn:
-        // TODO: au passant
+        char piece = this->get_piece(i);
+
+        if (by_white && Piece::is_white(piece))
         {
-            test_idx = Board::get_idx_fr_colrow(col, row + 1);
-            if (Board::is_row_valid(row + 1) && board[test_idx] == PieceType::Empty)
+            auto moves = this->get_moves(i, false);
+            for (auto move : moves)
             {
-                out.push_back(test_idx);
-            }
-
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row + 1);
-            if (Board::is_adj_colrow_valid(adj_col - 1, adj_row + 1) && board[test_idx] != PieceType::Empty && !Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
-            {
-                out.push_back(test_idx);
-            }
-
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row + 1);
-            if (Board::is_adj_colrow_valid(adj_col + 1, adj_row + 1) && board[test_idx] != PieceType::Empty && !Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
-            {
-                out.push_back(test_idx);
-            }
-
-            if (row == 2)
-            {
-                // Dont need to check if row adjustments are valid since we know that starting row is 2.
-                test_idx = Board::get_idx_fr_colrow(col, row + 1);
-                if (board[test_idx] == PieceType::Empty)
+                if (move.dst_square == square)
                 {
-                    test_idx = Board::get_idx_fr_colrow(col, row + 2);
-                    if (board[test_idx] == PieceType::Empty)
-                    {
-                        out.push_back(test_idx);
-                    }
+                    return true;
                 }
             }
         }
+        else if (!by_white && Piece::is_black(piece))
+        {
+            auto moves = this->get_moves(i, false);
+            for (auto move : moves)
+            {
+                if (move.dst_square == square)
+                {
+                    return true;
+                }
+            }
+        }
+    }
 
+    return false;
+}
+
+bool Board::is_check(bool by_white)
+{
+    if (by_white)
+    {
+        int black_king_square = -1;
+        for (int i = BOARD_LEN - 1; i >= 0; i--)
+        {
+            if (this->get_piece(i) == BK)
+            {
+                black_king_square = i;
+                break;
+            }
+        }
+
+        for (int i = 0; i < BOARD_LEN; i++)
+        {
+            switch (this->get_piece(i))
+            {
+            case WP:
+            case WN:
+            case WB:
+            case WR:
+            case WQ:
+            case WK:
+            {
+                auto moves = this->get_moves(i, false);
+                for (auto move : moves)
+                {
+                    if (move.dst_square == black_king_square)
+                    {
+                        return true;
+                    }
+                }
+            }
+            break;
+            default:
+                break;
+            }
+        }
+    }
+    else
+    {
+        int white_king_square = -1;
+        for (int i = 0; i < BOARD_LEN; i++)
+        {
+            if (this->get_piece(i) == WK)
+            {
+                white_king_square = i;
+                break;
+            }
+        }
+
+        for (int i = 0; i < BOARD_LEN; i++)
+        {
+            switch (this->get_piece(i))
+            {
+            case BP:
+            case BN:
+            case BB:
+            case BR:
+            case BQ:
+            case BK:
+            {
+                auto moves = this->get_moves(i, false);
+                for (auto move : moves)
+                {
+                    if (move.dst_square == white_king_square)
+                    {
+                        return true;
+                    }
+                }
+            }
+            break;
+            default:
+                break;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool Board::is_checkmate(bool by_white, bool assume_check)
+{
+    if (!assume_check)
+    {
+        if (!this->is_check(by_white))
+        {
+            return false;
+        }
+    }
+
+    auto sims = this->simulate_all(!by_white);
+    return sims.size() == 0;
+}
+
+std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int col)
+{
+    std::vector<Move> moves;
+
+    int cnt;
+    switch (piece)
+    {
+    case WB:
+    case BB:
+    case WQ:
+    case BQ:
+        cnt = 8;
         break;
-    case PieceType::BlackPawn:
-        // TODO: au passant
-        {
-            test_idx = Board::get_idx_fr_colrow(col, row - 1);
-            if (Board::is_row_valid(row - 1) && board[test_idx] == PieceType::Empty)
-            {
-                out.push_back(test_idx);
-            }
-
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row - 1);
-            if (Board::is_adj_colrow_valid(adj_col - 1, adj_row - 1) && board[test_idx] != PieceType::Empty && !Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
-            {
-                out.push_back(test_idx);
-            }
-
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row - 1);
-            if (Board::is_adj_colrow_valid(adj_col + 1, adj_row - 1) && board[test_idx] != PieceType::Empty && !Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
-            {
-                out.push_back(test_idx);
-            }
-
-            if (row == 7)
-            {
-                // Dont need to check if row adjustments are valid since we know that starting row is 7.
-                test_idx = Board::get_idx_fr_colrow(col, row - 1);
-                if (board[test_idx] == PieceType::Empty)
-                {
-                    test_idx = Board::get_idx_fr_colrow(col, row - 2);
-                    if (board[test_idx] == PieceType::Empty)
-                    {
-                        out.push_back(test_idx);
-                    }
-                }
-            }
-        }
-
+    case WK:
+    case BK:
+        cnt = 2;
         break;
-    case PieceType::WhiteKnight:
-    case PieceType::BlackKnight:
-    {
-        if (Board::is_adj_colrow_valid(adj_col + 1, adj_row + 2))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row + 2);
-            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
-            {
-                out.push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col + 1, adj_row - 2))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row - 2);
-            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
-            {
-                out.push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col - 1, adj_row + 2))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row + 2);
-            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
-            {
-                out.push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col - 1, adj_row - 2))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row - 2);
-            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
-            {
-                out.push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col + 2, adj_row + 1))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 2, adj_row + 1);
-            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
-            {
-                out.push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col + 2, adj_row - 1))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 2, adj_row - 1);
-            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
-            {
-                out.push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col - 2, adj_row + 1))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 2, adj_row + 1);
-            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
-            {
-                out.push_back(test_idx);
-            }
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col - 2, adj_row - 1))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 2, adj_row - 1);
-            if (!Piece::is_same_color(piece_typ, (PieceType)board[test_idx]))
-            {
-                out.push_back(test_idx);
-            }
-        }
+    default:
+        return moves;
     }
 
-    break;
-    case PieceType::WhiteBishop:
-    case PieceType::BlackBishop:
-    {
-        this->get_piece_diagonal_moves(piece_typ, adj_col, adj_row, 8, &out);
-    }
+    int test_square;
+    int test_row;
+    int test_col;
 
-    break;
-    case PieceType::WhiteRook:
-    case PieceType::BlackRook:
-    {
-        this->get_piece_straight_moves(piece_typ, adj_col, adj_row, 8, &out);
-    }
+    bool ne = false;
+    bool sw = false;
+    bool se = false;
+    bool nw = false;
 
-    break;
-    case PieceType::WhiteQueen:
-    case PieceType::BlackQueen:
+    for (int i = 1; i < cnt; i++)
     {
-        this->get_piece_diagonal_moves(piece_typ, adj_col, adj_row, 8, &out);
-        this->get_piece_straight_moves(piece_typ, adj_col, adj_row, 8, &out);
-    }
+        test_row = row + i;
+        test_col = col + i;
+        test_square = Board::get_square(test_row, test_col);
 
-    break;
-    case PieceType::WhiteKing:
-    case PieceType::BlackKing:
-    {
-        this->get_piece_diagonal_moves(piece_typ, adj_col, adj_row, 2, &out);
-        this->get_piece_straight_moves(piece_typ, adj_col, adj_row, 2, &out);
-
-        // Castles.
-        if (piece_typ == PieceType::WhiteKing)
+        if (!ne && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
         {
-            if (col == 'e' && row == 1)
+            char test_piece = this->get_piece(test_square);
+
+            if (test_piece == MT)
             {
-                // Queen side castle.
-                if (board[Board::get_idx_fr_colrow('a', 1)] == PieceType::WhiteRook)
+                moves.push_back(Move{square, test_square});
+            }
+            else
+            {
+                if (!Piece::is_same_color(piece, test_piece))
                 {
-                    if (board[Board::get_idx_fr_colrow('b', 1)] == PieceType::Empty && board[Board::get_idx_fr_colrow('c', 1)] == PieceType::Empty && board[Board::get_idx_fr_colrow('d', 1)] == PieceType::Empty &&
-                        !Board::is_square_under_attack(Board::get_idx_fr_colrow('b', 1), white) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('c', 1), white) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('d', 1), white))
+                    moves.push_back(Move{square, test_square});
+                }
+
+                ne = true;
+            }
+        }
+
+        test_row = row - i;
+        test_col = col - i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (!sw && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (test_piece == MT)
+            {
+                moves.push_back(Move{square, test_square});
+            }
+            else
+            {
+                if (!Piece::is_same_color(piece, test_piece))
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+
+                sw = true;
+            }
+        }
+
+        test_row = row - i;
+        test_col = col + i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (!se && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (test_piece == MT)
+            {
+                moves.push_back(Move{square, test_square});
+            }
+            else
+            {
+                if (!Piece::is_same_color(piece, test_piece))
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+
+                se = true;
+            }
+        }
+
+        test_row = row + i;
+        test_col = col - i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (!nw && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (test_piece == MT)
+            {
+                moves.push_back(Move{square, test_square});
+            }
+            else
+            {
+                if (!Piece::is_same_color(piece, test_piece))
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+
+                nw = true;
+            }
+        }
+    }
+
+    return moves;
+}
+
+std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int col)
+{
+    std::vector<Move> moves;
+
+    int cnt;
+    switch (piece)
+    {
+    case WR:
+    case BR:
+    case WQ:
+    case BQ:
+        cnt = 8;
+        break;
+    case WK:
+    case BK:
+        cnt = 2;
+        break;
+    default:
+        return moves;
+    }
+
+    int test_square;
+    int test_row;
+    int test_col;
+
+    bool n = false;
+    bool s = false;
+    bool e = false;
+    bool w = false;
+
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row + i;
+        test_col = col;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (!n && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (test_piece == MT)
+            {
+                moves.push_back(Move{square, test_square});
+            }
+            else
+            {
+                if (!Piece::is_same_color(piece, test_piece))
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+
+                n = true;
+            }
+        }
+
+        test_row = row - i;
+        test_col = col;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (!s && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (test_piece == MT)
+            {
+                moves.push_back(Move{square, test_square});
+            }
+            else
+            {
+                if (!Piece::is_same_color(piece, test_piece))
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+
+                s = true;
+            }
+        }
+
+        test_row = row;
+        test_col = col + i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (!e && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (test_piece == MT)
+            {
+                moves.push_back(Move{square, test_square});
+            }
+            else
+            {
+                if (!Piece::is_same_color(piece, test_piece))
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+
+                e = true;
+            }
+        }
+
+        test_row = row;
+        test_col = col - i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (!w && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (test_piece == MT)
+            {
+                moves.push_back(Move{square, test_square});
+            }
+            else
+            {
+                if (!Piece::is_same_color(piece, test_piece))
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+
+                w = true;
+            }
+        }
+    }
+
+    return moves;
+}
+
+std::vector<Move> Board::get_moves(int square, bool test_check)
+{
+    std::vector<Move> moves;
+
+    char piece = this->get_piece(square);
+
+    if (piece == MT)
+    {
+        return moves;
+    }
+
+    int row = Board::get_row(square);
+    int col = Board::get_col(square);
+
+    bool white = Piece::is_white(piece);
+
+    int test_square;
+    int test_row;
+    int test_col;
+
+    switch (piece)
+    {
+    case WP:
+    {
+        test_row = row + 1;
+        test_col = col;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && this->get_piece(test_square) == MT)
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row + 1;
+        test_col = col - 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) && Piece::is_black(this->get_piece(test_square)))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row + 1;
+        test_col = col + 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) && Piece::is_black(this->get_piece(test_square)))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        if (row == 1)
+        {
+            test_row = row + 1;
+            test_col = col;
+            test_square = Board::get_square(test_row, test_col);
+
+            if (this->get_piece(test_square) == MT)
+            {
+                test_row = row + 2;
+                test_col = col;
+                test_square = Board::get_square(test_row, test_col);
+
+                if (this->get_piece(test_square) == MT)
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+            }
+        }
+    }
+    break;
+    case BP:
+    {
+        test_row = row - 1;
+        test_col = col;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && this->get_piece(test_square) == MT)
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row - 1;
+        test_col = col - 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) && Piece::is_white(this->get_piece(test_square)))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row - 1;
+        test_col = col + 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) && Piece::is_white(this->get_piece(test_square)))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        if (row == 6)
+        {
+            test_row = row - 1;
+            test_col = col;
+            test_square = Board::get_square(test_row, test_col);
+
+            if (this->get_piece(test_square) == MT)
+            {
+                test_row = row - 2;
+                test_col = col;
+                test_square = Board::get_square(test_row, test_col);
+
+                if (this->get_piece(test_square) == MT)
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+            }
+        }
+    }
+    break;
+    case WN:
+    case BN:
+    {
+        test_row = row + 2;
+        test_col = col + 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) &&
+            !Piece::is_same_color(this->get_piece(square), this->get_piece(test_square)))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row - 2;
+        test_col = col + 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) &&
+            !Piece::is_same_color(this->get_piece(square), this->get_piece(test_square)))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row + 2;
+        test_col = col - 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) &&
+            !Piece::is_same_color(this->get_piece(square), this->get_piece(test_square)))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row - 2;
+        test_col = col - 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) &&
+            !Piece::is_same_color(this->get_piece(square), this->get_piece(test_square)))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row + 1;
+        test_col = col + 2;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) &&
+            !Piece::is_same_color(this->get_piece(square), this->get_piece(test_square)))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row - 1;
+        test_col = col + 2;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) &&
+            !Piece::is_same_color(this->get_piece(square), this->get_piece(test_square)))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row + 1;
+        test_col = col - 2;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) &&
+            !Piece::is_same_color(this->get_piece(square), this->get_piece(test_square)))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row - 1;
+        test_col = col - 2;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col) &&
+            !Piece::is_same_color(this->get_piece(square), this->get_piece(test_square)))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+    }
+    break;
+    case WB:
+    case BB:
+    {
+        auto diagonal_moves = this->get_diagonal_moves(square, piece, row, col);
+        moves.insert(moves.end(), diagonal_moves.begin(), diagonal_moves.end());
+    }
+    break;
+    case WR:
+    case BR:
+    {
+        auto straight_moves = this->get_straight_moves(square, piece, row, col);
+        moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
+    }
+    break;
+    case WQ:
+    case BQ:
+    {
+        auto diagonal_moves = this->get_diagonal_moves(square, piece, row, col);
+        moves.insert(moves.end(), diagonal_moves.begin(), diagonal_moves.end());
+
+        auto straight_moves = this->get_straight_moves(square, piece, row, col);
+        moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
+    }
+    break;
+    case WK:
+    case BK:
+    {
+        auto diagonal_moves = this->get_diagonal_moves(square, piece, row, col);
+        moves.insert(moves.end(), diagonal_moves.begin(), diagonal_moves.end());
+
+        auto straight_moves = this->get_straight_moves(square, piece, row, col);
+        moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
+
+        if (test_check)
+        {
+            if (piece == WK && !this->castle_state_.white_king_moved)
+            {
+                if (!this->castle_state_.white_left_rook_moved && this->get_piece(0) == WR)
+                {
+                    if (this->get_piece(1) == MT && this->get_piece(2) == MT && this->get_piece(3) == MT)
                     {
-                        out.push_back(Board::get_idx_fr_colrow('c', 1));
+                        if (!this->is_square_under_attack(1, false) && !this->is_square_under_attack(2, false) &&
+                            !this->is_square_under_attack(3, false))
+                        {
+                            moves.push_back(Move{square, 2});
+                        }
                     }
                 }
 
-                // King side castle.
-                if (board[Board::get_idx_fr_colrow('h', 1)] == PieceType::WhiteRook)
+                if (!this->castle_state_.white_right_rook_moved && this->get_piece(7) == WR)
                 {
-                    if (board[Board::get_idx_fr_colrow('f', 1)] == PieceType::Empty && board[Board::get_idx_fr_colrow('g', 1)] == PieceType::Empty &&
-                        !Board::is_square_under_attack(Board::get_idx_fr_colrow('f', 1), white) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('g', 1), white))
+                    if (this->get_piece(5) == MT && this->get_piece(6) == MT)
                     {
-                        out.push_back(Board::get_idx_fr_colrow('g', 1));
+                        if (!this->is_square_under_attack(5, false) && !this->is_square_under_attack(6, false))
+                        {
+                            moves.push_back(Move{square, 6});
+                        }
                     }
                 }
             }
-        }
-        else
-        {
-            if (col == 'e' && row == 8)
+            else if (piece == BK && !this->castle_state_.black_king_moved)
             {
-                // Queen side castle.
-                if (board[Board::get_idx_fr_colrow('a', 8)] == PieceType::BlackRook)
+                if (!this->castle_state_.black_left_rook_moved && this->get_piece(56) == BR)
                 {
-                    if (board[Board::get_idx_fr_colrow('b', 8)] == PieceType::Empty && board[Board::get_idx_fr_colrow('c', 8)] == PieceType::Empty && board[Board::get_idx_fr_colrow('d', 8)] == PieceType::Empty &&
-                        !Board::is_square_under_attack(Board::get_idx_fr_colrow('b', 8), white) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('c', 8), white) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('d', 8), white))
+                    if (this->get_piece(57) == MT && this->get_piece(58) == MT && this->get_piece(59) == MT)
                     {
-                        out.push_back(Board::get_idx_fr_colrow('c', 8));
+                        if (!this->is_square_under_attack(57, true) && !this->is_square_under_attack(58, true) &&
+                            !this->is_square_under_attack(59, true))
+                        {
+                            moves.push_back(Move{square, 58});
+                        }
                     }
                 }
 
-                // King side castle.
-                if (board[Board::get_idx_fr_colrow('h', 8)] == PieceType::BlackRook)
+                if (!this->castle_state_.black_right_rook_moved && this->get_piece(63) == BR)
                 {
-                    if (board[Board::get_idx_fr_colrow('f', 8)] == PieceType::Empty && board[Board::get_idx_fr_colrow('g', 8)] == PieceType::Empty &&
-                        !Board::is_square_under_attack(Board::get_idx_fr_colrow('f', 8), white) && !Board::is_square_under_attack(Board::get_idx_fr_colrow('g', 8), white))
+                    if (this->get_piece(61) == MT && this->get_piece(62) == MT)
                     {
-                        out.push_back(Board::get_idx_fr_colrow('g', 8));
+                        if (!this->is_square_under_attack(61, true) && !this->is_square_under_attack(62, true))
+                        {
+                            moves.push_back(Move{square, 62});
+                        }
                     }
                 }
             }
         }
     }
-
     break;
-    default: // Nothing...
+    default:
         break;
     }
 
     if (test_check)
     {
-        std::vector<int> upd_out;
-        for (int i = 0; i < out.size(); i++)
+        std::vector<Move> tested_moves;
+
+        for (auto move : moves)
         {
-            Board sim = this->simulate(Move{piece_idx, out[i]}, white);
-            if (!sim.check(white))
+            auto sim = this->simulate(move);
+
+            if (!sim.board.is_check(!white))
             {
-                upd_out.push_back(out[i]);
+                tested_moves.push_back(move);
             }
         }
-        out = upd_out;
+
+        moves = tested_moves;
     }
 
-    return out;
+    return moves;
 }
 
-std::vector<int> Board::get_piece_influence(int piece_idx, bool test_check)
+std::vector<Move> Board::get_all_moves(bool white)
 {
-    std::vector<int> out;
+    std::vector<Move> all_moves;
 
-    int *board = this->data_;
-
-    PieceType piece_typ = (PieceType)board[piece_idx];
-    bool white = Piece::is_white(piece_typ);
-
-    char col = Board::get_col_fr_idx(piece_idx);
-    int row = Board::get_row_fr_idx(piece_idx);
-
-    int adj_col = Board::get_adj_col_fr_idx(piece_idx);
-    int adj_row = Board::get_adj_row_fr_idx(piece_idx);
-
-    int test_idx;
-
-    switch (piece_typ)
+    if (white)
     {
-    case PieceType::WhitePawn:
-        // TODO: au passant
+        for (int i = 0; i < BOARD_LEN; i++)
         {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row + 1);
-            if (Board::is_adj_colrow_valid(adj_col - 1, adj_row + 1))
+            if (Piece::is_white(this->get_piece(i)))
             {
-                out.push_back(test_idx);
-            }
-
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row + 1);
-            if (Board::is_adj_colrow_valid(adj_col + 1, adj_row + 1))
-            {
-                out.push_back(test_idx);
+                auto moves = this->get_moves(i, true);
+                all_moves.insert(all_moves.end(), moves.begin(), moves.end());
             }
         }
-
-        break;
-    case PieceType::BlackPawn:
-        // TODO: au passant
+    }
+    else
+    {
+        for (int i = 0; i < BOARD_LEN; i++)
         {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row - 1);
-            if (Board::is_adj_colrow_valid(adj_col - 1, adj_row - 1))
+            if (Piece::is_black(this->get_piece(i)))
             {
-                out.push_back(test_idx);
-            }
-
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row - 1);
-            if (Board::is_adj_colrow_valid(adj_col + 1, adj_row - 1))
-            {
-                out.push_back(test_idx);
+                auto moves = this->get_moves(i, true);
+                all_moves.insert(all_moves.end(), moves.begin(), moves.end());
             }
         }
-
-        break;
-    case PieceType::WhiteKnight:
-    case PieceType::BlackKnight:
-    {
-        if (Board::is_adj_colrow_valid(adj_col + 1, adj_row + 2))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row + 2);
-            out.push_back(test_idx);
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col + 1, adj_row - 2))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 1, adj_row - 2);
-            out.push_back(test_idx);
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col - 1, adj_row + 2))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row + 2);
-            out.push_back(test_idx);
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col - 1, adj_row - 2))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 1, adj_row - 2);
-            out.push_back(test_idx);
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col + 2, adj_row + 1))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 2, adj_row + 1);
-            out.push_back(test_idx);
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col + 2, adj_row - 1))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col + 2, adj_row - 1);
-            out.push_back(test_idx);
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col - 2, adj_row + 1))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 2, adj_row + 1);
-            out.push_back(test_idx);
-        }
-
-        if (Board::is_adj_colrow_valid(adj_col - 2, adj_row - 1))
-        {
-            test_idx = Board::get_idx_fr_adj_colrow(adj_col - 2, adj_row - 1);
-            out.push_back(test_idx);
-        }
     }
 
-    break;
-    case PieceType::WhiteBishop:
-    case PieceType::BlackBishop:
-    {
-        this->get_piece_diagonal_influence(piece_typ, adj_col, adj_row, 8, &out);
-    }
-
-    break;
-    case PieceType::WhiteRook:
-    case PieceType::BlackRook:
-    {
-        this->get_piece_straight_influence(piece_typ, adj_col, adj_row, 8, &out);
-    }
-
-    break;
-    case PieceType::WhiteQueen:
-    case PieceType::BlackQueen:
-    {
-        this->get_piece_diagonal_influence(piece_typ, adj_col, adj_row, 8, &out);
-        this->get_piece_straight_influence(piece_typ, adj_col, adj_row, 8, &out);
-    }
-
-    break;
-    case PieceType::WhiteKing:
-    case PieceType::BlackKing:
-    {
-        this->get_piece_diagonal_influence(piece_typ, adj_col, adj_row, 2, &out);
-        this->get_piece_straight_influence(piece_typ, adj_col, adj_row, 2, &out);
-    }
-
-    break;
-    default: // Nothing...
-        break;
-    }
-
-    // Test in check:
-    if (test_check)
-    {
-        std::vector<int> upd_out;
-        for (int i = 0; i < out.size(); i++)
-        {
-            Board sim = this->simulate(Move{piece_idx, out[i]}, white);
-
-            if (!sim.check(white))
-            {
-                upd_out.push_back(out[i]);
-            }
-        }
-        out = upd_out;
-    }
-
-    return out;
+    return all_moves;
 }
 
-Move Board::get_random_move(bool white)
+std::string Board::convert_move_to_move_str(Move move)
 {
-    std::vector<int> piece_idxs;
+    std::string move_str;
 
-    // Get piece indexes.
+    char piece = this->data_[move.src_square];
+    char piece_str_id = Piece::get_str_id(piece);
+    int src_col = Board::get_col(move.src_square);
+    int src_row = Board::get_row(move.src_square);
+    int dst_col = Board::get_col(move.dst_square);
+    int dst_row = Board::get_row(move.dst_square);
 
-    for (int i = 0; i < CHESS_BOARD_LEN; i++)
+    // Check for castle.
+    if (piece == WK || piece == BK)
+    {
+        if ((src_col - dst_col) == -2)
+        {
+            move_str = "O-O";
+            return move_str;
+        }
+        else if ((src_col - dst_col) == 2)
+        {
+            move_str = "O-O-O";
+            return move_str;
+        }
+    }
+
+    // Example format going forward: piece id|src col|src row|dst col|dst row|promo ind|promo piece id
+    // ^always 7 chars
+
+    move_str += piece_str_id;
+
+    move_str += Board::get_alpha_col(src_col);
+    move_str += (char)(src_row + 1 + '0');
+
+    move_str += Board::get_alpha_col(dst_col);
+    move_str += (char)(dst_row + 1 + '0');
+
+    // Check for pawn promotion.
+    // TODO: allow other promotion options?
+    if ((piece == WP && dst_row == 7) || (piece == BP && dst_row == 0))
+    {
+        move_str += '=';
+        move_str += 'Q';
+    }
+
+    return move_str;
+}
+
+void Board::change(Move move)
+{
+    char src_piece = this->get_piece(move.src_square);
+    char dst_piece = src_piece;
+
+    int src_row = Board::get_row(move.src_square);
+    int src_col = Board::get_col(move.src_square);
+    int dst_row = Board::get_row(move.dst_square);
+    int dst_col = Board::get_col(move.dst_square);
+
+    switch (src_piece)
+    {
+    case WP:
+    {
+        // Look for promotion and au passant.
+
+        if (Board::get_row(move.dst_square) == 7)
+        {
+            dst_piece = WQ;
+        }
+    }
+    break;
+    case BP:
+    {
+        // Look for promotion and au passant.
+
+        if (Board::get_row(move.dst_square) == 0)
+        {
+            dst_piece = BQ;
+        }
+    }
+    break;
+    case WR:
+    {
+        if (src_col == 0)
+        {
+            this->castle_state_.white_left_rook_moved = true;
+        }
+        else if (src_col == 7)
+        {
+            this->castle_state_.white_right_rook_moved = true;
+        }
+    }
+    break;
+    case BR:
+    {
+        if (src_col == 0)
+        {
+            this->castle_state_.black_left_rook_moved = true;
+        }
+        else if (src_col == 7)
+        {
+            this->castle_state_.black_right_rook_moved = true;
+        }
+    }
+    break;
+    case WK:
+    {
+        // Look for castle.
+
+        if (src_col - dst_col == 2)
+        {
+            this->data_[0] = MT;
+            this->data_[3] = WR;
+        }
+        else if (src_col - dst_col == -2)
+        {
+            this->data_[7] = MT;
+            this->data_[5] = WR;
+        }
+
+        this->castle_state_.white_king_moved = true;
+    }
+    break;
+    case BK:
+    {
+        // Look for castle.
+
+        if (src_col - dst_col == 2)
+        {
+            this->data_[56] = MT;
+            this->data_[59] = BR;
+        }
+        else if (src_col - dst_col == -2)
+        {
+            this->data_[63] = MT;
+            this->data_[61] = BR;
+        }
+
+        this->castle_state_.black_king_moved = true;
+    }
+    break;
+    default:
+        break;
+    }
+
+    this->data_[move.src_square] = MT;
+    this->data_[move.dst_square] = dst_piece;
+}
+
+Move Board::change(std::string move_str, bool white)
+{
+    char piece_str_id;
+    int src_row;
+    int src_col;
+    int src_square;
+    int dst_row;
+    int dst_col;
+    int dst_square;
+
+    if (move_str.compare("O-O") == 0)
     {
         if (white)
         {
-            if (Piece::is_white((PieceType)this->data_[i]))
-            {
-                piece_idxs.push_back(i);
-            }
+            src_square = 4;
+            dst_square = 6;
         }
         else
         {
-            if (Piece::is_black((PieceType)this->data_[i]))
-            {
-                piece_idxs.push_back(i);
-            }
+            src_square = 60;
+            dst_square = 62;
         }
     }
-
-    Move move{CHESS_INVALID_VALUE, CHESS_INVALID_VALUE};
-    int max_try_cnt = 20;
-    int try_ctr = 0;
-
-    while (try_ctr < max_try_cnt)
+    else if (move_str.compare("O-O-O") == 0)
     {
-        int rand_piece_idx = rand() % piece_idxs.size();
-
-        // Got our piece; now get moves.
-        std::vector<int> legal_moves = this->get_piece_moves(piece_idxs[rand_piece_idx], true);
-
-        // If at least 1 move found, randomly make one and compare.
-        if (legal_moves.size() > 0)
+        if (white)
         {
-            int rand_legal_mov_idx = rand() % legal_moves.size();
-            Board sim = this->simulate(Move{piece_idxs[rand_piece_idx], legal_moves[rand_legal_mov_idx]}, white);
-
-            move.src_idx = piece_idxs[rand_piece_idx];
-            move.dst_idx = legal_moves[rand_legal_mov_idx];
+            src_square = 4;
+            dst_square = 2;
         }
-
-        try_ctr++;
+        else
+        {
+            src_square = 60;
+            dst_square = 58;
+        }
     }
+    else
+    {
+        piece_str_id = move_str[0];
+        src_row = Board::get_row(move_str[2]);
+        src_col = Board::get_col(move_str[1]);
+        src_square = Board::get_square(src_row, src_col);
+        dst_row = Board::get_row(move_str[4]);
+        dst_col = Board::get_col(move_str[3]);
+        dst_square = Board::get_square(dst_row, dst_col);
+    }
+
+    Move move{src_square, dst_square};
+
+    this->change(move);
 
     return move;
 }
 
-std::string Board::convert_move_to_an_move(Move move)
+Move Board::change_random(bool white)
 {
-    std::string out;
+    auto all_moves = this->get_all_moves(white);
 
-    PieceType piece = (PieceType)this->data_[move.src_idx];
-    char piece_id = Piece::fr_piece((PieceType)this->data_[move.src_idx]);
-    char src_col = Board::get_col_fr_idx(move.src_idx);
-    int src_row = Board::get_row_fr_idx(move.src_idx);
-    char dst_col = Board::get_col_fr_idx(move.dst_idx);
-    int dst_row = Board::get_row_fr_idx(move.dst_idx);
+    int rand_move_idx = rand() % all_moves.size();
 
-    // Check for castle.
-    if (piece == PieceType::WhiteKing || piece == PieceType::BlackKing)
-    {
-        int src_adj_col = Board::get_adj_col_fr_col(src_col);
-        int src_adj_row = Board::Board::get_adj_row_fr_row(src_row);
-        int dst_adj_col = get_adj_col_fr_col(dst_col);
-        int dst_adj_row = Board::get_adj_row_fr_row(dst_row);
+    this->change(all_moves[rand_move_idx]);
 
-        if ((src_adj_col - dst_adj_col) == -2)
-        {
-            out = "O-O";
-            return out;
-        }
-        else if ((src_adj_col - dst_adj_col) == 2)
-        {
-            out = "O-O-O";
-            return out;
-        }
-    }
-
-    // Example format going forward: piece id|src col|src row|dst col|dst row|promo (or space)|promo piece id (or space)
-    // ^always 7 chars
-
-    int move_ctr = 0;
-
-    out += piece_id;
-
-    out += src_col;
-    out += (char)(src_row + '0');
-
-    out += dst_col;
-    out += (char)(dst_row + '0');
-
-    // Check for pawn promotion. If none, set last 2 chars to ' '.
-    if ((piece == PieceType::WhitePawn && dst_row == 8) || (piece == PieceType::BlackPawn && dst_row == 1))
-    {
-        out += '=';
-        out += 'Q';
-    }
-    else
-    {
-        out += ' ';
-        out += ' ';
-    }
-
-    return out;
+    return all_moves[rand_move_idx];
 }
 
-Move Board::change(std::string an_move, bool white)
+Simulation Board::simulate(Move move)
 {
-    std::string mut_an_move = an_move;
+    Simulation sim;
 
-    int *board = this->data_;
-
-    int src_idx = CHESS_INVALID_VALUE;
-    int dst_idx = CHESS_INVALID_VALUE;
-    char src_col;
-    char dst_col;
-    int src_row;
-    int dst_row;
-    PieceType piece;
-    char piece_char;
-
-    // Trim '+'/'#'.
-    mut_an_move.erase(remove(mut_an_move.begin(), mut_an_move.end(), '+'), mut_an_move.end());
-    mut_an_move.erase(remove(mut_an_move.begin(), mut_an_move.end(), '#'), mut_an_move.end());
-
-    // Remove 'x'.
-    mut_an_move.erase(remove(mut_an_move.begin(), mut_an_move.end(), 'x'), mut_an_move.end());
-
-    switch (mut_an_move.size())
-    {
-    case 2:
-        // Pawn move.
-        dst_row = get_row_fr_char(mut_an_move[1]);
-        dst_idx = get_idx_fr_colrow(mut_an_move[0], dst_row);
-        if (white)
-        {
-            int prev_idx = get_idx_fr_colrow(mut_an_move[0], dst_row - 1);
-            int prev_idx_2 = get_idx_fr_colrow(mut_an_move[0], dst_row - 2);
-
-            board[dst_idx] = PieceType::WhitePawn;
-
-            if (board[prev_idx] == PieceType::WhitePawn)
-            {
-                board[prev_idx] = PieceType::Empty;
-                src_idx = prev_idx;
-            }
-            else if (board[prev_idx_2] == PieceType::WhitePawn)
-            {
-                board[prev_idx_2] = PieceType::Empty;
-                src_idx = prev_idx_2;
-            }
-        }
-        else
-        {
-            int prev_idx = get_idx_fr_colrow(mut_an_move[0], dst_row + 1);
-            int prev_idx_2 = get_idx_fr_colrow(mut_an_move[0], dst_row + 2);
-
-            board[dst_idx] = PieceType::BlackPawn;
-
-            if (board[prev_idx] == PieceType::BlackPawn)
-            {
-                board[prev_idx] = PieceType::Empty;
-                src_idx = prev_idx;
-            }
-            else if (board[prev_idx_2] == PieceType::BlackPawn)
-            {
-                board[prev_idx_2] = PieceType::Empty;
-                src_idx = prev_idx_2;
-            }
-        }
-        break;
-    case 3:
-        if (mut_an_move.compare("O-O") == 0)
-        {
-            // King side castle.
-            if (white)
-            {
-                int cur_rook_idx = get_idx_fr_colrow('h', 1);
-                int cur_king_idx = get_idx_fr_colrow('e', 1);
-                board[cur_rook_idx] = PieceType::Empty;
-                board[cur_king_idx] = PieceType::Empty;
-
-                int nxt_rook_idx = get_idx_fr_colrow('f', 1);
-                int nxt_king_idx = get_idx_fr_colrow('g', 1);
-                board[nxt_rook_idx] = PieceType::WhiteRook;
-                board[nxt_king_idx] = PieceType::WhiteKing;
-
-                src_idx = cur_king_idx;
-                dst_idx = nxt_king_idx;
-            }
-            else
-            {
-                int cur_rook_idx = get_idx_fr_colrow('h', 8);
-                int cur_king_idx = get_idx_fr_colrow('e', 8);
-                board[cur_rook_idx] = PieceType::Empty;
-                board[cur_king_idx] = PieceType::Empty;
-
-                int nxt_rook_idx = get_idx_fr_colrow('f', 8);
-                int nxt_king_idx = get_idx_fr_colrow('g', 8);
-                board[nxt_rook_idx] = PieceType::BlackRook;
-                board[nxt_king_idx] = PieceType::BlackKing;
-
-                src_idx = cur_king_idx;
-                dst_idx = nxt_king_idx;
-            }
-        }
-        else
-        {
-            // Need to check if isupper since pawn move will not have piece id -- just the src col.
-            if (isupper(mut_an_move[0]) == 1)
-            {
-                // Minor/major piece move.
-                piece = Piece::fr_char(mut_an_move[0], white);
-                dst_col = mut_an_move[1];
-                dst_row = get_row_fr_char(mut_an_move[2]);
-                dst_idx = get_idx_fr_colrow(dst_col, dst_row);
-
-                bool found = false;
-                for (int i = 0; i < CHESS_BOARD_LEN; i++)
-                {
-                    if (board[i] == piece)
-                    {
-                        std::vector<int> legal_moves = this->get_piece_moves(i, true);
-                        for (int j = 0; j < legal_moves.size(); j++)
-                        {
-                            if (legal_moves[j] == dst_idx)
-                            {
-                                board[dst_idx] = piece;
-                                src_idx = i;
-                                board[src_idx] = PieceType::Empty;
-                                found = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (found)
-                    {
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                // Disambiguated pawn move.
-                src_col = mut_an_move[0];
-                dst_col = mut_an_move[1];
-                dst_row = get_row_fr_char(mut_an_move[2]);
-                dst_idx = get_idx_fr_colrow(dst_col, dst_row);
-
-                if (white)
-                {
-                    piece = PieceType::WhitePawn;
-                    src_idx = get_idx_fr_colrow(src_col, dst_row - 1);
-                    board[src_idx] = PieceType::Empty;
-
-                    // Check if en passant:
-                    if ((PieceType)board[dst_idx] == PieceType::Empty)
-                    {
-                        int en_passant_pawn_idx = get_idx_fr_colrow(dst_col, dst_row - 1);
-                        if ((PieceType)board[en_passant_pawn_idx] == PieceType::BlackPawn)
-                        {
-                            board[en_passant_pawn_idx] = PieceType::Empty;
-                        }
-                    }
-                }
-                else
-                {
-                    piece = PieceType::BlackPawn;
-                    src_idx = get_idx_fr_colrow(src_col, dst_row + 1);
-                    board[src_idx] = PieceType::Empty;
-
-                    // Check if en passant:
-                    if ((PieceType)board[dst_idx] == PieceType::Empty)
-                    {
-                        int en_passant_pawn_idx = get_idx_fr_colrow(dst_col, dst_row + 1);
-                        if ((PieceType)board[en_passant_pawn_idx] == PieceType::WhitePawn)
-                        {
-                            board[en_passant_pawn_idx] = PieceType::Empty;
-                        }
-                    }
-                }
-
-                board[dst_idx] = piece;
-            }
-        }
-        break;
-    case 4:
-        // Need to check if isupper since pawn move will not have piece id -- just the src col.
-        if (isupper(mut_an_move[0]) == 1)
-        {
-            // Disambiguated minor/major piece move.
-            dst_col = mut_an_move[2];
-            dst_row = get_row_fr_char(mut_an_move[3]);
-            piece = Piece::fr_char(mut_an_move[0], white);
-
-            if (isdigit(mut_an_move[1]))
-            {
-                src_row = get_row_fr_char(mut_an_move[1]);
-
-                dst_idx = get_idx_fr_colrow(dst_col, dst_row);
-
-                for (int i = 0; i < CHESS_BOARD_LEN; i++)
-                {
-                    if (get_row_fr_idx(i) == src_row && board[i] == piece)
-                    {
-                        board[dst_idx] = piece;
-                        src_idx = i;
-                        board[src_idx] = PieceType::Empty;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                src_col = mut_an_move[1];
-
-                dst_idx = get_idx_fr_colrow(dst_col, dst_row);
-
-                for (int i = 0; i < CHESS_BOARD_LEN; i++)
-                {
-                    if (get_col_fr_idx(i) == src_col && board[i] == piece)
-                    {
-                        board[dst_idx] = piece;
-                        src_idx = i;
-                        board[src_idx] = PieceType::Empty;
-                        break;
-                    }
-                }
-            }
-        }
-        else
-        {
-            // Pawn promotion.
-            if (mut_an_move[2] == '=')
-            {
-                dst_row = get_row_fr_char(mut_an_move[1]);
-                dst_idx = get_idx_fr_colrow(mut_an_move[0], dst_row);
-                piece_char = mut_an_move[3];
-                piece = Piece::fr_char(piece_char, white);
-                PieceType promo_piece = piece;
-
-                if (white)
-                {
-                    piece = PieceType::WhitePawn;
-                }
-                else
-                {
-                    piece = PieceType::BlackPawn;
-                }
-
-                bool found = false;
-                for (int i = 0; i < CHESS_BOARD_LEN; i++)
-                {
-                    if (board[i] == piece)
-                    {
-                        std::vector<int> legal_moves = this->get_piece_moves(i, true);
-                        for (int j = 0; j < legal_moves.size(); j++)
-                        {
-                            if (legal_moves[j] == dst_idx)
-                            {
-                                src_idx = i;
-                                board[src_idx] = PieceType::Empty;
-                                found = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (found)
-                    {
-                        break;
-                    }
-                }
-
-                board[dst_idx] = promo_piece;
-            }
-        }
-        break;
-    case 5:
-        if (mut_an_move.compare("O-O-O") == 0)
-        {
-            // Queen side castle.
-            if (white)
-            {
-                int cur_rook_idx = get_idx_fr_colrow('a', 1);
-                int cur_king_idx = get_idx_fr_colrow('e', 1);
-                board[cur_rook_idx] = PieceType::Empty;
-                board[cur_king_idx] = PieceType::Empty;
-
-                int nxt_rook_idx = get_idx_fr_colrow('d', 1);
-                int nxt_king_idx = get_idx_fr_colrow('c', 1);
-                board[nxt_rook_idx] = PieceType::WhiteRook;
-                board[nxt_king_idx] = PieceType::WhiteKing;
-
-                src_idx = cur_king_idx;
-                dst_idx = nxt_king_idx;
-            }
-            else
-            {
-                int cur_rook_idx = get_idx_fr_colrow('a', 8);
-                int cur_king_idx = get_idx_fr_colrow('e', 8);
-                board[cur_rook_idx] = PieceType::Empty;
-                board[cur_king_idx] = PieceType::Empty;
-
-                int nxt_rook_idx = get_idx_fr_colrow('d', 8);
-                int nxt_king_idx = get_idx_fr_colrow('c', 8);
-                board[nxt_rook_idx] = PieceType::BlackRook;
-                board[nxt_king_idx] = PieceType::BlackKing;
-
-                src_idx = cur_king_idx;
-                dst_idx = nxt_king_idx;
-            }
-        }
-        else
-        {
-            // Need to check if isupper since pawn move will not have piece id -- just the src col.
-            if (isupper(mut_an_move[0]) == 1)
-            {
-                // Disambiguated queen move.
-                piece = Piece::fr_char(mut_an_move[0], white);
-                if (piece == PieceType::WhiteQueen || piece == PieceType::BlackQueen)
-                {
-                    src_col = mut_an_move[1];
-                    src_row = get_row_fr_char(mut_an_move[2]);
-                    dst_col = mut_an_move[3];
-                    dst_row = get_row_fr_char(mut_an_move[4]);
-
-                    src_idx = get_idx_fr_colrow(src_col, src_row);
-                    dst_idx = get_idx_fr_colrow(dst_col, dst_row);
-
-                    board[dst_idx] = piece;
-                    board[src_idx] = PieceType::Empty;
-                }
-            }
-            else
-            {
-                // Disambiguated pawn promotion.
-                if (mut_an_move[3] == '=')
-                {
-                    src_col = mut_an_move[0];
-                    dst_col = mut_an_move[1];
-                    dst_row = get_row_fr_char(mut_an_move[2]);
-                    dst_idx = get_idx_fr_colrow(dst_col, dst_row);
-                    char promo_piece_char = mut_an_move[4];
-                    PieceType promo_piece = Piece::fr_char(promo_piece_char, white);
-
-                    if (white)
-                    {
-                        src_row = dst_row - 1;
-                        piece = PieceType::WhitePawn;
-                    }
-                    else
-                    {
-                        src_row = dst_row + 1;
-                        piece = PieceType::BlackPawn;
-                    }
-
-                    src_idx = get_idx_fr_colrow(src_col, src_row);
-                    board[dst_idx] = promo_piece;
-                    board[src_idx] = PieceType::Empty;
-                }
-            }
-        }
-        break;
-    case 7: // schneizel custom move format.
-        piece = Piece::fr_char(mut_an_move[0], white);
-        src_col = mut_an_move[1];
-        src_row = get_row_fr_char(mut_an_move[2]);
-        src_idx = get_idx_fr_colrow(src_col, src_row);
-        dst_col = mut_an_move[3];
-        dst_row = get_row_fr_char(mut_an_move[4]);
-        dst_idx = get_idx_fr_colrow(dst_col, dst_row);
-
-        if (mut_an_move[5] == '=')
-        {
-            PieceType promo_piece = Piece::fr_char(mut_an_move[6], white);
-            board[dst_idx] = promo_piece;
-            board[src_idx] = PieceType::Empty;
-        }
-        else
-        {
-            board[dst_idx] = piece;
-            board[src_idx] = PieceType::Empty;
-        }
-        break;
-    default: // Nothing..
-        break;
-    }
-
-    Move chess_move{src_idx, dst_idx};
-    return chess_move;
-}
-
-Move Board::change(Move move, bool white)
-{
-    auto an_move = this->convert_move_to_an_move(move);
-    return this->change(an_move, white);
-}
-
-Move Board::change(bool white)
-{
-    return this->change(this->get_random_move(white), white);
-}
-
-Board Board::simulate(Move move, bool white)
-{
-    Board sim;
-    sim.copy(this);
-
-    sim.change(move, white);
+    sim.move = move;
+    sim.board.copy(this);
+    sim.board.change(move);
 
     return sim;
 }
 
-std::vector<Board> Board::simulate_all_moves(bool white)
+std::vector<Simulation> Board::simulate_all(bool white)
 {
-    std::vector<Board> sims;
+    std::vector<Simulation> sims;
 
-    int white_king_idx = 0;
-    int black_king_idx = 0;
+    auto all_moves = this->get_all_moves(white);
 
-    for (int i = 0; i < CHESS_BOARD_LEN; i++)
+    int move_idx = 0;
+
+    for (auto move : all_moves)
     {
-        bool check_moves = false;
+        auto sim = this->simulate(move);
+        sim.idx = move_idx;
+        sims.push_back(sim);
 
-        PieceType piece_typ = (PieceType)this->data_[i];
-
-        if (white)
-        {
-            if (Piece::is_white(piece_typ) && piece_typ)
-            {
-
-                if (piece_typ == PieceType::WhiteKing)
-                {
-                    white_king_idx = i;
-                }
-                else
-                {
-                    check_moves = true;
-                }
-            }
-        }
-        else
-        {
-            if (Piece::is_black(piece_typ))
-            {
-                if (piece_typ == PieceType::BlackKing)
-                {
-                    black_king_idx = i;
-                }
-                else
-                {
-                    check_moves = true;
-                }
-            }
-        }
-
-        if (check_moves)
-        {
-            std::vector<int> legal_moves = this->get_piece_moves(i, true);
-            for (int j = 0; j < legal_moves.size(); j++)
-            {
-                Board sim = this->simulate(Move{i, legal_moves[j]}, white);
-                sims.push_back(sim);
-            }
-        }
-    }
-
-    if (sims.size() == 0)
-    {
-        if (white)
-        {
-            std::vector<int> legal_moves = this->get_piece_moves(white_king_idx, true);
-            for (int j = 0; j < legal_moves.size(); j++)
-            {
-                Board sim = this->simulate(Move{white_king_idx, legal_moves[j]}, white);
-                sims.push_back(sim);
-            }
-        }
-        else
-        {
-            std::vector<int> legal_moves = this->get_piece_moves(black_king_idx, true);
-            for (int j = 0; j < legal_moves.size(); j++)
-            {
-                Board sim = this->simulate(Move{black_king_idx, legal_moves[j]}, white);
-                sims.push_back(sim);
-            }
-        }
+        move_idx++;
     }
 
     return sims;
 }
 
-bool Board::check(bool white)
+int Board::evaluate_material()
 {
-    bool in_check_flg = false;
-    int *board = this->data_;
+    int mat_eval = 0;
 
-    if (white)
+    for (int i = 0; i < BOARD_LEN; i++)
     {
-        for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
-        {
-            if (Piece::is_black((PieceType)board[piece_idx]))
-            {
-                std::vector<int> legal_moves = this->get_piece_moves(piece_idx, false);
-
-                for (int mov_idx = 0; mov_idx < legal_moves.size(); mov_idx++)
-                {
-                    if ((PieceType)board[legal_moves[mov_idx]] == PieceType::WhiteKing)
-                    {
-                        in_check_flg = true;
-                        break;
-                    }
-                }
-            }
-
-            if (in_check_flg)
-            {
-                break;
-            }
-        }
-    }
-    else
-    {
-        for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
-        {
-            if (Piece::is_white((PieceType)board[piece_idx]))
-            {
-                std::vector<int> legal_moves = this->get_piece_moves(piece_idx, false);
-
-                for (int mov_idx = 0; mov_idx < legal_moves.size(); mov_idx++)
-                {
-                    if ((PieceType)board[legal_moves[mov_idx]] == PieceType::BlackKing)
-                    {
-                        in_check_flg = true;
-                        break;
-                    }
-                }
-            }
-
-            if (in_check_flg)
-            {
-                break;
-            }
-        }
+        mat_eval += Piece::get_value(this->get_piece(i));
     }
 
-    return in_check_flg;
+    return mat_eval;
 }
 
-bool Board::checkmate(bool white)
+float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha, float beta)
 {
-    bool in_checkmate_flg;
-
-    int *board = this->data_;
-
-    if (this->check(white))
+    if (sim.board.is_checkmate(!white, false))
     {
-        in_checkmate_flg = true;
-
         if (white)
         {
-            for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
-            {
-                if (Piece::is_white((PieceType)board[piece_idx]))
-                {
-                    std::vector<int> legal_moves = this->get_piece_moves(piece_idx, true);
-
-                    if (legal_moves.size() > 0)
-                    {
-                        in_checkmate_flg = false;
-                        break;
-                    }
-                }
-            }
+            return EVAL_MAX_VAL;
         }
         else
         {
-            for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
-            {
-                if (Piece::is_black((PieceType)board[piece_idx]))
-                {
-                    std::vector<int> legal_moves = this->get_piece_moves(piece_idx, true);
-
-                    if (legal_moves.size() > 0)
-                    {
-                        in_checkmate_flg = false;
-                        break;
-                    }
-                }
-            }
+            return EVAL_MIN_VAL;
         }
-    }
-    else
-    {
-        in_checkmate_flg = false;
-    }
-
-    return in_checkmate_flg;
-}
-
-bool Board::stalemate(bool white)
-{
-    bool in_stalemate_flg;
-
-    int *board = this->data_;
-
-    if (!this->check(white))
-    {
-        in_stalemate_flg = true;
-
-        if (white)
-        {
-            for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
-            {
-                if (Piece::is_white((PieceType)board[piece_idx]))
-                {
-                    std::vector<int> legal_moves = this->get_piece_moves(piece_idx, true);
-
-                    if (legal_moves.size() > 0)
-                    {
-                        in_stalemate_flg = false;
-                        break;
-                    }
-                }
-            }
-        }
-        else
-        {
-            for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
-            {
-                if (Piece::is_black((PieceType)board[piece_idx]))
-                {
-                    std::vector<int> legal_moves = this->get_piece_moves(piece_idx, true);
-
-                    if (legal_moves.size() > 0)
-                    {
-                        in_stalemate_flg = false;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        in_stalemate_flg = false;
-    }
-
-    return in_stalemate_flg;
-}
-
-bool Board::insufficient_material()
-{
-    int white_knight_cnt = 0;
-    int white_bishop_cnt = 0;
-    int black_knight_cnt = 0;
-    int black_bishop_cnt = 0;
-
-    for (int i = 0; i < CHESS_BOARD_LEN; i++)
-    {
-        PieceType piece_typ = (PieceType)this->data_[i];
-
-        switch (piece_typ)
-        {
-        case PieceType::WhitePawn:
-        case PieceType::BlackPawn:
-            return false;
-        case PieceType::WhiteKnight:
-            white_knight_cnt++;
-            break;
-        case PieceType::BlackKnight:
-            black_knight_cnt++;
-            break;
-        case PieceType::WhiteBishop:
-            white_bishop_cnt++;
-            break;
-        case PieceType::BlackBishop:
-            black_bishop_cnt++;
-            break;
-        case PieceType::WhiteRook:
-        case PieceType::WhiteQueen:
-        case PieceType::BlackRook:
-        case PieceType::BlackQueen:
-            return false;
-        default:
-            break;
-        }
-    }
-
-    if (white_knight_cnt < 2 && white_bishop_cnt == 0 &&
-        black_knight_cnt < 2 && black_bishop_cnt == 0)
-    {
-        return true;
-    }
-    else if (white_knight_cnt == 0 && white_bishop_cnt < 2 &&
-             black_knight_cnt == 0 && black_bishop_cnt < 2)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
-    }
-}
-
-bool Board::game_over()
-{
-    BoardStatus sts = this->get_status();
-    if (sts == BoardStatus::Normal || sts == BoardStatus::WhiteInCheck || sts == BoardStatus::BlackInCheck)
-    {
-        return false;
-    }
-    else
-    {
-        return true;
-    }
-}
-
-BoardStatus Board::get_status()
-{
-    if (this->checkmate(true))
-    {
-        return BoardStatus::WhiteInCheckmate;
-    }
-    else if (this->checkmate(false))
-    {
-        return BoardStatus::BlackInCheckmate;
-    }
-    else if (this->stalemate(true))
-    {
-        return BoardStatus::WhiteInStalemate;
-    }
-    else if (this->stalemate(false))
-    {
-        return BoardStatus::BlackInStalemate;
-    }
-    else if (this->insufficient_material())
-    {
-        return BoardStatus::InsufficientMaterial;
-    }
-    else if (this->check(true))
-    {
-        return BoardStatus::WhiteInCheck;
-    }
-    else if (this->check(false))
-    {
-        return BoardStatus::BlackInCheck;
-    }
-    else
-    {
-        return BoardStatus::Normal;
-    }
-}
-
-void Board::print_status()
-{
-    printf("\n    Status: ");
-
-    switch (this->get_status())
-    {
-    case BoardStatus::Normal:
-        printf("Normal");
-        break;
-    case BoardStatus::WhiteInCheck:
-        printf("WhiteInCheck");
-        break;
-    case BoardStatus::BlackInCheck:
-        printf("BlackInCheck");
-        break;
-    case BoardStatus::WhiteInCheckmate:
-        printf("WhiteInCheckmate");
-        break;
-    case BoardStatus::BlackInCheckmate:
-        printf("BlackInCheckmate");
-        break;
-    case BoardStatus::WhiteInStalemate:
-        printf("WhiteInStalemate");
-        break;
-    case BoardStatus::BlackInStalemate:
-        printf("BlackInStalemate");
-        break;
-    case BoardStatus::InsufficientMaterial:
-        printf("InsufficientMaterial");
-        break;
-    default:
-        break;
-    }
-}
-
-int *Board::get_material()
-{
-    for (int i = 0; i < CHESS_BOARD_LEN; i++)
-    {
-        this->material_data_[i] = Piece::to_int((PieceType)this->data_[i]);
-    }
-
-    return this->material_data_;
-}
-
-int Board::sum_material()
-{
-    this->get_material();
-
-    int sum = 0;
-    for (int i = 0; i < CHESS_BOARD_LEN; i++)
-    {
-        sum += this->material_data_[i];
-    }
-    return sum;
-}
-
-int *Board::get_influence(bool test_check)
-{
-    memset(this->influence_data_, 0, sizeof(int) * CHESS_BOARD_LEN);
-
-    for (int piece_idx = 0; piece_idx < CHESS_BOARD_LEN; piece_idx++)
-    {
-        PieceType piece_typ = (PieceType)this->data_[piece_idx];
-
-        if (piece_typ != PieceType::Empty)
-        {
-            auto piece_inf = this->get_piece_influence(piece_idx, test_check);
-
-            for (int piece_inf_idx = 0; piece_inf_idx < piece_inf.size(); piece_inf_idx++)
-            {
-                int dst_idx = piece_inf[piece_inf_idx];
-
-                int val = 0;
-
-                if (Piece::is_white(piece_typ))
-                {
-                    val = 1;
-                }
-                else if (Piece::is_black(piece_typ))
-                {
-                    val = -1;
-                }
-
-                this->influence_data_[dst_idx] += val;
-            }
-        }
-    }
-
-    return this->influence_data_;
-}
-
-int Board::sum_influence(bool test_check)
-{
-    this->get_influence(test_check);
-
-    int sum = 0;
-    for (int i = 0; i < CHESS_BOARD_LEN; i++)
-    {
-        sum += this->influence_data_[i];
-    }
-    return sum;
-}
-
-void Board::one_hot_encode(int *out)
-{
-    memset(out, 0, sizeof(int) * CHESS_ONE_HOT_ENCODED_BOARD_LEN);
-
-    for (int i = 0; i < CHESS_BOARD_LEN; i++)
-    {
-        switch ((PieceType)this->data_[i])
-        {
-        case PieceType::WhitePawn:
-            out[i] = 1;
-            break;
-        case PieceType::WhiteKnight:
-            out[i + CHESS_BOARD_LEN] = 1;
-            break;
-        case PieceType::WhiteBishop:
-            out[i + (CHESS_BOARD_LEN * 2)] = 1;
-            break;
-        case PieceType::WhiteRook:
-            out[i + (CHESS_BOARD_LEN * 3)] = 1;
-            break;
-        case PieceType::WhiteQueen:
-            out[i + (CHESS_BOARD_LEN * 4)] = 1;
-            break;
-        case PieceType::WhiteKing:
-            out[i + (CHESS_BOARD_LEN * 5)] = 1;
-            break;
-        case PieceType::BlackPawn:
-            out[i] = -1;
-            break;
-        case PieceType::BlackKnight:
-            out[i + (CHESS_BOARD_LEN)] = -1;
-            break;
-        case PieceType::BlackBishop:
-            out[i + (CHESS_BOARD_LEN * 2)] = -1;
-            break;
-        case PieceType::BlackRook:
-            out[i + (CHESS_BOARD_LEN * 3)] = -1;
-            break;
-        case PieceType::BlackQueen:
-            out[i + (CHESS_BOARD_LEN * 4)] = -1;
-            break;
-        case PieceType::BlackKing:
-            out[i + (CHESS_BOARD_LEN * 5)] = -1;
-            break;
-        default: // ChessPiece::Empty:
-            break;
-        }
-    }
-}
-
-void Board::one_hot_encode(float *out)
-{
-    memset(out, 0, sizeof(float) * CHESS_ONE_HOT_ENCODED_BOARD_LEN);
-
-    for (int i = 0; i < CHESS_BOARD_LEN; i++)
-    {
-        switch ((PieceType)this->data_[i])
-        {
-        case PieceType::WhitePawn:
-            out[i] = 1.0f;
-            break;
-        case PieceType::WhiteKnight:
-            out[i + CHESS_BOARD_LEN] = 1.0f;
-            break;
-        case PieceType::WhiteBishop:
-            out[i + (CHESS_BOARD_LEN * 2)] = 1.0f;
-            break;
-        case PieceType::WhiteRook:
-            out[i + (CHESS_BOARD_LEN * 3)] = 1.0f;
-            break;
-        case PieceType::WhiteQueen:
-            out[i + (CHESS_BOARD_LEN * 4)] = 1.0f;
-            break;
-        case PieceType::WhiteKing:
-            out[i + (CHESS_BOARD_LEN * 5)] = 1.0f;
-            break;
-        case PieceType::BlackPawn:
-            out[i] = -1.0f;
-            break;
-        case PieceType::BlackKnight:
-            out[i + (CHESS_BOARD_LEN)] = -1.0f;
-            break;
-        case PieceType::BlackBishop:
-            out[i + (CHESS_BOARD_LEN * 2)] = -1.0f;
-            break;
-        case PieceType::BlackRook:
-            out[i + (CHESS_BOARD_LEN * 3)] = -1.0f;
-            break;
-        case PieceType::BlackQueen:
-            out[i + (CHESS_BOARD_LEN * 4)] = -1.0f;
-            break;
-        case PieceType::BlackKing:
-            out[i + (CHESS_BOARD_LEN * 5)] = -1.0f;
-            break;
-        default: // ChessPiece::Empty:
-            break;
-        }
-    }
-}
-
-float Board::evaluate()
-{
-    int mat_sum = this->sum_material();
-
-    return mat_sum * 1.0f;
-}
-
-float Board::minimax(int depth, bool white, float alpha, float beta)
-{
-    if (this->game_over())
-    {
-        return white ? -1000.0f : 1000.0f;
     }
 
     if (depth == 0)
     {
-        return this->evaluate();
+        return (float)sim.board.evaluate_material();
     }
 
-    if (white)
+    if (!white)
     {
-        float val = -1000.0f;
-        auto sims = this->simulate_all_moves(false);
+        float best_eval_val = EVAL_MIN_VAL;
+        auto sim_sims = sim.board.simulate_all(true);
 
-        for (auto sim : sims)
+        for (auto sim_sim : sim_sims)
         {
-            float eval = sim.minimax(depth - 1, false, alpha, beta);
+            float eval_val = Board::sim_minimax_sync(sim_sim, true, depth - 1, alpha, beta);
 
-            val = eval > val ? eval : val;
+            best_eval_val = eval_val > best_eval_val ? eval_val : best_eval_val;
 
-            alpha = eval > alpha ? eval : alpha;
+            alpha = eval_val > alpha ? eval_val : alpha;
             if (beta <= alpha)
             {
                 break;
             }
         }
 
-        return val;
+        return best_eval_val;
     }
     else
     {
-        float val = 1000.0f;
-        auto sims = this->simulate_all_moves(true);
+        float best_eval_val = EVAL_MAX_VAL;
+        auto sim_sims = sim.board.simulate_all(false);
 
-        for (auto sim : sims)
+        for (auto sim_sim : sim_sims)
         {
-            float eval = sim.minimax(depth - 1, true, alpha, beta);
+            float eval_val = Board::sim_minimax_sync(sim_sim, false, depth - 1, alpha, beta);
 
-            val = eval < val ? eval : val;
+            best_eval_val = eval_val < best_eval_val ? eval_val : best_eval_val;
 
-            beta = eval < beta ? eval : beta;
+            beta = eval_val < beta ? eval_val : beta;
             if (beta <= alpha)
             {
                 break;
             }
         }
 
-        return val;
+        return best_eval_val;
     }
 }
 
-void Board::change_minimax(bool white, int depth)
+void Board::sim_minimax_async(Simulation sim, bool white, int depth, float alpha, float beta, Evaluation *evals)
+{
+    float eval_val = Board::sim_minimax_sync(sim, white, depth, alpha, beta);
+    evals[sim.idx] = Evaluation{eval_val, sim.move};
+}
+
+Move Board::change_minimax_async(bool white, int depth)
 {
     auto sw = new CpuStopWatch();
     sw->start();
 
-    auto sims = this->simulate_all_moves(white);
+    Evaluation evals[BOARD_LEN];
 
-    float min = -1000.0f;
-    float max = 1000.0f;
+    auto sims = this->simulate_all(white);
 
-    float best_val = white ? min : max;
-    Board best_board;
+    float min = EVAL_MIN_VAL;
+    float max = EVAL_MAX_VAL;
+
+    float best_eval_val = white ? min : max;
+    Move best_move;
+
+    std::vector<std::thread> threads;
 
     for (auto sim : sims)
     {
-        float val = sim.minimax(depth - 1, white, min, max);
-
-        if (white && val > best_val)
-        {
-            best_val = val;
-            best_board = sim;
-        }
-        else if (!white && val < best_val)
-        {
-            best_val = val;
-            best_board = sim;
-        }
+        threads.push_back(std::thread(Board::sim_minimax_async, sim, white, depth, min, max, evals));
     }
 
-    this->copy(&best_board);
-    sw->stop();
-
-    sw->print_elapsed_seconds();
-
-    delete sw;
-}
-
-Board Openings::create(OpeningType typ, bool *white)
-{
-    Board board;
-
-    switch (typ)
+    for (auto &th : threads)
     {
-    case SicilianDefense:
-        board.change("e4", *white);
-        *white = !*white;
-        board.change("c5", *white);
-        *white = !*white;
-        break;
-    case FrenchDefense:
-        board.change("e4", *white);
-        *white = !*white;
-        board.change("e6", *white);
-        *white = !*white;
-        break;
-    case RuyLopezOpening:
-        board.change("e4", *white);
-        *white = !*white;
-        board.change("e5", *white);
-        *white = !*white;
-        board.change("Nf3", *white);
-        *white = !*white;
-        board.change("Nc6", *white);
-        *white = !*white;
-        board.change("Bb5", *white);
-        *white = !*white;
-        break;
-    case CaroKannDefense:
-        board.change("e4", *white);
-        *white = !*white;
-        board.change("c6", *white);
-        *white = !*white;
-        break;
-    case ItalianGame:
-        board.change("e4", *white);
-        *white = !*white;
-        board.change("e5", *white);
-        *white = !*white;
-        board.change("Nf3", *white);
-        *white = !*white;
-        board.change("Nc6", *white);
-        *white = !*white;
-        board.change("Bc4", *white);
-        *white = !*white;
-        break;
-    case SicilianDefenseClosed:
-        board.change("e4", *white);
-        *white = !*white;
-        board.change("c5", *white);
-        *white = !*white;
-        board.change("Nc3", *white);
-        *white = !*white;
-        break;
-    case ScandinavianDefense:
-        board.change("e4", *white);
-        *white = !*white;
-        board.change("d5", *white);
-        *white = !*white;
-        break;
-    case PircDefense:
-        board.change("e4", *white);
-        *white = !*white;
-        board.change("d6", *white);
-        *white = !*white;
-        board.change("d4", *white);
-        *white = !*white;
-        board.change("Nf6", *white);
-        *white = !*white;
-        break;
-    case SicilianDefenseAlapinVariation:
-        board.change("e4", *white);
-        *white = !*white;
-        board.change("c5", *white);
-        *white = !*white;
-        board.change("c3", *white);
-        *white = !*white;
-        break;
-    case AlekhinesDefense:
-        board.change("e4", *white);
-        *white = !*white;
-        board.change("Nf6", *white);
-        *white = !*white;
-        break;
-    case KingsGambit:
-        board.change("e4", *white);
-        *white = !*white;
-        board.change("e5", *white);
-        *white = !*white;
-        board.change("f4", *white);
-        *white = !*white;
-        break;
-    case ScotchGame:
-        board.change("e4", *white);
-        *white = !*white;
-        board.change("e5", *white);
-        *white = !*white;
-        board.change("Nf3", *white);
-        *white = !*white;
-        board.change("Nc6", *white);
-        *white = !*white;
-        board.change("d4", *white);
-        *white = !*white;
-        break;
-    case ViennaGame:
-        board.change("e4", *white);
-        *white = !*white;
-        board.change("e5", *white);
-        *white = !*white;
-        board.change("Nc3", *white);
-        *white = !*white;
-        break;
-    case QueensGambit:
-        board.change("d4", *white);
-        *white = !*white;
-        board.change("d5", *white);
-        *white = !*white;
-        board.change("c4", *white);
-        *white = !*white;
-        break;
-    case SlavDefense:
-        board.change("d4", *white);
-        *white = !*white;
-        board.change("d5", *white);
-        *white = !*white;
-        board.change("c4", *white);
-        *white = !*white;
-        board.change("c6", *white);
-        *white = !*white;
-        break;
-    case KingsIndianDefense:
-        board.change("d4", *white);
-        *white = !*white;
-        board.change("Nf6", *white);
-        *white = !*white;
-        board.change("c4", *white);
-        *white = !*white;
-        board.change("g6", *white);
-        *white = !*white;
-        break;
-    case NimzoIndianDefense:
-        board.change("d4", *white);
-        *white = !*white;
-        board.change("Nf6", *white);
-        *white = !*white;
-        board.change("c4", *white);
-        *white = !*white;
-        board.change("e6", *white);
-        *white = !*white;
-        board.change("Nc3", *white);
-        *white = !*white;
-        board.change("Bb4", *white);
-        *white = !*white;
-        break;
-    case QueensIndianDefense:
-        board.change("d4", *white);
-        *white = !*white;
-        board.change("Nf6", *white);
-        *white = !*white;
-        board.change("c4", *white);
-        *white = !*white;
-        board.change("e6", *white);
-        *white = !*white;
-        board.change("Nf3", *white);
-        *white = !*white;
-        board.change("b6", *white);
-        *white = !*white;
-        break;
-    case CatalanOpening:
-        board.change("d4", *white);
-        *white = !*white;
-        board.change("Nf6", *white);
-        *white = !*white;
-        board.change("c4", *white);
-        *white = !*white;
-        board.change("e6", *white);
-        *white = !*white;
-        board.change("g3", *white);
-        *white = !*white;
-        break;
-    case BogoIndianDefense:
-        board.change("d4", *white);
-        *white = !*white;
-        board.change("Nf6", *white);
-        *white = !*white;
-        board.change("c4", *white);
-        *white = !*white;
-        board.change("e6", *white);
-        *white = !*white;
-        board.change("Nf3", *white);
-        *white = !*white;
-        board.change("Bb4+", *white);
-        *white = !*white;
-        break;
-    case GrunfeldDefense:
-        board.change("d4", *white);
-        *white = !*white;
-        board.change("Nf6", *white);
-        *white = !*white;
-        board.change("c4", *white);
-        *white = !*white;
-        board.change("g6", *white);
-        *white = !*white;
-        board.change("Nc3", *white);
-        *white = !*white;
-        board.change("d5", *white);
-        *white = !*white;
-        break;
-    case DutchDefense:
-        board.change("d4", *white);
-        *white = !*white;
-        board.change("f5", *white);
-        *white = !*white;
-        break;
-    case TrompowskyAttack:
-        board.change("d4", *white);
-        *white = !*white;
-        board.change("Nf6", *white);
-        *white = !*white;
-        board.change("Bg5", *white);
-        *white = !*white;
-        break;
-    case BenkoGambit:
-        board.change("d4", *white);
-        *white = !*white;
-        board.change("Nf6", *white);
-        *white = !*white;
-        board.change("c4", *white);
-        *white = !*white;
-        board.change("c5", *white);
-        *white = !*white;
-        board.change("d5", *white);
-        *white = !*white;
-        board.change("b5", *white);
-        *white = !*white;
-        break;
-    case LondonSystem:
-        board.change("d4", *white);
-        *white = !*white;
-        board.change("d5", *white);
-        *white = !*white;
-        board.change("Nf3", *white);
-        *white = !*white;
-        board.change("Nf6", *white);
-        *white = !*white;
-        board.change("Bf4", *white);
-        *white = !*white;
-        break;
-    case BenoniDefense:
-        board.change("d4", *white);
-        *white = !*white;
-        board.change("Nf6", *white);
-        *white = !*white;
-        board.change("c4", *white);
-        *white = !*white;
-        board.change("c5", *white);
-        *white = !*white;
-        board.change("d5", *white);
-        *white = !*white;
-        board.change("e6", *white);
-        *white = !*white;
-        board.change("Nc3", *white);
-        *white = !*white;
-        board.change("exd5", *white);
-        *white = !*white;
-        board.change("cxd5", *white);
-        *white = !*white;
-        board.change("d6", *white);
-        *white = !*white;
-        break;
-    default:
-        break;
+        th.join();
     }
 
-    return board;
-}
+    std::vector<Evaluation> ties;
 
-Board Openings::create_rand_e4(bool *white)
-{
-    OpeningType typ = (OpeningType)((rand() % CHESS_OPENING_E4_CNT) + CHESS_OPENING_E4);
-    return Openings::create(typ, white);
-}
+    for (int i = 0; i < sims.size(); i++)
+    {
+        auto eval = evals[i];
 
-Board Openings::create_rand_d4(bool *white)
-{
-    OpeningType typ = (OpeningType)((rand() % CHESS_OPENING_D4_CNT) + CHESS_OPENING_D4);
-    return Openings::create(typ, white);
+        printf("MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_move_str(eval.move).c_str(),
+               eval.move.src_square, eval.move.dst_square, eval.value);
+
+        if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
+        {
+            best_eval_val = eval.value;
+            best_move = eval.move;
+
+            ties.clear();
+        }
+        else if (eval.value == best_eval_val)
+        {
+            ties.push_back(eval);
+        }
+    }
+
+    printf("TIES: %d\n", ties.size());
+    if (ties.size() > 0)
+    {
+        int rand_idx = rand() % ties.size();
+        best_move = ties[rand_idx].move;
+    }
+
+    printf("BEST MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_move_str(best_move).c_str(),
+           best_move.src_square, best_move.dst_square, best_eval_val);
+
+    this->change(best_move);
+
+    sw->stop();
+    sw->print_elapsed_seconds();
+    delete sw;
+
+    return best_move;
 }
 
 CpuStopWatch::CpuStopWatch()

@@ -1,203 +1,131 @@
 #pragma once
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-
 #include <iostream>
 #include <vector>
+#include <thread>
+#include <mutex>
 
 #include <windows.h>
 
-#define CHESS_BOARD_ROW_CNT 8
-#define CHESS_BOARD_COL_CNT 8
-#define CHESS_BOARD_LEN (CHESS_BOARD_COL_CNT * CHESS_BOARD_ROW_CNT)
+#define ROW_CNT 8
+#define COL_CNT 8
+#define BOARD_LEN (ROW_CNT * COL_CNT)
 
-#define CHESS_MOVE_LIMIT 250
+#define MT ' '
+#define WP 'P'
+#define WN 'N'
+#define WB 'B'
+#define WR 'R'
+#define WQ 'Q'
+#define WK 'K'
+#define BP 'p'
+#define BN 'n'
+#define BB 'b'
+#define BR 'r'
+#define BQ 'q'
+#define BK 'k'
 
-#define CHESS_INVALID_VALUE -1
-
-#define CHESS_ONE_HOT_ENCODE_COMBINATION_CNT 6
-#define CHESS_ONE_HOT_ENCODED_BOARD_LEN (CHESS_BOARD_LEN * CHESS_ONE_HOT_ENCODE_COMBINATION_CNT)
-
-#define CHESS_OPENING_E4 1000
-#define CHESS_OPENING_E4_CNT 13
-#define CHESS_OPENING_D4 2000
-#define CHESS_OPENING_D4_CNT 13
-#define CHESS_OPENING_OTHER 3000
-#define CHESS_OPENING_OTHER_CNT 12
+#define EVAL_MIN_VAL -1000.0f
+#define EVAL_MAX_VAL 1000.0f
 
 namespace chess
 {
-    enum PieceType
+    struct Move
     {
-        Empty = 0,
-        WhitePawn = 1,
-        WhiteKnight = 2,
-        WhiteBishop = 3,
-        WhiteRook = 4,
-        WhiteQueen = 5,
-        WhiteKing = 6,
-        BlackPawn = -1,
-        BlackKnight = -2,
-        BlackBishop = -3,
-        BlackRook = -4,
-        BlackQueen = -5,
-        BlackKing = -6
+        int src_square;
+        int dst_square;
+    };
+
+    struct Evaluation
+    {
+        float value;
+        Move move;
     };
 
     class Piece
     {
     public:
-        static PieceType fr_char(char piece_id, bool white);
-        static char fr_piece(PieceType piece);
-        static bool is_white(PieceType piece);
-        static bool is_black(PieceType piece);
-        static bool is_same_color(PieceType a, PieceType b);
-        static int to_int(PieceType typ);
-        static const char *to_str(PieceType typ);
-        static const char *to_pretty_str(PieceType typ);
+        static bool is_white(char piece);
+        static bool is_black(char piece);
+        static bool is_same_color(char piece_a, char piece_b);
+        static const char *to_str(char piece);
+        static int get_value(char piece);
+        static char get_str_id(char piece);
     };
 
-    struct Move
+    struct CastleState
     {
-        int src_idx;
-        int dst_idx;
+        bool white_king_moved = false;
+        bool black_king_moved = false;
+        bool white_right_rook_moved = false;
+        bool white_left_rook_moved = false;
+        bool black_right_rook_moved = false;
+        bool black_left_rook_moved = false;
     };
 
-    enum BoardStatus
-    {
-        Normal,
-        WhiteInCheck,
-        BlackInCheck,
-        WhiteInCheckmate,
-        BlackInCheckmate,
-        WhiteInStalemate,
-        BlackInStalemate,
-        InsufficientMaterial
-    };
-
-    enum BoardAnalysisType
-    {
-        PieceTypes,
-        Material,
-        Influence
-    };
+    struct Simulation;
 
     class Board
     {
     private:
-        int data_[CHESS_BOARD_LEN];
-        int material_data_[CHESS_BOARD_LEN];
-        int influence_data_[CHESS_BOARD_LEN];
-        int attack_opportunities_data_[CHESS_BOARD_LEN];
+        char data_[BOARD_LEN];
+        CastleState castle_state_;
 
-        static int get_col_fr_adj_col(int adj_col);
-        static int get_adj_col_fr_col(char col);
-        static int get_row_fr_char(char row);
-        static int get_adj_row_fr_row(int row);
-        static int get_adj_col_fr_idx(int idx);
-        static int get_adj_row_fr_idx(int idx);
-        static char get_col_fr_idx(int idx);
-        static int get_row_fr_idx(int idx);
-        static int get_idx_fr_colrow(char col, int row);
-        static int get_idx_fr_adj_colrow(int adj_col, int adj_row);
+        static int get_row(int square);
+        static int get_row(char alpha_row);
+        static int get_col(int square);
+        static int get_col(char alpha_col);
+        static char get_alpha_col(int col);
+        static int get_square(int row, int col);
         static bool is_row_valid(int row);
-        static bool is_adj_colrow_valid(int adj_col, int adj_row);
+        static bool is_col_valid(int col);
 
-        bool is_square_under_attack(int idx, bool white);
+        bool is_square_under_attack(int square, bool by_white);
+        bool is_check(bool by_white);
+        bool is_checkmate(bool by_white, bool assume_check);
 
-        void get_piece_straight_moves(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out);
-        void get_piece_straight_influence(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out);
-        void get_piece_diagonal_moves(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out);
-        void get_piece_diagonal_influence(PieceType piece, int adj_col, int adj_row, int cnt, std::vector<int> *out);
+        std::vector<Move> get_diagonal_moves(int square, char piece, int row, int col);
+        std::vector<Move> get_straight_moves(int square, char piece, int row, int col);
+
+        static float sim_minimax_sync(Simulation sim, bool white, int depth, float alpha, float beta);
+        static void sim_minimax_async(Simulation sim, bool white, int depth, float alpha, float beta, Evaluation *evals);
 
     public:
         Board();
         ~Board();
 
-        bool operator==(const Board &);
-        bool operator!=(const Board &);
-
         void reset();
         void copy(Board *src);
 
-        static void print(int *board);
         void print();
-        void pretty_print();
-        void print_analysis(BoardAnalysisType typ);
+        void print(Move move);
 
-        std::vector<int> get_piece_moves(int piece_idx, bool test_check);
-        std::vector<int> get_piece_influence(int piece_idx, bool test_check);
+        char get_piece(int square);
 
-        Move get_random_move(bool white);
-        std::string convert_move_to_an_move(Move move);
+        std::vector<Move> get_moves(int square, bool test_check);
+        std::vector<Move> get_all_moves(bool white);
 
-        Move change(std::string an_move, bool white);
-        Move change(Move move, bool white);
-        Move change(bool white);
-        Board simulate(Move move, bool white);
-        std::vector<Board> simulate_all_moves(bool white);
+        // NOTE: this will only work if invoked BEFORE move is made to board.
+        std::string convert_move_to_move_str(Move move);
 
-        bool check(bool white);
-        bool checkmate(bool white);
-        bool stalemate(bool white);
-        bool insufficient_material();
-        bool game_over();
+        void change(Move move);
+        Move change(std::string move_str, bool white);
+        Move change_random(bool white);
 
-        BoardStatus get_status();
-        void print_status();
+        Simulation simulate(Move move);
+        std::vector<Simulation> simulate_all(bool white);
 
-        int *get_material();
-        int sum_material();
-        int *get_influence(bool test_check);
-        int sum_influence(bool test_check);
+        int evaluate_material();
 
-        void one_hot_encode(int *out);
-        void one_hot_encode(float *out);
-
-        float evaluate();
-        float minimax(int depth, bool white, float alpha, float beta);
-        void change_minimax(bool white, int depth);
+        // NOTE: depth should be EVEN number!
+        Move change_minimax_async(bool white, int depth);
     };
 
-    enum OpeningType
+    struct Simulation
     {
-        SicilianDefense = CHESS_OPENING_E4,
-        FrenchDefense = CHESS_OPENING_E4 + 1,
-        RuyLopezOpening = CHESS_OPENING_E4 + 2,
-        CaroKannDefense = CHESS_OPENING_E4 + 3,
-        ItalianGame = CHESS_OPENING_E4 + 4,
-        SicilianDefenseClosed = CHESS_OPENING_E4 + 5,
-        ScandinavianDefense = CHESS_OPENING_E4 + 6,
-        PircDefense = CHESS_OPENING_E4 + 7,
-        SicilianDefenseAlapinVariation = CHESS_OPENING_E4 + 8,
-        AlekhinesDefense = CHESS_OPENING_E4 + 9,
-        KingsGambit = CHESS_OPENING_E4 + 10,
-        ScotchGame = CHESS_OPENING_E4 + 11,
-        ViennaGame = CHESS_OPENING_E4 + 12,
-        QueensGambit = CHESS_OPENING_D4,
-        SlavDefense = CHESS_OPENING_D4 + 1,
-        KingsIndianDefense = CHESS_OPENING_D4 + 2,
-        NimzoIndianDefense = CHESS_OPENING_D4 + 3,
-        QueensIndianDefense = CHESS_OPENING_D4 + 4,
-        CatalanOpening = CHESS_OPENING_D4 + 5,
-        BogoIndianDefense = CHESS_OPENING_D4 + 6,
-        GrunfeldDefense = CHESS_OPENING_D4 + 7,
-        DutchDefense = CHESS_OPENING_D4 + 8,
-        TrompowskyAttack = CHESS_OPENING_D4 + 9,
-        BenkoGambit = CHESS_OPENING_D4 + 10,
-        LondonSystem = CHESS_OPENING_D4 + 11,
-        BenoniDefense = CHESS_OPENING_D4 + 12,
-    };
-
-    class Openings
-    {
-    public:
-        static Board create(OpeningType typ, bool *white);
-        static Board create_rand_e4(bool *white);
-        static Board create_rand_d4(bool *white);
+        int idx = -1;
+        Move move;
+        Board board;
     };
 
     class StopWatch

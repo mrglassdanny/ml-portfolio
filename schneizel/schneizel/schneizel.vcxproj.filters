@@ -21,15 +21,9 @@
     <ClCompile Include="src\chess.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\fastchess.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\chess.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\fastchess.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
