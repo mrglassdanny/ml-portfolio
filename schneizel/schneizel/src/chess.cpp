@@ -1156,7 +1156,7 @@ bool Board::is_check(bool by_white)
             }
         }
 
-        return this->is_square_under_attack(black_king_square, by_white);
+        return this->is_square_under_attack(black_king_square, true);
     }
     else
     {
@@ -1170,7 +1170,7 @@ bool Board::is_check(bool by_white)
             }
         }
 
-        return this->is_square_under_attack(white_king_square, by_white);
+        return this->is_square_under_attack(white_king_square, false);
     }
 
     return false;
@@ -1196,17 +1196,17 @@ bool Board::change(Move move, bool test_check)
 
     if (test_check)
     {
-        this->simulate(move);
+        auto sim = this->simulate(move);
         if (Piece::is_white(src_piece))
         {
-            if (this->is_check(false))
+            if (sim.board.is_check(false))
             {
                 return false;
             }
         }
         else
         {
-            if (this->is_check(true))
+            if (sim.board.is_check(true))
             {
                 return false;
             }
@@ -1536,8 +1536,25 @@ Move Board::change_minimax_async(bool white, int depth)
     bool success = this->change(best_move, true);
     if (!success)
     {
-        // TODO
-        printf("SHIT!\n");
+        for (auto tie : ties)
+        {
+            if (this->change(tie.move, true))
+            {
+                best_move = tie.move;
+                break;
+            }
+        }
+
+        for (auto sim : sims)
+        {
+            if (this->change(sim.move, true))
+            {
+                best_move = sim.move;
+                break;
+            }
+        }
+
+        printf("\n ===================================== SHOULDNT BE HERE!!!\n");
     }
 
     sw->stop();
