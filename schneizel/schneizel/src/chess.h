@@ -80,10 +80,6 @@ namespace chess
         static bool is_row_valid(int row);
         static bool is_col_valid(int col);
 
-        bool is_square_under_attack(int square, bool by_white);
-        bool is_check(bool by_white);
-        bool is_checkmate(bool by_white, bool assume_check);
-
         std::vector<Move> get_diagonal_moves(int square, char piece, int row, int col);
         std::vector<Move> get_straight_moves(int square, char piece, int row, int col);
 
@@ -114,6 +110,11 @@ namespace chess
             NOTE: this will only work if invoked BEFORE move is made to board!
         */
         std::string convert_move_to_move_str(Move move);
+
+        bool has_moves(bool white);
+        bool is_square_under_attack(int square, bool by_white);
+        bool is_check(bool by_white);
+        bool is_checkmate(bool by_white);
 
         void change(Move move);
         Move change(std::string move_str, bool white);

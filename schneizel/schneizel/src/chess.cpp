@@ -418,135 +418,6 @@ char Board::get_piece(int square)
     return this->data_[square];
 }
 
-bool Board::is_square_under_attack(int square, bool by_white)
-{
-    for (int i = 0; i < BOARD_LEN; i++)
-    {
-        char piece = this->get_piece(i);
-
-        if (by_white && Piece::is_white(piece))
-        {
-            auto moves = this->get_moves(i, false);
-            for (auto move : moves)
-            {
-                if (move.dst_square == square)
-                {
-                    return true;
-                }
-            }
-        }
-        else if (!by_white && Piece::is_black(piece))
-        {
-            auto moves = this->get_moves(i, false);
-            for (auto move : moves)
-            {
-                if (move.dst_square == square)
-                {
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
-}
-
-bool Board::is_check(bool by_white)
-{
-    if (by_white)
-    {
-        int black_king_square = -1;
-        for (int i = BOARD_LEN - 1; i >= 0; i--)
-        {
-            if (this->get_piece(i) == BK)
-            {
-                black_king_square = i;
-                break;
-            }
-        }
-
-        for (int i = 0; i < BOARD_LEN; i++)
-        {
-            switch (this->get_piece(i))
-            {
-            case WP:
-            case WN:
-            case WB:
-            case WR:
-            case WQ:
-            case WK:
-            {
-                auto moves = this->get_moves(i, false);
-                for (auto move : moves)
-                {
-                    if (move.dst_square == black_king_square)
-                    {
-                        return true;
-                    }
-                }
-            }
-            break;
-            default:
-                break;
-            }
-        }
-    }
-    else
-    {
-        int white_king_square = -1;
-        for (int i = 0; i < BOARD_LEN; i++)
-        {
-            if (this->get_piece(i) == WK)
-            {
-                white_king_square = i;
-                break;
-            }
-        }
-
-        for (int i = 0; i < BOARD_LEN; i++)
-        {
-            switch (this->get_piece(i))
-            {
-            case BP:
-            case BN:
-            case BB:
-            case BR:
-            case BQ:
-            case BK:
-            {
-                auto moves = this->get_moves(i, false);
-                for (auto move : moves)
-                {
-                    if (move.dst_square == white_king_square)
-                    {
-                        return true;
-                    }
-                }
-            }
-            break;
-            default:
-                break;
-            }
-        }
-    }
-
-    return false;
-}
-
-bool Board::is_checkmate(bool by_white, bool assume_check)
-{
-    if (!assume_check)
-    {
-        if (!this->is_check(by_white))
-        {
-            return false;
-        }
-    }
-
-    auto sims = this->simulate_all(!by_white);
-    return sims.size() == 0;
-}
-
 std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int col)
 {
     std::vector<Move> moves;
@@ -1193,6 +1064,127 @@ std::string Board::convert_move_to_move_str(Move move)
     return move_str;
 }
 
+bool Board::has_moves(bool white)
+{
+    if (white)
+    {
+        for (int i = 0; i < BOARD_LEN; i++)
+        {
+            if (Piece::is_white(this->get_piece(i)))
+            {
+                auto moves = this->get_moves(i, true);
+                if (moves.size() > 0)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+    else
+    {
+        for (int i = BOARD_LEN - 1; i >= 0; i--)
+        {
+            if (Piece::is_black(this->get_piece(i)))
+            {
+                auto moves = this->get_moves(i, true);
+                if (moves.size() > 0)
+                {
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+bool Board::is_square_under_attack(int square, bool by_white)
+{
+    if (by_white)
+    {
+        for (int i = 0; i < BOARD_LEN; i++)
+        {
+            if (Piece::is_white(this->get_piece(i)))
+            {
+                auto moves = this->get_moves(i, false);
+                for (auto move : moves)
+                {
+                    if (move.dst_square == square)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        for (int i = BOARD_LEN - 1; i >= 0; i--)
+        {
+            if (Piece::is_black(this->get_piece(i)))
+            {
+                auto moves = this->get_moves(i, false);
+                for (auto move : moves)
+                {
+                    if (move.dst_square == square)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+bool Board::is_check(bool by_white)
+{
+    if (by_white)
+    {
+        int black_king_square = -1;
+        for (int i = BOARD_LEN - 1; i >= 0; i--)
+        {
+            if (this->get_piece(i) == BK)
+            {
+                black_king_square = i;
+                break;
+            }
+        }
+
+        return this->is_square_under_attack(black_king_square, by_white);
+    }
+    else
+    {
+        int white_king_square = -1;
+        for (int i = 0; i < BOARD_LEN; i++)
+        {
+            if (this->get_piece(i) == WK)
+            {
+                white_king_square = i;
+                break;
+            }
+        }
+
+        return this->is_square_under_attack(white_king_square, by_white);
+    }
+
+    return false;
+}
+
+bool Board::is_checkmate(bool by_white)
+{
+    if (this->is_check(by_white))
+    {
+        if (!this->has_moves(!by_white))
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 void Board::change(Move move)
 {
     char src_piece = this->get_piece(move.src_square);
@@ -1403,7 +1395,7 @@ int Board::evaluate_material()
 
 float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha, float beta)
 {
-    if (sim.board.is_checkmate(!white, false))
+    if (sim.board.is_checkmate(!white))
     {
         if (white)
         {
@@ -1501,8 +1493,8 @@ Move Board::change_minimax_async(bool white, int depth)
     {
         auto eval = evals[i];
 
-        printf("MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_move_str(eval.move).c_str(),
-               eval.move.src_square, eval.move.dst_square, eval.value);
+        // printf("MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_move_str(eval.move).c_str(),
+        //        eval.move.src_square, eval.move.dst_square, eval.value);
 
         if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
         {
@@ -1517,15 +1509,17 @@ Move Board::change_minimax_async(bool white, int depth)
         }
     }
 
-    printf("TIES: %d\n", ties.size());
+    // printf("TIES: %d\n", ties.size());
     if (ties.size() > 0)
     {
-        int rand_idx = rand() % ties.size();
-        best_move = ties[rand_idx].move;
+        // int rand_idx = rand() % ties.size();
+        // best_move = ties[rand_idx].move;
+
+        best_move = ties[0].move;
     }
 
-    printf("BEST MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_move_str(best_move).c_str(),
-           best_move.src_square, best_move.dst_square, best_eval_val);
+    // printf("BEST MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_move_str(best_move).c_str(),
+    //        best_move.src_square, best_move.dst_square, best_eval_val);
 
     this->change(best_move);
 
