@@ -57,13 +57,6 @@ void play(bool white, int depth)
 
 		if (white)
 		{
-			auto moves = board.get_all_moves(true);
-			for (auto move : moves)
-			{
-				printf("MOVE: %s (%d->%d)\n", board.convert_move_to_move_str(move).c_str(),
-					   move.src_square, move.dst_square);
-			}
-
 			std::string move_str;
 			printf("Move: ");
 			std::cin >> move_str;
@@ -81,13 +74,6 @@ void play(bool white, int depth)
 
 		if (!white)
 		{
-			auto moves = board.get_all_moves(false);
-			for (auto move : moves)
-			{
-				printf("MOVE: %s (%d->%d)\n", board.convert_move_to_move_str(move).c_str(),
-					   move.src_square, move.dst_square);
-			}
-
 			std::string move_str;
 			printf("Move: ");
 			std::cin >> move_str;

@@ -1160,7 +1160,6 @@ std::string Board::convert_move_to_move_str(Move move)
     int dst_col = Board::get_col(move.dst_square);
     int dst_row = Board::get_row(move.dst_square);
 
-    // Check for castle.
     if (piece == WK || piece == BK)
     {
         if ((src_col - dst_col) == -2)
@@ -1174,9 +1173,6 @@ std::string Board::convert_move_to_move_str(Move move)
             return move_str;
         }
     }
-
-    // Example format going forward: piece id|src col|src row|dst col|dst row|promo ind|promo piece id
-    // ^always 7 chars
 
     move_str += piece_str_id;
 
