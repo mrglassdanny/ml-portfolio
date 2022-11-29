@@ -1393,7 +1393,7 @@ int Board::evaluate_material()
     return mat_eval;
 }
 
-float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha, float beta)
+int Board::sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, int beta)
 {
     if (sim.board.is_checkmate(!white))
     {
@@ -1409,17 +1409,17 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha
 
     if (depth == 0)
     {
-        return (float)sim.board.evaluate_material();
+        return sim.board.evaluate_material();
     }
 
     if (!white)
     {
-        float best_eval_val = EVAL_MIN_VAL;
+        int best_eval_val = EVAL_MIN_VAL;
         auto sim_sims = sim.board.simulate_all(true);
 
         for (auto sim_sim : sim_sims)
         {
-            float eval_val = Board::sim_minimax_sync(sim_sim, true, depth - 1, alpha, beta);
+            int eval_val = Board::sim_minimax_sync(sim_sim, true, depth - 1, alpha, beta);
 
             best_eval_val = eval_val > best_eval_val ? eval_val : best_eval_val;
 
@@ -1434,12 +1434,12 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha
     }
     else
     {
-        float best_eval_val = EVAL_MAX_VAL;
+        int best_eval_val = EVAL_MAX_VAL;
         auto sim_sims = sim.board.simulate_all(false);
 
         for (auto sim_sim : sim_sims)
         {
-            float eval_val = Board::sim_minimax_sync(sim_sim, false, depth - 1, alpha, beta);
+            int eval_val = Board::sim_minimax_sync(sim_sim, false, depth - 1, alpha, beta);
 
             best_eval_val = eval_val < best_eval_val ? eval_val : best_eval_val;
 
@@ -1454,9 +1454,9 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha
     }
 }
 
-void Board::sim_minimax_async(Simulation sim, bool white, int depth, float alpha, float beta, Evaluation *evals)
+void Board::sim_minimax_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals)
 {
-    float eval_val = Board::sim_minimax_sync(sim, white, depth, alpha, beta);
+    int eval_val = Board::sim_minimax_sync(sim, white, depth, alpha, beta);
     evals[sim.idx] = Evaluation{eval_val, sim.move};
 }
 
@@ -1469,10 +1469,10 @@ Move Board::change_minimax_async(bool white, int depth)
 
     auto sims = this->simulate_all(white);
 
-    float min = EVAL_MIN_VAL;
-    float max = EVAL_MAX_VAL;
+    int min = EVAL_MIN_VAL;
+    int max = EVAL_MAX_VAL;
 
-    float best_eval_val = white ? min : max;
+    int best_eval_val = white ? min : max;
     Move best_move;
 
     std::vector<std::thread> threads;
@@ -1493,7 +1493,7 @@ Move Board::change_minimax_async(bool white, int depth)
     {
         auto eval = evals[i];
 
-        // printf("MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_move_str(eval.move).c_str(),
+        // printf("MOVE: %s (%d->%d)\tEVAL: %d\n", this->convert_move_to_move_str(eval.move).c_str(),
         //        eval.move.src_square, eval.move.dst_square, eval.value);
 
         if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
@@ -1518,7 +1518,7 @@ Move Board::change_minimax_async(bool white, int depth)
         best_move = ties[0].move;
     }
 
-    // printf("BEST MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_move_str(best_move).c_str(),
+    // printf("BEST MOVE: %s (%d->%d)\tEVAL: %d\n", this->convert_move_to_move_str(best_move).c_str(),
     //        best_move.src_square, best_move.dst_square, best_eval_val);
 
     this->change(best_move);
