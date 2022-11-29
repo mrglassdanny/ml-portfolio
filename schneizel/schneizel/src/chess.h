@@ -98,7 +98,7 @@ namespace chess
 
         char get_piece(int square);
 
-        std::vector<Move> get_moves(int square, bool test_check);
+        std::vector<Move> get_moves(int square, bool test_check, bool assume_in_check);
         std::vector<Move> get_all_moves(bool white);
 
         /*
@@ -116,9 +116,8 @@ namespace chess
         bool is_check(bool by_white);
         bool is_checkmate(bool by_white);
 
-        void change(Move move);
+        bool change(Move move, bool test_check);
         Move change(std::string move_str, bool white);
-        Move change_random(bool white);
 
         Simulation simulate(Move move);
         std::vector<Simulation> simulate_all(bool white);

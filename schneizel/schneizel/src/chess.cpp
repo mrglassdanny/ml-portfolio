@@ -674,7 +674,7 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
     return moves;
 }
 
-std::vector<Move> Board::get_moves(int square, bool test_check)
+std::vector<Move> Board::get_moves(int square, bool test_check, bool assume_in_check)
 {
     std::vector<Move> moves;
 
@@ -970,7 +970,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
         break;
     }
 
-    if (test_check)
+    if (test_check && assume_in_check)
     {
         std::vector<Move> tested_moves;
 
@@ -996,22 +996,26 @@ std::vector<Move> Board::get_all_moves(bool white)
 
     if (white)
     {
+        bool white_in_check = this->is_check(false);
+
         for (int i = 0; i < BOARD_LEN; i++)
         {
             if (Piece::is_white(this->get_piece(i)))
             {
-                auto moves = this->get_moves(i, true);
+                auto moves = this->get_moves(i, true, white_in_check);
                 all_moves.insert(all_moves.end(), moves.begin(), moves.end());
             }
         }
     }
     else
     {
+        bool black_in_check = this->is_check(true);
+
         for (int i = 0; i < BOARD_LEN; i++)
         {
             if (Piece::is_black(this->get_piece(i)))
             {
-                auto moves = this->get_moves(i, true);
+                auto moves = this->get_moves(i, true, black_in_check);
                 all_moves.insert(all_moves.end(), moves.begin(), moves.end());
             }
         }
@@ -1072,7 +1076,7 @@ bool Board::has_moves(bool white)
         {
             if (Piece::is_white(this->get_piece(i)))
             {
-                auto moves = this->get_moves(i, true);
+                auto moves = this->get_moves(i, true, true);
                 if (moves.size() > 0)
                 {
                     return true;
@@ -1086,7 +1090,7 @@ bool Board::has_moves(bool white)
         {
             if (Piece::is_black(this->get_piece(i)))
             {
-                auto moves = this->get_moves(i, true);
+                auto moves = this->get_moves(i, true, true);
                 if (moves.size() > 0)
                 {
                     return true;
@@ -1106,7 +1110,7 @@ bool Board::is_square_under_attack(int square, bool by_white)
         {
             if (Piece::is_white(this->get_piece(i)))
             {
-                auto moves = this->get_moves(i, false);
+                auto moves = this->get_moves(i, false, false);
                 for (auto move : moves)
                 {
                     if (move.dst_square == square)
@@ -1123,7 +1127,7 @@ bool Board::is_square_under_attack(int square, bool by_white)
         {
             if (Piece::is_black(this->get_piece(i)))
             {
-                auto moves = this->get_moves(i, false);
+                auto moves = this->get_moves(i, false, false);
                 for (auto move : moves)
                 {
                     if (move.dst_square == square)
@@ -1185,10 +1189,29 @@ bool Board::is_checkmate(bool by_white)
     return false;
 }
 
-void Board::change(Move move)
+bool Board::change(Move move, bool test_check)
 {
     char src_piece = this->get_piece(move.src_square);
     char dst_piece = src_piece;
+
+    if (test_check)
+    {
+        this->simulate(move);
+        if (Piece::is_white(src_piece))
+        {
+            if (this->is_check(false))
+            {
+                return false;
+            }
+        }
+        else
+        {
+            if (this->is_check(true))
+            {
+                return false;
+            }
+        }
+    }
 
     int src_row = Board::get_row(move.src_square);
     int src_col = Board::get_col(move.src_square);
@@ -1283,6 +1306,8 @@ void Board::change(Move move)
 
     this->data_[move.src_square] = MT;
     this->data_[move.dst_square] = dst_piece;
+
+    return true;
 }
 
 Move Board::change(std::string move_str, bool white)
@@ -1334,20 +1359,9 @@ Move Board::change(std::string move_str, bool white)
 
     Move move{src_square, dst_square};
 
-    this->change(move);
+    this->change(move, false);
 
     return move;
-}
-
-Move Board::change_random(bool white)
-{
-    auto all_moves = this->get_all_moves(white);
-
-    int rand_move_idx = rand() % all_moves.size();
-
-    this->change(all_moves[rand_move_idx]);
-
-    return all_moves[rand_move_idx];
 }
 
 Simulation Board::simulate(Move move)
@@ -1356,7 +1370,7 @@ Simulation Board::simulate(Move move)
 
     sim.move = move;
     sim.board.copy(this);
-    sim.board.change(move);
+    sim.board.change(move, false);
 
     return sim;
 }
@@ -1519,7 +1533,12 @@ Move Board::change_minimax_async(bool white, int depth)
     // printf("BEST MOVE: %s (%d->%d)\tEVAL: %d\n", this->convert_move_to_move_str(best_move).c_str(),
     //        best_move.src_square, best_move.dst_square, best_eval_val);
 
-    this->change(best_move);
+    bool success = this->change(best_move, true);
+    if (!success)
+    {
+        // TODO
+        printf("SHIT!\n");
+    }
 
     sw->stop();
     sw->print_elapsed_seconds();
