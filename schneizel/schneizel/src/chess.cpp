@@ -1512,10 +1512,8 @@ Move Board::change_minimax_async(bool white, int depth)
     // printf("TIES: %d\n", ties.size());
     if (ties.size() > 0)
     {
-        // int rand_idx = rand() % ties.size();
-        // best_move = ties[rand_idx].move;
-
-        best_move = ties[0].move;
+        int rand_idx = rand() % ties.size();
+        best_move = ties[rand_idx].move;
     }
 
     // printf("BEST MOVE: %s (%d->%d)\tEVAL: %d\n", this->convert_move_to_move_str(best_move).c_str(),
