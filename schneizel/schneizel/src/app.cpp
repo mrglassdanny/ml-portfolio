@@ -27,7 +27,7 @@ void self_play(int white_depth, int black_depth)
 			printf("WHITE CHECKMATED!\n");
 			break;
 		}
-		else if (board.has_moves(true))
+		else if (!board.has_moves(true))
 		{
 			printf("WHITE STALEMATED!\n");
 			break;
@@ -45,7 +45,7 @@ void self_play(int white_depth, int black_depth)
 			printf("BLACK CHECKMATED!\n");
 			break;
 		}
-		else if (board.has_moves(true))
+		else if (!board.has_moves(true))
 		{
 			printf("BLACK STALEMATED!\n");
 			break;
@@ -82,7 +82,7 @@ void play(bool play_as_white, int cpu_depth)
 			printf("WHITE CHECKMATED!\n");
 			break;
 		}
-		else if (board.has_moves(true))
+		else if (!board.has_moves(true))
 		{
 			printf("WHITE STALEMATED!\n");
 			break;
@@ -110,7 +110,7 @@ void play(bool play_as_white, int cpu_depth)
 			printf("BLACK CHECKMATED!\n");
 			break;
 		}
-		else if (board.has_moves(true))
+		else if (!board.has_moves(true))
 		{
 			printf("BLACK STALEMATED!\n");
 			break;
