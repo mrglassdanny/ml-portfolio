@@ -98,7 +98,7 @@ namespace chess
 
         char get_piece(int square);
 
-        std::vector<Move> get_moves(int square, bool test_check, bool assume_in_check);
+        std::vector<Move> get_moves(int square, bool test_check);
         std::vector<Move> get_all_moves(bool white);
 
         /*
@@ -106,7 +106,6 @@ namespace chess
                 - O-O
                 - O-O-O or Ng1f3
                 - Pd7d8=Q
-
             NOTE: this will only work if invoked BEFORE move is made to board!
         */
         std::string convert_move_to_move_str(Move move);
@@ -116,14 +115,16 @@ namespace chess
         bool is_check(bool by_white);
         bool is_checkmate(bool by_white);
 
-        bool change(Move move, bool test_check);
+        void change(Move move);
         Move change(std::string move_str, bool white);
+        Move change_random(bool white);
 
         Simulation simulate(Move move);
         std::vector<Simulation> simulate_all(bool white);
 
         int evaluate_material();
 
+        // NOTE: depth should be EVEN number!
         Move change_minimax_async(bool white, int depth);
     };
 

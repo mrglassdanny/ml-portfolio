@@ -22,36 +22,14 @@ void self_play(int depth)
 			board.print(prev_move);
 		}
 
-		if (board.is_checkmate(false))
-		{
-			printf("\nWHITE CHECKMATED!\n");
-			break;
-		}
-		else if (!board.has_moves(true))
-		{
-			printf("\nWHITE STALEMATED!\n");
-			break;
-		}
-
-		prev_move = board.change_minimax_async(true, 5);
+		prev_move = board.change_minimax_async(true, depth);
 
 		move_cnt++;
 
 		printf("\nBLACK TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
 		board.print(prev_move);
 
-		if (board.is_checkmate(true))
-		{
-			printf("\BLACK CHECKMATED!\n");
-			break;
-		}
-		else if (!board.has_moves(false))
-		{
-			printf("\BLACK STALEMATED!\n");
-			break;
-		}
-
-		prev_move = board.change_minimax_async(false, 2);
+		prev_move = board.change_minimax_async(false, depth);
 
 		move_cnt++;
 	}
@@ -114,7 +92,7 @@ int main()
 {
 	srand(time(NULL));
 
-	self_play(6);
+	self_play(4);
 
 	return 0;
 }
