@@ -1613,7 +1613,6 @@ void Board::change(Move move)
     this->data_[move.src_square] = MT;
     this->data_[move.dst_square] = dst_piece;
 
-    // TODO: should be able to tell here if opponent is in check right?
     this->check_state_.white_checked = false;
     this->check_state_.black_checked = false;
 

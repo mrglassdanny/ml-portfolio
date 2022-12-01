@@ -158,8 +158,8 @@ int main()
 {
 	srand(time(NULL));
 
-	// self_play(5, 5);
-	play(true, 1);
+	self_play(5, 5);
+	// play(true, 1);
 
 	return 0;
 }
