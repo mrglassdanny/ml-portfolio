@@ -100,6 +100,12 @@ void play(bool play_as_white, int cpu_depth)
 
 		if (play_as_white)
 		{
+			auto moves = board.get_all_moves(true);
+			for (auto move : moves)
+			{
+				printf("Move: %s\n", board.convert_move_to_move_str(move).c_str());
+			}
+
 			std::string move_str;
 			printf("Move: ");
 			std::cin >> move_str;
@@ -128,6 +134,12 @@ void play(bool play_as_white, int cpu_depth)
 
 		if (!play_as_white)
 		{
+			auto moves = board.get_all_moves(false);
+			for (auto move : moves)
+			{
+				printf("Move: %s\n", board.convert_move_to_move_str(move).c_str());
+			}
+
 			std::string move_str;
 			printf("Move: ");
 			std::cin >> move_str;
@@ -146,7 +158,8 @@ int main()
 {
 	srand(time(NULL));
 
-	self_play(5, 5);
+	// self_play(5, 5);
+	play(true, 1);
 
 	return 0;
 }
