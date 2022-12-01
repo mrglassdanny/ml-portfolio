@@ -234,12 +234,15 @@ bool Board::is_col_valid(int col)
 void Board::reset()
 {
     memcpy(this->data_, BOARD_START_STATE, sizeof(char) * BOARD_LEN);
+
+    memset(&this->check_state_, 0, sizeof(this->check_state_));
 }
 
 void Board::copy(Board *src)
 {
     memcpy(this->data_, src->data_, sizeof(char) * BOARD_LEN);
     this->castle_state_ = src->castle_state_;
+    this->check_state_ = src->check_state_;
 }
 
 void Board::print()
@@ -418,9 +421,54 @@ char Board::get_piece(int square)
     return this->data_[square];
 }
 
+int Board::get_king_square(bool white)
+{
+    int king_square = -1;
+    if (white)
+    {
+        for (int i = 0; i < BOARD_LEN; i++)
+        {
+            if (this->get_piece(i) == WK)
+            {
+                king_square = i;
+                break;
+            }
+        }
+    }
+    else
+    {
+        for (int i = BOARD_LEN - 1; i >= 0; i--)
+        {
+            if (this->get_piece(i) == BK)
+            {
+                king_square = i;
+                break;
+            }
+        }
+    }
+
+    return king_square;
+}
+
+bool Board::is_piece_in_king_pin(int square, bool white_king_pin)
+{
+    if (white_king_pin)
+    {
+        return this->check_state_.white_king_pins[square];
+    }
+    else
+    {
+        return this->check_state_.black_king_pins[square];
+    }
+
+    return false;
+}
+
 std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int col)
 {
     std::vector<Move> moves;
+
+    bool white = Piece::is_white(this->get_piece(square));
 
     int cnt;
     switch (piece)
@@ -442,11 +490,15 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
     int test_square;
     int test_row;
     int test_col;
+    int test_pin_square;
 
     bool ne = false;
     bool sw = false;
     bool se = false;
     bool nw = false;
+
+    int opp_king_square = this->get_king_square(!white);
+    bool opp_king_white = Piece::is_white(this->get_piece(opp_king_square));
 
     for (int i = 1; i < cnt; i++)
     {
@@ -454,22 +506,46 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
         test_col = col + i;
         test_square = Board::get_square(test_row, test_col);
 
-        if (!ne && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
         {
             char test_piece = this->get_piece(test_square);
 
-            if (test_piece == MT)
+            if (!ne)
             {
-                moves.push_back(Move{square, test_square});
-            }
-            else
-            {
-                if (!Piece::is_same_color(piece, test_piece))
+                if (test_piece == MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
+                else
+                {
+                    if (!Piece::is_same_color(piece, test_piece))
+                    {
+                        moves.push_back(Move{square, test_square});
+                    }
 
-                ne = true;
+                    test_pin_square = test_square;
+
+                    ne = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
             }
         }
 
@@ -477,22 +553,46 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
         test_col = col - i;
         test_square = Board::get_square(test_row, test_col);
 
-        if (!sw && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
         {
             char test_piece = this->get_piece(test_square);
 
-            if (test_piece == MT)
+            if (!sw)
             {
-                moves.push_back(Move{square, test_square});
-            }
-            else
-            {
-                if (!Piece::is_same_color(piece, test_piece))
+                if (test_piece == MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
+                else
+                {
+                    if (!Piece::is_same_color(piece, test_piece))
+                    {
+                        moves.push_back(Move{square, test_square});
+                    }
 
-                sw = true;
+                    test_pin_square = test_square;
+
+                    sw = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
             }
         }
 
@@ -500,22 +600,46 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
         test_col = col + i;
         test_square = Board::get_square(test_row, test_col);
 
-        if (!se && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
         {
             char test_piece = this->get_piece(test_square);
 
-            if (test_piece == MT)
+            if (!se)
             {
-                moves.push_back(Move{square, test_square});
-            }
-            else
-            {
-                if (!Piece::is_same_color(piece, test_piece))
+                if (test_piece == MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
+                else
+                {
+                    if (!Piece::is_same_color(piece, test_piece))
+                    {
+                        moves.push_back(Move{square, test_square});
+                    }
 
-                se = true;
+                    test_pin_square = test_square;
+
+                    se = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
             }
         }
 
@@ -523,22 +647,46 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
         test_col = col - i;
         test_square = Board::get_square(test_row, test_col);
 
-        if (!nw && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
         {
             char test_piece = this->get_piece(test_square);
 
-            if (test_piece == MT)
+            if (!nw)
             {
-                moves.push_back(Move{square, test_square});
-            }
-            else
-            {
-                if (!Piece::is_same_color(piece, test_piece))
+                if (test_piece == MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
+                else
+                {
+                    if (!Piece::is_same_color(piece, test_piece))
+                    {
+                        moves.push_back(Move{square, test_square});
+                    }
 
-                nw = true;
+                    test_pin_square = test_square;
+
+                    nw = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
             }
         }
     }
@@ -549,6 +697,8 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
 std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int col)
 {
     std::vector<Move> moves;
+
+    bool white = Piece::is_white(this->get_piece(square));
 
     int cnt;
     switch (piece)
@@ -570,11 +720,15 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
     int test_square;
     int test_row;
     int test_col;
+    int test_pin_square;
 
     bool n = false;
     bool s = false;
     bool e = false;
     bool w = false;
+
+    int opp_king_square = this->get_king_square(!white);
+    bool opp_king_white = Piece::is_white(this->get_piece(opp_king_square));
 
     for (int i = 1; i < cnt; i++)
     {
@@ -582,22 +736,46 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
         test_col = col;
         test_square = Board::get_square(test_row, test_col);
 
-        if (!n && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
         {
             char test_piece = this->get_piece(test_square);
 
-            if (test_piece == MT)
+            if (!n)
             {
-                moves.push_back(Move{square, test_square});
-            }
-            else
-            {
-                if (!Piece::is_same_color(piece, test_piece))
+                if (test_piece == MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
+                else
+                {
+                    if (!Piece::is_same_color(piece, test_piece))
+                    {
+                        moves.push_back(Move{square, test_square});
+                    }
 
-                n = true;
+                    test_pin_square = test_square;
+
+                    n = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
             }
         }
 
@@ -605,22 +783,46 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
         test_col = col;
         test_square = Board::get_square(test_row, test_col);
 
-        if (!s && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
         {
             char test_piece = this->get_piece(test_square);
 
-            if (test_piece == MT)
+            if (!s)
             {
-                moves.push_back(Move{square, test_square});
-            }
-            else
-            {
-                if (!Piece::is_same_color(piece, test_piece))
+                if (test_piece == MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
+                else
+                {
+                    if (!Piece::is_same_color(piece, test_piece))
+                    {
+                        moves.push_back(Move{square, test_square});
+                    }
 
-                s = true;
+                    test_pin_square = test_square;
+
+                    s = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
             }
         }
 
@@ -628,22 +830,46 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
         test_col = col + i;
         test_square = Board::get_square(test_row, test_col);
 
-        if (!e && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
         {
             char test_piece = this->get_piece(test_square);
 
-            if (test_piece == MT)
+            if (!e)
             {
-                moves.push_back(Move{square, test_square});
-            }
-            else
-            {
-                if (!Piece::is_same_color(piece, test_piece))
+                if (test_piece == MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
+                else
+                {
+                    if (!Piece::is_same_color(piece, test_piece))
+                    {
+                        moves.push_back(Move{square, test_square});
+                    }
 
-                e = true;
+                    test_pin_square = test_square;
+
+                    e = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
             }
         }
 
@@ -651,22 +877,46 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
         test_col = col - i;
         test_square = Board::get_square(test_row, test_col);
 
-        if (!w && Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
         {
             char test_piece = this->get_piece(test_square);
 
-            if (test_piece == MT)
+            if (!w)
             {
-                moves.push_back(Move{square, test_square});
-            }
-            else
-            {
-                if (!Piece::is_same_color(piece, test_piece))
+                if (test_piece == MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
+                else
+                {
+                    if (!Piece::is_same_color(piece, test_piece))
+                    {
+                        moves.push_back(Move{square, test_square});
+                    }
 
-                w = true;
+                    test_pin_square = test_square;
+
+                    w = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
             }
         }
     }
@@ -679,6 +929,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
     std::vector<Move> moves;
 
     char piece = this->get_piece(square);
+    bool white = Piece::is_white(piece);
 
     if (piece == MT)
     {
@@ -687,8 +938,6 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
 
     int row = Board::get_row(square);
     int col = Board::get_col(square);
-
-    bool white = Piece::is_white(piece);
 
     int test_square;
     int test_row;
@@ -963,6 +1212,23 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                     }
                 }
             }
+
+            // Make sure king is not moving into check.
+            {
+                std::vector<Move> tested_moves;
+
+                for (auto move : moves)
+                {
+                    auto sim = this->simulate(move);
+
+                    if (!sim.board.is_check(!white, true))
+                    {
+                        tested_moves.push_back(move);
+                    }
+                }
+
+                moves = tested_moves;
+            }
         }
     }
     break;
@@ -972,19 +1238,82 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
 
     if (test_check)
     {
-        std::vector<Move> tested_moves;
-
-        for (auto move : moves)
+        if (white)
         {
-            auto sim = this->simulate(move);
-
-            if (!sim.board.is_check(!white))
+            if (this->check_state_.white_checked)
             {
-                tested_moves.push_back(move);
+                std::vector<Move> tested_moves;
+
+                for (auto move : moves)
+                {
+                    auto sim = this->simulate(move);
+
+                    if (!sim.board.is_check(!white, true))
+                    {
+                        tested_moves.push_back(move);
+                    }
+                }
+
+                moves = tested_moves;
+            }
+            else
+            {
+                if (this->is_piece_in_king_pin(square, white))
+                {
+                    std::vector<Move> tested_moves;
+
+                    for (auto move : moves)
+                    {
+                        auto sim = this->simulate(move);
+
+                        if (!sim.board.is_check(!white, true))
+                        {
+                            tested_moves.push_back(move);
+                        }
+                    }
+
+                    moves = tested_moves;
+                }
             }
         }
+        else
+        {
+            if (this->check_state_.black_checked)
+            {
+                std::vector<Move> tested_moves;
 
-        moves = tested_moves;
+                for (auto move : moves)
+                {
+                    auto sim = this->simulate(move);
+
+                    if (!sim.board.is_check(!white, true))
+                    {
+                        tested_moves.push_back(move);
+                    }
+                }
+
+                moves = tested_moves;
+            }
+            else
+            {
+                if (this->is_piece_in_king_pin(square, white))
+                {
+                    std::vector<Move> tested_moves;
+
+                    for (auto move : moves)
+                    {
+                        auto sim = this->simulate(move);
+
+                        if (!sim.board.is_check(!white, true))
+                        {
+                            tested_moves.push_back(move);
+                        }
+                    }
+
+                    moves = tested_moves;
+                }
+            }
+        }
     }
 
     return moves;
@@ -996,6 +1325,8 @@ std::vector<Move> Board::get_all_moves(bool white)
 
     if (white)
     {
+        memset(this->check_state_.black_king_pins, 0, sizeof(this->check_state_.black_king_pins));
+
         for (int i = 0; i < BOARD_LEN; i++)
         {
             if (Piece::is_white(this->get_piece(i)))
@@ -1007,6 +1338,8 @@ std::vector<Move> Board::get_all_moves(bool white)
     }
     else
     {
+        memset(this->check_state_.white_king_pins, 0, sizeof(this->check_state_.white_king_pins));
+
         for (int i = 0; i < BOARD_LEN; i++)
         {
             if (Piece::is_black(this->get_piece(i)))
@@ -1138,43 +1471,37 @@ bool Board::is_square_under_attack(int square, bool by_white)
     return false;
 }
 
-bool Board::is_check(bool by_white)
+bool Board::is_check(bool by_white, bool hard_way)
 {
-    if (by_white)
+    if (hard_way)
     {
-        int black_king_square = -1;
-        for (int i = BOARD_LEN - 1; i >= 0; i--)
+        if (by_white)
         {
-            if (this->get_piece(i) == BK)
-            {
-                black_king_square = i;
-                break;
-            }
+            return this->is_square_under_attack(this->get_king_square(false), by_white);
         }
-
-        return this->is_square_under_attack(black_king_square, by_white);
+        else
+        {
+            return this->is_square_under_attack(this->get_king_square(true), by_white);
+        }
     }
     else
     {
-        int white_king_square = -1;
-        for (int i = 0; i < BOARD_LEN; i++)
+        if (by_white)
         {
-            if (this->get_piece(i) == WK)
-            {
-                white_king_square = i;
-                break;
-            }
+            return this->check_state_.black_checked;
         }
-
-        return this->is_square_under_attack(white_king_square, by_white);
+        else
+        {
+            return this->check_state_.white_checked;
+        }
     }
 
     return false;
 }
 
-bool Board::is_checkmate(bool by_white)
+bool Board::is_checkmate(bool by_white, bool hard_way)
 {
-    if (this->is_check(by_white))
+    if (this->is_check(by_white, hard_way))
     {
         if (!this->has_moves(!by_white))
         {
@@ -1194,6 +1521,8 @@ void Board::change(Move move)
     int src_col = Board::get_col(move.src_square);
     int dst_row = Board::get_row(move.dst_square);
     int dst_col = Board::get_col(move.dst_square);
+
+    bool white = Piece::is_white(src_piece);
 
     switch (src_piece)
     {
@@ -1283,6 +1612,45 @@ void Board::change(Move move)
 
     this->data_[move.src_square] = MT;
     this->data_[move.dst_square] = dst_piece;
+
+    // TODO: should be able to tell here if opponent is in check right?
+    this->check_state_.white_checked = false;
+    this->check_state_.black_checked = false;
+
+    // Check new moves for moved piece.
+    auto moves = this->get_moves(move.dst_square, false);
+    int opp_king_square = this->get_king_square(!white);
+    for (auto move : moves)
+    {
+        if (move.dst_square == opp_king_square)
+        {
+            if (white)
+            {
+                this->check_state_.black_checked = true;
+            }
+            else
+            {
+                this->check_state_.white_checked = true;
+            }
+            break;
+        }
+    }
+
+    // Check if piece was pinned to opponent king.
+    if (white)
+    {
+        if (this->check_state_.black_king_pins[move.src_square])
+        {
+            this->check_state_.black_checked = true;
+        }
+    }
+    else
+    {
+        if (this->check_state_.white_king_pins[move.src_square])
+        {
+            this->check_state_.white_checked = true;
+        }
+    }
 }
 
 Move Board::change(std::string move_str, bool white)
@@ -1395,7 +1763,7 @@ int Board::evaluate_material()
 
 int Board::sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, int beta)
 {
-    if (sim.board.is_checkmate(!white))
+    if (sim.board.is_checkmate(!white, false))
     {
         if (white)
         {

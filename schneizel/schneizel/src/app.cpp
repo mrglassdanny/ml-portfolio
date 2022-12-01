@@ -22,7 +22,7 @@ void self_play(int white_depth, int black_depth)
 			board.print(prev_move);
 		}
 
-		if (board.is_checkmate(false))
+		if (board.is_checkmate(false, true))
 		{
 			printf("WHITE CHECKMATED!\n");
 			break;
@@ -33,6 +33,11 @@ void self_play(int white_depth, int black_depth)
 			break;
 		}
 
+		if (board.check_state_.white_checked)
+		{
+			printf("======================================================== WHITE IN CHECK!\n");
+		}
+
 		prev_move = board.change_minimax_async(true, white_depth);
 
 		move_cnt++;
@@ -40,15 +45,20 @@ void self_play(int white_depth, int black_depth)
 		printf("\nBLACK TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
 		board.print(prev_move);
 
-		if (board.is_checkmate(false))
+		if (board.is_checkmate(true, true))
 		{
 			printf("BLACK CHECKMATED!\n");
 			break;
 		}
-		else if (!board.has_moves(true))
+		else if (!board.has_moves(false))
 		{
 			printf("BLACK STALEMATED!\n");
 			break;
+		}
+
+		if (board.check_state_.black_checked)
+		{
+			printf("======================================================== BLACK IN CHECK!\n");
 		}
 
 		prev_move = board.change_minimax_async(false, black_depth);
@@ -77,7 +87,7 @@ void play(bool play_as_white, int cpu_depth)
 			board.print(prev_move);
 		}
 
-		if (board.is_checkmate(false))
+		if (board.is_checkmate(false, true))
 		{
 			printf("WHITE CHECKMATED!\n");
 			break;
@@ -105,12 +115,12 @@ void play(bool play_as_white, int cpu_depth)
 		printf("\nBLACK TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
 		board.print(prev_move);
 
-		if (board.is_checkmate(false))
+		if (board.is_checkmate(true, true))
 		{
 			printf("BLACK CHECKMATED!\n");
 			break;
 		}
-		else if (!board.has_moves(true))
+		else if (!board.has_moves(false))
 		{
 			printf("BLACK STALEMATED!\n");
 			break;
@@ -136,7 +146,7 @@ int main()
 {
 	srand(time(NULL));
 
-	self_play(4, 3);
+	self_play(5, 5);
 
 	return 0;
 }
