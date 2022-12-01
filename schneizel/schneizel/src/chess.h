@@ -63,6 +63,14 @@ namespace chess
         bool black_left_rook_moved = false;
     };
 
+    struct CheckState
+    {
+        bool white_checked;
+        bool black_checked;
+        bool white_king_pins[BOARD_LEN];
+        bool black_king_pins[BOARD_LEN];
+    };
+
     struct Simulation;
 
     class Board
@@ -87,6 +95,8 @@ namespace chess
         static void sim_minimax_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals);
 
     public:
+        CheckState check_state_;
+
         Board();
         ~Board();
 
@@ -97,6 +107,8 @@ namespace chess
         void print(Move move);
 
         char get_piece(int square);
+        int get_king_square(bool white);
+        bool is_piece_in_king_pin(int square, bool white_king_pin);
 
         std::vector<Move> get_moves(int square, bool test_check);
         std::vector<Move> get_all_moves(bool white);
@@ -112,8 +124,8 @@ namespace chess
 
         bool has_moves(bool white);
         bool is_square_under_attack(int square, bool by_white);
-        bool is_check(bool by_white);
-        bool is_checkmate(bool by_white);
+        bool is_check(bool by_white, bool hard_way);
+        bool is_checkmate(bool by_white, bool hard_way);
 
         void change(Move move);
         Move change(std::string move_str, bool white);
