@@ -106,6 +106,8 @@ namespace chess
         void print();
         void print(Move move);
 
+        char *get_data();
+
         char get_piece(int square);
         int get_king_square(bool white);
         bool is_piece_in_king_pin(int square, bool white_king_pin);
@@ -138,6 +140,8 @@ namespace chess
 
         // NOTE: depth should be EVEN number!
         Move change_minimax_async(bool white, int depth);
+
+        void one_hot_encode(float *out);
     };
 
     struct Simulation

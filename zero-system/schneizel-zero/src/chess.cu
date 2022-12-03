@@ -1,4 +1,4 @@
-#include "chess.h"
+#include "chess.cuh"
 
 using namespace chess;
 
@@ -414,6 +414,11 @@ void Board::print(Move move)
     }
 
     printf("\n\n");
+}
+
+char *Board::get_data()
+{
+    return this->data_;
 }
 
 char Board::get_piece(int square)
@@ -1893,6 +1898,59 @@ Move Board::change_minimax_async(bool white, int depth)
     delete sw;
 
     return best_move;
+}
+
+void Board::one_hot_encode(float *out)
+{
+    for (int i = 0; i < ROW_CNT; i++)
+    {
+        for (int j = 0; j < COL_CNT; j++)
+        {
+            int idx = i * COL_CNT + (j * 6);
+
+            switch (this->data_[i * COL_CNT + j])
+            {
+            case WP:
+                out[idx + 0] = 1.0f;
+                break;
+            case BP:
+                out[idx + 0] = -1.0f;
+                break;
+            case WN:
+                out[idx + 1] = 1.0f;
+                break;
+            case BN:
+                out[idx + 1] = -1.0f;
+                break;
+            case WB:
+                out[idx + 2] = 1.0f;
+                break;
+            case BB:
+                out[idx + 2] = -1.0f;
+                break;
+            case WR:
+                out[idx + 3] = 1.0f;
+                break;
+            case BR:
+                out[idx + 3] = -1.0f;
+                break;
+            case WQ:
+                out[idx + 4] = 1.0f;
+                break;
+            case BQ:
+                out[idx + 4] = -1.0f;
+                break;
+            case WK:
+                out[idx + 5] = 1.0f;
+                break;
+            case BK:
+                out[idx + 5] = -1.0f;
+                break;
+            default:
+                break;
+            }
+        }
+    }
 }
 
 CpuStopWatch::CpuStopWatch()
