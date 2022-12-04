@@ -1,7 +1,12 @@
 #include <stdio.h>
 
+#include <zero/mod.cuh>
+
 #include "chess.cuh"
-#include "eval.cuh"
+
+using namespace zero::core;
+using namespace zero::nn;
+using namespace chess;
 
 struct Game
 {
@@ -185,8 +190,7 @@ int main()
     board.one_hot_encode(x->data());
     x->to_cuda();
 
-    auto m = new PosEvalModel(4, 1);
-    m->forward(x);
+    x->print();
 
     return 0;
 }
