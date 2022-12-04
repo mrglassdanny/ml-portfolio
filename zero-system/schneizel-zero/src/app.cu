@@ -192,8 +192,8 @@ int main()
     auto y = Tensor::ones(true, Shape(1, 1));
 
     auto model = new Model();
-    model->hadamard(x->shape(), 1, layer::ActivationType::None);
-    model->linear(y->shape(), layer::ActivationType::None);
+    model->hadamard(x->shape(), 4, layer::ActivationType::Tanh);
+    model->linear(y->shape(), layer::ActivationType::Tanh);
 
     model->set_loss(new loss::MSE());
 
