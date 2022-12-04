@@ -3,7 +3,7 @@
 using namespace zero::core;
 using namespace zero::nn::layer;
 
-__global__ void k_hadamard_product_evaluate(float *in, float *w, float *b, float *out, int batch_size, int channel_cnt, int row_cnt, int col_cnt,
+__global__ void k_hadamard_product_evaluate(float *in, float *w, float *out, int batch_size, int channel_cnt, int row_cnt, int col_cnt,
                                             int filter_cnt)
 {
     int f_r_c_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -21,7 +21,6 @@ __global__ void k_hadamard_product_evaluate(float *in, float *w, float *b, float
 
         float *l_in = &in[(batch_idx * channel_cnt * in_cnt)];
         float *l_w = &w[(filter_idx * channel_cnt * w_cnt)];
-        float *l_b = &b[(filter_idx * channel_cnt)];
         float *l_out = &out[((batch_idx * filter_cnt * out_cnt) + (filter_idx * out_cnt))];
 
         for (int channel_idx = 0; channel_idx < channel_cnt; channel_idx++)
@@ -29,13 +28,11 @@ __global__ void k_hadamard_product_evaluate(float *in, float *w, float *b, float
             l_out[row_idx * col_cnt + col_idx] +=
                 (l_in[(channel_idx * in_cnt) + (row_idx * col_cnt) + col_idx] *
                  l_w[(channel_idx * w_cnt) + (row_idx * col_cnt) + col_idx]);
-
-            // l_out[row_idx * out_col_cnt + col_idx] += l_b[channel_idx];
         }
     }
 }
 
-__global__ void k_hadamard_product_inc_param_derivatives(float *in, float *in_n, float *n, float *dw, float *db, int batch_size, int channel_cnt, int filter_cnt,
+__global__ void k_hadamard_product_inc_param_derivatives(float *in, float *in_n, float *n, float *dw, int batch_size, int channel_cnt, int filter_cnt,
                                                          int row_cnt, int col_cnt, int cnt)
 {
     int c_r_c_idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -56,11 +53,6 @@ __global__ void k_hadamard_product_inc_param_derivatives(float *in, float *in_n,
 
             dw[w_elem_idx] +=
                 (in[in_elem_idx] * n[(batch_idx * channel_cnt * cnt) + (channel_idx * cnt) + ((row_idx * col_cnt) + col_idx)]);
-
-            // if (row_idx == 0 && col_idx == 0)
-            // {
-            //     db[b_elem_idx] += in[in_elem_idx];
-            // }
         }
     }
 }
@@ -108,9 +100,8 @@ void HadamardProduct::evaluate(Tensor *out)
 
     Tensor *n = this->n_;
     Tensor *w = this->params_->weights();
-    Tensor *b = this->params_->biases();
 
-    k_hadamard_product_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(), this->batch_size(), this->channels(), this->rows(), this->cols(),
+    k_hadamard_product_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), out->data(), this->batch_size(), this->channels(), this->rows(), this->cols(),
                                                            this->filters());
 
     Activation::evaluate(out, this->batch_size(), this->out_features(), this->activation_);
@@ -123,7 +114,6 @@ void HadamardProduct::derive(Tensor *in, Tensor *in_n)
     Tensor *w = this->params_->weights();
     Tensor *b = this->params_->biases();
     Tensor *dw = this->params_->weight_gradients();
-    Tensor *db = this->params_->bias_gradients();
 
     Activation::derive(in, in_n, this->batch_size(), this->out_features(), this->activation_);
 
@@ -134,7 +124,7 @@ void HadamardProduct::derive(Tensor *in, Tensor *in_n)
         dim3 grid_dims(grid_col_cnt, grid_row_cnt);
         dim3 block_dims(ZERO_CORE_CUDA_THREADS_PER_BLOCK, ZERO_CORE_CUDA_THREADS_PER_BLOCK);
 
-        k_hadamard_product_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), in_n->data(), n->data(), dw->data(), db->data(), this->batch_size(), this->channels(), this->filters(),
+        k_hadamard_product_inc_param_derivatives<<<grid_dims, block_dims>>>(in->data(), in_n->data(), n->data(), dw->data(), this->batch_size(), this->channels(), this->filters(),
                                                                             this->rows(), this->cols(), (this->rows() * this->cols()));
     }
 

@@ -199,5 +199,7 @@ int main()
 
     model->validate_gradients(x, y, true);
 
+    model->summarize();
+
     return 0;
 }
