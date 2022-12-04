@@ -1,13 +1,11 @@
 #include <stdio.h>
 
-#include <zero/mod.cuh>
-
 #include "chess.cuh"
+#include "eval.cuh"
 
 struct Game
 {
-    zero::core::Tensor *one_hot_board_data;
-    int move_cnt;
+    std::vector<chess::Board> boards;
     int lbl;
 };
 
@@ -17,7 +15,6 @@ Game self_play(int white_depth, int black_depth)
     chess::Move prev_move;
 
     Game game;
-    std::vector<chess::Board> boards;
 
     int move_cnt = 0;
 
@@ -55,7 +52,7 @@ Game self_play(int white_depth, int black_depth)
         prev_move = board.change_minimax_async(true, white_depth);
         chess::Board cpy_board;
         cpy_board.copy(&board);
-        boards.push_back(cpy_board);
+        game.boards.push_back(cpy_board);
 
         move_cnt++;
 
@@ -83,20 +80,10 @@ Game self_play(int white_depth, int black_depth)
         prev_move = board.change_minimax_async(false, black_depth);
         chess::Board cpy_board2;
         cpy_board2.copy(&board);
-        boards.push_back(cpy_board2);
+        game.boards.push_back(cpy_board2);
 
         move_cnt++;
     }
-
-    game.move_cnt = move_cnt;
-
-    game.one_hot_board_data = zero::core::Tensor::zeros(false, zero::core::Shape(game.move_cnt, 8, 8, 6));
-    for (auto b : boards)
-    {
-        b.one_hot_encode(&game.one_hot_board_data->data()[(8 * 8 * 6) * move_cnt]);
-    }
-
-    game.one_hot_board_data->print();
 
     return game;
 }
@@ -192,7 +179,14 @@ int main()
 {
     srand(time(NULL));
 
-    Game game = self_play(3, 3);
+    chess::Board board;
+
+    Tensor *x = Tensor::zeros(false, Shape(6, 8, 8));
+    board.one_hot_encode(x->data());
+    x->to_cuda();
+
+    auto m = new PosEvalModel(4, 1);
+    m->forward(x);
 
     return 0;
 }

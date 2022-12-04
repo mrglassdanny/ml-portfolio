@@ -2,7 +2,7 @@
 
 using namespace chess;
 
-char BOARD_START_STATE[BOARD_LEN] =
+char BOARD_START_STATE[CHESS_BOARD_LEN] =
     {
         WR, WN, WB, WQ, WK, WB, WN, WR,
         WP, WP, WP, WP, WP, WP, WP, WP,
@@ -157,7 +157,7 @@ Board::~Board() {}
 
 int Board::get_row(int square)
 {
-    return square / COL_CNT;
+    return square / CHESS_COL_CNT;
 }
 
 int Board::get_row(char alpha_row)
@@ -167,7 +167,7 @@ int Board::get_row(char alpha_row)
 
 int Board::get_col(int square)
 {
-    return square % COL_CNT;
+    return square % CHESS_COL_CNT;
 }
 
 int Board::get_col(char alpha_col)
@@ -218,29 +218,29 @@ char Board::get_alpha_col(int col)
 
 int Board::get_square(int row, int col)
 {
-    return row * COL_CNT + col;
+    return row * CHESS_COL_CNT + col;
 }
 
 bool Board::is_row_valid(int row)
 {
-    return row >= 0 && row < ROW_CNT;
+    return row >= 0 && row < CHESS_ROW_CNT;
 }
 
 bool Board::is_col_valid(int col)
 {
-    return col >= 0 && col < COL_CNT;
+    return col >= 0 && col < CHESS_COL_CNT;
 }
 
 void Board::reset()
 {
-    memcpy(this->data_, BOARD_START_STATE, sizeof(char) * BOARD_LEN);
+    memcpy(this->data_, BOARD_START_STATE, sizeof(char) * CHESS_BOARD_LEN);
 
     memset(&this->check_state_, 0, sizeof(this->check_state_));
 }
 
 void Board::copy(Board *src)
 {
-    memcpy(this->data_, src->data_, sizeof(char) * BOARD_LEN);
+    memcpy(this->data_, src->data_, sizeof(char) * CHESS_BOARD_LEN);
     this->castle_state_ = src->castle_state_;
     this->check_state_ = src->check_state_;
 }
@@ -256,12 +256,12 @@ void Board::print()
     int foreground = 0;
     int background = 0;
 
-    for (int row = ROW_CNT - 1; row >= 0; row--)
+    for (int row = CHESS_ROW_CNT - 1; row >= 0; row--)
     {
         printf("%d  ", row + 1);
         printf("");
 
-        for (int col = 0; col < COL_CNT; col++)
+        for (int col = 0; col < CHESS_COL_CNT; col++)
         {
             char piece = this->get_piece(Board::get_square(row, col));
 
@@ -319,7 +319,7 @@ void Board::print()
     SetConsoleTextAttribute(hConsole, 15);
 
     printf("   ");
-    for (int col = 0; col < COL_CNT; col++)
+    for (int col = 0; col < CHESS_COL_CNT; col++)
     {
         printf(" %c ", Board::get_alpha_col(col));
     }
@@ -338,12 +338,12 @@ void Board::print(Move move)
     int foreground = 0;
     int background = 0;
 
-    for (int row = ROW_CNT - 1; row >= 0; row--)
+    for (int row = CHESS_ROW_CNT - 1; row >= 0; row--)
     {
         printf("%d  ", row + 1);
         printf("");
 
-        for (int col = 0; col < COL_CNT; col++)
+        for (int col = 0; col < CHESS_COL_CNT; col++)
         {
             char piece = this->get_piece(Board::get_square(row, col));
 
@@ -408,7 +408,7 @@ void Board::print(Move move)
     SetConsoleTextAttribute(hConsole, 15);
 
     printf("   ");
-    for (int col = 0; col < COL_CNT; col++)
+    for (int col = 0; col < CHESS_COL_CNT; col++)
     {
         printf(" %c ", Board::get_alpha_col(col));
     }
@@ -431,7 +431,7 @@ int Board::get_king_square(bool white)
     int king_square = -1;
     if (white)
     {
-        for (int i = 0; i < BOARD_LEN; i++)
+        for (int i = 0; i < CHESS_BOARD_LEN; i++)
         {
             if (this->get_piece(i) == WK)
             {
@@ -442,7 +442,7 @@ int Board::get_king_square(bool white)
     }
     else
     {
-        for (int i = BOARD_LEN - 1; i >= 0; i--)
+        for (int i = CHESS_BOARD_LEN - 1; i >= 0; i--)
         {
             if (this->get_piece(i) == BK)
             {
@@ -1332,7 +1332,7 @@ std::vector<Move> Board::get_all_moves(bool white)
     {
         memset(this->check_state_.black_king_pins, 0, sizeof(this->check_state_.black_king_pins));
 
-        for (int i = 0; i < BOARD_LEN; i++)
+        for (int i = 0; i < CHESS_BOARD_LEN; i++)
         {
             if (Piece::is_white(this->get_piece(i)))
             {
@@ -1345,7 +1345,7 @@ std::vector<Move> Board::get_all_moves(bool white)
     {
         memset(this->check_state_.white_king_pins, 0, sizeof(this->check_state_.white_king_pins));
 
-        for (int i = 0; i < BOARD_LEN; i++)
+        for (int i = 0; i < CHESS_BOARD_LEN; i++)
         {
             if (Piece::is_black(this->get_piece(i)))
             {
@@ -1406,7 +1406,7 @@ bool Board::has_moves(bool white)
 {
     if (white)
     {
-        for (int i = 0; i < BOARD_LEN; i++)
+        for (int i = 0; i < CHESS_BOARD_LEN; i++)
         {
             if (Piece::is_white(this->get_piece(i)))
             {
@@ -1420,7 +1420,7 @@ bool Board::has_moves(bool white)
     }
     else
     {
-        for (int i = BOARD_LEN - 1; i >= 0; i--)
+        for (int i = CHESS_BOARD_LEN - 1; i >= 0; i--)
         {
             if (Piece::is_black(this->get_piece(i)))
             {
@@ -1440,7 +1440,7 @@ bool Board::is_square_under_attack(int square, bool by_white)
 {
     if (by_white)
     {
-        for (int i = 0; i < BOARD_LEN; i++)
+        for (int i = 0; i < CHESS_BOARD_LEN; i++)
         {
             if (Piece::is_white(this->get_piece(i)))
             {
@@ -1457,7 +1457,7 @@ bool Board::is_square_under_attack(int square, bool by_white)
     }
     else
     {
-        for (int i = BOARD_LEN - 1; i >= 0; i--)
+        for (int i = CHESS_BOARD_LEN - 1; i >= 0; i--)
         {
             if (Piece::is_black(this->get_piece(i)))
             {
@@ -1757,7 +1757,7 @@ int Board::evaluate_material()
 {
     int mat_eval = 0;
 
-    for (int i = 0; i < BOARD_LEN; i++)
+    for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
         mat_eval += Piece::get_value(this->get_piece(i));
     }
@@ -1837,7 +1837,7 @@ Move Board::change_minimax_async(bool white, int depth)
     auto sw = new CpuStopWatch();
     sw->start();
 
-    Evaluation evals[BOARD_LEN];
+    Evaluation evals[CHESS_BOARD_LEN];
 
     auto sims = this->simulate_all(white);
 
@@ -1902,52 +1902,78 @@ Move Board::change_minimax_async(bool white, int depth)
 
 void Board::one_hot_encode(float *out)
 {
-    for (int i = 0; i < ROW_CNT; i++)
+    for (int c = 0; c < 6; c++)
     {
-        for (int j = 0; j < COL_CNT; j++)
+        for (int i = 0; i < CHESS_ROW_CNT; i++)
         {
-            int idx = i * COL_CNT + (j * 6);
-
-            switch (this->data_[i * COL_CNT + j])
+            for (int j = 0; j < CHESS_COL_CNT; j++)
             {
-            case WP:
-                out[idx + 0] = 1.0f;
-                break;
-            case BP:
-                out[idx + 0] = -1.0f;
-                break;
-            case WN:
-                out[idx + 1] = 1.0f;
-                break;
-            case BN:
-                out[idx + 1] = -1.0f;
-                break;
-            case WB:
-                out[idx + 2] = 1.0f;
-                break;
-            case BB:
-                out[idx + 2] = -1.0f;
-                break;
-            case WR:
-                out[idx + 3] = 1.0f;
-                break;
-            case BR:
-                out[idx + 3] = -1.0f;
-                break;
-            case WQ:
-                out[idx + 4] = 1.0f;
-                break;
-            case BQ:
-                out[idx + 4] = -1.0f;
-                break;
-            case WK:
-                out[idx + 5] = 1.0f;
-                break;
-            case BK:
-                out[idx + 5] = -1.0f;
-                break;
-            default:
-                break;
+                int out_idx = (c * CHESS_BOARD_LEN) + (i * CHESS_COL_CNT) + j;
+                int data_idx = (i * CHESS_COL_CNT) + j;
+
+                switch (c)
+                {
+                case 0:
+                    if (this->data_[data_idx] == WP)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    else if (this->data_[data_idx] == BP)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 1:
+                    if (this->data_[data_idx] == WN)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    else if (this->data_[data_idx] == BN)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 2:
+                    if (this->data_[data_idx] == WB)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    else if (this->data_[data_idx] == BB)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 3:
+                    if (this->data_[data_idx] == WR)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    else if (this->data_[data_idx] == BR)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 4:
+                    if (this->data_[data_idx] == WQ)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    else if (this->data_[data_idx] == BQ)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                default:
+                    if (this->data_[data_idx] == WK)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    else if (this->data_[data_idx] == BK)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                }
             }
         }
     }

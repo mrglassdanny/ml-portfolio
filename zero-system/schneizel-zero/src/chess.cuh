@@ -7,9 +7,9 @@
 
 #include <windows.h>
 
-#define ROW_CNT 8
-#define COL_CNT 8
-#define BOARD_LEN (ROW_CNT * COL_CNT)
+#define CHESS_ROW_CNT 8
+#define CHESS_COL_CNT 8
+#define CHESS_BOARD_LEN (CHESS_ROW_CNT * CHESS_COL_CNT)
 
 #define MT ' '
 #define WP 'P'
@@ -67,8 +67,8 @@ namespace chess
     {
         bool white_checked;
         bool black_checked;
-        bool white_king_pins[BOARD_LEN];
-        bool black_king_pins[BOARD_LEN];
+        bool white_king_pins[CHESS_BOARD_LEN];
+        bool black_king_pins[CHESS_BOARD_LEN];
     };
 
     struct Simulation;
@@ -76,7 +76,7 @@ namespace chess
     class Board
     {
     private:
-        char data_[BOARD_LEN];
+        char data_[CHESS_BOARD_LEN];
         CastleState castle_state_;
 
         static int get_row(int square);
