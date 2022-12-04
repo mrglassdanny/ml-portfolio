@@ -186,11 +186,18 @@ int main()
 
     chess::Board board;
 
-    Tensor *x = Tensor::zeros(false, Shape(6, 8, 8));
+    Tensor *x = Tensor::zeros(false, Shape(1, 6, 8, 8));
     board.one_hot_encode(x->data());
     x->to_cuda();
+    auto y = Tensor::ones(true, Shape(1, 1));
 
-    x->print();
+    auto model = new Model();
+    model->hadamard(x->shape(), 1, layer::ActivationType::None);
+    model->linear(y->shape(), layer::ActivationType::None);
+
+    model->set_loss(new loss::MSE());
+
+    model->validate_gradients(x, y, true);
 
     return 0;
 }
