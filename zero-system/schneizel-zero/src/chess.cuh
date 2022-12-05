@@ -3,9 +3,10 @@
 #include <iostream>
 #include <vector>
 #include <thread>
-#include <mutex>
 
 #include <windows.h>
+
+#include <zero/mod.cuh>
 
 #define CHESS_ROW_CNT 8
 #define CHESS_COL_CNT 8
@@ -25,8 +26,8 @@
 #define BQ 'q'
 #define BK 'k'
 
-#define EVAL_MIN_VAL -1000
-#define EVAL_MAX_VAL 1000
+#define CHESS_EVAL_MIN_VAL -1000.0f
+#define CHESS_EVAL_MAX_VAL 1000.0f
 
 namespace chess
 {
@@ -38,7 +39,7 @@ namespace chess
 
     struct Evaluation
     {
-        int value;
+        float value;
         Move move;
     };
 
@@ -91,8 +92,8 @@ namespace chess
         std::vector<Move> get_diagonal_moves(int square, char piece, int row, int col);
         std::vector<Move> get_straight_moves(int square, char piece, int row, int col);
 
-        static int sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, int beta);
-        static void sim_minimax_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals);
+        static float sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, int beta, zero::nn::Model *model);
+        static void sim_minimax_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals, zero::nn::Model *model);
 
     public:
         CheckState check_state_;
@@ -138,7 +139,7 @@ namespace chess
 
         int evaluate_material();
 
-        Move change_minimax_async(bool white, int depth);
+        Move change_minimax_async(bool white, int depth, std::vector<zero::nn::Model *> models);
 
         void one_hot_encode(float *out);
     };
