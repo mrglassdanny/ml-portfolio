@@ -37,12 +37,6 @@ namespace chess
         int dst_square;
     };
 
-    struct Evaluation
-    {
-        float value;
-        Move move;
-    };
-
     class Piece
     {
     public:
@@ -73,7 +67,7 @@ namespace chess
     };
 
     struct Simulation;
-    class Evaluator;
+    class Evaluation;
 
     class Board
     {
@@ -94,8 +88,8 @@ namespace chess
         std::vector<Move> get_diagonal_moves(int square, char piece, int row, int col);
         std::vector<Move> get_straight_moves(int square, char piece, int row, int col);
 
-        static float sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, int beta, Evaluator *evaluator);
-        static void sim_minimax_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals, Evaluator *evaluator);
+        static float sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, int beta);
+        static void sim_minimax_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals);
 
     public:
         Board();
@@ -138,9 +132,8 @@ namespace chess
 
         int evaluate_material();
 
-        Move change_minimax_sync(bool white, int depth, Evaluator *evaluator);
-        Move change_minimax_async(bool white, int depth, Evaluator *evaluator);
-        Move change_minimax_async(bool white, int depth, std::vector<Evaluator *> evaluators);
+        Move change_minimax_async(bool white, int depth);
+        Move change_minimax_async(bool white, int depth, zero::nn::Model *model);
 
         void one_hot_encode(float *out);
     };
@@ -152,29 +145,10 @@ namespace chess
         Board board;
     };
 
-    class Evaluator
+    struct Evaluation
     {
-    public:
-        virtual float evaluate(Board *board) = 0;
-    };
-
-    class MaterialEvaluator : public Evaluator
-    {
-    public:
-        MaterialEvaluator();
-
-        virtual float evaluate(Board *board) override;
-    };
-
-    class ModelEvaluator : public Evaluator
-    {
-    private:
-        zero::nn::Model *model_;
-
-    public:
-        ModelEvaluator(zero::nn::Model *model);
-        ~ModelEvaluator();
-
-        virtual float evaluate(Board *board) override;
+        float value;
+        Move move;
+        Board board;
     };
 }

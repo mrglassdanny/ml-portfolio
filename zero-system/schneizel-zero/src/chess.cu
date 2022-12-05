@@ -1754,7 +1754,7 @@ int Board::evaluate_material()
     return mat_eval;
 }
 
-float Board::sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, int beta, Evaluator *evaluator)
+float Board::sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, int beta)
 {
     if (sim.board.is_checkmate(!white, false))
     {
@@ -1770,7 +1770,7 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, 
 
     if (depth == 0)
     {
-        return evaluator->evaluate(&sim.board);
+        return (float)sim.board.evaluate_material();
     }
 
     if (!white)
@@ -1780,7 +1780,7 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, 
 
         for (auto sim_sim : sim_sims)
         {
-            float eval_val = Board::sim_minimax_sync(sim_sim, true, depth - 1, alpha, beta, evaluator);
+            float eval_val = Board::sim_minimax_sync(sim_sim, true, depth - 1, alpha, beta);
 
             best_eval_val = eval_val > best_eval_val ? eval_val : best_eval_val;
 
@@ -1800,7 +1800,7 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, 
 
         for (auto sim_sim : sim_sims)
         {
-            float eval_val = Board::sim_minimax_sync(sim_sim, false, depth - 1, alpha, beta, evaluator);
+            float eval_val = Board::sim_minimax_sync(sim_sim, false, depth - 1, alpha, beta);
 
             best_eval_val = eval_val < best_eval_val ? eval_val : best_eval_val;
 
@@ -1815,16 +1815,18 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, 
     }
 }
 
-void Board::sim_minimax_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals, Evaluator *evaluator)
+void Board::sim_minimax_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals)
 {
-    float eval_val = Board::sim_minimax_sync(sim, white, depth, alpha, beta, evaluator);
-    evals[sim.idx] = Evaluation{eval_val, sim.move};
+    float eval_val = Board::sim_minimax_sync(sim, white, depth, alpha, beta);
+    evals[sim.idx] = Evaluation{eval_val, sim.move, sim.board};
 }
 
-Move Board::change_minimax_sync(bool white, int depth, Evaluator *evaluator)
+Move Board::change_minimax_async(bool white, int depth)
 {
     auto sw = new zero::core::CpuStopWatch();
     sw->start();
+
+    Evaluation evals[CHESS_BOARD_LEN];
 
     auto sims = this->simulate_all(white);
 
@@ -1834,137 +1836,114 @@ Move Board::change_minimax_sync(bool white, int depth, Evaluator *evaluator)
     float best_eval_val = white ? min : max;
     Move best_move;
 
+    std::vector<std::thread> threads;
+
     for (auto sim : sims)
     {
-        float eval_val = Board::sim_minimax_sync(sim, white, depth, min, max, evaluator);
+        threads.push_back(std::thread(Board::sim_minimax_async, sim, white, depth, min, max, evals));
+    }
+
+    for (auto &th : threads)
+    {
+        th.join();
+    }
+
+    std::vector<Evaluation> ties;
+
+    for (int i = 0; i < sims.size(); i++)
+    {
+        auto eval = evals[i];
+
+        if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
+        {
+            best_eval_val = eval.value;
+            best_move = eval.move;
+
+            ties.clear();
+        }
+        else if (eval.value == best_eval_val)
+        {
+            ties.push_back(eval);
+        }
+    }
+
+    if (ties.size() > 0)
+    {
+        int rand_idx = rand() % ties.size();
+        best_move = ties[rand_idx].move;
+    }
+
+    this->change(best_move);
+
+    sw->stop();
+    sw->print_elapsed_seconds();
+    delete sw;
+
+    return best_move;
+}
+
+Move Board::change_minimax_async(bool white, int depth, zero::nn::Model *model)
+{
+    auto sw = new zero::core::CpuStopWatch();
+    sw->start();
+
+    Evaluation evals[CHESS_BOARD_LEN];
+
+    auto sims = this->simulate_all(white);
+
+    float min = CHESS_EVAL_MIN_VAL;
+    float max = CHESS_EVAL_MAX_VAL;
+
+    float best_eval_val = white ? min : max;
+    Move best_move;
+
+    std::vector<std::thread> threads;
+
+    for (auto sim : sims)
+    {
+        threads.push_back(std::thread(Board::sim_minimax_async, sim, white, depth, min, max, evals));
+    }
+
+    for (auto &th : threads)
+    {
+        th.join();
+    }
+
+    std::vector<Evaluation> ties;
+
+    for (int i = 0; i < sims.size(); i++)
+    {
+        auto eval = evals[i];
+
+        if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
+        {
+            best_eval_val = eval.value;
+            best_move = eval.move;
+
+            ties.clear();
+        }
+        else if (eval.value == best_eval_val)
+        {
+            ties.push_back(eval);
+        }
+    }
+
+    for (auto tie : ties)
+    {
+        auto x = zero::core::Tensor::zeros(false, model->input_shape());
+        tie.board.one_hot_encode(x->data());
+        x->to_cuda();
+        auto p = model->forward(x);
+        delete x;
+
+        float eval_val = tie.value + p->get_val(0);
+        delete p;
 
         if ((white && eval_val > best_eval_val) || (!white && eval_val < best_eval_val))
         {
-            best_eval_val = eval_val;
-            best_move = sim.move;
+            best_eval_val = tie.value;
+            best_move = tie.move;
         }
-    }
-
-    this->change(best_move);
-
-    sw->stop();
-    sw->print_elapsed_seconds();
-    delete sw;
-
-    return best_move;
-}
-
-Move Board::change_minimax_async(bool white, int depth, Evaluator *evaluator)
-{
-    auto sw = new zero::core::CpuStopWatch();
-    sw->start();
-
-    Evaluation evals[CHESS_BOARD_LEN];
-
-    auto sims = this->simulate_all(white);
-
-    float min = CHESS_EVAL_MIN_VAL;
-    float max = CHESS_EVAL_MAX_VAL;
-
-    float best_eval_val = white ? min : max;
-    Move best_move;
-
-    std::vector<std::thread> threads;
-
-    for (auto sim : sims)
-    {
-        threads.push_back(std::thread(Board::sim_minimax_async, sim, white, depth, min, max, evals, evaluator));
-    }
-
-    for (auto &th : threads)
-    {
-        th.join();
-    }
-
-    std::vector<Evaluation> ties;
-
-    for (int i = 0; i < sims.size(); i++)
-    {
-        auto eval = evals[i];
-
-        if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
-        {
-            best_eval_val = eval.value;
-            best_move = eval.move;
-
-            ties.clear();
-        }
-        else if (eval.value == best_eval_val)
-        {
-            ties.push_back(eval);
-        }
-    }
-
-    if (ties.size() > 0)
-    {
-        int rand_idx = rand() % ties.size();
-        best_move = ties[rand_idx].move;
-    }
-
-    this->change(best_move);
-
-    sw->stop();
-    sw->print_elapsed_seconds();
-    delete sw;
-
-    return best_move;
-}
-
-Move Board::change_minimax_async(bool white, int depth, std::vector<Evaluator *> evaluators)
-{
-    auto sw = new zero::core::CpuStopWatch();
-    sw->start();
-
-    Evaluation evals[CHESS_BOARD_LEN];
-
-    auto sims = this->simulate_all(white);
-
-    float min = CHESS_EVAL_MIN_VAL;
-    float max = CHESS_EVAL_MAX_VAL;
-
-    float best_eval_val = white ? min : max;
-    Move best_move;
-
-    std::vector<std::thread> threads;
-
-    for (auto sim : sims)
-    {
-        threads.push_back(std::thread(Board::sim_minimax_async, sim, white, depth, min, max, evals, evaluators[sim.idx]));
-    }
-
-    for (auto &th : threads)
-    {
-        th.join();
-    }
-
-    std::vector<Evaluation> ties;
-
-    for (int i = 0; i < sims.size(); i++)
-    {
-        auto eval = evals[i];
-
-        if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
-        {
-            best_eval_val = eval.value;
-            best_move = eval.move;
-
-            ties.clear();
-        }
-        else if (eval.value == best_eval_val)
-        {
-            ties.push_back(eval);
-        }
-    }
-
-    if (ties.size() > 0)
-    {
-        int rand_idx = rand() % ties.size();
-        best_move = ties[rand_idx].move;
     }
 
     this->change(best_move);
@@ -2053,37 +2032,4 @@ void Board::one_hot_encode(float *out)
             }
         }
     }
-}
-
-MaterialEvaluator::MaterialEvaluator()
-{
-}
-
-float MaterialEvaluator::evaluate(Board *board)
-{
-    return (float)board->evaluate_material();
-}
-
-ModelEvaluator::ModelEvaluator(zero::nn::Model *model)
-{
-    this->model_ = model;
-}
-
-ModelEvaluator::~ModelEvaluator()
-{
-    delete this->model_;
-}
-
-float ModelEvaluator::evaluate(Board *board)
-{
-    auto x = zero::core::Tensor::zeros(false, this->model_->input_shape());
-    board->one_hot_encode(x->data());
-    x->to_cuda();
-    auto p = model_->forward(x);
-    delete x;
-
-    float eval = (float)board->evaluate_material() + p->get_val(0);
-    delete p;
-
-    return eval;
 }

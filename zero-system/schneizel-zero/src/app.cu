@@ -23,16 +23,6 @@ Game self_play(int white_depth, int black_depth, Model *model)
 
     int move_cnt = 0;
 
-    auto material_evaluator = new MaterialEvaluator();
-    auto model_evaluator = new ModelEvaluator(model->copy());
-
-    std::vector<Evaluator *> model_evaluators;
-    model_evaluators.push_back(model_evaluator);
-    for (int i = 0; i < 74; i++)
-    {
-        model_evaluators.push_back(new ModelEvaluator(model->copy()));
-    }
-
     while (true)
     {
         printf("\nWHITE TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
@@ -64,8 +54,7 @@ Game self_play(int white_depth, int black_depth, Model *model)
             printf("======================================================== WHITE IN CHECK!\n");
         }
 
-        // prev_move = board.change_minimax_sync(true, white_depth, model_evaluator);
-        prev_move = board.change_minimax_async(true, white_depth, model_evaluators);
+        prev_move = board.change_minimax_async(true, white_depth, model);
         Board cpy_board;
         cpy_board.copy(&board);
         game.boards.push_back(cpy_board);
@@ -93,20 +82,12 @@ Game self_play(int white_depth, int black_depth, Model *model)
             printf("======================================================== BLACK IN CHECK!\n");
         }
 
-        prev_move = board.change_minimax_async(false, black_depth, material_evaluator);
+        prev_move = board.change_minimax_async(false, black_depth);
         Board cpy_board2;
         cpy_board2.copy(&board);
         game.boards.push_back(cpy_board2);
 
         move_cnt++;
-    }
-
-    delete material_evaluator;
-    delete model_evaluator;
-
-    for (int i = 0; i < 75; i++)
-    {
-        delete model_evaluators[i];
     }
 
     return game;
@@ -120,8 +101,8 @@ int main()
     auto y = Tensor::zeros(true, Shape(1, 1));
 
     auto model = new Model();
-    model->hadamard_product(x->shape(), 4, layer::ActivationType::Tanh);
-    model->matrix_product(4, layer::ActivationType::Tanh);
+    model->hadamard_product(x->shape(), 16, layer::ActivationType::Tanh);
+    model->matrix_product(16, layer::ActivationType::Tanh);
     model->linear(y->shape(), layer::ActivationType::Tanh);
 
     model->set_loss(new loss::MSE());
@@ -131,7 +112,7 @@ int main()
 
     while (true)
     {
-        auto game = self_play(1, 3, model);
+        auto game = self_play(3, 3, model);
         for (auto board : game.boards)
         {
             x->to_cpu();
