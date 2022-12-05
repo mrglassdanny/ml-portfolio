@@ -85,7 +85,7 @@ HadamardProduct::HadamardProduct(Shape in_shape, int filter_cnt, ActivationType 
     this->n_ = new Tensor(true, in_shape);
     this->dn_ = new Tensor(true, in_shape);
     this->params_ = new Parameters(Shape(filter_cnt, this->channels(), this->rows(), this->cols()),
-                                   Shape(filter_cnt, this->channels()), this->rows(), this->cols());
+                                   Shape(1), this->rows(), this->cols());
 
     this->activation_ = activation;
 }
