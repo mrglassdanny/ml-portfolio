@@ -65,7 +65,10 @@ namespace zero
             void conv2d(Shape filter_shape, ActivationType activation);
             void conv2d(Shape filter_shape, Stride stride, ActivationType activation);
             void conv2d(Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation);
-            void hadamard(Shape in_shape, int filter_cnt, ActivationType activation);
+            void hadamard_product(int filter_cnt, ActivationType activation);
+            void hadamard_product(Shape in_shape, int filter_cnt, ActivationType activation);
+            void matrix_product(int filter_cnt, ActivationType activation);
+            void matrix_product(Shape in_shape, int filter_cnt, ActivationType activation);
 
             std::vector<Layer *> layers();
             std::vector<Parameters *> parameters();

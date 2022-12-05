@@ -444,9 +444,24 @@ void Model::conv2d(Shape in_shape, Shape filter_shape, Stride stride, Activation
     this->add_layer(new Conv2d(in_shape, filter_shape, stride, activation));
 }
 
-void Model::hadamard(Shape in_shape, int filter_cnt, ActivationType activation)
+void Model::hadamard_product(int filter_cnt, ActivationType activation)
+{
+    this->add_layer(new HadamardProduct(this->output_shape(), filter_cnt, activation));
+}
+
+void Model::hadamard_product(Shape in_shape, int filter_cnt, ActivationType activation)
 {
     this->add_layer(new HadamardProduct(in_shape, filter_cnt, activation));
+}
+
+void Model::matrix_product(int filter_cnt, ActivationType activation)
+{
+    this->add_layer(new MatrixProduct(this->output_shape(), filter_cnt, activation));
+}
+
+void Model::matrix_product(Shape in_shape, int filter_cnt, ActivationType activation)
+{
+    this->add_layer(new MatrixProduct(in_shape, filter_cnt, activation));
 }
 
 std::vector<Layer *> Model::layers()
