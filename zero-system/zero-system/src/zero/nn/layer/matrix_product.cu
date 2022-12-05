@@ -34,8 +34,8 @@ __global__ void k_matrix_product_evaluate(float *in, float *w, float *out,
 }
 
 __global__ void k_matrix_product_inc_param_derivatives(float *in, float *in_n, float *n, float *dw,
-                                                       int row_cnt, int col_cnt, int cnt, int filter_cnt,
-                                                       int batch_size, int channel_cnt)
+                                                       int row_cnt, int col_cnt, int cnt,
+                                                       int filter_cnt, int batch_size, int channel_cnt)
 {
     int r_c_idx = blockIdx.x * blockDim.x + threadIdx.x;
     int filter_idx = blockIdx.y * blockDim.y + threadIdx.y;
@@ -63,7 +63,8 @@ __global__ void k_matrix_product_inc_param_derivatives(float *in, float *in_n, f
     }
 }
 
-__global__ void k_matrix_product_agg_derivatives(float *in, float *w, float *out, int row_cnt, int col_cnt, int cnt,
+__global__ void k_matrix_product_agg_derivatives(float *in, float *w, float *out,
+                                                 int row_cnt, int col_cnt, int cnt,
                                                  int batch_size, int channel_cnt, int filter_cnt)
 {
     int r_c_idx = blockIdx.x * blockDim.x + threadIdx.x;
