@@ -189,11 +189,11 @@ int main()
     Tensor *x = Tensor::zeros(false, Shape(1, 6, 8, 8));
     board.one_hot_encode(x->data());
     x->to_cuda();
-    auto y = Tensor::ones(true, Shape(1, 1));
+    auto y = Tensor::zeros(true, Shape(1, 1));
 
     auto model = new Model();
-    model->hadamard_product(x->shape(), 4, layer::ActivationType::Tanh);
-    model->matrix_product(4, layer::ActivationType::Tanh);
+    model->hadamard_product(x->shape(), 16, layer::ActivationType::Tanh);
+    model->matrix_product(16, layer::ActivationType::Tanh);
     model->linear(y->shape(), layer::ActivationType::Tanh);
 
     model->set_loss(new loss::MSE());
