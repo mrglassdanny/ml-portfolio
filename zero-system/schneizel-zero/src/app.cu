@@ -14,42 +14,49 @@ struct Game
     int lbl;
 };
 
-Game self_play(int white_depth, int black_depth, Model *model)
+Game self_play(int white_depth, int black_depth, bool print, Model *model)
 {
     Board board;
     Move prev_move;
 
     Game game;
+    game.lbl = 0;
 
     int move_cnt = 0;
 
-    while (true)
+    while (move_cnt < 100)
     {
-        printf("\nWHITE TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
-
-        if (move_cnt == 0)
+        if (print)
         {
-            board.print();
-        }
-        else
-        {
-            board.print(prev_move);
+            printf("\nWHITE TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
+            if (move_cnt == 0)
+            {
+                board.print();
+            }
+            else
+            {
+                board.print(prev_move);
+            }
         }
 
         if (board.is_checkmate(false, true))
         {
-            printf("WHITE CHECKMATED!\n");
+            if (print)
+                printf("WHITE CHECKMATED!\n");
+
             game.lbl = 1;
             break;
         }
         else if (!board.has_moves(true))
         {
-            printf("WHITE STALEMATED!\n");
+            if (print)
+                printf("WHITE STALEMATED!\n");
+
             game.lbl = 0;
             break;
         }
 
-        if (board.is_check(false, false))
+        if (board.is_check(false, false) && print)
         {
             printf("======================================================== WHITE IN CHECK!\n");
         }
@@ -61,23 +68,30 @@ Game self_play(int white_depth, int black_depth, Model *model)
 
         move_cnt++;
 
-        printf("\nBLACK TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
-        board.print(prev_move);
+        if (print)
+        {
+            printf("\nBLACK TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
+            board.print(prev_move);
+        }
 
         if (board.is_checkmate(true, true))
         {
-            printf("BLACK CHECKMATED!\n");
+            if (print)
+                printf("BLACK CHECKMATED!\n");
+
             game.lbl = -1;
             break;
         }
         else if (!board.has_moves(false))
         {
-            printf("BLACK STALEMATED!\n");
+            if (print)
+                printf("BLACK STALEMATED!\n");
+
             game.lbl = 0;
             break;
         }
 
-        if (board.is_check(true, false))
+        if (board.is_check(true, false) && print)
         {
             printf("======================================================== BLACK IN CHECK!\n");
         }
@@ -110,23 +124,31 @@ int main()
 
     model->summarize();
 
+    int game_cnt = 0;
+
     while (true)
     {
-        auto game = self_play(3, 3, model);
-        for (auto board : game.boards)
+        game_cnt++;
+        auto game = self_play(3, 3, false, model);
+        if (game.lbl != 0)
         {
-            x->to_cpu();
-            board.one_hot_encode(x->data());
-            x->to_cuda();
+            for (auto board : game.boards)
+            {
+                x->to_cpu();
+                board.one_hot_encode(x->data());
+                x->to_cuda();
 
-            y->set_val(0, game.lbl);
+                y->set_val(0, game.lbl);
 
-            auto p = model->forward(x);
-            model->backward(p, y);
-            model->step();
+                auto p = model->forward(x);
+                model->backward(p, y);
+                model->step();
 
-            delete p;
+                delete p;
+            }
         }
+
+        printf("GAME COUNT: %d\n", game_cnt);
     }
 
     delete x;
