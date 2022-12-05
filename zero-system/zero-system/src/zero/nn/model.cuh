@@ -73,11 +73,14 @@ namespace zero
             void matrix_product(Shape in_shape, int filter_cnt, ActivationType activation);
 
             std::vector<Layer *> layers();
+
             std::vector<Parameters *> parameters();
             void share_parameters(std::vector<Parameters *> params);
+            void save_parameters(const char *file);
+            void load_parameters(const char *file);
+
             Layer *first_layer();
             Layer *last_layer();
-            void reset_layer_shapes();
 
             int batch_size();
             void change_batch_size(int batch_size);

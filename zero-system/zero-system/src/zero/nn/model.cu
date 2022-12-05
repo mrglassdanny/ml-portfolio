@@ -510,6 +510,15 @@ void Model::share_parameters(std::vector<Parameters *> params)
     }
 }
 
+void Model::save_parameters(const char *file)
+{
+    auto params = this->parameters();
+
+    for (auto p : params)
+    {
+    }
+}
+
 Layer *Model::first_layer()
 {
     return this->lyrs_[0];
