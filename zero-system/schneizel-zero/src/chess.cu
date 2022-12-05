@@ -1915,7 +1915,7 @@ Move Board::change_minimax_async(bool white, int depth, Evaluator *evaluator)
     return best_move;
 }
 
-Move Board::change_minimax_async(bool white, int depth, std::vector<Evaluator *> *evaluators)
+Move Board::change_minimax_async(bool white, int depth, std::vector<Evaluator *> evaluators)
 {
     auto sw = new zero::core::CpuStopWatch();
     sw->start();

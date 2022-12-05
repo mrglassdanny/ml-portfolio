@@ -65,7 +65,7 @@ Game self_play(int white_depth, int black_depth, Model *model)
         }
 
         // prev_move = board.change_minimax_sync(true, white_depth, model_evaluator);
-        prev_move = board.change_minimax_async(true, white_depth, &model_evaluators);
+        prev_move = board.change_minimax_async(true, white_depth, model_evaluators);
         Board cpy_board;
         cpy_board.copy(&board);
         game.boards.push_back(cpy_board);
@@ -131,7 +131,7 @@ int main()
 
     while (true)
     {
-        auto game = self_play(2, 4, model);
+        auto game = self_play(1, 3, model);
         for (auto board : game.boards)
         {
             x->to_cpu();

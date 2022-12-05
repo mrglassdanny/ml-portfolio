@@ -140,7 +140,7 @@ namespace chess
 
         Move change_minimax_sync(bool white, int depth, Evaluator *evaluator);
         Move change_minimax_async(bool white, int depth, Evaluator *evaluator);
-        Move change_minimax_async(bool white, int depth, std::vector<Evaluator *> *evaluators);
+        Move change_minimax_async(bool white, int depth, std::vector<Evaluator *> evaluators);
 
         void one_hot_encode(float *out);
     };
