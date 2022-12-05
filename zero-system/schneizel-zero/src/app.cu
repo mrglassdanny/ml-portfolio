@@ -10,25 +10,21 @@ using namespace chess;
 
 struct Game
 {
-    std::vector<chess::Board> boards;
+    std::vector<Board> boards;
     int lbl;
 };
 
 Game self_play(int white_depth, int black_depth, Model *model)
 {
-    chess::Board board;
-    chess::Move prev_move;
+    Board board;
+    Move prev_move;
 
     Game game;
 
-    std::vector<Model *> models;
-    models.push_back(model);
-    for (int i = 0; i < 49; i++)
-    {
-        models.push_back(model->copy());
-    }
-
     int move_cnt = 0;
+
+    auto material_evaluator = new MaterialEvaluator();
+    auto model_evaluator = new ModelEvaluator(model);
 
     while (true)
     {
@@ -56,13 +52,14 @@ Game self_play(int white_depth, int black_depth, Model *model)
             break;
         }
 
-        if (board.check_state_.white_checked)
+        if (board.is_check(false, false))
         {
             printf("======================================================== WHITE IN CHECK!\n");
         }
 
-        prev_move = board.change_minimax_async(true, white_depth, models);
-        chess::Board cpy_board;
+        prev_move = board.change_minimax_sync(true, white_depth, model_evaluator);
+        printf("MODEL SYNC EVAL CNT: %d\t", model_evaluator->get_count());
+        Board cpy_board;
         cpy_board.copy(&board);
         game.boards.push_back(cpy_board);
 
@@ -84,26 +81,31 @@ Game self_play(int white_depth, int black_depth, Model *model)
             break;
         }
 
-        if (board.check_state_.black_checked)
+        if (board.is_check(true, false))
         {
             printf("======================================================== BLACK IN CHECK!\n");
         }
 
-        prev_move = board.change_minimax_async(false, black_depth, models);
-        chess::Board cpy_board2;
+        // prev_move = board.change_minimax_async(false, black_depth, material_evaluator);
+        prev_move = board.change_minimax_sync(false, black_depth, material_evaluator);
+        printf("MATERIAL SYNC EVAL CNT: %d\n", material_evaluator->get_count());
+        Board cpy_board2;
         cpy_board2.copy(&board);
         game.boards.push_back(cpy_board2);
 
         move_cnt++;
     }
 
+    delete material_evaluator;
+    delete model_evaluator;
+
     return game;
 }
 
 // void play(bool play_as_white, int cpu_depth)
 // {
-//     chess::Board board;
-//     chess::Move prev_move;
+//     Board board;
+//     Move prev_move;
 
 //     int move_cnt = 0;
 
@@ -191,7 +193,7 @@ int main()
 {
     srand(time(NULL));
 
-    chess::Board board;
+    Board board;
 
     Tensor *x = Tensor::zeros(false, Shape(1, 6, 8, 8));
     board.one_hot_encode(x->data());
@@ -204,7 +206,7 @@ int main()
     model->linear(y->shape(), layer::ActivationType::Tanh);
 
     model->set_loss(new loss::MSE());
-    model->set_optimizer(new optim::SGD(model->parameters(), 0.01f));
+    model->set_optimizer(new optim::SGD(model->parameters(), 0.1f));
 
     model->summarize();
 

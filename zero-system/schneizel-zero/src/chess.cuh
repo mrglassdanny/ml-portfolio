@@ -73,12 +73,14 @@ namespace chess
     };
 
     struct Simulation;
+    class Evaluator;
 
     class Board
     {
     private:
         char data_[CHESS_BOARD_LEN];
         CastleState castle_state_;
+        CheckState check_state_;
 
         static int get_row(int square);
         static int get_row(char alpha_row);
@@ -92,12 +94,10 @@ namespace chess
         std::vector<Move> get_diagonal_moves(int square, char piece, int row, int col);
         std::vector<Move> get_straight_moves(int square, char piece, int row, int col);
 
-        static float sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, int beta, zero::nn::Model *model);
-        static void sim_minimax_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals, zero::nn::Model *model);
+        static float sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, int beta, Evaluator *evaluator);
+        static void sim_minimax_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals, Evaluator *evaluator);
 
     public:
-        CheckState check_state_;
-
         Board();
         ~Board();
 
@@ -138,7 +138,9 @@ namespace chess
 
         int evaluate_material();
 
-        Move change_minimax_async(bool white, int depth, std::vector<zero::nn::Model *> models);
+        Move change_minimax_sync(bool white, int depth, Evaluator *evaluator);
+        Move change_minimax_async(bool white, int depth, Evaluator *evaluator);
+        Move change_minimax_async(bool white, int depth, std::vector<Evaluator *> evaluators);
 
         void one_hot_encode(float *out);
     };
@@ -150,30 +152,31 @@ namespace chess
         Board board;
     };
 
-    class StopWatch
+    class Evaluator
     {
-    public:
-        virtual void start() = 0;
-        virtual void stop() = 0;
+    protected:
+        int cnt_ = 0;
 
-        virtual double get_elapsed_seconds() = 0;
-        virtual void print_elapsed_seconds() = 0;
+    public:
+        virtual float evaluate(Board *board) = 0;
+
+        int get_count();
     };
 
-    class CpuStopWatch : public StopWatch
+    class MaterialEvaluator : public Evaluator
+    {
+    public:
+        MaterialEvaluator();
+        virtual float evaluate(Board *board) override;
+    };
+
+    class ModelEvaluator : public Evaluator
     {
     private:
-        clock_t beg_;
-        clock_t end_;
+        zero::nn::Model *model_;
 
     public:
-        CpuStopWatch();
-        ~CpuStopWatch();
-
-        virtual void start();
-        virtual void stop();
-
-        virtual double get_elapsed_seconds();
-        virtual void print_elapsed_seconds();
+        ModelEvaluator(zero::nn::Model *model);
+        virtual float evaluate(Board *board) override;
     };
 }
