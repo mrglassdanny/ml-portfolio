@@ -44,15 +44,14 @@ __global__ void k_hadamard_product_inc_param_derivatives(float *in, float *in_n,
 
     if (channel_idx < channel_cnt && row_idx < row_cnt && col_idx < col_cnt && filter_idx < filter_cnt)
     {
-        int w_elem_idx = (filter_idx * channel_cnt * cnt) + (channel_idx * cnt) + (row_idx * col_cnt + col_idx);
-        int b_elem_idx = filter_idx * channel_cnt + channel_idx;
+        int w_elem_idx = (filter_idx * channel_cnt * cnt) + (channel_idx * cnt) + (row_idx * col_cnt) + col_idx;
 
         for (int batch_idx = 0; batch_idx < batch_size; batch_idx++)
         {
-            int in_elem_idx = (batch_idx * filter_cnt * cnt) + (filter_idx * cnt) + (row_idx * col_cnt + col_idx);
+            int in_elem_idx = (batch_idx * filter_cnt * cnt) + (filter_idx * cnt) + (row_idx * col_cnt) + col_idx;
 
             dw[w_elem_idx] +=
-                (in[in_elem_idx] * n[(batch_idx * channel_cnt * cnt) + (channel_idx * cnt) + ((row_idx * col_cnt) + col_idx)]);
+                (in[in_elem_idx] * n[(batch_idx * channel_cnt * cnt) + (channel_idx * cnt) + (row_idx * col_cnt) + col_idx]);
         }
     }
 }
@@ -69,13 +68,13 @@ __global__ void k_hadamard_product_agg_derivatives(float *in, float *w, float *o
 
     if (filter_idx < filter_cnt && row_idx < row_cnt && col_idx < col_cnt && batch_idx < batch_size)
     {
-        int in_elem_idx = (batch_idx * filter_cnt * cnt) + (filter_idx * cnt) + (row_idx * col_cnt + col_idx);
+        int in_elem_idx = (batch_idx * filter_cnt * cnt) + (filter_idx * cnt) + (row_idx * col_cnt) + col_idx;
 
         for (int channel_idx = 0; channel_idx < channel_cnt; channel_idx++)
         {
             int out_elem_idx = (batch_idx * channel_cnt * cnt) + (channel_idx * cnt) + (row_idx * col_cnt) + col_idx;
 
-            atomicAdd(&out[out_elem_idx], (in[in_elem_idx] * w[(filter_idx * channel_cnt * cnt) + (channel_idx * cnt) + (row_idx * col_cnt + col_idx)]));
+            atomicAdd(&out[out_elem_idx], (in[in_elem_idx] * w[(filter_idx * channel_cnt * cnt) + (channel_idx * cnt) + (row_idx * col_cnt) + col_idx]));
         }
     }
 }

@@ -56,7 +56,7 @@ __global__ void k_matrix_product_inc_param_derivatives(float *in, float *in_n, f
                     int n_idx = (batch_idx * channel_cnt * cnt) + (channel_idx * cnt) + (in_col_idx * col_cnt) + row_idx;
                     int in_idx = (batch_idx * filter_cnt * cnt) + (filter_idx * cnt) + (in_col_idx * col_cnt) + col_idx;
 
-                    atomicAdd(&dw[w_elem_idx], (in[in_idx] * n[n_idx]));
+                    dw[w_elem_idx] += (in[in_idx] * n[n_idx]);
                 }
             }
         }
@@ -87,7 +87,7 @@ __global__ void k_matrix_product_agg_derivatives(float *in, float *w, float *out
                 int in_idx = (batch_idx * filter_cnt * cnt) + (filter_idx * cnt) + (row_idx * col_cnt) + in_col_idx;
                 int w_idx = (filter_idx * channel_cnt * cnt) + (channel_idx * cnt) + (col_idx * col_cnt) + in_col_idx;
 
-                atomicAdd(&out[out_elem_idx], (in[in_idx] * w[w_idx]));
+                out[out_elem_idx] += (in[in_idx] * w[w_idx]);
             }
         }
     }
