@@ -56,11 +56,6 @@ Game self_play(int white_depth, int black_depth, bool print, Model *model)
             break;
         }
 
-        if (board.is_check(false, false) && print)
-        {
-            printf("======================================================== WHITE IN CHECK!\n");
-        }
-
         prev_move = board.change_minimax_async(true, white_depth, model);
         Board cpy_board;
         cpy_board.copy(&board);
@@ -89,11 +84,6 @@ Game self_play(int white_depth, int black_depth, bool print, Model *model)
 
             game.lbl = 0;
             break;
-        }
-
-        if (board.is_check(true, false) && print)
-        {
-            printf("======================================================== BLACK IN CHECK!\n");
         }
 
         prev_move = board.change_minimax_async(false, black_depth);
