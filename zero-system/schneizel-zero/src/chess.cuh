@@ -140,7 +140,7 @@ namespace chess
 
         Move change_minimax_sync(bool white, int depth, Evaluator *evaluator);
         Move change_minimax_async(bool white, int depth, Evaluator *evaluator);
-        Move change_minimax_async(bool white, int depth, std::vector<Evaluator *> evaluators);
+        Move change_minimax_async(bool white, int depth, std::vector<Evaluator *> *evaluators);
 
         void one_hot_encode(float *out);
     };
@@ -154,19 +154,15 @@ namespace chess
 
     class Evaluator
     {
-    protected:
-        int cnt_ = 0;
-
     public:
         virtual float evaluate(Board *board) = 0;
-
-        int get_count();
     };
 
     class MaterialEvaluator : public Evaluator
     {
     public:
         MaterialEvaluator();
+
         virtual float evaluate(Board *board) override;
     };
 
@@ -177,6 +173,8 @@ namespace chess
 
     public:
         ModelEvaluator(zero::nn::Model *model);
+        ~ModelEvaluator();
+
         virtual float evaluate(Board *board) override;
     };
 }

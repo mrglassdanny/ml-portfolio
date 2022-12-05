@@ -1838,16 +1838,12 @@ Move Board::change_minimax_sync(bool white, int depth, Evaluator *evaluator)
     {
         float eval_val = Board::sim_minimax_sync(sim, white, depth, min, max, evaluator);
 
-        printf("MOVE: %s\tEVAL: %f\n", this->convert_move_to_move_str(sim.move).c_str(), eval_val);
-
         if ((white && eval_val > best_eval_val) || (!white && eval_val < best_eval_val))
         {
             best_eval_val = eval_val;
             best_move = sim.move;
         }
     }
-
-    printf("BEST MOVE: %s\tEVAL: %f\n", this->convert_move_to_move_str(best_move).c_str(), best_eval_val);
 
     this->change(best_move);
 
@@ -1891,8 +1887,6 @@ Move Board::change_minimax_async(bool white, int depth, Evaluator *evaluator)
     {
         auto eval = evals[i];
 
-        printf("MOVE: %s\tEVAL: %f\n", this->convert_move_to_move_str(eval.move).c_str(), eval.value);
-
         if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
         {
             best_eval_val = eval.value;
@@ -1912,8 +1906,6 @@ Move Board::change_minimax_async(bool white, int depth, Evaluator *evaluator)
         best_move = ties[rand_idx].move;
     }
 
-    printf("BEST MOVE: %s\tEVAL: %f\n", this->convert_move_to_move_str(best_move).c_str(), best_eval_val);
-
     this->change(best_move);
 
     sw->stop();
@@ -1923,7 +1915,7 @@ Move Board::change_minimax_async(bool white, int depth, Evaluator *evaluator)
     return best_move;
 }
 
-Move Board::change_minimax_async(bool white, int depth, std::vector<Evaluator *> evaluators)
+Move Board::change_minimax_async(bool white, int depth, std::vector<Evaluator *> *evaluators)
 {
     auto sw = new zero::core::CpuStopWatch();
     sw->start();
@@ -1956,8 +1948,6 @@ Move Board::change_minimax_async(bool white, int depth, std::vector<Evaluator *>
     {
         auto eval = evals[i];
 
-        printf("MOVE: %s\tEVAL: %f\n", this->convert_move_to_move_str(eval.move).c_str(), eval.value);
-
         if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
         {
             best_eval_val = eval.value;
@@ -1976,8 +1966,6 @@ Move Board::change_minimax_async(bool white, int depth, std::vector<Evaluator *>
         int rand_idx = rand() % ties.size();
         best_move = ties[rand_idx].move;
     }
-
-    printf("BEST MOVE: %s\tEVAL: %f\n", this->convert_move_to_move_str(best_move).c_str(), best_eval_val);
 
     this->change(best_move);
 
@@ -2067,20 +2055,12 @@ void Board::one_hot_encode(float *out)
     }
 }
 
-int Evaluator::get_count()
-{
-    int cnt = this->cnt_;
-    this->cnt_ = 0;
-    return cnt;
-}
-
 MaterialEvaluator::MaterialEvaluator()
 {
 }
 
 float MaterialEvaluator::evaluate(Board *board)
 {
-    this->cnt_++;
     return (float)board->evaluate_material();
 }
 
@@ -2089,10 +2069,13 @@ ModelEvaluator::ModelEvaluator(zero::nn::Model *model)
     this->model_ = model;
 }
 
+ModelEvaluator::~ModelEvaluator()
+{
+    delete this->model_;
+}
+
 float ModelEvaluator::evaluate(Board *board)
 {
-    this->cnt_++;
-
     auto x = zero::core::Tensor::zeros(false, this->model_->input_shape());
     board->one_hot_encode(x->data());
     x->to_cuda();

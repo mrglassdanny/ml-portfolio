@@ -24,7 +24,14 @@ Game self_play(int white_depth, int black_depth, Model *model)
     int move_cnt = 0;
 
     auto material_evaluator = new MaterialEvaluator();
-    auto model_evaluator = new ModelEvaluator(model);
+    auto model_evaluator = new ModelEvaluator(model->copy());
+
+    std::vector<Evaluator *> model_evaluators;
+    model_evaluators.push_back(model_evaluator);
+    for (int i = 0; i < 74; i++)
+    {
+        model_evaluators.push_back(new ModelEvaluator(model->copy()));
+    }
 
     while (true)
     {
@@ -57,8 +64,8 @@ Game self_play(int white_depth, int black_depth, Model *model)
             printf("======================================================== WHITE IN CHECK!\n");
         }
 
-        prev_move = board.change_minimax_sync(true, white_depth, model_evaluator);
-        printf("MODEL SYNC EVAL CNT: %d\t", model_evaluator->get_count());
+        // prev_move = board.change_minimax_sync(true, white_depth, model_evaluator);
+        prev_move = board.change_minimax_async(true, white_depth, &model_evaluators);
         Board cpy_board;
         cpy_board.copy(&board);
         game.boards.push_back(cpy_board);
@@ -86,9 +93,7 @@ Game self_play(int white_depth, int black_depth, Model *model)
             printf("======================================================== BLACK IN CHECK!\n");
         }
 
-        // prev_move = board.change_minimax_async(false, black_depth, material_evaluator);
-        prev_move = board.change_minimax_sync(false, black_depth, material_evaluator);
-        printf("MATERIAL SYNC EVAL CNT: %d\n", material_evaluator->get_count());
+        prev_move = board.change_minimax_async(false, black_depth, material_evaluator);
         Board cpy_board2;
         cpy_board2.copy(&board);
         game.boards.push_back(cpy_board2);
@@ -99,110 +104,24 @@ Game self_play(int white_depth, int black_depth, Model *model)
     delete material_evaluator;
     delete model_evaluator;
 
+    for (int i = 0; i < 75; i++)
+    {
+        delete model_evaluators[i];
+    }
+
     return game;
 }
-
-// void play(bool play_as_white, int cpu_depth)
-// {
-//     Board board;
-//     Move prev_move;
-
-//     int move_cnt = 0;
-
-//     while (true)
-//     {
-//         printf("\nWHITE TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
-
-//         if (move_cnt == 0)
-//         {
-//             board.print();
-//         }
-//         else
-//         {
-//             board.print(prev_move);
-//         }
-
-//         if (board.is_checkmate(false, true))
-//         {
-//             printf("WHITE CHECKMATED!\n");
-//             break;
-//         }
-//         else if (!board.has_moves(true))
-//         {
-//             printf("WHITE STALEMATED!\n");
-//             break;
-//         }
-
-//         if (play_as_white)
-//         {
-//             auto moves = board.get_all_moves(true);
-//             for (auto move : moves)
-//             {
-//                 printf("Move: %s\n", board.convert_move_to_move_str(move).c_str());
-//             }
-
-//             std::string move_str;
-//             printf("Move: ");
-//             std::cin >> move_str;
-//             prev_move = board.change(move_str, true);
-//         }
-//         else
-//         {
-//             prev_move = board.change_minimax_async(true, cpu_depth);
-//         }
-
-//         move_cnt++;
-
-//         printf("\nBLACK TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
-//         board.print(prev_move);
-
-//         if (board.is_checkmate(true, true))
-//         {
-//             printf("BLACK CHECKMATED!\n");
-//             break;
-//         }
-//         else if (!board.has_moves(false))
-//         {
-//             printf("BLACK STALEMATED!\n");
-//             break;
-//         }
-
-//         if (!play_as_white)
-//         {
-//             auto moves = board.get_all_moves(false);
-//             for (auto move : moves)
-//             {
-//                 printf("Move: %s\n", board.convert_move_to_move_str(move).c_str());
-//             }
-
-//             std::string move_str;
-//             printf("Move: ");
-//             std::cin >> move_str;
-//             prev_move = board.change(move_str, false);
-//         }
-//         else
-//         {
-//             prev_move = board.change_minimax_async(false, cpu_depth);
-//         }
-
-//         move_cnt++;
-//     }
-// }
 
 int main()
 {
     srand(time(NULL));
 
-    Board board;
-
-    Tensor *x = Tensor::zeros(false, Shape(1, 6, 8, 8));
-    board.one_hot_encode(x->data());
-    x->to_cuda();
+    auto x = Tensor::zeros(false, Shape(1, 6, 8, 8));
     auto y = Tensor::zeros(true, Shape(1, 1));
 
     auto model = new Model();
-    model->hadamard_product(x->shape(), 16, layer::ActivationType::Tanh);
-    model->matrix_product(16, layer::ActivationType::Tanh);
+    model->hadamard_product(x->shape(), 4, layer::ActivationType::Tanh);
+    model->matrix_product(4, layer::ActivationType::Tanh);
     model->linear(y->shape(), layer::ActivationType::Tanh);
 
     model->set_loss(new loss::MSE());
@@ -210,7 +129,27 @@ int main()
 
     model->summarize();
 
-    self_play(1, 1, model);
+    while (true)
+    {
+        auto game = self_play(2, 4, model);
+        for (auto board : game.boards)
+        {
+            x->to_cpu();
+            board.one_hot_encode(x->data());
+            x->to_cuda();
+
+            y->set_val(0, game.lbl);
+
+            auto p = model->forward(x);
+            model->backward(p, y);
+            model->step();
+
+            delete p;
+        }
+    }
+
+    delete x;
+    delete y;
 
     return 0;
 }
