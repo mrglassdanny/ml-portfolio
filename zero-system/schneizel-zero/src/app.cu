@@ -198,9 +198,9 @@ int main()
 
     model->set_loss(new loss::MSE());
 
-    model->validate_gradients(x, y, true);
-
     model->summarize();
+
+    model->validate_gradients(x, y, true);
 
     return 0;
 }

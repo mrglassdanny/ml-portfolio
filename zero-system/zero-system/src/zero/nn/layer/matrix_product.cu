@@ -4,18 +4,32 @@ using namespace zero::core;
 using namespace zero::nn::layer;
 
 __global__ void k_matrix_product_evaluate(float *in, float *w, float *out,
-                                          int row_cnt, int col_cnt)
+                                          int row_cnt, int col_cnt, int cnt,
+                                          int batch_size, int channel_cnt, int filter_cnt)
 {
-    int col_idx = blockIdx.x * blockDim.x + threadIdx.x;
-    int row_idx = blockIdx.y * blockDim.y + threadIdx.y;
+    int r_c_idx = blockIdx.x * blockDim.x + threadIdx.x;
+    int b_c_idx = blockIdx.y * blockDim.y + threadIdx.y;
 
-    if (col_idx < col_cnt && row_idx < row_cnt)
+    int batch_idx = b_c_idx / channel_cnt;
+    int channel_idx = b_c_idx % channel_cnt;
+
+    int row_idx = r_c_idx / col_cnt;
+    int col_idx = r_c_idx % col_cnt;
+
+    if (col_idx < col_cnt && row_idx < row_cnt && channel_idx < channel_cnt && batch_idx < batch_size)
     {
-        int out_elem_idx = row_idx * col_cnt + col_idx;
-
-        for (int in_col_idx = 0; in_col_idx < col_cnt; in_col_idx++)
+        for (int filter_idx = 0; filter_idx < filter_cnt; filter_idx++)
         {
-            out[out_elem_idx] += (in[row_idx * col_cnt + in_col_idx] * w[in_col_idx * col_cnt + col_idx]);
+            int out_elem_idx = (batch_idx * filter_cnt * cnt) + (filter_idx * cnt) + (row_idx * col_cnt) + col_idx;
+
+            for (int in_col_idx = 0; in_col_idx < col_cnt; in_col_idx++)
+            {
+                int in_idx = (batch_idx * channel_cnt * cnt) + (channel_idx * cnt) + (row_idx * col_cnt) + in_col_idx;
+                int w_idx = (filter_idx * channel_cnt * cnt) + (channel_idx * cnt) + (in_col_idx * col_cnt) + col_idx;
+
+                // atomicAdd(&out[out_elem_idx], (in[in_idx] * w[w_idx]));
+                out[out_elem_idx] += (in[in_idx] * w[w_idx]);
+            }
         }
     }
 }
@@ -68,8 +82,8 @@ MatrixProduct::MatrixProduct(Shape in_shape, int filter_cnt, ActivationType acti
 
 void MatrixProduct::evaluate(Tensor *out)
 {
-    int grid_row_cnt = (this->rows() / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
-    int grid_col_cnt = (this->cols() / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_row_cnt = (this->batch_size() * this->channels() / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
+    int grid_col_cnt = (this->rows() * this->cols() / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
 
     dim3 grid_dims(grid_col_cnt, grid_row_cnt);
     dim3 block_dims(ZERO_CORE_CUDA_THREADS_PER_BLOCK, ZERO_CORE_CUDA_THREADS_PER_BLOCK);
@@ -78,9 +92,10 @@ void MatrixProduct::evaluate(Tensor *out)
     Tensor *w = this->params_->weights();
 
     k_matrix_product_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), out->data(),
-                                                         this->rows(), this->cols());
+                                                         this->rows(), this->cols(), this->rows() * this->cols(),
+                                                         this->batch_size(), this->channels(), this->filters());
 
-    // int grid_row_cnt2 = (4 / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
+    // int grid_row_cnt2 = (1 / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
     // int grid_col_cnt2 = (4 / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
     // dim3 grid_dims2(grid_col_cnt2, grid_row_cnt2);
     // dim3 block_dims2(ZERO_CORE_CUDA_THREADS_PER_BLOCK, ZERO_CORE_CUDA_THREADS_PER_BLOCK);
@@ -99,7 +114,7 @@ void MatrixProduct::evaluate(Tensor *out)
     // t2->set_val(2, 4.0f);
     // t2->set_val(3, 5.0f);
 
-    // k_matrix_product_evaluate<<<grid_dims, block_dims>>>(t1->data(), t2->data(), t3->data(), 2, 2);
+    // k_matrix_product_evaluate<<<grid_dims2, block_dims2>>>(t1->data(), t2->data(), t3->data(), 2, 2, 4, 1, 1, 1);
     // t3->print();
 
     Activation::evaluate(out, this->batch_size(), this->out_features(), this->activation_);
