@@ -132,7 +132,6 @@ namespace chess
 
         void change(Move move);
         Move change(std::string move_str, bool white);
-        Move change_random(bool white);
 
         Simulation simulate(Move move);
         std::vector<Simulation> simulate_all(bool white);

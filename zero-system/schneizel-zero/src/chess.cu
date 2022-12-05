@@ -1711,17 +1711,6 @@ Move Board::change(std::string move_str, bool white)
     return move;
 }
 
-Move Board::change_random(bool white)
-{
-    auto all_moves = this->get_all_moves(white);
-
-    int rand_move_idx = rand() % all_moves.size();
-
-    this->change(all_moves[rand_move_idx]);
-
-    return all_moves[rand_move_idx];
-}
-
 Simulation Board::simulate(Move move)
 {
     Simulation sim;
@@ -1874,7 +1863,7 @@ Move Board::change_minimax_async(bool white, int depth, std::vector<zero::nn::Mo
     {
         auto eval = evals[i];
 
-        printf("MOVE: %s (%d->%d)\tEVAL: %d\n", this->convert_move_to_move_str(eval.move).c_str(),
+        printf("MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_move_str(eval.move).c_str(),
                eval.move.src_square, eval.move.dst_square, eval.value);
 
         if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
@@ -1897,7 +1886,7 @@ Move Board::change_minimax_async(bool white, int depth, std::vector<zero::nn::Mo
         best_move = ties[rand_idx].move;
     }
 
-    printf("BEST MOVE: %s (%d->%d)\tEVAL: %d\n", this->convert_move_to_move_str(best_move).c_str(),
+    printf("BEST MOVE: %s (%d->%d)\tEVAL: %f\n", this->convert_move_to_move_str(best_move).c_str(),
            best_move.src_square, best_move.dst_square, best_eval_val);
 
     this->change(best_move);

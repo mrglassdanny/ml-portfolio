@@ -25,16 +25,7 @@ Game self_play(int white_depth, int black_depth, Model *model)
     models.push_back(model);
     for (int i = 0; i < 49; i++)
     {
-        auto cpy_model = new Model(true);
-        cpy_model->hadamard_product(model->input_shape(), 16, layer::ActivationType::Tanh);
-        cpy_model->matrix_product(16, layer::ActivationType::Tanh);
-        cpy_model->linear(model->output_shape(), layer::ActivationType::Tanh);
-
-        cpy_model->share_parameters(model->parameters());
-
-        cpy_model->set_loss(new loss::MSE());
-
-        models.push_back(cpy_model);
+        models.push_back(model->copy());
     }
 
     int move_cnt = 0;
