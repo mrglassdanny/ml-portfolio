@@ -22,6 +22,7 @@ namespace zero
         {
         protected:
             std::vector<Layer *> lyrs_;
+            bool shared_params_;
             Loss *loss_;
             Optimizer *optim_;
 
@@ -34,6 +35,7 @@ namespace zero
 
         public:
             Model();
+            Model(bool shared_params);
             ~Model();
 
             Tensor *forward(Tensor *x);
@@ -72,6 +74,7 @@ namespace zero
 
             std::vector<Layer *> layers();
             std::vector<Parameters *> parameters();
+            void share_parameters(std::vector<Parameters *> params);
             Layer *first_layer();
             Layer *last_layer();
             void reset_layer_shapes();

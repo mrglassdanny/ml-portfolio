@@ -50,12 +50,32 @@ Tensor *Parameters::bias_gradients()
     return this->db_;
 }
 
+Learnable::Learnable(bool shared_params)
+{
+    this->params_ = nullptr;
+    this->shared_params_ = shared_params;
+}
+
 Learnable::~Learnable()
 {
-    delete params_;
+    if (!this->shared_params_)
+    {
+        delete params_;
+    }
 }
 
 Parameters *Learnable::parameters()
 {
     return this->params_;
+}
+
+void Learnable::share_parameters(Parameters *params)
+{
+    if (this->params_ != nullptr)
+    {
+        delete this->params_;
+    }
+
+    this->params_ = params;
+    this->shared_params_ = true;
 }

@@ -5,6 +5,18 @@ using namespace zero::nn;
 
 Model::Model()
 {
+    this->shared_params_ = false;
+
+    this->loss_ = nullptr;
+    this->optim_ = nullptr;
+
+    this->validations_ = Validations{false, false, false};
+}
+
+Model::Model(bool shared_params)
+{
+    this->shared_params_ = shared_params;
+
     this->loss_ = nullptr;
     this->optim_ = nullptr;
 
@@ -411,57 +423,57 @@ void Model::set_optimizer(Optimizer *optim)
 
 void Model::linear(int out_feature_cnt, ActivationType activation)
 {
-    this->add_layer(new Linear(this->output_shape(), Shape(this->batch_size(), out_feature_cnt), activation));
+    this->add_layer(new Linear(this->shared_params_, this->output_shape(), Shape(this->batch_size(), out_feature_cnt), activation));
 }
 
 void Model::linear(Shape y_shape, ActivationType activation)
 {
-    this->add_layer(new Linear(this->output_shape(), y_shape, activation));
+    this->add_layer(new Linear(this->shared_params_, this->output_shape(), y_shape, activation));
 }
 
 void Model::linear(int batch_size, int in_feature_cnt, int out_feature_cnt, ActivationType activation)
 {
-    this->add_layer(new Linear(Shape(batch_size, in_feature_cnt), Shape(batch_size, out_feature_cnt), activation));
+    this->add_layer(new Linear(this->shared_params_, Shape(batch_size, in_feature_cnt), Shape(batch_size, out_feature_cnt), activation));
 }
 
 void Model::linear(Shape in_shape, int out_feature_cnt, ActivationType activation)
 {
-    this->add_layer(new Linear(in_shape, Shape(in_shape[0], out_feature_cnt), activation));
+    this->add_layer(new Linear(this->shared_params_, in_shape, Shape(in_shape[0], out_feature_cnt), activation));
 }
 
 void Model::conv2d(Shape filter_shape, ActivationType activation)
 {
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, Stride{1, 1}, activation));
+    this->add_layer(new Conv2d(this->shared_params_, this->output_shape(), filter_shape, Stride{1, 1}, activation));
 }
 
 void Model::conv2d(Shape filter_shape, Stride stride, ActivationType activation)
 {
-    this->add_layer(new Conv2d(this->output_shape(), filter_shape, stride, activation));
+    this->add_layer(new Conv2d(this->shared_params_, this->output_shape(), filter_shape, stride, activation));
 }
 
 void Model::conv2d(Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation)
 {
-    this->add_layer(new Conv2d(in_shape, filter_shape, stride, activation));
+    this->add_layer(new Conv2d(this->shared_params_, in_shape, filter_shape, stride, activation));
 }
 
 void Model::hadamard_product(int filter_cnt, ActivationType activation)
 {
-    this->add_layer(new HadamardProduct(this->output_shape(), filter_cnt, activation));
+    this->add_layer(new HadamardProduct(this->shared_params_, this->output_shape(), filter_cnt, activation));
 }
 
 void Model::hadamard_product(Shape in_shape, int filter_cnt, ActivationType activation)
 {
-    this->add_layer(new HadamardProduct(in_shape, filter_cnt, activation));
+    this->add_layer(new HadamardProduct(this->shared_params_, in_shape, filter_cnt, activation));
 }
 
 void Model::matrix_product(int filter_cnt, ActivationType activation)
 {
-    this->add_layer(new MatrixProduct(this->output_shape(), filter_cnt, activation));
+    this->add_layer(new MatrixProduct(this->shared_params_, this->output_shape(), filter_cnt, activation));
 }
 
 void Model::matrix_product(Shape in_shape, int filter_cnt, ActivationType activation)
 {
-    this->add_layer(new MatrixProduct(in_shape, filter_cnt, activation));
+    this->add_layer(new MatrixProduct(this->shared_params_, in_shape, filter_cnt, activation));
 }
 
 std::vector<Layer *> Model::layers()
@@ -482,6 +494,20 @@ std::vector<Parameters *> Model::parameters()
     }
 
     return params;
+}
+
+void Model::share_parameters(std::vector<Parameters *> params)
+{
+    int param_idx = 0;
+    for (Layer *lyr : this->lyrs_)
+    {
+        if (Learnable *lrn_lyr = dynamic_cast<Learnable *>(lyr))
+        {
+            lrn_lyr->share_parameters(params[param_idx]);
+        }
+
+        param_idx++;
+    }
 }
 
 Layer *Model::first_layer()

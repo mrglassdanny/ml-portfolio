@@ -17,7 +17,7 @@ namespace zero
                 ActivationType activation_;
 
             public:
-                MatrixProduct(Shape in_shape, int filter_cnt, ActivationType activation);
+                MatrixProduct(bool shared_params, Shape in_shape, int filter_cnt, ActivationType activation);
 
                 virtual void evaluate(Tensor *out) override;
                 virtual void derive(Tensor *in, Tensor *in_n) override;

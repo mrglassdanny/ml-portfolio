@@ -93,12 +93,18 @@ __global__ void k_matrix_product_agg_derivatives(float *in, float *w, float *out
     }
 }
 
-MatrixProduct::MatrixProduct(Shape in_shape, int filter_cnt, ActivationType activation)
+MatrixProduct::MatrixProduct(bool shared_params, Shape in_shape, int filter_cnt, ActivationType activation)
+    : Learnable(shared_params)
 {
+
     this->n_ = new Tensor(true, in_shape);
     this->dn_ = new Tensor(true, in_shape);
-    this->params_ = new Parameters(Shape(filter_cnt, this->channels(), this->rows(), this->cols()),
-                                   Shape(1), this->rows(), this->cols());
+
+    if (!this->shared_params_)
+    {
+        this->params_ = new Parameters(Shape(filter_cnt, this->channels(), this->rows(), this->cols()),
+                                       Shape(1), this->rows(), this->cols());
+    }
 
     this->activation_ = activation;
 }

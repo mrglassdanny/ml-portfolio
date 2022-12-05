@@ -36,11 +36,14 @@ namespace zero
             {
             protected:
                 Parameters *params_;
+                bool shared_params_;
 
             public:
+                Learnable(bool shared_params);
                 ~Learnable();
 
                 Parameters *parameters();
+                void share_parameters(Parameters *params);
             };
         }
     }

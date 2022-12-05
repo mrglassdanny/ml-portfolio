@@ -17,8 +17,7 @@ namespace zero
                 ActivationType activation_;
 
             public:
-                Linear();
-                Linear(Shape in_shape, Shape out_shape, ActivationType activation);
+                Linear(bool shared_params, Shape in_shape, Shape out_shape, ActivationType activation);
 
                 virtual void evaluate(Tensor *out) override;
                 virtual void derive(Tensor *in, Tensor *in_n) override;

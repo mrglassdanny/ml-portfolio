@@ -67,9 +67,8 @@ __global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int ba
     }
 }
 
-Linear::Linear() {}
-
-Linear::Linear(Shape in_shape, Shape out_shape, ActivationType activation)
+Linear::Linear(bool shared_params, Shape in_shape, Shape out_shape, ActivationType activation)
+    : Learnable(shared_params)
 {
     this->n_ = new Tensor(true, in_shape);
     this->dn_ = new Tensor(true, in_shape);
@@ -77,7 +76,10 @@ Linear::Linear(Shape in_shape, Shape out_shape, ActivationType activation)
     int in_cnt = (in_shape.dims_size() / this->batch_size());
     int out_cnt = (out_shape.dims_size() / this->batch_size());
 
-    this->params_ = new Parameters(Shape(in_cnt, out_cnt), Shape(out_cnt), in_cnt, out_cnt);
+    if (!this->shared_params_)
+    {
+        this->params_ = new Parameters(Shape(in_cnt, out_cnt), Shape(out_cnt), in_cnt, out_cnt);
+    }
 
     this->activation_ = activation;
 }

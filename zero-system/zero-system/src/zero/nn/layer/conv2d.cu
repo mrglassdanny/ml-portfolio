@@ -110,11 +110,17 @@ __global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int ba
     }
 }
 
-Conv2d::Conv2d(Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation)
+Conv2d::Conv2d(bool shared_params, Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation)
+    : Learnable(shared_params)
 {
     this->n_ = new Tensor(true, in_shape);
     this->dn_ = new Tensor(true, in_shape);
-    this->params_ = new Parameters(filter_shape, Shape(filter_shape[0], filter_shape[1]), this->in_feature_rows(), this->in_feature_cols());
+
+    if (!this->shared_params_)
+    {
+        this->params_ = new Parameters(filter_shape, Shape(filter_shape[0], filter_shape[1]), this->in_feature_rows(), this->in_feature_cols());
+    }
+
     this->stride_ = stride;
 
     this->out_row_cnt_ = ((this->in_feature_rows() - this->filter_rows()) / this->stride_rows()) + 1;
