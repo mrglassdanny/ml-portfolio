@@ -80,6 +80,28 @@ void MatrixProduct::evaluate(Tensor *out)
     k_matrix_product_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), out->data(),
                                                          this->rows(), this->cols());
 
+    // int grid_row_cnt2 = (4 / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
+    // int grid_col_cnt2 = (4 / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
+    // dim3 grid_dims2(grid_col_cnt2, grid_row_cnt2);
+    // dim3 block_dims2(ZERO_CORE_CUDA_THREADS_PER_BLOCK, ZERO_CORE_CUDA_THREADS_PER_BLOCK);
+
+    // auto t1 = Tensor::ones(true, Shape(2, 2));
+    // auto t2 = Tensor::ones(true, Shape(2, 2));
+    // auto t3 = Tensor::zeros(true, Shape(2, 2));
+
+    // t1->set_val(0, 0.0f);
+    // t1->set_val(1, 4.0f);
+    // t1->set_val(2, 1.0f);
+    // t1->set_val(3, -3.0f);
+
+    // t2->set_val(0, 2.0f);
+    // t2->set_val(1, 3.0f);
+    // t2->set_val(2, 4.0f);
+    // t2->set_val(3, 5.0f);
+
+    // k_matrix_product_evaluate<<<grid_dims, block_dims>>>(t1->data(), t2->data(), t3->data(), 2, 2);
+    // t3->print();
+
     Activation::evaluate(out, this->batch_size(), this->out_features(), this->activation_);
 }
 
