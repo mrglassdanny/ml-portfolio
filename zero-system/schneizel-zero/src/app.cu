@@ -137,10 +137,10 @@ int main()
                 x->to_cpu();
                 board.one_hot_encode(x->data());
                 x->to_cuda();
-
                 y->set_val(0, game.lbl);
 
                 auto p = model->forward(x);
+                printf("LOSS: %f\n", model->loss(p, y));
                 model->backward(p, y);
                 model->step();
 
@@ -148,7 +148,7 @@ int main()
             }
         }
 
-        printf("GAME COUNT: %d\n", game_cnt);
+        printf("GAME COUNT: %d\tLABEL: %d\n", game_cnt, game.lbl);
     }
 
     delete x;

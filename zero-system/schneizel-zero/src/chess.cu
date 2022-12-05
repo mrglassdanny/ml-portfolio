@@ -1823,9 +1823,6 @@ void Board::sim_minimax_async(Simulation sim, bool white, int depth, int alpha, 
 
 Move Board::change_minimax_async(bool white, int depth)
 {
-    auto sw = new zero::core::CpuStopWatch();
-    sw->start();
-
     Evaluation evals[CHESS_BOARD_LEN];
 
     auto sims = this->simulate_all(white);
@@ -1875,18 +1872,11 @@ Move Board::change_minimax_async(bool white, int depth)
 
     this->change(best_move);
 
-    sw->stop();
-    sw->print_elapsed_seconds();
-    delete sw;
-
     return best_move;
 }
 
 Move Board::change_minimax_async(bool white, int depth, zero::nn::Model *model)
 {
-    auto sw = new zero::core::CpuStopWatch();
-    sw->start();
-
     Evaluation evals[CHESS_BOARD_LEN];
 
     auto sims = this->simulate_all(white);
@@ -1947,10 +1937,6 @@ Move Board::change_minimax_async(bool white, int depth, zero::nn::Model *model)
     }
 
     this->change(best_move);
-
-    sw->stop();
-    sw->print_elapsed_seconds();
-    delete sw;
 
     return best_move;
 }
