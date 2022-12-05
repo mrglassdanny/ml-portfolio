@@ -130,7 +130,7 @@ int main()
                 y->set_val(0, game.lbl);
 
                 auto p = model->forward(x);
-                printf("LOSS: %f\n", model->loss(p, y));
+                printf("\tLOSS: %f\n", model->loss(p, y));
                 model->backward(p, y);
                 model->step();
 
