@@ -198,6 +198,13 @@ Shape Conv2d::output_shape()
     return Shape(this->batch_size(), this->filters(), this->out_row_cnt_, this->out_col_cnt_);
 }
 
+Layer *Conv2d::copy()
+{
+    auto lyr = new Conv2d(true, this->input_shape(), this->filter_shape(), this->stride_, this->activation_);
+    lyr->share_parameters(this->params_);
+    return lyr;
+}
+
 void Conv2d::validate()
 {
     if (this->input_shape().num_dims() != 4)

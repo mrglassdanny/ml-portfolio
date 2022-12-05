@@ -25,6 +25,8 @@ namespace zero
                 virtual Shape input_shape() = 0;
                 virtual Shape output_shape() = 0;
 
+                virtual Layer *copy() = 0;
+
                 virtual void validate() = 0;
 
                 virtual void summarize();

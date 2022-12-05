@@ -147,6 +147,13 @@ Shape Linear::output_shape()
     return Shape(this->batch_size(), this->weight_cols());
 }
 
+Layer *Linear::copy()
+{
+    auto lyr = new Linear(true, this->input_shape(), this->output_shape(), this->activation_);
+    lyr->share_parameters(this->params_);
+    return lyr;
+}
+
 void Linear::validate()
 {
     if (this->input_shape().num_dims() < 2)

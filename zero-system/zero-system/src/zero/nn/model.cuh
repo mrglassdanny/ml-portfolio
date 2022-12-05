@@ -38,6 +38,8 @@ namespace zero
             Model(bool shared_params);
             ~Model();
 
+            Model *copy();
+
             Tensor *forward(Tensor *x);
             float loss(Tensor *p, Tensor *y);
             float accuracy(Tensor *p, Tensor *y);

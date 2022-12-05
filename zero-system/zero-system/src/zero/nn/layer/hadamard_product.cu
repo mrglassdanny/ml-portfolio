@@ -154,6 +154,13 @@ Shape HadamardProduct::output_shape()
     return Shape(this->batch_size(), this->filters(), this->rows(), this->cols());
 }
 
+Layer *HadamardProduct::copy()
+{
+    auto lyr = new HadamardProduct(true, this->input_shape(), this->filters(), this->activation_);
+    lyr->share_parameters(this->params_);
+    return lyr;
+}
+
 void HadamardProduct::validate()
 {
     if (this->input_shape().num_dims() != 4)

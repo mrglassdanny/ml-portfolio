@@ -33,12 +33,31 @@ Model::~Model()
     if (this->loss_ != nullptr)
     {
         delete this->loss_;
+        this->loss_ = nullptr;
     }
 
     if (this->optim_ != nullptr)
     {
         delete this->optim_;
+        this->optim_ = nullptr;
     }
+}
+
+Model *Model::copy()
+{
+    auto model = new Model(true);
+
+    for (auto lyr : this->lyrs_)
+    {
+        model->add_layer(lyr->copy());
+    }
+
+    model->loss_ = this->loss_;
+    model->optim_ = this->optim_;
+
+    model->validations_ = this->validations_;
+
+    return model;
 }
 
 Tensor *Model::forward(Tensor *x)

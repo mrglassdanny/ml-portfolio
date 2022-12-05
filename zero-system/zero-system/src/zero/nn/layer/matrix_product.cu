@@ -173,6 +173,13 @@ Shape MatrixProduct::output_shape()
     return Shape(this->batch_size(), this->filters(), this->rows(), this->cols());
 }
 
+Layer *MatrixProduct::copy()
+{
+    auto lyr = new MatrixProduct(true, this->input_shape(), this->filters(), this->activation_);
+    lyr->share_parameters(this->params_);
+    return lyr;
+}
+
 void MatrixProduct::validate()
 {
     if (this->input_shape().num_dims() != 4)

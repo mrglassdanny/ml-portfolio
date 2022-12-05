@@ -25,6 +25,8 @@ namespace zero
                 virtual Shape input_shape() override;
                 virtual Shape output_shape() override;
 
+                virtual Layer *copy() override;
+
                 virtual void validate() override;
 
                 virtual void summarize() override;
