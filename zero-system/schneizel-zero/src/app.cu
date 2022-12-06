@@ -117,7 +117,7 @@ int main()
     while (true)
     {
         game_cnt++;
-        auto game = self_play(3, 5, true, model);
+        auto game = self_play(3, 4, false, model);
         if (game.lbl != 0)
         {
             for (auto board : game.boards)
@@ -140,7 +140,7 @@ int main()
             }
         }
 
-        printf("GAME COUNT: %d\tLABEL: %d\n", game_cnt, game.lbl);
+        printf("GAME COUNT: %d\n", game_cnt);
     }
 
     delete x;
