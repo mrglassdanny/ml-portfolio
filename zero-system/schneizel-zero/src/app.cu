@@ -11,7 +11,7 @@ using namespace chess;
 struct Game
 {
     std::vector<Board> boards;
-    int lbl;
+    float lbl;
 };
 
 Game self_play(int white_depth, int black_depth, bool print, Model *model)
@@ -20,11 +20,11 @@ Game self_play(int white_depth, int black_depth, bool print, Model *model)
     Move prev_move;
 
     Game game;
-    game.lbl = 0;
+    game.lbl = 0.0f;
 
     int move_cnt = 0;
 
-    while (move_cnt < 100)
+    while (move_cnt < 200)
     {
         if (print)
         {
@@ -44,7 +44,7 @@ Game self_play(int white_depth, int black_depth, bool print, Model *model)
             if (print)
                 printf("WHITE CHECKMATED!\n");
 
-            game.lbl = 1;
+            game.lbl = -1.0f;
             break;
         }
         else if (!board.has_moves(true))
@@ -52,7 +52,6 @@ Game self_play(int white_depth, int black_depth, bool print, Model *model)
             if (print)
                 printf("WHITE STALEMATED!\n");
 
-            game.lbl = 0;
             break;
         }
 
@@ -74,7 +73,7 @@ Game self_play(int white_depth, int black_depth, bool print, Model *model)
             if (print)
                 printf("BLACK CHECKMATED!\n");
 
-            game.lbl = -1;
+            game.lbl = 1.0f;
             break;
         }
         else if (!board.has_moves(false))
@@ -82,7 +81,6 @@ Game self_play(int white_depth, int black_depth, bool print, Model *model)
             if (print)
                 printf("BLACK STALEMATED!\n");
 
-            game.lbl = 0;
             break;
         }
 
@@ -110,7 +108,7 @@ int main()
     model->linear(y->shape(), layer::ActivationType::Tanh);
 
     model->set_loss(new loss::MSE());
-    model->set_optimizer(new optim::SGD(model->parameters(), 0.1f));
+    model->set_optimizer(new optim::SGD(model->parameters(), 0.01f));
 
     model->summarize();
 
@@ -119,7 +117,7 @@ int main()
     while (true)
     {
         game_cnt++;
-        auto game = self_play(3, 3, false, model);
+        auto game = self_play(3, 5, true, model);
         if (game.lbl != 0)
         {
             for (auto board : game.boards)
@@ -129,8 +127,12 @@ int main()
                 x->to_cuda();
                 y->set_val(0, game.lbl);
 
+                board.print();
+
                 auto p = model->forward(x);
                 printf("\tLOSS: %f\n", model->loss(p, y));
+                p->print();
+                y->print();
                 model->backward(p, y);
                 model->step();
 
