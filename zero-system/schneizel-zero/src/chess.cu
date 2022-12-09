@@ -1659,7 +1659,6 @@ void Board::change(Move move)
 
 Move Board::change(std::string move_str, bool white)
 {
-    char piece_str_id;
     int src_row;
     int src_col;
     int src_square;
@@ -1695,7 +1694,6 @@ Move Board::change(std::string move_str, bool white)
     }
     else
     {
-        piece_str_id = move_str[0];
         src_row = Board::get_row(move_str[2]);
         src_col = Board::get_col(move_str[1]);
         src_square = Board::get_square(src_row, src_col);
@@ -1823,6 +1821,9 @@ void Board::sim_minimax_async(Simulation sim, bool white, int depth, int alpha, 
 
 Move Board::change_minimax_async(bool white, int depth)
 {
+    auto sw = new zero::core::CpuStopWatch();
+    sw->start();
+
     Evaluation evals[CHESS_BOARD_LEN];
 
     auto sims = this->simulate_all(white);
@@ -1872,11 +1873,18 @@ Move Board::change_minimax_async(bool white, int depth)
 
     this->change(best_move);
 
+    sw->stop();
+    sw->print_elapsed_seconds();
+    delete sw;
+
     return best_move;
 }
 
 Move Board::change_minimax_async(bool white, int depth, zero::nn::Model *model)
 {
+    auto sw = new zero::core::CpuStopWatch();
+    sw->start();
+
     Evaluation evals[CHESS_BOARD_LEN];
 
     auto sims = this->simulate_all(white);
@@ -1937,6 +1945,10 @@ Move Board::change_minimax_async(bool white, int depth, zero::nn::Model *model)
     }
 
     this->change(best_move);
+
+    sw->stop();
+    sw->print_elapsed_seconds();
+    delete sw;
 
     return best_move;
 }

@@ -117,7 +117,7 @@ int main()
     while (true)
     {
         game_cnt++;
-        auto game = self_play(3, 4, false, model);
+        auto game = self_play(3, 3, false, model);
         if (game.lbl != 0)
         {
             for (auto board : game.boards)
