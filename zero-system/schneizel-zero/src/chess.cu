@@ -1647,7 +1647,12 @@ void Board::change(Move move)
 
         if (dst_row == 7)
         {
-            dst_piece = WQ;
+            if (move.promo_piece == MT)
+            {
+                move.promo_piece = WQ;
+            }
+
+            dst_piece = move.promo_piece;
         }
         else if (dst_row == 5)
         {
@@ -1668,7 +1673,12 @@ void Board::change(Move move)
 
         if (dst_row == 0)
         {
-            dst_piece = BQ;
+            if (move.promo_piece == MT)
+            {
+                move.promo_piece = BQ;
+            }
+
+            dst_piece = move.promo_piece;
         }
         else if (dst_row == 2)
         {

@@ -151,6 +151,7 @@ int main()
 
     auto pgn_games = PGN::import("data/data.pgn");
 
+    int i = 0;
     for (auto pgn_game : pgn_games)
     {
         Board board;
@@ -158,12 +159,21 @@ int main()
 
         for (auto move_str : pgn_game->move_strs)
         {
-            printf("Move: %s\n", move_str.c_str());
-            auto move = board.change(move_str, white);
-            board.print(move);
-            white = !white;
+            if (i == -1)
+            {
+                printf("Move: %s\n", move_str.c_str());
+                auto move = board.change(move_str, white);
+                white = !white;
+                board.print(move);
+            }
+            else
+            {
+                auto move = board.change(move_str, white);
+                white = !white;
+            }
         }
-        system("cls");
+        printf("Game: %d\n", i++);
+        // system("cls");
     }
 
     return 0;
