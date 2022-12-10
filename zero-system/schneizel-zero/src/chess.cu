@@ -124,7 +124,7 @@ int Piece::get_value(char piece)
     }
 }
 
-char Piece::get_str_id(char piece)
+char Piece::get_pgn_piece(char piece)
 {
     switch (piece)
     {
@@ -145,6 +145,68 @@ char Piece::get_str_id(char piece)
         return 'K';
     default:
         return 'P';
+    }
+}
+
+char Piece::get_piece_fr_pgn_piece(char pgn_piece, bool white)
+{
+    switch (pgn_piece)
+    {
+    case 'N':
+        if (white)
+        {
+            return WN;
+        }
+        else
+        {
+            return BN;
+        }
+    case 'B':
+        if (white)
+        {
+            return WB;
+        }
+        else
+        {
+            return BB;
+        }
+    case 'R':
+        if (white)
+        {
+            return WR;
+        }
+        else
+        {
+            return BR;
+        }
+    case 'Q':
+        if (white)
+        {
+            return WQ;
+        }
+        else
+        {
+            return BQ;
+        }
+    case 'K':
+        if (white)
+        {
+            return WK;
+        }
+        else
+        {
+            return BK;
+        }
+    default:
+        // Pawn will be 'P' (optional).
+        if (white)
+        {
+            return WP;
+        }
+        else
+        {
+            return BP;
+        }
     }
 }
 
@@ -219,6 +281,16 @@ char Board::get_alpha_col(int col)
 int Board::get_square(int row, int col)
 {
     return row * CHESS_COL_CNT + col;
+}
+
+int Board::get_square(int row, char alpha_col)
+{
+    return row * CHESS_COL_CNT + Board::get_col(alpha_col);
+}
+
+int Board::get_square(int alpha_row, char alpha_col)
+{
+    return Board::get_row(alpha_row) * CHESS_COL_CNT + Board::get_col(alpha_col);
 }
 
 bool Board::is_row_valid(int row)
@@ -1362,8 +1434,8 @@ std::string Board::convert_move_to_move_str(Move move)
 {
     std::string move_str;
 
-    char piece = this->data_[move.src_square];
-    char piece_str_id = Piece::get_str_id(piece);
+    char piece = this->get_piece(move.src_square);
+    char pgn_piece = Piece::get_pgn_piece(piece);
     int src_col = Board::get_col(move.src_square);
     int src_row = Board::get_row(move.src_square);
     int dst_col = Board::get_col(move.dst_square);
@@ -1383,7 +1455,7 @@ std::string Board::convert_move_to_move_str(Move move)
         }
     }
 
-    move_str += piece_str_id;
+    move_str += pgn_piece;
 
     move_str += Board::get_alpha_col(src_col);
     move_str += (char)(src_row + 1 + '0');
@@ -1392,11 +1464,18 @@ std::string Board::convert_move_to_move_str(Move move)
     move_str += (char)(dst_row + 1 + '0');
 
     // Check for pawn promotion.
-    // TODO: allow other promotion options?
     if ((piece == WP && dst_row == 7) || (piece == BP && dst_row == 0))
     {
         move_str += '=';
-        move_str += 'Q';
+
+        if (move.promo_piece != MT)
+        {
+            move_str += move.promo_piece;
+        }
+        else
+        {
+            move_str += 'Q';
+        }
     }
 
     return move_str;
@@ -1659,6 +1738,8 @@ void Board::change(Move move)
 
 Move Board::change(std::string move_str, bool white)
 {
+    char piece;
+    char promo_piece;
     int src_row;
     int src_col;
     int src_square;
@@ -1666,33 +1747,249 @@ Move Board::change(std::string move_str, bool white)
     int dst_col;
     int dst_square;
 
-    if (move_str.compare("O-O") == 0)
+    std::string mut_move_str = move_str;
+
+    // Trim '+'/'#'.
+    mut_move_str.erase(remove(mut_move_str.begin(), mut_move_str.end(), '+'), mut_move_str.end());
+    mut_move_str.erase(remove(mut_move_str.begin(), mut_move_str.end(), '#'), mut_move_str.end());
+
+    // Remove 'x'.
+    mut_move_str.erase(remove(mut_move_str.begin(), mut_move_str.end(), 'x'), mut_move_str.end());
+
+    switch (mut_move_str.size())
     {
+    case 2:
+    {
+        // Pawn move.
+
+        dst_row = Board::get_row(mut_move_str[1]);
+        dst_col = Board::get_col(mut_move_str[0]);
+        dst_square = Board::get_square(dst_row, dst_col);
+
         if (white)
         {
-            src_square = 4;
-            dst_square = 6;
+            int prev_square = Board::get_square(dst_row - 1, dst_col);
+            int prev_square_2 = Board::get_square(dst_row - 2, dst_col);
+
+            if (this->get_piece(prev_square) == WP)
+            {
+                src_square = prev_square;
+            }
+            else if (this->get_piece(prev_square_2) == WP)
+            {
+                src_square = prev_square_2;
+            }
         }
         else
         {
-            src_square = 60;
-            dst_square = 62;
+            int prev_square = Board::get_square(dst_row + 1, dst_col);
+            int prev_square_2 = Board::get_square(dst_row + 2, dst_col);
+
+            if (this->get_piece(prev_square) == BP)
+            {
+                src_square = prev_square;
+            }
+            else if (this->get_piece(prev_square_2) == BP)
+            {
+                src_square = prev_square_2;
+            }
         }
     }
-    else if (move_str.compare("O-O-O") == 0)
+    break;
+    case 3:
     {
-        if (white)
+        if (mut_move_str.compare("O-O") == 0)
         {
-            src_square = 4;
-            dst_square = 2;
+            if (white)
+            {
+                src_square = 4;
+                dst_square = 6;
+            }
+            else
+            {
+                src_square = 60;
+                dst_square = 62;
+            }
         }
         else
         {
-            src_square = 60;
-            dst_square = 58;
+            // Need to check if isupper since pawn move will not have piece id -- just the src col.
+            if (isupper(mut_move_str[0]) == 1)
+            {
+                // Minor/major piece move.
+                piece = Piece::get_piece_fr_pgn_piece(mut_move_str[0], white);
+                dst_row = Board::get_row(mut_move_str[2]);
+                dst_col = Board::get_col(mut_move_str[1]);
+                dst_square = Board::get_square(dst_col, dst_row);
+
+                auto moves = this->get_all_moves(white);
+                for (auto move : moves)
+                {
+                    if (this->get_piece(move.src_square) == piece)
+                    {
+                        if (move.dst_square == dst_square)
+                        {
+                            src_square = move.src_square;
+                            break;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                // Disambiguated pawn move.
+                src_col = Board::get_col(mut_move_str[0]);
+                dst_row = Board::get_row(mut_move_str[2]);
+                dst_col = Board::get_col(mut_move_str[1]);
+                dst_square = Board::get_square(dst_col, dst_row);
+
+                if (white)
+                {
+                    src_square = Board::get_square(dst_row - 1, src_col);
+                }
+                else
+                {
+                    src_square = Board::get_square(dst_row + 1, src_col);
+                }
+            }
         }
     }
-    else
+    break;
+    case 4:
+    {
+        // Need to check if isupper since pawn move will not have piece id -- just the src col.
+        if (isupper(mut_move_str[0]) == 1)
+        {
+            // Disambiguated minor/major piece move.
+            piece = Piece::get_piece_fr_pgn_piece(mut_move_str[0], white);
+            dst_row = Board::get_row(mut_move_str[3]);
+            dst_col = Board::get_col(mut_move_str[2]);
+
+            if (isdigit(mut_move_str[1]))
+            {
+                src_row = Board::get_row(mut_move_str[1]);
+                dst_square = Board::get_square(dst_col, dst_row);
+
+                for (int i = 0; i < CHESS_BOARD_LEN; i++)
+                {
+                    if (Board::get_row(i) == src_row && this->get_piece(i) == piece)
+                    {
+                        src_square = i;
+                        break;
+                    }
+                }
+            }
+            else
+            {
+                src_col = Board::get_col(mut_move_str[1]);
+                dst_square = Board::get_square(dst_col, dst_row);
+
+                for (int i = 0; i < CHESS_BOARD_LEN; i++)
+                {
+                    if (Board::get_col(i) == src_col && this->get_piece(i) == piece)
+                    {
+                        src_square = i;
+                        break;
+                    }
+                }
+            }
+        }
+        else
+        {
+            // Pawn promotion.
+            if (mut_move_str[2] == '=')
+            {
+                dst_row = Board::get_row(mut_move_str[1]);
+                dst_col = Board::get_col(mut_move_str[0]);
+                dst_square = Board::get_square(dst_row, dst_col);
+                piece = Piece::get_piece_fr_pgn_piece(mut_move_str[3], white);
+                promo_piece = piece;
+
+                if (white)
+                {
+                    piece = WP;
+                }
+                else
+                {
+                    piece = BP;
+                }
+
+                auto moves = this->get_all_moves(white);
+                for (auto move : moves)
+                {
+                    if (this->get_piece(move.src_square) == piece)
+                    {
+                        if (move.dst_square == dst_square)
+                        {
+                            src_square = move.src_square;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    break;
+    case 5:
+    {
+        if (mut_move_str.compare("O-O-O") == 0)
+        {
+            if (white)
+            {
+                src_square = 4;
+                dst_square = 2;
+            }
+            else
+            {
+                src_square = 60;
+                dst_square = 58;
+            }
+        }
+        else
+        {
+            // Need to check if isupper since pawn move will not have piece id -- just the src col.
+            if (isupper(mut_move_str[0]) == 1)
+            {
+                // Disambiguated queen move.
+                piece = Piece::get_piece_fr_pgn_piece(mut_move_str[0], white);
+                if (piece == WQ || piece == BQ)
+                {
+                    src_row = Board::get_row(mut_move_str[2]);
+                    src_col = Board::get_col(mut_move_str[1]);
+                    dst_row = Board::get_row(mut_move_str[4]);
+                    dst_col = Board::get_col(mut_move_str[3]);
+
+                    src_square = Board::get_square(src_row, src_col);
+                    dst_square = Board::get_square(dst_row, dst_col);
+                }
+            }
+            else
+            {
+                // Disambiguated pawn promotion.
+                if (mut_move_str[3] == '=')
+                {
+                    src_col = Board::get_col(mut_move_str[0]);
+                    dst_row = Board::get_row(mut_move_str[2]);
+                    dst_col = Board::get_col(mut_move_str[1]);
+                    dst_square = Board::get_square(dst_col, dst_row);
+                    promo_piece = Piece::get_piece_fr_pgn_piece(mut_move_str[4], white);
+
+                    if (white)
+                    {
+                        src_row = dst_row - 1;
+                    }
+                    else
+                    {
+                        src_row = dst_row + 1;
+                    }
+
+                    src_square = Board::get_square(src_row, src_col);
+                }
+            }
+        }
+    }
+    break;
+    case 7: // schneizel custom move format.
     {
         src_row = Board::get_row(move_str[2]);
         src_col = Board::get_col(move_str[1]);
@@ -1701,60 +1998,12 @@ Move Board::change(std::string move_str, bool white)
         dst_col = Board::get_col(move_str[3]);
         dst_square = Board::get_square(dst_row, dst_col);
     }
-
-    Move move{src_square, dst_square};
-
-    this->change(move);
-
-    return move;
-}
-
-Move Board::change2(std::string move_str, bool white)
-{
-    int src_row;
-    int src_col;
-    int src_square;
-    int dst_row;
-    int dst_col;
-    int dst_square;
-
-    if (move_str.compare("O-O") == 0)
-    {
-        if (white)
-        {
-            src_square = 4;
-            dst_square = 6;
-        }
-        else
-        {
-            src_square = 60;
-            dst_square = 62;
-        }
-    }
-    else if (move_str.compare("O-O-O") == 0)
-    {
-        if (white)
-        {
-            src_square = 4;
-            dst_square = 2;
-        }
-        else
-        {
-            src_square = 60;
-            dst_square = 58;
-        }
-    }
-    else
-    {
-        src_row = Board::get_row(move_str[2]);
-        src_col = Board::get_col(move_str[1]);
-        src_square = Board::get_square(src_row, src_col);
-        dst_row = Board::get_row(move_str[4]);
-        dst_col = Board::get_col(move_str[3]);
-        dst_square = Board::get_square(dst_row, dst_col);
+    break;
+    default: // Nothing..
+        break;
     }
 
-    Move move{src_square, dst_square};
+    Move move{src_square, dst_square, promo_piece};
 
     this->change(move);
 
@@ -2014,66 +2263,66 @@ void Board::one_hot_encode(float *out)
             for (int j = 0; j < CHESS_COL_CNT; j++)
             {
                 int out_idx = (c * CHESS_BOARD_LEN) + (i * CHESS_COL_CNT) + j;
-                int data_idx = (i * CHESS_COL_CNT) + j;
+                int square = (i * CHESS_COL_CNT) + j;
 
                 switch (c)
                 {
                 case 0:
-                    if (this->data_[data_idx] == WP)
+                    if (this->get_piece(square) == WP)
                     {
                         out[out_idx] = 1.0f;
                     }
-                    else if (this->data_[data_idx] == BP)
+                    else if (this->get_piece(square) == BP)
                     {
                         out[out_idx] = -1.0f;
                     }
                     break;
                 case 1:
-                    if (this->data_[data_idx] == WN)
+                    if (this->get_piece(square) == WN)
                     {
                         out[out_idx] = 1.0f;
                     }
-                    else if (this->data_[data_idx] == BN)
+                    else if (this->get_piece(square) == BN)
                     {
                         out[out_idx] = -1.0f;
                     }
                     break;
                 case 2:
-                    if (this->data_[data_idx] == WB)
+                    if (this->get_piece(square) == WB)
                     {
                         out[out_idx] = 1.0f;
                     }
-                    else if (this->data_[data_idx] == BB)
+                    else if (this->get_piece(square) == BB)
                     {
                         out[out_idx] = -1.0f;
                     }
                     break;
                 case 3:
-                    if (this->data_[data_idx] == WR)
+                    if (this->get_piece(square) == WR)
                     {
                         out[out_idx] = 1.0f;
                     }
-                    else if (this->data_[data_idx] == BR)
+                    else if (this->get_piece(square) == BR)
                     {
                         out[out_idx] = -1.0f;
                     }
                     break;
                 case 4:
-                    if (this->data_[data_idx] == WQ)
+                    if (this->get_piece(square) == WQ)
                     {
                         out[out_idx] = 1.0f;
                     }
-                    else if (this->data_[data_idx] == BQ)
+                    else if (this->get_piece(square) == BQ)
                     {
                         out[out_idx] = -1.0f;
                     }
                     break;
                 default:
-                    if (this->data_[data_idx] == WK)
+                    if (this->get_piece(square) == WK)
                     {
                         out[out_idx] = 1.0f;
                     }
-                    else if (this->data_[data_idx] == BK)
+                    else if (this->get_piece(square) == BK)
                     {
                         out[out_idx] = -1.0f;
                     }

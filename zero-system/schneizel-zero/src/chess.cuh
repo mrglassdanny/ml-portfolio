@@ -35,6 +35,7 @@ namespace chess
     {
         int src_square;
         int dst_square;
+        char promo_piece = MT;
     };
 
     class Piece
@@ -45,7 +46,8 @@ namespace chess
         static bool is_same_color(char piece_a, char piece_b);
         static const char *to_str(char piece);
         static int get_value(char piece);
-        static char get_str_id(char piece);
+        static char get_pgn_piece(char piece);
+        static char get_piece_fr_pgn_piece(char pgn_piece, bool white);
     };
 
     struct CastleState
@@ -82,6 +84,8 @@ namespace chess
         static int get_col(char alpha_col);
         static char get_alpha_col(int col);
         static int get_square(int row, int col);
+        static int get_square(int row, char alpha_col);
+        static int get_square(char alpha_row, char alpha_col);
         static bool is_row_valid(int row);
         static bool is_col_valid(int col);
 
@@ -126,7 +130,6 @@ namespace chess
 
         void change(Move move);
         Move change(std::string move_str, bool white);
-        Move change2(std::string move_str, bool white);
 
         Simulation simulate(Move move);
         std::vector<Simulation> simulate_all(bool white);
