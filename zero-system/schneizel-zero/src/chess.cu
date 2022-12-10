@@ -288,7 +288,7 @@ int Board::get_square(int row, char alpha_col)
     return row * CHESS_COL_CNT + Board::get_col(alpha_col);
 }
 
-int Board::get_square(int alpha_row, char alpha_col)
+int Board::get_square(char alpha_row, char alpha_col)
 {
     return Board::get_row(alpha_row) * CHESS_COL_CNT + Board::get_col(alpha_col);
 }
@@ -577,6 +577,7 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
     int opp_king_square = this->get_king_square(!white);
     bool opp_king_white = Piece::is_white(this->get_piece(opp_king_square));
 
+    // Northeast.
     for (int i = 1; i < cnt; i++)
     {
         test_row = row + i;
@@ -625,7 +626,11 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
                 }
             }
         }
+    }
 
+    // Southwest.
+    for (int i = 1; i < cnt; i++)
+    {
         test_row = row - i;
         test_col = col - i;
         test_square = Board::get_square(test_row, test_col);
@@ -672,7 +677,11 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
                 }
             }
         }
+    }
 
+    // Southeast.
+    for (int i = 1; i < cnt; i++)
+    {
         test_row = row - i;
         test_col = col + i;
         test_square = Board::get_square(test_row, test_col);
@@ -719,7 +728,11 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
                 }
             }
         }
+    }
 
+    // Northwest.
+    for (int i = 1; i < cnt; i++)
+    {
         test_row = row + i;
         test_col = col - i;
         test_square = Board::get_square(test_row, test_col);
@@ -807,6 +820,7 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
     int opp_king_square = this->get_king_square(!white);
     bool opp_king_white = Piece::is_white(this->get_piece(opp_king_square));
 
+    // North.
     for (int i = 1; i < cnt; i++)
     {
         test_row = row + i;
@@ -855,7 +869,11 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
                 }
             }
         }
+    }
 
+    // South.
+    for (int i = 1; i < cnt; i++)
+    {
         test_row = row - i;
         test_col = col;
         test_square = Board::get_square(test_row, test_col);
@@ -902,7 +920,11 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
                 }
             }
         }
+    }
 
+    // East.
+    for (int i = 1; i < cnt; i++)
+    {
         test_row = row;
         test_col = col + i;
         test_square = Board::get_square(test_row, test_col);
@@ -949,7 +971,11 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
                 }
             }
         }
+    }
 
+    // West.
+    for (int i = 1; i < cnt; i++)
+    {
         test_row = row;
         test_col = col - i;
         test_square = Board::get_square(test_row, test_col);
@@ -1614,9 +1640,20 @@ void Board::change(Move move)
     {
         // Look for promotion and au passant.
 
-        if (Board::get_row(move.dst_square) == 7)
+        if (dst_row == 7)
         {
             dst_piece = WQ;
+        }
+        else if (dst_row == 5)
+        {
+            if (this->get_piece(move.dst_square) == MT)
+            {
+                int test_au_passant_square = Board::get_square(dst_row - 1, dst_col);
+                if (this->get_piece(test_au_passant_square) == BP)
+                {
+                    this->data_[test_au_passant_square] = MT;
+                }
+            }
         }
     }
     break;
@@ -1624,9 +1661,20 @@ void Board::change(Move move)
     {
         // Look for promotion and au passant.
 
-        if (Board::get_row(move.dst_square) == 0)
+        if (dst_row == 0)
         {
             dst_piece = BQ;
+        }
+        else if (dst_row == 2)
+        {
+            if (this->get_piece(move.dst_square) == MT)
+            {
+                int test_au_passant_square = Board::get_square(dst_row + 1, dst_col);
+                if (this->get_piece(test_au_passant_square) == WP)
+                {
+                    this->data_[test_au_passant_square] = MT;
+                }
+            }
         }
     }
     break;
@@ -1738,8 +1786,11 @@ void Board::change(Move move)
 
 Move Board::change(std::string move_str, bool white)
 {
+    // Need to reset pins state.
+    this->get_all_moves(white);
+
     char piece;
-    char promo_piece;
+    char promo_piece = MT;
     int src_row;
     int src_col;
     int src_square;
@@ -1797,64 +1848,78 @@ Move Board::change(std::string move_str, bool white)
     }
     break;
     case 3:
-    {
-        if (mut_move_str.compare("O-O") == 0)
+        if (move_str.compare("Rxd1") == 0)
         {
-            if (white)
-            {
-                src_square = 4;
-                dst_square = 6;
-            }
-            else
-            {
-                src_square = 60;
-                dst_square = 62;
-            }
+            int lakdjs = 0;
         }
-        else
         {
-            // Need to check if isupper since pawn move will not have piece id -- just the src col.
-            if (isupper(mut_move_str[0]) == 1)
+            if (mut_move_str.compare("O-O") == 0)
             {
-                // Minor/major piece move.
-                piece = Piece::get_piece_fr_pgn_piece(mut_move_str[0], white);
-                dst_row = Board::get_row(mut_move_str[2]);
-                dst_col = Board::get_col(mut_move_str[1]);
-                dst_square = Board::get_square(dst_col, dst_row);
-
-                auto moves = this->get_all_moves(white);
-                for (auto move : moves)
-                {
-                    if (this->get_piece(move.src_square) == piece)
-                    {
-                        if (move.dst_square == dst_square)
-                        {
-                            src_square = move.src_square;
-                            break;
-                        }
-                    }
-                }
-            }
-            else
-            {
-                // Disambiguated pawn move.
-                src_col = Board::get_col(mut_move_str[0]);
-                dst_row = Board::get_row(mut_move_str[2]);
-                dst_col = Board::get_col(mut_move_str[1]);
-                dst_square = Board::get_square(dst_col, dst_row);
-
                 if (white)
                 {
-                    src_square = Board::get_square(dst_row - 1, src_col);
+                    src_square = 4;
+                    dst_square = 6;
                 }
                 else
                 {
-                    src_square = Board::get_square(dst_row + 1, src_col);
+                    src_square = 60;
+                    dst_square = 62;
+                }
+            }
+            else
+            {
+                // Need to check if isupper since pawn move will not have piece id -- just the src col.
+                if (isupper(mut_move_str[0]) == 1)
+                {
+                    // Minor/major piece move.
+                    piece = Piece::get_piece_fr_pgn_piece(mut_move_str[0], white);
+                    dst_row = Board::get_row(mut_move_str[2]);
+                    dst_col = Board::get_col(mut_move_str[1]);
+                    dst_square = Board::get_square(dst_row, dst_col);
+
+                    bool found = false;
+                    for (int square = 0; square < CHESS_BOARD_LEN; square++)
+                    {
+                        if (this->get_piece(square) == piece)
+                        {
+                            auto moves = this->get_moves(square, true);
+                            for (auto move : moves)
+                            {
+                                if (move.dst_square == dst_square)
+                                {
+                                    src_square = square;
+                                    found = true;
+                                    break;
+                                }
+                            }
+
+                            if (found)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Disambiguated pawn move.
+                    src_col = Board::get_col(mut_move_str[0]);
+                    dst_row = Board::get_row(mut_move_str[2]);
+                    dst_col = Board::get_col(mut_move_str[1]);
+                    dst_square = Board::get_square(dst_row, dst_col);
+
+                    if (white)
+                    {
+                        src_square = Board::get_square(dst_row - 1, src_col);
+                    }
+                    else
+                    {
+                        src_square = Board::get_square(dst_row + 1, src_col);
+                    }
                 }
             }
         }
-    }
-    break;
+        break;
     case 4:
     {
         // Need to check if isupper since pawn move will not have piece id -- just the src col.
@@ -1868,7 +1933,7 @@ Move Board::change(std::string move_str, bool white)
             if (isdigit(mut_move_str[1]))
             {
                 src_row = Board::get_row(mut_move_str[1]);
-                dst_square = Board::get_square(dst_col, dst_row);
+                dst_square = Board::get_square(dst_row, dst_col);
 
                 for (int i = 0; i < CHESS_BOARD_LEN; i++)
                 {
@@ -1882,7 +1947,7 @@ Move Board::change(std::string move_str, bool white)
             else
             {
                 src_col = Board::get_col(mut_move_str[1]);
-                dst_square = Board::get_square(dst_col, dst_row);
+                dst_square = Board::get_square(dst_row, dst_col);
 
                 for (int i = 0; i < CHESS_BOARD_LEN; i++)
                 {
@@ -1914,14 +1979,24 @@ Move Board::change(std::string move_str, bool white)
                     piece = BP;
                 }
 
-                auto moves = this->get_all_moves(white);
-                for (auto move : moves)
+                bool found = false;
+                for (int square = 0; square < CHESS_BOARD_LEN; square++)
                 {
-                    if (this->get_piece(move.src_square) == piece)
+                    if (this->get_piece(square) == piece)
                     {
-                        if (move.dst_square == dst_square)
+                        auto moves = this->get_moves(square, true);
+                        for (auto move : moves)
                         {
-                            src_square = move.src_square;
+                            if (move.dst_square == dst_square)
+                            {
+                                src_square = square;
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if (found)
+                        {
                             break;
                         }
                     }
@@ -1971,7 +2046,7 @@ Move Board::change(std::string move_str, bool white)
                     src_col = Board::get_col(mut_move_str[0]);
                     dst_row = Board::get_row(mut_move_str[2]);
                     dst_col = Board::get_col(mut_move_str[1]);
-                    dst_square = Board::get_square(dst_col, dst_row);
+                    dst_square = Board::get_square(dst_row, dst_col);
                     promo_piece = Piece::get_piece_fr_pgn_piece(mut_move_str[4], white);
 
                     if (white)
