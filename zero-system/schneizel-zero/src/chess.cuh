@@ -8,6 +8,10 @@
 
 #include <zero/mod.cuh>
 
+#define CHESS_THROW_ERROR(chess_err_msg) \
+    printf("%s", chess_err_msg);         \
+    exit(1)
+
 #define CHESS_ROW_CNT 8
 #define CHESS_COL_CNT 8
 #define CHESS_BOARD_LEN (CHESS_ROW_CNT * CHESS_COL_CNT)
@@ -25,6 +29,8 @@
 #define BR 'r'
 #define BQ 'q'
 #define BK 'k'
+
+#define CHESS_INVALID_SQUARE -1
 
 #define CHESS_EVAL_MIN_VAL -1000.0f
 #define CHESS_EVAL_MAX_VAL 1000.0f

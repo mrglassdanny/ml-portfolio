@@ -1624,6 +1624,11 @@ bool Board::is_checkmate(bool by_white, bool hard_way)
 
 void Board::change(Move move)
 {
+    if (move.src_square == CHESS_INVALID_SQUARE || move.dst_square == CHESS_INVALID_SQUARE)
+    {
+        CHESS_THROW_ERROR("CHESS ERROR: invalid move");
+    }
+
     char src_piece = this->get_piece(move.src_square);
     char dst_piece = src_piece;
 
@@ -1791,12 +1796,14 @@ Move Board::change(std::string move_str, bool white)
 
     char piece;
     char promo_piece = MT;
+
     int src_row;
     int src_col;
-    int src_square;
     int dst_row;
     int dst_col;
-    int dst_square;
+
+    int src_square = CHESS_INVALID_SQUARE;
+    int dst_square = CHESS_INVALID_SQUARE;
 
     std::string mut_move_str = move_str;
 
@@ -1848,78 +1855,74 @@ Move Board::change(std::string move_str, bool white)
     }
     break;
     case 3:
-        if (move_str.compare("Rxd1") == 0)
+    {
+        if (mut_move_str.compare("O-O") == 0)
         {
-            int lakdjs = 0;
-        }
-        {
-            if (mut_move_str.compare("O-O") == 0)
+            if (white)
             {
-                if (white)
+                src_square = 4;
+                dst_square = 6;
+            }
+            else
+            {
+                src_square = 60;
+                dst_square = 62;
+            }
+        }
+        else
+        {
+            // Need to check if isupper since pawn move will not have piece id -- just the src col.
+            if (isupper(mut_move_str[0]) == 1)
+            {
+                // Minor/major piece move.
+                piece = Piece::get_piece_fr_pgn_piece(mut_move_str[0], white);
+                dst_row = Board::get_row(mut_move_str[2]);
+                dst_col = Board::get_col(mut_move_str[1]);
+                dst_square = Board::get_square(dst_row, dst_col);
+
+                bool found = false;
+                for (int square = 0; square < CHESS_BOARD_LEN; square++)
                 {
-                    src_square = 4;
-                    dst_square = 6;
-                }
-                else
-                {
-                    src_square = 60;
-                    dst_square = 62;
+                    if (this->get_piece(square) == piece)
+                    {
+                        auto moves = this->get_moves(square, true);
+                        for (auto move : moves)
+                        {
+                            if (move.dst_square == dst_square)
+                            {
+                                src_square = square;
+                                found = true;
+                                break;
+                            }
+                        }
+
+                        if (found)
+                        {
+                            break;
+                        }
+                    }
                 }
             }
             else
             {
-                // Need to check if isupper since pawn move will not have piece id -- just the src col.
-                if (isupper(mut_move_str[0]) == 1)
+                // Disambiguated pawn move.
+                src_col = Board::get_col(mut_move_str[0]);
+                dst_row = Board::get_row(mut_move_str[2]);
+                dst_col = Board::get_col(mut_move_str[1]);
+                dst_square = Board::get_square(dst_row, dst_col);
+
+                if (white)
                 {
-                    // Minor/major piece move.
-                    piece = Piece::get_piece_fr_pgn_piece(mut_move_str[0], white);
-                    dst_row = Board::get_row(mut_move_str[2]);
-                    dst_col = Board::get_col(mut_move_str[1]);
-                    dst_square = Board::get_square(dst_row, dst_col);
-
-                    bool found = false;
-                    for (int square = 0; square < CHESS_BOARD_LEN; square++)
-                    {
-                        if (this->get_piece(square) == piece)
-                        {
-                            auto moves = this->get_moves(square, true);
-                            for (auto move : moves)
-                            {
-                                if (move.dst_square == dst_square)
-                                {
-                                    src_square = square;
-                                    found = true;
-                                    break;
-                                }
-                            }
-
-                            if (found)
-                            {
-                                break;
-                            }
-                        }
-                    }
+                    src_square = Board::get_square(dst_row - 1, src_col);
                 }
                 else
                 {
-                    // Disambiguated pawn move.
-                    src_col = Board::get_col(mut_move_str[0]);
-                    dst_row = Board::get_row(mut_move_str[2]);
-                    dst_col = Board::get_col(mut_move_str[1]);
-                    dst_square = Board::get_square(dst_row, dst_col);
-
-                    if (white)
-                    {
-                        src_square = Board::get_square(dst_row - 1, src_col);
-                    }
-                    else
-                    {
-                        src_square = Board::get_square(dst_row + 1, src_col);
-                    }
+                    src_square = Board::get_square(dst_row + 1, src_col);
                 }
             }
         }
-        break;
+    }
+    break;
     case 4:
     {
         // Need to check if isupper since pawn move will not have piece id -- just the src col.
@@ -2064,7 +2067,7 @@ Move Board::change(std::string move_str, bool white)
         }
     }
     break;
-    case 7: // schneizel custom move format.
+    case 7:
     {
         src_row = Board::get_row(move_str[2]);
         src_col = Board::get_col(move_str[1]);
@@ -2074,7 +2077,7 @@ Move Board::change(std::string move_str, bool white)
         dst_square = Board::get_square(dst_row, dst_col);
     }
     break;
-    default: // Nothing..
+    default:
         break;
     }
 
