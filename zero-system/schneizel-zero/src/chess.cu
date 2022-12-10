@@ -1709,6 +1709,58 @@ Move Board::change(std::string move_str, bool white)
     return move;
 }
 
+Move Board::change2(std::string move_str, bool white)
+{
+    int src_row;
+    int src_col;
+    int src_square;
+    int dst_row;
+    int dst_col;
+    int dst_square;
+
+    if (move_str.compare("O-O") == 0)
+    {
+        if (white)
+        {
+            src_square = 4;
+            dst_square = 6;
+        }
+        else
+        {
+            src_square = 60;
+            dst_square = 62;
+        }
+    }
+    else if (move_str.compare("O-O-O") == 0)
+    {
+        if (white)
+        {
+            src_square = 4;
+            dst_square = 2;
+        }
+        else
+        {
+            src_square = 60;
+            dst_square = 58;
+        }
+    }
+    else
+    {
+        src_row = Board::get_row(move_str[2]);
+        src_col = Board::get_col(move_str[1]);
+        src_square = Board::get_square(src_row, src_col);
+        dst_row = Board::get_row(move_str[4]);
+        dst_col = Board::get_col(move_str[3]);
+        dst_square = Board::get_square(dst_row, dst_col);
+    }
+
+    Move move{src_square, dst_square};
+
+    this->change(move);
+
+    return move;
+}
+
 Simulation Board::simulate(Move move)
 {
     Simulation sim;
@@ -2030,4 +2082,124 @@ void Board::one_hot_encode(float *out)
             }
         }
     }
+}
+
+long long PGN::get_file_size(const char *file_name)
+{
+    HANDLE hFile = CreateFile((LPCSTR)file_name, GENERIC_READ,
+                              FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+                              FILE_ATTRIBUTE_NORMAL, NULL);
+
+    if (hFile == INVALID_HANDLE_VALUE)
+        return -1; // error condition, could call GetLastError to find out more
+
+    LARGE_INTEGER size;
+    if (!GetFileSizeEx(hFile, &size))
+    {
+        CloseHandle(hFile);
+        return -1; // error condition, could call GetLastError to find out more
+    }
+
+    CloseHandle(hFile);
+    return size.QuadPart;
+}
+
+std::vector<PGNGame *> PGN::import(const char *file_name)
+{
+    FILE *file_ptr = fopen(file_name, "rb");
+
+    fseek(file_ptr, 0L, SEEK_END);
+    long long file_size = PGN::get_file_size(file_name);
+    rewind(file_ptr);
+
+    char *buf = (char *)malloc(file_size);
+    fread(buf, 1, file_size, file_ptr);
+
+    fclose(file_ptr);
+
+    std::vector<PGNGame *> games;
+    PGNGame *game;
+
+    for (int i = 0; i < file_size; i++)
+    {
+        if (i - 2 > 0 && buf[i - 2] == '\n' && buf[i - 1] == '1' && buf[i] == '.')
+        {
+            game = new PGNGame();
+
+            i++;
+            // At start of game (past "1.")).
+
+            // Read moves.
+
+            while ((i + 1) < file_size && buf[i] != ' ' && buf[i + 1] != ' ')
+            {
+
+                // Turn x.
+
+                // White move.
+                std::string white_move_str;
+                while (i < file_size && buf[i] != ' ' && buf[i] != '\n' && buf[i] != '\r')
+                {
+                    white_move_str += buf[i++];
+                }
+                game->move_strs.push_back(white_move_str);
+                i++;
+
+                // It is possible that white made the last move.
+                if ((i + 1) < file_size && buf[i] != ' ' && buf[i + 1] != ' ')
+                {
+                    // Black move.
+                    std::string black_move_str;
+                    while (i < file_size && buf[i] != ' ' && buf[i] != '\n' && buf[i] != '\r')
+                    {
+                        black_move_str += buf[i++];
+                    }
+                    game->move_strs.push_back(black_move_str);
+
+                    // Go to next turn.
+                    if ((i + 1) < file_size && buf[i + 1] != ' ')
+                    {
+                        while (i < file_size && buf[i] != '.')
+                        {
+                            i++;
+                        }
+                        i++;
+                    }
+                }
+            }
+
+            // At end of game (right before 1-0 or 0-1 or 1/2-1/2).
+            // Should be spaces.
+            i++;
+            i++;
+            if (buf[i] == '0')
+            {
+                // White loss.
+                game->lbl = -1;
+            }
+            else
+            {
+                // buf[i] == 1;
+                // This could mean tie; let's check next char for '/'.
+                if (buf[i + 1] == '/')
+                {
+                    // Tie.
+                    game->lbl = 0;
+                }
+                else
+                {
+                    // White win.
+                    game->lbl = 1;
+                }
+            }
+
+            games.push_back(game);
+        }
+
+        // Ignore characters here...
+    }
+
+    free(buf);
+
+    return games;
 }

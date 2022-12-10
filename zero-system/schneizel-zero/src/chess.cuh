@@ -126,6 +126,7 @@ namespace chess
 
         void change(Move move);
         Move change(std::string move_str, bool white);
+        Move change2(std::string move_str, bool white);
 
         Simulation simulate(Move move);
         std::vector<Simulation> simulate_all(bool white);
@@ -150,5 +151,20 @@ namespace chess
         float value;
         Move move;
         Board board;
+    };
+
+    struct PGNGame
+    {
+        int lbl;
+        std::vector<std::string> move_strs;
+    };
+
+    class PGN
+    {
+    private:
+        static long long get_file_size(const char *file_name);
+
+    public:
+        static std::vector<PGNGame *> import(const char *file_name);
     };
 }

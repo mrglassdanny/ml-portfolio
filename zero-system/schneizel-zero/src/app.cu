@@ -95,10 +95,8 @@ Game self_play(int white_depth, int black_depth, bool print, Model *model)
     return game;
 }
 
-int main()
+void self_play_test1()
 {
-    srand(time(NULL));
-
     auto x = Tensor::zeros(false, Shape(1, 6, 8, 8));
     auto y = Tensor::zeros(true, Shape(1, 1));
 
@@ -145,6 +143,13 @@ int main()
 
     delete x;
     delete y;
+}
+
+int main()
+{
+    srand(time(NULL));
+
+    auto pgn_games = PGN::import("data/data.pgn");
 
     return 0;
 }
