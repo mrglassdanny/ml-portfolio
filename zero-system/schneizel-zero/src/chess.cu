@@ -2141,7 +2141,7 @@ Move Board::change(std::string move_str, bool white)
 
     Move move{src_square, dst_square, promo_piece};
 
-    // TEST
+    // Make sure our engine thinks move is valid.
     {
         bool valid_move = false;
 
@@ -2157,7 +2157,9 @@ Move Board::change(std::string move_str, bool white)
 
         if (!valid_move)
         {
-            CHESS_THROW_ERROR("CHESS TEST FAILURE: invalid move");
+            this->print();
+            printf("MOVE: %s\n", move_str.c_str());
+            CHESS_THROW_ERROR("CHESS ERROR: move is not valid");
         }
     }
 
