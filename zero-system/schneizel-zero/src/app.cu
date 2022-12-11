@@ -15,12 +15,6 @@ struct Game
     float lbl;
 };
 
-struct LabeledBoard
-{
-    Board board;
-    float lbl;
-};
-
 Game self_play(int white_depth, int black_depth, bool print, Model *model)
 {
     Board board;
@@ -152,11 +146,17 @@ void self_play_test1()
     delete y;
 }
 
-std::vector<LabeledBoard> import_pgn(const char *path)
+void export_pgn(const char *path)
 {
     auto pgn_games = PGN::import(path);
 
-    std::vector<LabeledBoard> labeled_boards;
+    FILE *train_data_file = fopen("temp/train.data", "wb");
+    FILE *train_lbl_file = fopen("temp/train.lbl", "wb");
+    FILE *test_data_file = fopen("temp/test.data", "wb");
+    FILE *test_lbl_file = fopen("temp/test.lbl", "wb");
+
+    float data_buf[6 * 8 * 8];
+    float lbl_buf;
 
     for (auto pgn_game : pgn_games)
     {
@@ -166,92 +166,119 @@ std::vector<LabeledBoard> import_pgn(const char *path)
         for (auto move_str : pgn_game->move_strs)
         {
             auto move = board.change(move_str, white);
-            labeled_boards.push_back(LabeledBoard{board, (float)pgn_game->lbl});
             white = !white;
+
+            board.one_hot_encode(data_buf);
+            lbl_buf = (float)pgn_game->lbl;
+
+            if (rand() % 20 == 0)
+            {
+                fwrite(data_buf, sizeof(data_buf), 1, test_data_file);
+                fwrite(&lbl_buf, sizeof(lbl_buf), 1, test_lbl_file);
+            }
+            else
+            {
+                fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
+                fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
+            }
         }
 
         delete pgn_game;
     }
 
-    return labeled_boards;
+    fclose(train_data_file);
+    fclose(train_lbl_file);
+    fclose(test_data_file);
+    fclose(test_lbl_file);
 }
 
-void train_pgn(const char *path)
+struct Batch
 {
-    auto labeled_boards = import_pgn(path);
+    zero::core::Tensor *x;
+    zero::core::Tensor *y;
+};
 
-    int batch_size = 64;
+std::vector<Batch> get_train_dataset(int batch_size)
+{
+    int oh_board_len = 6 * 8 * 8;
+    int oh_board_size = oh_board_len * sizeof(float);
 
-    bool quit = false;
+    long long data_file_size = zero::core::FileUtils::get_file_size("temp/train.data");
+    size_t data_cnt = data_file_size / oh_board_size;
 
-    int epoch;
-    int epochs = 5;
+    std::vector<Batch> batches;
 
-    auto x = Tensor::zeros(false, Shape(batch_size, 6, 8, 8));
-    auto y = Tensor::zeros(false, Shape(batch_size, 1));
+    FILE *data_file = fopen("temp/train.data", "rb");
+    FILE *lbl_file = fopen("temp/train.lbl", "rb");
 
-    auto model = new Model();
-    model->hadamard_product(x->shape(), 64, layer::ActivationType::Tanh);
-    model->matrix_product(64, layer::ActivationType::Tanh);
-    model->linear(y->shape(), layer::ActivationType::Tanh);
+    float *data_buf = (float *)malloc(data_file_size);
+    fread(data_buf, 1, (data_file_size), data_file);
 
-    model->set_loss(new loss::MSE());
-    model->set_optimizer(new optim::SGD(model->parameters(), 0.01f));
+    float *lbl_buf = (float *)malloc(sizeof(float) * data_cnt);
+    fread(lbl_buf, 1, (sizeof(float) * data_cnt), lbl_file);
 
-    model->summarize();
+    fclose(data_file);
+    fclose(lbl_file);
 
-    for (epoch = 0; epoch < epochs; epoch++)
+    for (int i = 0; i < data_cnt / batch_size; i++)
     {
-        for (int batch = 0; batch < (2000000 / batch_size); batch++)
-        {
-            x->to_cpu();
-            y->to_cpu();
-            for (int i = 0; i < batch_size; i++)
-            {
-                int rand_idx = rand() % labeled_boards.size();
-                labeled_boards[rand_idx].board.one_hot_encode(&x->data()[i * (6 * 8 * 8)]);
-                y->set_val(i, labeled_boards[rand_idx].lbl);
-            }
-            x->to_cuda();
-            y->to_cuda();
+        auto x = zero::core::Tensor::from_data(zero::core::Shape(batch_size, 6, 8, 8), &data_buf[i * batch_size * oh_board_len]);
+        auto y = zero::core::Tensor::from_data(zero::core::Shape(batch_size, 1), &lbl_buf[i * batch_size]);
 
-            auto p = model->forward(x);
-
-            if (batch % 100 == 0)
-            {
-                printf("EPOCH: %d\tBATCH: %d\tLOSS: %f\tACCURACY: %f\n", epoch, batch, model->loss(p, y), model->accuracy(p, y));
-            }
-
-            model->backward(p, y);
-            model->step();
-            delete p;
-
-            if (_kbhit())
-            {
-                if (_getch() == 'q')
-                {
-                    quit = true;
-                    break;
-                }
-            }
-
-            if (quit)
-            {
-                break;
-            }
-        }
+        batches.push_back({x, y});
     }
 
-    delete x;
-    delete y;
-    delete model;
+    free(data_buf);
+    free(lbl_buf);
+
+    return batches;
+}
+
+std::vector<Batch> get_test_dataset(int batch_size)
+{
+    int oh_board_len = 6 * 8 * 8;
+    int oh_board_size = oh_board_len * sizeof(float);
+
+    long long data_file_size = zero::core::FileUtils::get_file_size("temp/test.data");
+    size_t data_cnt = data_file_size / oh_board_size;
+
+    std::vector<Batch> batches;
+
+    FILE *data_file = fopen("temp/test.data", "rb");
+    FILE *lbl_file = fopen("temp/test.lbl", "rb");
+
+    float *data_buf = (float *)malloc(data_file_size);
+    fread(data_buf, oh_board_size, data_cnt, data_file);
+
+    float *lbl_buf = (float *)malloc(sizeof(float) * data_cnt);
+    fread(lbl_buf, sizeof(float), data_cnt, lbl_file);
+
+    fclose(data_file);
+    fclose(lbl_file);
+
+    for (int i = 0; i < data_cnt / batch_size; i++)
+    {
+        auto x = zero::core::Tensor::from_data(zero::core::Shape(batch_size, 6, 8, 8), &data_buf[i * batch_size * oh_board_len]);
+        auto y = zero::core::Tensor::from_data(zero::core::Shape(batch_size, 1), &lbl_buf[i * batch_size]);
+
+        batches.push_back({x, y});
+    }
+
+    free(data_buf);
+    free(lbl_buf);
+
+    return batches;
 }
 
 int main()
 {
     srand(time(NULL));
 
-    train_pgn("data/data.pgn");
+    // export_pgn("data/data.pgn");
+
+    auto tr = get_train_dataset(128);
+    auto te = get_test_dataset(128);
+
 
     return 0;
 }

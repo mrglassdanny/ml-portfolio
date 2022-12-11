@@ -80,7 +80,7 @@ namespace chess
     };
 
     struct Simulation;
-    class Evaluation;
+    struct Evaluation;
 
     class Board
     {
@@ -104,8 +104,8 @@ namespace chess
         std::vector<Move> get_diagonal_moves(int square, char piece, int row, int col);
         std::vector<Move> get_straight_moves(int square, char piece, int row, int col);
 
-        static float sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, int beta);
-        static void sim_minimax_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals);
+        static float sim_minimax_sync(Simulation sim, bool white, int depth, float alpha, float beta);
+        static void sim_minimax_async(Simulation sim, bool white, int depth, float alpha, float beta, Evaluation *evals);
 
     public:
         Board();
@@ -176,10 +176,8 @@ namespace chess
 
     class PGN
     {
-    private:
-        static long long get_file_size(const char *path);
-
     public:
+        static long long get_file_size(const char *path);
         static std::vector<PGNGame *> import(const char *path);
     };
 }

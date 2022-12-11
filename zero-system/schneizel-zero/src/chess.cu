@@ -2211,7 +2211,7 @@ int Board::evaluate_material()
     return mat_eval;
 }
 
-float Board::sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, int beta)
+float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha, float beta)
 {
     if (sim.board.is_checkmate(!white, false))
     {
@@ -2272,7 +2272,7 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, int alpha, 
     }
 }
 
-void Board::sim_minimax_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals)
+void Board::sim_minimax_async(Simulation sim, bool white, int depth, float alpha, float beta, Evaluation *evals)
 {
     float eval_val = Board::sim_minimax_sync(sim, white, depth, alpha, beta);
     evals[sim.idx] = Evaluation{eval_val, sim.move, sim.board};
@@ -2414,6 +2414,7 @@ Move Board::change_minimax_async(bool white, int depth, zero::nn::Model *model)
 
 void Board::one_hot_encode(float *out)
 {
+    memset(out, 0, sizeof(float) * 6 * CHESS_BOARD_LEN);
     for (int c = 0; c < 6; c++)
     {
         for (int i = 0; i < CHESS_ROW_CNT; i++)
@@ -2491,32 +2492,12 @@ void Board::one_hot_encode(float *out)
     }
 }
 
-long long PGN::get_file_size(const char *path)
-{
-    HANDLE hFile = CreateFile((LPCSTR)path, GENERIC_READ,
-                              FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
-                              FILE_ATTRIBUTE_NORMAL, NULL);
-
-    if (hFile == INVALID_HANDLE_VALUE)
-        return -1; // error condition, could call GetLastError to find out more
-
-    LARGE_INTEGER size;
-    if (!GetFileSizeEx(hFile, &size))
-    {
-        CloseHandle(hFile);
-        return -1; // error condition, could call GetLastError to find out more
-    }
-
-    CloseHandle(hFile);
-    return size.QuadPart;
-}
-
 std::vector<PGNGame *> PGN::import(const char *path)
 {
     FILE *file_ptr = fopen(path, "rb");
 
     fseek(file_ptr, 0L, SEEK_END);
-    long long file_size = PGN::get_file_size(path);
+    long long file_size = zero::core::FileUtils::get_file_size(path);
     rewind(file_ptr);
 
     char *buf = (char *)malloc(file_size);
