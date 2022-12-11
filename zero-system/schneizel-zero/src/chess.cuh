@@ -76,7 +76,6 @@ namespace chess
 
     struct AuPassantState
     {
-        bool opportunity = false;
         int dst_col = CHESS_INVALID_SQUARE;
     };
 

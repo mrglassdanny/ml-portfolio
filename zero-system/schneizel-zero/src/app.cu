@@ -159,7 +159,7 @@ int main()
 
         for (auto move_str : pgn_game->move_strs)
         {
-            if (i == 7044)
+            if (i == 0)
             {
                 printf("Move: %s\n", move_str.c_str());
                 auto move = board.change(move_str, white);

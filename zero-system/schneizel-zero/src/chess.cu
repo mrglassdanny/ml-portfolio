@@ -1098,16 +1098,13 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
 
         if (row == 4)
         {
-            if (this->au_passant_state_.opportunity)
+            if (this->au_passant_state_.dst_col == col - 1)
             {
-                if (this->au_passant_state_.dst_col == col - 1)
-                {
-                    moves.push_back(Move{square, Board::get_square(row + 1, col - 1)});
-                }
-                else if (this->au_passant_state_.dst_col == col + 1)
-                {
-                    moves.push_back(Move{square, Board::get_square(row + 1, col + 1)});
-                }
+                moves.push_back(Move{square, Board::get_square(row + 1, col - 1)});
+            }
+            else if (this->au_passant_state_.dst_col == col + 1)
+            {
+                moves.push_back(Move{square, Board::get_square(row + 1, col + 1)});
             }
         }
     }
@@ -1162,16 +1159,13 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
 
         if (row == 3)
         {
-            if (this->au_passant_state_.opportunity)
+            if (this->au_passant_state_.dst_col == col - 1)
             {
-                if (this->au_passant_state_.dst_col == col - 1)
-                {
-                    moves.push_back(Move{square, Board::get_square(row - 1, col - 1)});
-                }
-                else if (this->au_passant_state_.dst_col == col + 1)
-                {
-                    moves.push_back(Move{square, Board::get_square(row - 1, col + 1)});
-                }
+                moves.push_back(Move{square, Board::get_square(row - 1, col - 1)});
+            }
+            else if (this->au_passant_state_.dst_col == col + 1)
+            {
+                moves.push_back(Move{square, Board::get_square(row - 1, col + 1)});
             }
         }
     }
@@ -1667,7 +1661,7 @@ void Board::change(Move move)
 
     bool white = Piece::is_white(src_piece);
 
-    this->au_passant_state_.opportunity = false;
+    this->au_passant_state_.dst_col = CHESS_INVALID_SQUARE;
 
     switch (src_piece)
     {
@@ -1701,7 +1695,6 @@ void Board::change(Move move)
         {
             if (abs(dst_row - src_row) == 2)
             {
-                this->au_passant_state_.opportunity = true;
                 this->au_passant_state_.dst_col = dst_col;
             }
         }
@@ -1737,7 +1730,6 @@ void Board::change(Move move)
         {
             if (abs(dst_row - src_row) == 2)
             {
-                this->au_passant_state_.opportunity = true;
                 this->au_passant_state_.dst_col = dst_col;
             }
         }
@@ -1745,11 +1737,11 @@ void Board::change(Move move)
     break;
     case WR:
     {
-        if (src_col == 0)
+        if (src_row == 0 && src_col == 0)
         {
             this->castle_state_.white_left_rook_moved = true;
         }
-        else if (src_col == 7)
+        else if (src_row == 0 && src_col == 7)
         {
             this->castle_state_.white_right_rook_moved = true;
         }
@@ -1757,11 +1749,11 @@ void Board::change(Move move)
     break;
     case BR:
     {
-        if (src_col == 0)
+        if (src_row == 7 && src_col == 0)
         {
             this->castle_state_.black_left_rook_moved = true;
         }
-        else if (src_col == 7)
+        else if (src_row == 7 && src_col == 7)
         {
             this->castle_state_.black_right_rook_moved = true;
         }
