@@ -74,6 +74,12 @@ namespace chess
         bool black_king_pins[CHESS_BOARD_LEN];
     };
 
+    struct AuPassantState
+    {
+        bool opportunity = false;
+        int dst_col = CHESS_INVALID_SQUARE;
+    };
+
     struct Simulation;
     class Evaluation;
 
@@ -83,6 +89,7 @@ namespace chess
         char data_[CHESS_BOARD_LEN];
         CastleState castle_state_;
         CheckState check_state_;
+        AuPassantState au_passant_state_;
 
         static int get_row(int square);
         static int get_row(char alpha_row);

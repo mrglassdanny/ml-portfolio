@@ -1095,6 +1095,21 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                 }
             }
         }
+
+        if (row == 4)
+        {
+            if (this->au_passant_state_.opportunity)
+            {
+                if (this->au_passant_state_.dst_col == col - 1)
+                {
+                    moves.push_back(Move{square, Board::get_square(row + 1, col - 1)});
+                }
+                else if (this->au_passant_state_.dst_col == col + 1)
+                {
+                    moves.push_back(Move{square, Board::get_square(row + 1, col + 1)});
+                }
+            }
+        }
     }
     break;
     case BP:
@@ -1141,6 +1156,21 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                 if (this->get_piece(test_square) == MT)
                 {
                     moves.push_back(Move{square, test_square});
+                }
+            }
+        }
+
+        if (row == 3)
+        {
+            if (this->au_passant_state_.opportunity)
+            {
+                if (this->au_passant_state_.dst_col == col - 1)
+                {
+                    moves.push_back(Move{square, Board::get_square(row - 1, col - 1)});
+                }
+                else if (this->au_passant_state_.dst_col == col + 1)
+                {
+                    moves.push_back(Move{square, Board::get_square(row - 1, col + 1)});
                 }
             }
         }
@@ -1271,8 +1301,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                 {
                     if (this->get_piece(1) == MT && this->get_piece(2) == MT && this->get_piece(3) == MT)
                     {
-                        if (!this->is_square_under_attack(1, false) && !this->is_square_under_attack(2, false) &&
-                            !this->is_square_under_attack(3, false))
+                        if (!this->is_square_under_attack(2, false) && !this->is_square_under_attack(3, false))
                         {
                             moves.push_back(Move{square, 2});
                         }
@@ -1296,8 +1325,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                 {
                     if (this->get_piece(57) == MT && this->get_piece(58) == MT && this->get_piece(59) == MT)
                     {
-                        if (!this->is_square_under_attack(57, true) && !this->is_square_under_attack(58, true) &&
-                            !this->is_square_under_attack(59, true))
+                        if (!this->is_square_under_attack(58, true) && !this->is_square_under_attack(59, true))
                         {
                             moves.push_back(Move{square, 58});
                         }
@@ -1639,6 +1667,8 @@ void Board::change(Move move)
 
     bool white = Piece::is_white(src_piece);
 
+    this->au_passant_state_.opportunity = false;
+
     switch (src_piece)
     {
     case WP:
@@ -1667,6 +1697,14 @@ void Board::change(Move move)
                 }
             }
         }
+        else
+        {
+            if (abs(dst_row - src_row) == 2)
+            {
+                this->au_passant_state_.opportunity = true;
+                this->au_passant_state_.dst_col = dst_col;
+            }
+        }
     }
     break;
     case BP:
@@ -1693,6 +1731,14 @@ void Board::change(Move move)
                 {
                     this->data_[test_au_passant_square] = MT;
                 }
+            }
+        }
+        else
+        {
+            if (abs(dst_row - src_row) == 2)
+            {
+                this->au_passant_state_.opportunity = true;
+                this->au_passant_state_.dst_col = dst_col;
             }
         }
     }
@@ -2096,6 +2142,26 @@ Move Board::change(std::string move_str, bool white)
     }
 
     Move move{src_square, dst_square, promo_piece};
+
+    // TEST
+    {
+        bool valid_move = false;
+
+        auto moves = this->get_moves(src_square, true);
+        for (auto move : moves)
+        {
+            if (move.dst_square == dst_square)
+            {
+                valid_move = true;
+                break;
+            }
+        }
+
+        if (!valid_move)
+        {
+            CHESS_THROW_ERROR("CHESS TEST FAILURE: invalid move");
+        }
+    }
 
     this->change(move);
 
