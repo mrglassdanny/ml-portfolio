@@ -63,3 +63,8 @@ void Layer::zero_grad()
 {
     this->dn_->zeros();
 }
+
+ActivationType Layer::activation()
+{
+    return this->activation_;
+}

@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <conio.h>
 
 #include <zero/mod.cuh>
 
@@ -14,10 +15,10 @@ struct Game
     float lbl;
 };
 
-struct Batch
+struct LabeledBoard
 {
-    zero::core::Tensor *x;
-    zero::core::Tensor *y;
+    Board board;
+    float lbl;
 };
 
 Game self_play(int white_depth, int black_depth, bool print, Model *model)
@@ -151,17 +152,12 @@ void self_play_test1()
     delete y;
 }
 
-std::vector<Batch> import_pgn(const char *path)
+std::vector<LabeledBoard> import_pgn(const char *path)
 {
-}
+    auto pgn_games = PGN::import(path);
 
-int main()
-{
-    srand(time(NULL));
+    std::vector<LabeledBoard> labeled_boards;
 
-    auto pgn_games = PGN::import("data/data.pgn");
-
-    int i = 0;
     for (auto pgn_game : pgn_games)
     {
         Board board;
@@ -170,10 +166,92 @@ int main()
         for (auto move_str : pgn_game->move_strs)
         {
             auto move = board.change(move_str, white);
+            labeled_boards.push_back(LabeledBoard{board, (float)pgn_game->lbl});
             white = !white;
         }
-        printf("Game: %d\n", i++);
+
+        delete pgn_game;
     }
+
+    return labeled_boards;
+}
+
+void train_pgn(const char *path)
+{
+    auto labeled_boards = import_pgn(path);
+
+    int batch_size = 64;
+
+    bool quit = false;
+
+    int epoch;
+    int epochs = 5;
+
+    auto x = Tensor::zeros(false, Shape(batch_size, 6, 8, 8));
+    auto y = Tensor::zeros(false, Shape(batch_size, 1));
+
+    auto model = new Model();
+    model->hadamard_product(x->shape(), 64, layer::ActivationType::Tanh);
+    model->matrix_product(64, layer::ActivationType::Tanh);
+    model->linear(y->shape(), layer::ActivationType::Tanh);
+
+    model->set_loss(new loss::MSE());
+    model->set_optimizer(new optim::SGD(model->parameters(), 0.01f));
+
+    model->summarize();
+
+    for (epoch = 0; epoch < epochs; epoch++)
+    {
+        for (int batch = 0; batch < (2000000 / batch_size); batch++)
+        {
+            x->to_cpu();
+            y->to_cpu();
+            for (int i = 0; i < batch_size; i++)
+            {
+                int rand_idx = rand() % labeled_boards.size();
+                labeled_boards[rand_idx].board.one_hot_encode(&x->data()[i * (6 * 8 * 8)]);
+                y->set_val(i, labeled_boards[rand_idx].lbl);
+            }
+            x->to_cuda();
+            y->to_cuda();
+
+            auto p = model->forward(x);
+
+            if (batch % 100 == 0)
+            {
+                printf("EPOCH: %d\tBATCH: %d\tLOSS: %f\tACCURACY: %f\n", epoch, batch, model->loss(p, y), model->accuracy(p, y));
+            }
+
+            model->backward(p, y);
+            model->step();
+            delete p;
+
+            if (_kbhit())
+            {
+                if (_getch() == 'q')
+                {
+                    quit = true;
+                    break;
+                }
+            }
+
+            if (quit)
+            {
+                break;
+            }
+        }
+    }
+
+    delete x;
+    delete y;
+    delete model;
+}
+
+int main()
+{
+    srand(time(NULL));
+
+    train_pgn("data/data.pgn");
 
     return 0;
 }

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "layer.cuh"
+#include "../../core/mod.cuh"
 
 namespace zero
 {

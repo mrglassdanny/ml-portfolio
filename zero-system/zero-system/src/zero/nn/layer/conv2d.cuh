@@ -1,7 +1,6 @@
 #pragma once
 
 #include "learnable.cuh"
-#include "activation.cuh"
 
 namespace zero
 {
@@ -23,7 +22,6 @@ namespace zero
                 Stride stride_;
                 int out_row_cnt_;
                 int out_col_cnt_;
-                ActivationType activation_;
 
             public:
                 Conv2d(bool shared_params, Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation);

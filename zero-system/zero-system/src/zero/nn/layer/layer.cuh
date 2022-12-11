@@ -2,6 +2,8 @@
 
 #include "../../core/mod.cuh"
 
+#include "activation.cuh"
+
 namespace zero
 {
     using namespace core;
@@ -15,6 +17,7 @@ namespace zero
             protected:
                 Tensor *n_;
                 Tensor *dn_;
+                ActivationType activation_;
 
             public:
                 ~Layer();
@@ -42,6 +45,8 @@ namespace zero
 
                 Tensor *neuron_gradients();
                 void zero_grad();
+
+                ActivationType activation();
             };
         }
     }

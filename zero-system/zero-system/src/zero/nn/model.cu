@@ -137,16 +137,62 @@ float Model::accuracy(Tensor *p, Tensor *y)
     }
     else
     {
-        // Assume value is between 0 and 1.
-
-        for (int i = 0; i < batch_size; i++)
+        switch (this->last_layer()->activation())
         {
-            float p_val = p->get_val(i) >= 0.50 ? 1.0f : 0.0f;
-
-            if (p_val == y->get_val(i))
+        case Sigmoid:
+        {
+            for (int i = 0; i < batch_size; i++)
             {
-                correct_cnt++;
+                float p_val = p->get_val(i) >= 0.50 ? 1.0f : 0.0f;
+
+                if (p_val == y->get_val(i))
+                {
+                    correct_cnt++;
+                }
             }
+        }
+        break;
+        case Tanh:
+        {
+            for (int i = 0; i < batch_size; i++)
+            {
+                float p_val = p->get_val(i);
+                if (p_val < 0.0f)
+                {
+                    if (p_val <= -0.5f)
+                    {
+                        p_val = -1.0f;
+                    }
+                    else
+                    {
+                        p_val = 0.0f;
+                    }
+                }
+                else if (p_val > 0.0f)
+                {
+                    if (p_val >= 0.5f)
+                    {
+                        p_val = 1.0f;
+                    }
+                    else
+                    {
+                        p_val = 0.0f;
+                    }
+                }
+
+                if (p_val == y->get_val(i))
+                {
+                    correct_cnt++;
+                }
+            }
+        }
+        break;
+        case ReLU:
+            // TODO
+            break;
+        default:
+            // TODO
+            break;
         }
     }
 

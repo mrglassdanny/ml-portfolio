@@ -1,7 +1,6 @@
 #pragma once
 
 #include "learnable.cuh"
-#include "activation.cuh"
 
 namespace zero
 {
@@ -13,9 +12,6 @@ namespace zero
         {
             class Linear : public Learnable
             {
-            protected:
-                ActivationType activation_;
-
             public:
                 Linear(bool shared_params, Shape in_shape, Shape out_shape, ActivationType activation);
 
