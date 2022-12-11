@@ -2491,9 +2491,9 @@ void Board::one_hot_encode(float *out)
     }
 }
 
-long long PGN::get_file_size(const char *file_name)
+long long PGN::get_file_size(const char *path)
 {
-    HANDLE hFile = CreateFile((LPCSTR)file_name, GENERIC_READ,
+    HANDLE hFile = CreateFile((LPCSTR)path, GENERIC_READ,
                               FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
                               FILE_ATTRIBUTE_NORMAL, NULL);
 
@@ -2511,12 +2511,12 @@ long long PGN::get_file_size(const char *file_name)
     return size.QuadPart;
 }
 
-std::vector<PGNGame *> PGN::import(const char *file_name)
+std::vector<PGNGame *> PGN::import(const char *path)
 {
-    FILE *file_ptr = fopen(file_name, "rb");
+    FILE *file_ptr = fopen(path, "rb");
 
     fseek(file_ptr, 0L, SEEK_END);
-    long long file_size = PGN::get_file_size(file_name);
+    long long file_size = PGN::get_file_size(path);
     rewind(file_ptr);
 
     char *buf = (char *)malloc(file_size);

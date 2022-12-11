@@ -14,6 +14,12 @@ struct Game
     float lbl;
 };
 
+struct Batch
+{
+    zero::core::Tensor *x;
+    zero::core::Tensor *y;
+};
+
 Game self_play(int white_depth, int black_depth, bool print, Model *model)
 {
     Board board;
@@ -145,6 +151,10 @@ void self_play_test1()
     delete y;
 }
 
+std::vector<Batch> import_pgn(const char *path)
+{
+}
+
 int main()
 {
     srand(time(NULL));
@@ -159,21 +169,10 @@ int main()
 
         for (auto move_str : pgn_game->move_strs)
         {
-            if (i == -1)
-            {
-                printf("Move: %s\n", move_str.c_str());
-                auto move = board.change(move_str, white);
-                white = !white;
-                board.print(move);
-            }
-            else
-            {
-                auto move = board.change(move_str, white);
-                white = !white;
-            }
+            auto move = board.change(move_str, white);
+            white = !white;
         }
         printf("Game: %d\n", i++);
-        // system("cls");
     }
 
     return 0;
