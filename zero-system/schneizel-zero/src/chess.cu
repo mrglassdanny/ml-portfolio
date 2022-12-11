@@ -1098,13 +1098,16 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
 
         if (row == 4)
         {
-            if (this->au_passant_state_.dst_col == col - 1)
+            if (Board::is_col_valid(this->au_passant_state_.dst_col))
             {
-                moves.push_back(Move{square, Board::get_square(row + 1, col - 1)});
-            }
-            else if (this->au_passant_state_.dst_col == col + 1)
-            {
-                moves.push_back(Move{square, Board::get_square(row + 1, col + 1)});
+                if (this->au_passant_state_.dst_col == col - 1)
+                {
+                    moves.push_back(Move{square, Board::get_square(row + 1, col - 1)});
+                }
+                else if (this->au_passant_state_.dst_col == col + 1)
+                {
+                    moves.push_back(Move{square, Board::get_square(row + 1, col + 1)});
+                }
             }
         }
     }
@@ -1159,13 +1162,16 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
 
         if (row == 3)
         {
-            if (this->au_passant_state_.dst_col == col - 1)
+            if (Board::is_col_valid(this->au_passant_state_.dst_col))
             {
-                moves.push_back(Move{square, Board::get_square(row - 1, col - 1)});
-            }
-            else if (this->au_passant_state_.dst_col == col + 1)
-            {
-                moves.push_back(Move{square, Board::get_square(row - 1, col + 1)});
+                if (this->au_passant_state_.dst_col == col - 1)
+                {
+                    moves.push_back(Move{square, Board::get_square(row - 1, col - 1)});
+                }
+                else if (this->au_passant_state_.dst_col == col + 1)
+                {
+                    moves.push_back(Move{square, Board::get_square(row - 1, col + 1)});
+                }
             }
         }
     }
