@@ -220,14 +220,161 @@ std::vector<Batch> get_test_dataset(int batch_size)
     return batches;
 }
 
+void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::vector<Batch> *test_ds)
+{
+    int train_batch_cnt = train_ds->size();
+    int test_batch_cnt = test_ds->size();
+
+    bool quit = false;
+
+    // Train:
+    for (int epoch = 0; epoch < epochs; epoch++)
+    {
+        for (int j = 0; j < train_batch_cnt; j++)
+        {
+            auto batch = &train_ds->at(j);
+            auto x = batch->x;
+            auto y = batch->y;
+
+            auto p = model->forward(x);
+
+            model->backward(p, y);
+            model->step();
+
+            delete p;
+
+            if (_kbhit())
+            {
+                if (_getch() == 'q')
+                {
+                    quit = true;
+                    break;
+                }
+            }
+        }
+
+        if (quit)
+        {
+            break;
+        }
+
+        printf("EPOCH COMPLETE: %d\n", epoch);
+    }
+
+    // Test:
+    {
+        float loss = 0.0f;
+        float acc = 0.0f;
+
+        for (int j = 0; j < test_batch_cnt; j++)
+        {
+            auto batch = &test_ds->at(j);
+            auto x = batch->x;
+            auto y = batch->y;
+
+            auto p = model->forward(x);
+            loss += model->loss(p, y);
+            acc += model->accuracy(p, y);
+            delete p;
+        }
+
+        float test_acc_pct = (acc / (float)test_batch_cnt) * 100.0f;
+
+        model->summarize();
+        printf("TEST LOSS: %f\tTEST ACCURACY: %f%%\n",
+               (loss / (float)test_batch_cnt),
+               test_acc_pct);
+    }
+}
+
+void compare_models(int epochs)
+{
+    auto train_ds = get_train_dataset(64);
+    auto test_ds = get_test_dataset(512);
+
+    Shape x_shape = train_ds[0].x->shape();
+    Shape y_shape = train_ds[0].y->shape();
+
+    {
+        printf("\n\n");
+        auto model = new Model();
+        model->hadamard_product(x_shape, 16, ActivationType::Tanh);
+        model->matrix_product(16, ActivationType::Tanh);
+        model->linear(y_shape, ActivationType::Tanh);
+        model->set_loss(new MSE());
+        model->set_optimizer(new SGD(model->parameters(), 0.1f));
+
+        train_n_test(model, epochs, &train_ds, &test_ds);
+
+        delete model;
+    }
+
+    {
+        printf("\n\n");
+        auto model = new Model();
+        model->hadamard_product(x_shape, 64, ActivationType::Tanh);
+        model->matrix_product(64, ActivationType::Tanh);
+        model->linear(y_shape, ActivationType::Tanh);
+        model->set_loss(new MSE());
+        model->set_optimizer(new SGD(model->parameters(), 0.1f));
+
+        train_n_test(model, epochs, &train_ds, &test_ds);
+
+        delete model;
+    }
+
+    {
+        printf("\n\n");
+        auto model = new Model();
+        model->hadamard_product(x_shape, 16, ActivationType::Tanh);
+        model->hadamard_product(16, ActivationType::Tanh);
+        model->matrix_product(16, ActivationType::Tanh);
+        model->matrix_product(16, ActivationType::Tanh);
+        model->linear(y_shape, ActivationType::Tanh);
+        model->set_loss(new MSE());
+        model->set_optimizer(new SGD(model->parameters(), 0.1f));
+
+        train_n_test(model, epochs, &train_ds, &test_ds);
+
+        delete model;
+    }
+
+    {
+        printf("\n\n");
+        auto model = new Model();
+        model->hadamard_product(x_shape, 64, ActivationType::Tanh);
+        model->linear(512, ActivationType::Tanh);
+        model->linear(y_shape, ActivationType::Tanh);
+        model->set_loss(new MSE());
+        model->set_optimizer(new SGD(model->parameters(), 0.1f));
+
+        train_n_test(model, epochs, &train_ds, &test_ds);
+
+        delete model;
+    }
+
+    // Clean up:
+
+    for (auto batch : train_ds)
+    {
+        delete batch.x;
+        delete batch.y;
+    }
+
+    for (auto batch : test_ds)
+    {
+        delete batch.x;
+        delete batch.y;
+    }
+}
+
 int main()
 {
     srand(time(NULL));
 
     // export_pgn("data/data.pgn");
 
-    auto tr = get_train_dataset(128);
-    auto te = get_test_dataset(128);
+    compare_models(4);
 
     return 0;
 }
