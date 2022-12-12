@@ -177,7 +177,6 @@ namespace chess
     class PGN
     {
     public:
-        static long long get_file_size(const char *path);
         static std::vector<PGNGame *> import(const char *path);
     };
 }
