@@ -96,56 +96,6 @@ Game self_play(int white_depth, int black_depth, bool print, Model *model)
     return game;
 }
 
-void self_play_test1()
-{
-    auto x = Tensor::zeros(false, Shape(1, 6, 8, 8));
-    auto y = Tensor::zeros(true, Shape(1, 1));
-
-    auto model = new Model();
-    model->hadamard_product(x->shape(), 16, layer::ActivationType::Tanh);
-    model->matrix_product(16, layer::ActivationType::Tanh);
-    model->linear(y->shape(), layer::ActivationType::Tanh);
-
-    model->set_loss(new loss::MSE());
-    model->set_optimizer(new optim::SGD(model->parameters(), 0.01f));
-
-    model->summarize();
-
-    int game_cnt = 0;
-
-    while (true)
-    {
-        game_cnt++;
-        auto game = self_play(3, 3, false, model);
-        if (game.lbl != 0)
-        {
-            for (auto board : game.boards)
-            {
-                x->to_cpu();
-                board.one_hot_encode(x->data());
-                x->to_cuda();
-                y->set_val(0, game.lbl);
-
-                board.print();
-
-                auto p = model->forward(x);
-                printf("\tLOSS: %f\n", model->loss(p, y));
-                p->print();
-                y->print();
-                model->backward(p, y);
-                model->step();
-
-                delete p;
-            }
-        }
-
-        printf("GAME COUNT: %d\n", game_cnt);
-    }
-
-    delete x;
-    delete y;
-}
-
 void export_pgn(const char *path)
 {
     auto pgn_games = PGN::import(path);
@@ -278,7 +228,6 @@ int main()
 
     auto tr = get_train_dataset(128);
     auto te = get_test_dataset(128);
-
 
     return 0;
 }
