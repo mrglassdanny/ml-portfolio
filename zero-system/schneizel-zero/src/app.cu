@@ -108,7 +108,7 @@ void export_pgn(const char *path)
     FILE *test_data_file = fopen("temp/test.data", "wb");
     FILE *test_lbl_file = fopen("temp/test.lbl", "wb");
 
-    float data_buf[6 * 8 * 8];
+    float data_buf[CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT];
     float lbl_buf;
 
     for (auto pgn_game : pgn_games)
@@ -158,7 +158,7 @@ struct Batch
 
 std::vector<Batch> get_train_dataset(int batch_size)
 {
-    int oh_board_len = 6 * 8 * 8;
+    int oh_board_len = CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT;
     int oh_board_size = oh_board_len * sizeof(float);
 
     long long data_file_size = zero::core::FileUtils::get_file_size("temp/train.data");
@@ -180,7 +180,7 @@ std::vector<Batch> get_train_dataset(int batch_size)
 
     for (int i = 0; i < data_cnt / batch_size; i++)
     {
-        auto x = zero::core::Tensor::from_data(zero::core::Shape(batch_size, 6, 8, 8), &data_buf[i * batch_size * oh_board_len]);
+        auto x = zero::core::Tensor::from_data(zero::core::Shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT), &data_buf[i * batch_size * oh_board_len]);
         auto y = zero::core::Tensor::from_data(zero::core::Shape(batch_size, 1), &lbl_buf[i * batch_size]);
 
         batches.push_back({x, y});
@@ -194,7 +194,7 @@ std::vector<Batch> get_train_dataset(int batch_size)
 
 std::vector<Batch> get_test_dataset(int batch_size)
 {
-    int oh_board_len = 6 * 8 * 8;
+    int oh_board_len = CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT;
     int oh_board_size = oh_board_len * sizeof(float);
 
     long long data_file_size = zero::core::FileUtils::get_file_size("temp/test.data");
@@ -216,7 +216,7 @@ std::vector<Batch> get_test_dataset(int batch_size)
 
     for (int i = 0; i < data_cnt / batch_size; i++)
     {
-        auto x = zero::core::Tensor::from_data(zero::core::Shape(batch_size, 6, 8, 8), &data_buf[i * batch_size * oh_board_len]);
+        auto x = zero::core::Tensor::from_data(zero::core::Shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT), &data_buf[i * batch_size * oh_board_len]);
         auto y = zero::core::Tensor::from_data(zero::core::Shape(batch_size, 1), &lbl_buf[i * batch_size]);
 
         batches.push_back({x, y});

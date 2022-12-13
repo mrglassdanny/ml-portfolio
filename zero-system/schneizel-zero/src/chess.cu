@@ -2414,8 +2414,8 @@ Move Board::change_minimax_async(bool white, int depth, zero::nn::Model *model)
 
 void Board::one_hot_encode(float *out)
 {
-    memset(out, 0, sizeof(float) * 6 * CHESS_BOARD_LEN);
-    for (int c = 0; c < 6; c++)
+    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
+    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
     {
         for (int i = 0; i < CHESS_ROW_CNT; i++)
         {

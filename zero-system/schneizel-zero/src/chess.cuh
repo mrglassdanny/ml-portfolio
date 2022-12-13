@@ -35,6 +35,8 @@
 #define CHESS_EVAL_MIN_VAL -1000.0f
 #define CHESS_EVAL_MAX_VAL 1000.0f
 
+#define CHESS_BOARD_CHANNEL_CNT 12
+
 namespace chess
 {
     struct Move
