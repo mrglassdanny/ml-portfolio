@@ -100,6 +100,9 @@ void export_pgn(const char *path)
 {
     auto pgn_games = PGN::import(path);
 
+    int game_cnt = 0;
+    long move_cnt = 0;
+
     FILE *train_data_file = fopen("temp/train.data", "wb");
     FILE *train_lbl_file = fopen("temp/train.lbl", "wb");
     FILE *test_data_file = fopen("temp/test.data", "wb");
@@ -131,8 +134,11 @@ void export_pgn(const char *path)
                 fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
                 fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
             }
+
+            move_cnt++;
         }
 
+        game_cnt++;
         delete pgn_game;
     }
 
@@ -140,6 +146,8 @@ void export_pgn(const char *path)
     fclose(train_lbl_file);
     fclose(test_data_file);
     fclose(test_lbl_file);
+
+    printf("GAME COUNT: %d\tMOVE COUNT: %ld", game_cnt, move_cnt);
 }
 
 struct Batch
@@ -290,7 +298,7 @@ void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::v
 void compare_models(int epochs)
 {
     auto train_ds = get_train_dataset(64);
-    auto test_ds = get_test_dataset(512);
+    auto test_ds = get_test_dataset(64);
 
     Shape x_shape = train_ds[0].x->shape();
     Shape y_shape = train_ds[0].y->shape();
@@ -372,9 +380,9 @@ int main()
 {
     srand(time(NULL));
 
-    // export_pgn("data/data.pgn");
+    export_pgn("data/data.pgn");
 
-    compare_models(4);
+    // compare_models(4);
 
     return 0;
 }
