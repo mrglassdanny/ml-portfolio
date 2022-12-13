@@ -96,6 +96,7 @@ Game self_play(int white_depth, int black_depth, bool print, Model *model)
     return game;
 }
 
+// NOTE: excludes ties and openings.
 void export_pgn(const char *path)
 {
     auto pgn_games = PGN::import(path);
@@ -113,32 +114,44 @@ void export_pgn(const char *path)
 
     for (auto pgn_game : pgn_games)
     {
-        Board board;
-        bool white = true;
-
-        for (auto move_str : pgn_game->move_strs)
+        // Only save games where there was a winner.
+        if (pgn_game->lbl != 0)
         {
-            auto move = board.change(move_str, white);
-            white = !white;
+            Board board;
+            bool white = true;
 
-            board.one_hot_encode(data_buf);
-            lbl_buf = (float)pgn_game->lbl;
+            int game_move_cnt = 0;
 
-            if (rand() % 20 == 0)
+            for (auto move_str : pgn_game->move_strs)
             {
-                fwrite(data_buf, sizeof(data_buf), 1, test_data_file);
-                fwrite(&lbl_buf, sizeof(lbl_buf), 1, test_lbl_file);
-            }
-            else
-            {
-                fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
-                fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
-            }
+                auto move = board.change(move_str, white);
+                white = !white;
 
-            move_cnt++;
+                // Skip openings.
+                if (game_move_cnt > 6)
+                {
+                    board.one_hot_encode(data_buf);
+                    lbl_buf = (float)pgn_game->lbl;
+
+                    if (rand() % 20 == 0)
+                    {
+                        fwrite(data_buf, sizeof(data_buf), 1, test_data_file);
+                        fwrite(&lbl_buf, sizeof(lbl_buf), 1, test_lbl_file);
+                    }
+                    else
+                    {
+                        fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
+                        fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
+                    }
+
+                    move_cnt++;
+                }
+
+                game_move_cnt++;
+            }
+            game_cnt++;
         }
 
-        game_cnt++;
         delete pgn_game;
     }
 
@@ -295,6 +308,47 @@ void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::v
     }
 }
 
+void grad_tests()
+{
+    auto test_ds = get_test_dataset(1);
+
+    auto x = test_ds[0].x;
+    auto y = test_ds[0].y;
+
+    Shape x_shape = x->shape();
+    Shape y_shape = y->shape();
+
+    {
+        auto model = new Model();
+        model->hadamard_product(x_shape, 4, ActivationType::Tanh);
+        model->hadamard_product(4, ActivationType::Tanh);
+        model->matrix_product(4, ActivationType::Tanh);
+        model->matrix_product(4, ActivationType::Tanh);
+        model->linear(y_shape, ActivationType::Tanh);
+        model->set_loss(new MSE());
+
+        model->summarize();
+        model->validate_gradients(x, y, false);
+
+        delete model;
+    }
+
+    {
+        auto model = new Model();
+        model->hadamard_product(x_shape, 4, ActivationType::Tanh);
+        model->hadamard_product(4, ActivationType::Tanh);
+        model->matrix_product(4, ActivationType::Tanh);
+        model->matrix_product(4, ActivationType::Tanh);
+        model->linear(y_shape, ActivationType::Tanh);
+        model->set_loss(new MSE());
+
+        model->summarize();
+        model->validate_gradients(x, y, false);
+
+        delete model;
+    }
+}
+
 void compare_models(int epochs)
 {
     auto train_ds = get_train_dataset(64);
@@ -347,20 +401,6 @@ void compare_models(int epochs)
         delete model;
     }
 
-    {
-        printf("\n\n");
-        auto model = new Model();
-        model->hadamard_product(x_shape, 64, ActivationType::Tanh);
-        model->linear(512, ActivationType::Tanh);
-        model->linear(y_shape, ActivationType::Tanh);
-        model->set_loss(new MSE());
-        model->set_optimizer(new SGD(model->parameters(), 0.1f));
-
-        train_n_test(model, epochs, &train_ds, &test_ds);
-
-        delete model;
-    }
-
     // Clean up:
 
     for (auto batch : train_ds)
@@ -380,7 +420,9 @@ int main()
 {
     srand(time(NULL));
 
-    export_pgn("data/data.pgn");
+    // export_pgn("data/data.pgn");
+
+    grad_tests();
 
     // compare_models(4);
 
