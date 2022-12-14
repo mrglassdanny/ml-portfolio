@@ -133,11 +133,14 @@ void SGD::step(int batch_size)
 
         k_sgd_weight_step<<<w_cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK + 1, ZERO_CORE_CUDA_THREADS_PER_BLOCK>>>(w->data(), dw->data(), w_cnt, this->lr_, batch_size);
         k_sgd_bias_step<<<b_cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK + 1, ZERO_CORE_CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), b_cnt, this->lr_, batch_size);
-
-        params->zero_grad();
     }
 
     this->step_num_++;
+}
+
+Optimizer *SGD::copy()
+{
+    return new SGD(this->model_params_, this->lr_);
 }
 
 SGDMomentum::SGDMomentum(std::vector<Parameters *> model_params, float learning_rate, float beta1)
@@ -181,11 +184,14 @@ void SGDMomentum::step(int batch_size)
                                                                                                                        w_cnt, this->lr_, this->beta1_, this->step_num_, batch_size);
         k_sgd_momentum_bias_step<<<b_cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK + 1, ZERO_CORE_CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), mdb->data(),
                                                                                                                      b_cnt, this->lr_, this->beta1_, this->step_num_, batch_size);
-
-        params->zero_grad();
     }
 
     this->step_num_++;
+}
+
+Optimizer *SGDMomentum::copy()
+{
+    return new SGDMomentum(this->model_params_, this->lr_, this->beta1_);
 }
 
 Adam::Adam(std::vector<Parameters *> model_params, float learning_rate, float beta1, float beta2)
@@ -236,9 +242,12 @@ void Adam::step(int batch_size)
                                                                                                                w_cnt, this->lr_, this->beta1_, this->beta2_, this->step_num_, batch_size);
         k_adam_bias_step<<<b_cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK + 1, ZERO_CORE_CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), mdb->data(), vdb->data(),
                                                                                                              b_cnt, this->lr_, this->beta1_, this->beta2_, this->step_num_, batch_size);
-
-        params->zero_grad();
     }
 
     this->step_num_++;
+}
+
+Optimizer *Adam::copy()
+{
+    return new Adam(this->model_params_, this->lr_, this->beta1_, this->beta2_);
 }

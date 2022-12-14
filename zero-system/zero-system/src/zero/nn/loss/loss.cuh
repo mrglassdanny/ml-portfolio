@@ -16,6 +16,8 @@ namespace zero
                 virtual void evaluate(Tensor *p, Tensor *y, Tensor *out) = 0;
                 virtual Tensor *derive(Tensor *p, Tensor *y) = 0;
 
+                virtual Loss *copy() = 0;
+
                 virtual void summarize();
             };
 
@@ -24,6 +26,8 @@ namespace zero
             public:
                 virtual void evaluate(Tensor *p, Tensor *y, Tensor *out) override;
                 virtual Tensor *derive(Tensor *p, Tensor *y) override;
+
+                virtual Loss *copy() override;
             };
 
             class CrossEntropy : public Loss
@@ -31,6 +35,8 @@ namespace zero
             public:
                 virtual void evaluate(Tensor *p, Tensor *y, Tensor *out) override;
                 virtual Tensor *derive(Tensor *p, Tensor *y) override;
+
+                virtual Loss *copy() override;
             };
         }
     }

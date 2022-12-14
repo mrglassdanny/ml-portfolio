@@ -71,7 +71,7 @@ Linear::Linear(bool shared_params, Shape in_shape, Shape out_shape, ActivationTy
     : Learnable(shared_params)
 {
     this->n_ = new Tensor(true, in_shape);
-    this->dn_ = new Tensor(true, in_shape);
+    this->dn_ = Tensor::zeros(true, in_shape);
 
     int in_cnt = (in_shape.dims_size() / this->batch_size());
     int out_cnt = (out_shape.dims_size() / this->batch_size());

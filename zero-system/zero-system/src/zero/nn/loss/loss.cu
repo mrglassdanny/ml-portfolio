@@ -121,6 +121,11 @@ Tensor *MSE::derive(Tensor *p, Tensor *y)
     return out;
 }
 
+Loss *MSE::copy()
+{
+    return new MSE();
+}
+
 void CrossEntropy::evaluate(Tensor *p, Tensor *y, Tensor *out)
 {
     int batch_size = p->shape()[0];
@@ -151,4 +156,9 @@ Tensor *CrossEntropy::derive(Tensor *p, Tensor *y)
     k_cross_entropy_derive<<<grid_dims, block_dims>>>(p->data(), y->data(), out->data(), batch_size, output_cnt);
 
     return out;
+}
+
+Loss *CrossEntropy::copy()
+{
+    return new CrossEntropy();
 }

@@ -83,7 +83,7 @@ HadamardProduct::HadamardProduct(bool shared_params, Shape in_shape, int filter_
     : Learnable(shared_params)
 {
     this->n_ = new Tensor(true, in_shape);
-    this->dn_ = new Tensor(true, in_shape);
+    this->dn_ = Tensor::zeros(true, in_shape);
 
     if (!this->shared_params_)
     {

@@ -101,7 +101,7 @@ MatrixProduct::MatrixProduct(bool shared_params, Shape in_shape, int filter_cnt,
 {
 
     this->n_ = new Tensor(true, in_shape);
-    this->dn_ = new Tensor(true, in_shape);
+    this->dn_ = Tensor::zeros(true, in_shape);
 
     if (!this->shared_params_)
     {

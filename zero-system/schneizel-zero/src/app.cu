@@ -347,6 +347,25 @@ void grad_tests()
 
         delete model;
     }
+
+    {
+        auto model = new Model();
+        model->hadamard_product(x_shape, 4, ActivationType::Tanh);
+        model->hadamard_product(4, ActivationType::Tanh);
+        model->matrix_product(4, ActivationType::Tanh);
+        model->matrix_product(4, ActivationType::Tanh);
+        model->linear(y_shape, ActivationType::Tanh);
+        model->set_loss(new MSE());
+
+        model->summarize();
+        model->validate_gradients(x, y, false);
+
+        auto cpy = model->copy();
+        cpy->validate_gradients(x, y, false);
+
+        delete model;
+        delete cpy;
+    }
 }
 
 void compare_models(int epochs)

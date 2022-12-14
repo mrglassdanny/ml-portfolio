@@ -52,10 +52,15 @@ Model *Model::copy()
         model->add_layer(lyr->copy());
     }
 
-    model->loss_ = this->loss_;
-    model->optim_ = this->optim_;
+    if (this->loss_ != nullptr)
+    {
+        model->loss_ = this->loss_->copy();
+    }
 
-    model->validations_ = this->validations_;
+    if (this->optim_ != nullptr)
+    {
+        model->optim_ = this->optim_->copy();
+    }
 
     return model;
 }
@@ -233,9 +238,19 @@ void Model::step()
 
     this->optim_->step(this->batch_size());
 
-    for (Layer *lyr : this->lyrs_)
+    this->zero_grad();
+}
+
+void Model::zero_grad()
+{
+    for (auto lyr : this->lyrs_)
     {
         lyr->zero_grad();
+    }
+
+    for (auto params : this->parameters())
+    {
+        params->zero_grad();
     }
 }
 
@@ -344,6 +359,8 @@ void Model::validate_gradients(Tensor *x, Tensor *y, bool print_params)
     float agg_ana_grad = 0.0f;
     float agg_num_grad = 0.0f;
     float agg_grad_diff = 0.0f;
+
+    this->zero_grad();
 
     Tensor *p = this->forward(x);
     this->backward(p, y);
@@ -575,6 +592,7 @@ void Model::share_parameters(std::vector<Parameters *> params)
     }
 }
 
+// TODO
 void Model::save_parameters(const char *file)
 {
     auto params = this->parameters();

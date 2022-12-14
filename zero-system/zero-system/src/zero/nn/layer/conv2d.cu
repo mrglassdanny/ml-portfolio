@@ -114,7 +114,7 @@ Conv2d::Conv2d(bool shared_params, Shape in_shape, Shape filter_shape, Stride st
     : Learnable(shared_params)
 {
     this->n_ = new Tensor(true, in_shape);
-    this->dn_ = new Tensor(true, in_shape);
+    this->dn_ = Tensor::zeros(true, in_shape);
 
     if (!this->shared_params_)
     {

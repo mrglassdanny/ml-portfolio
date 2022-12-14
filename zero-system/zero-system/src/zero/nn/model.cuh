@@ -45,6 +45,7 @@ namespace zero
             float accuracy(Tensor *p, Tensor *y);
             void backward(Tensor *p, Tensor *y);
             void step();
+            void zero_grad();
 
             Shape input_shape();
             Shape output_shape();

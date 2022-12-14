@@ -27,6 +27,8 @@ namespace zero
 
                 virtual void step(int batch_size) = 0;
 
+                virtual Optimizer *copy() = 0;
+
                 virtual void summarize();
 
                 void set_learning_rate(float learning_rate);
@@ -39,6 +41,8 @@ namespace zero
                 SGD(std::vector<Parameters *> model_params, float learning_rate);
 
                 virtual void step(int batch_size) override;
+
+                virtual Optimizer *copy() override;
             };
 
             class SGDMomentum : public Optimizer
@@ -53,6 +57,8 @@ namespace zero
                 ~SGDMomentum();
 
                 virtual void step(int batch_size) override;
+
+                virtual Optimizer *copy() override;
             };
 
             class Adam : public Optimizer
@@ -70,6 +76,8 @@ namespace zero
                 ~Adam();
 
                 virtual void step(int batch_size) override;
+
+                virtual Optimizer *copy() override;
             };
         }
     }
