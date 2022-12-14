@@ -10,6 +10,24 @@ namespace zero
     {
         namespace layer
         {
+            class Initializer
+            {
+            public:
+                virtual void initialize(Tensor* tensor, int fan_in, int fan_out) = 0;
+            };
+
+            class XavierInitializer : public Initializer
+            {
+            public:
+                virtual void initialize(Tensor* tensor, int fan_in, int fan_out) override;
+            };
+
+            class HeInitializer : public Initializer
+            {
+            public:
+                virtual void initialize(Tensor* tensor, int fan_in, int fan_out) override;
+            };
+
             class Parameters
             {
             private:
@@ -19,7 +37,7 @@ namespace zero
                 Tensor *db_;
 
             public:
-                Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out);
+                Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out, Initializer *initializer);
                 ~Parameters();
 
                 void zero_grad();

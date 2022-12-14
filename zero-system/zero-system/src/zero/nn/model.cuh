@@ -25,6 +25,7 @@ namespace zero
             bool shared_params_;
             Loss *loss_;
             Optimizer *optim_;
+            Initializer *initializer_;
 
             struct Validations
             {
@@ -42,7 +43,7 @@ namespace zero
 
             Tensor *forward(Tensor *x);
             float loss(Tensor *p, Tensor *y);
-            float accuracy(Tensor *p, Tensor *y);
+            float accuracy(Tensor *p, Tensor *y, int (*acc_fn)(Tensor *p, Tensor *y, int batch_size));
             void backward(Tensor *p, Tensor *y);
             void step();
             void zero_grad();
@@ -62,18 +63,19 @@ namespace zero
             void add_layer(Layer *lyr);
             void set_loss(Loss *loss);
             void set_optimizer(Optimizer *optim);
+            void set_initializer(Initializer *initializer);
 
-            void linear(int out_feature_cnt, ActivationType activation);
-            void linear(Shape y_shape, ActivationType activation);
-            void linear(int batch_size, int in_feature_cnt, int out_feature_cnt, ActivationType activation);
-            void linear(Shape in_shape, int out_feature_cnt, ActivationType activation);
-            void conv2d(Shape filter_shape, ActivationType activation);
-            void conv2d(Shape filter_shape, Stride stride, ActivationType activation);
-            void conv2d(Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation);
-            void hadamard_product(int filter_cnt, ActivationType activation);
-            void hadamard_product(Shape in_shape, int filter_cnt, ActivationType activation);
-            void matrix_product(int filter_cnt, ActivationType activation);
-            void matrix_product(Shape in_shape, int filter_cnt, ActivationType activation);
+            void linear(int out_feature_cnt, Activation *activation);
+            void linear(Shape y_shape, Activation *activation);
+            void linear(int batch_size, int in_feature_cnt, int out_feature_cnt, Activation *activation);
+            void linear(Shape in_shape, int out_feature_cnt, Activation *activation);
+            void conv2d(Shape filter_shape, Activation *activation);
+            void conv2d(Shape filter_shape, Stride stride, Activation *activation);
+            void conv2d(Shape in_shape, Shape filter_shape, Stride stride, Activation *activation);
+            void hadamard_product(int filter_cnt, Activation *activation);
+            void hadamard_product(Shape in_shape, int filter_cnt, Activation *activation);
+            void matrix_product(int filter_cnt, Activation *activation);
+            void matrix_product(Shape in_shape, int filter_cnt, Activation *activation);
 
             std::vector<Layer *> layers();
 
@@ -91,6 +93,11 @@ namespace zero
             Optimizer *optimizer();
 
             void performance_check(Tensor *x, Tensor *y, int epoch_cnt);
+
+            static int regression_accuracy_fn(Tensor *p, Tensor *y, int batch_size);
+            static int regression_sigmoid_accuracy_fn(Tensor *p, Tensor *y, int batch_size);
+            static int regression_tanh_accuracy_fn(Tensor *p, Tensor *y, int batch_size);
+            static int classification_accuracy_fn(Tensor *p, Tensor *y, int batch_size);
         };
     }
 }

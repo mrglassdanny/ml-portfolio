@@ -13,7 +13,7 @@ namespace zero
             class Linear : public Learnable
             {
             public:
-                Linear(bool shared_params, Shape in_shape, Shape out_shape, ActivationType activation);
+                Linear(bool shared_params, Shape in_shape, Shape out_shape, Activation *activation, Initializer *initializer);
 
                 virtual void evaluate(Tensor *out) override;
                 virtual void derive(Tensor *in, Tensor *in_n) override;

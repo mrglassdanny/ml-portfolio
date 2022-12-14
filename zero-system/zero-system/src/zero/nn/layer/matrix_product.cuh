@@ -13,7 +13,7 @@ namespace zero
             class MatrixProduct : public Learnable
             {
             public:
-                MatrixProduct(bool shared_params, Shape in_shape, int filter_cnt, ActivationType activation);
+                MatrixProduct(bool shared_params, Shape in_shape, int filter_cnt, Activation *activation, Initializer *initializer);
 
                 virtual void evaluate(Tensor *out) override;
                 virtual void derive(Tensor *in, Tensor *in_n) override;

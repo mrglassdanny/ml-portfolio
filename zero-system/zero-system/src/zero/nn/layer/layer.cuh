@@ -2,8 +2,6 @@
 
 #include "../../core/mod.cuh"
 
-#include "activation.cuh"
-
 namespace zero
 {
     using namespace core;
@@ -12,12 +10,48 @@ namespace zero
     {
         namespace layer
         {
+            class Activation
+            {
+            public:
+                virtual void evaluate(Tensor *in, int batch_size, int cnt) = 0;
+                virtual void derive(Tensor *in, Tensor *n, int batch_size, int cnt) = 0;
+                virtual Activation *copy() = 0;
+                virtual void summarize() = 0;
+            };
+
+            class SigmoidActivation : public Activation
+            {
+            public:
+                virtual void evaluate(Tensor *in, int batch_size, int cnt) override;
+                virtual void derive(Tensor *in, Tensor *n, int batch_size, int cnt) override;
+                virtual Activation *copy() override;
+                virtual void summarize() override;
+            };
+
+            class TanhActivation : public Activation
+            {
+            public:
+                virtual void evaluate(Tensor *in, int batch_size, int cnt) override;
+                virtual void derive(Tensor *in, Tensor *n, int batch_size, int cnt) override;
+                virtual Activation *copy() override;
+                virtual void summarize() override;
+            };
+
+            class ReLUActivation : public Activation
+            {
+            public:
+                virtual void evaluate(Tensor *in, int batch_size, int cnt) override;
+                virtual void derive(Tensor *in, Tensor *n, int batch_size, int cnt) override;
+                virtual Activation *copy() override;
+                virtual void summarize() override;
+            };
+
             class Layer
             {
             protected:
                 Tensor *n_;
                 Tensor *dn_;
-                ActivationType activation_;
+                Activation *activation_;
 
             public:
                 ~Layer();
@@ -45,8 +79,6 @@ namespace zero
 
                 Tensor *neuron_gradients();
                 void zero_grad();
-
-                ActivationType activation();
             };
         }
     }

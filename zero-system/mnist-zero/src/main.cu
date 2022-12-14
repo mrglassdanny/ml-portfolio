@@ -3,10 +3,13 @@
 
 #include <zero/mod.cuh>
 
+using namespace zero::core;
+using namespace zero::nn;
+
 struct Batch
 {
-	zero::core::Tensor *x;
-	zero::core::Tensor *y;
+	Tensor *x;
+	Tensor *y;
 };
 
 std::vector<Batch> get_train_dataset(int batch_size)
@@ -49,9 +52,9 @@ std::vector<Batch> get_train_dataset(int batch_size)
 
 	for (int i = 0; i < img_cnt / batch_size; i++)
 	{
-		auto x = zero::core::Tensor::from_data(zero::core::Shape(batch_size, 1, img_row_cnt, img_col_cnt), &img_flt_buf[i * batch_size * img_area]);
-		auto y = zero::core::Tensor::from_data(zero::core::Shape(batch_size, 1), &lbl_flt_buf[i * batch_size]);
-		auto oh_y = zero::core::Tensor::one_hot(y, 9);
+		auto x = Tensor::from_data(Shape(batch_size, 1, img_row_cnt, img_col_cnt), &img_flt_buf[i * batch_size * img_area]);
+		auto y = Tensor::from_data(Shape(batch_size, 1), &lbl_flt_buf[i * batch_size]);
+		auto oh_y = Tensor::one_hot(y, 9);
 		delete y;
 
 		batches.push_back({x, oh_y});
@@ -103,9 +106,9 @@ std::vector<Batch> get_test_dataset(int batch_size)
 
 	for (int i = 0; i < img_cnt / batch_size; i++)
 	{
-		auto x = zero::core::Tensor::from_data(zero::core::Shape(batch_size, 1, img_row_cnt, img_col_cnt), &img_flt_buf[i * batch_size * img_area]);
-		auto y = zero::core::Tensor::from_data(zero::core::Shape(batch_size, 1), &lbl_flt_buf[i * batch_size]);
-		auto oh_y = zero::core::Tensor::one_hot(y, 9);
+		auto x = Tensor::from_data(Shape(batch_size, 1, img_row_cnt, img_col_cnt), &img_flt_buf[i * batch_size * img_area]);
+		auto y = Tensor::from_data(Shape(batch_size, 1), &lbl_flt_buf[i * batch_size]);
+		auto oh_y = Tensor::one_hot(y, 9);
 		delete y;
 
 		batches.push_back({x, oh_y});
@@ -117,9 +120,9 @@ std::vector<Batch> get_test_dataset(int batch_size)
 	return batches;
 }
 
-float test_mnist(zero::nn::Model *model, int epoch, bool train, bool to_file);
+float test_mnist(Model *model, int epoch, bool train, bool to_file);
 
-void train_mnist(zero::nn::Model *model, int batch_size, int epochs, bool test_each_epoch)
+void train_mnist(Model *model, int batch_size, int epochs, bool test_each_epoch)
 {
 	auto train_ds = get_train_dataset(batch_size);
 
@@ -176,7 +179,7 @@ void train_mnist(zero::nn::Model *model, int batch_size, int epochs, bool test_e
 	}
 }
 
-float test_mnist(zero::nn::Model *model, int epoch, bool train, bool to_file)
+float test_mnist(Model *model, int epoch, bool train, bool to_file)
 {
 	float test_acc_pct = 0.0f;
 	float train_acc_pct = 0.0f;
@@ -198,7 +201,7 @@ float test_mnist(zero::nn::Model *model, int epoch, bool train, bool to_file)
 
 			auto p = model->forward(x);
 			loss += model->loss(p, y);
-			acc += model->accuracy(p, y);
+			acc += model->accuracy(p, y, Model::classification_accuracy_fn);
 			delete p;
 		}
 
@@ -246,7 +249,7 @@ float test_mnist(zero::nn::Model *model, int epoch, bool train, bool to_file)
 
 			auto p = model->forward(x);
 			loss += model->loss(p, y);
-			acc += model->accuracy(p, y);
+			acc += model->accuracy(p, y, Model::classification_accuracy_fn);
 			delete p;
 		}
 
@@ -281,24 +284,26 @@ float test_mnist(zero::nn::Model *model, int epoch, bool train, bool to_file)
 
 void grad_tests()
 {
-	auto m1 = new zero::nn::Model();
-	auto m2 = new zero::nn::Model();
-	auto m3 = new zero::nn::Model();
-	auto m4 = new zero::nn::Model();
+	auto m1 = new Model();
+	auto m2 = new Model();
+	auto m3 = new Model();
+	auto m4 = new Model();
 
 	int batch_size = 1;
 
 	// m1
 	{
-		auto x = zero::core::Tensor::random(true, zero::core::Shape(batch_size, 64), 0.0f, 1.0f);
-		auto y = zero::core::Tensor::ones(true, zero::core::Shape(batch_size, 1));
+		auto x = Tensor::random(true, Shape(batch_size, 64), 0.0f, 1.0f);
+		auto y = Tensor::ones(true, Shape(batch_size, 1));
 
-		m1->linear(x->shape(), 16, zero::nn::layer::ActivationType::Sigmoid);
-		m1->linear(16, zero::nn::layer::ActivationType::Tanh);
-		m1->linear(y->shape(), zero::nn::layer::ActivationType::Sigmoid);
+		m1->set_initializer(new XavierInitializer());
 
-		m1->set_loss(new zero::nn::loss::MSE());
-		m1->set_optimizer(new zero::nn::optim::SGD(m1->parameters(), 0.01f));
+		m1->linear(x->shape(), 16, new SigmoidActivation());
+		m1->linear(16, new TanhActivation());
+		m1->linear(y->shape(), new SigmoidActivation());
+
+		m1->set_loss(new loss::MSE());
+		m1->set_optimizer(new optim::SGD(m1->parameters(), 0.01f));
 
 		m1->summarize();
 		m1->validate_gradients(x, y, false);
@@ -309,16 +314,18 @@ void grad_tests()
 
 	// m2
 	{
-		auto x = zero::core::Tensor::random(true, zero::core::Shape(batch_size, 64), 0.0f, 1.0f);
-		auto y = zero::core::Tensor::zeros(true, zero::core::Shape(batch_size, 10));
+		auto x = Tensor::random(true, Shape(batch_size, 64), 0.0f, 1.0f);
+		auto y = Tensor::zeros(true, Shape(batch_size, 10));
 		y->set_val(3, 1.0f);
 
-		m2->linear(x->shape(), 16, zero::nn::layer::ActivationType::Tanh);
-		m2->linear(16, zero::nn::layer::ActivationType::Sigmoid);
-		m2->linear(y->shape(), zero::nn::layer::ActivationType::Sigmoid);
+		m2->set_initializer(new XavierInitializer());
 
-		m2->set_loss(new zero::nn::loss::CrossEntropy());
-		m2->set_optimizer(new zero::nn::optim::SGD(m2->parameters(), 0.01f));
+		m2->linear(x->shape(), 16, new TanhActivation());
+		m2->linear(16, new SigmoidActivation());
+		m2->linear(y->shape(), new SigmoidActivation());
+
+		m2->set_loss(new loss::CrossEntropy());
+		m2->set_optimizer(new optim::SGD(m2->parameters(), 0.01f));
 
 		m2->summarize();
 		m2->validate_gradients(x, y, false);
@@ -329,17 +336,19 @@ void grad_tests()
 
 	// m3
 	{
-		auto x = zero::core::Tensor::random(true, zero::core::Shape(batch_size, 2, 21, 14), 0.0f, 1.0f);
-		auto y = zero::core::Tensor::zeros(true, zero::core::Shape(batch_size, 4));
+		auto x = Tensor::random(true, Shape(batch_size, 2, 21, 14), 0.0f, 1.0f);
+		auto y = Tensor::zeros(true, Shape(batch_size, 4));
 		y->set_val(3, 1.0f);
 
-		m3->conv2d(x->shape(), zero::core::Shape(4, 2, 3, 2), zero::nn::layer::Stride{3, 2}, zero::nn::layer::ActivationType::Sigmoid);
-		m3->conv2d(zero::core::Shape(4, 4, 2, 2), zero::nn::layer::Stride{1, 1}, zero::nn::layer::ActivationType::Sigmoid);
-		m3->linear(16, zero::nn::layer::ActivationType::Sigmoid);
-		m3->linear(y->shape(), zero::nn::layer::ActivationType::Sigmoid);
+		m3->set_initializer(new XavierInitializer());
 
-		m3->set_loss(new zero::nn::loss::MSE());
-		m3->set_optimizer(new zero::nn::optim::SGD(m3->parameters(), 0.01f));
+		m3->conv2d(x->shape(), Shape(4, 2, 3, 2), layer::Stride{3, 2}, new SigmoidActivation());
+		m3->conv2d(Shape(4, 4, 2, 2), layer::Stride{1, 1}, new SigmoidActivation());
+		m3->linear(16, new SigmoidActivation());
+		m3->linear(y->shape(), new SigmoidActivation());
+
+		m3->set_loss(new loss::MSE());
+		m3->set_optimizer(new optim::SGD(m3->parameters(), 0.01f));
 
 		m3->summarize();
 		m3->validate_gradients(x, y, false);
@@ -350,18 +359,20 @@ void grad_tests()
 
 	// m4
 	{
-		auto x = zero::core::Tensor::random(true, zero::core::Shape(batch_size, 1, 12, 12), 0.0f, 1.0f);
-		auto y = zero::core::Tensor::zeros(true, zero::core::Shape(batch_size, 4));
+		auto x = Tensor::random(true, Shape(batch_size, 1, 12, 12), 0.0f, 1.0f);
+		auto y = Tensor::zeros(true, Shape(batch_size, 4));
 		y->set_val(3, 1.0f);
 
-		m4->conv2d(x->shape(), zero::core::Shape(4, 1, 3, 3), zero::nn::layer::Stride{1, 1}, zero::nn::layer::ActivationType::Sigmoid);
-		m4->conv2d(zero::core::Shape(4, 4, 4, 4), zero::nn::layer::Stride{1, 1}, zero::nn::layer::ActivationType::Tanh);
-		m4->conv2d(zero::core::Shape(4, 4, 2, 2), zero::nn::layer::Stride{1, 1}, zero::nn::layer::ActivationType::None);
-		m4->linear(16, zero::nn::layer::ActivationType::Sigmoid);
-		m4->linear(y->shape(), zero::nn::layer::ActivationType::Sigmoid);
+		m4->set_initializer(new XavierInitializer());
 
-		m4->set_loss(new zero::nn::loss::CrossEntropy());
-		m4->set_optimizer(new zero::nn::optim::SGD(m4->parameters(), 0.01f));
+		m4->conv2d(x->shape(), Shape(4, 1, 3, 3), layer::Stride{1, 1}, new SigmoidActivation());
+		m4->conv2d(Shape(4, 4, 4, 4), layer::Stride{1, 1}, new TanhActivation());
+		m4->conv2d(Shape(4, 4, 2, 2), layer::Stride{1, 1}, nullptr);
+		m4->linear(16, new SigmoidActivation());
+		m4->linear(y->shape(), new SigmoidActivation());
+
+		m4->set_loss(new loss::CrossEntropy());
+		m4->set_optimizer(new optim::SGD(m4->parameters(), 0.01f));
 
 		m4->summarize();
 		m4->validate_gradients(x, y, false);
@@ -378,21 +389,23 @@ void grad_tests()
 
 void mnist_conv(int batch_size, int epochs)
 {
-	auto input_shape = zero::core::Shape(batch_size, 1, 28, 28);
-	auto output_shape = zero::core::Shape(batch_size, 10);
+	auto input_shape = Shape(batch_size, 1, 28, 28);
+	auto output_shape = Shape(batch_size, 10);
 
-	auto model = new zero::nn::Model();
+	auto model = new Model();
 
-	model->conv2d(input_shape, zero::core::Shape(64, 1, 5, 5), zero::nn::layer::Stride{1, 1}, zero::nn::layer::ActivationType::ReLU);
-	model->conv2d(zero::core::Shape(64, 64, 3, 3), zero::nn::layer::Stride{3, 3}, zero::nn::layer::ActivationType::ReLU);
-	model->conv2d(zero::core::Shape(64, 64, 3, 3), zero::nn::layer::Stride{1, 1}, zero::nn::layer::ActivationType::ReLU);
-	model->linear(512, zero::nn::layer::ActivationType::ReLU);
-	model->linear(256, zero::nn::layer::ActivationType::ReLU);
-	model->linear(128, zero::nn::layer::ActivationType::ReLU);
-	model->linear(output_shape, zero::nn::layer::ActivationType::Sigmoid);
+	model->set_initializer(new XavierInitializer());
 
-	model->set_loss(new zero::nn::loss::CrossEntropy());
-	model->set_optimizer(new zero::nn::optim::SGDMomentum(model->parameters(), 0.15f, ZERO_NN_BETA_1));
+	model->conv2d(input_shape, Shape(64, 1, 5, 5), layer::Stride{1, 1}, new ReLUActivation());
+	model->conv2d(Shape(64, 64, 3, 3), layer::Stride{3, 3}, new ReLUActivation());
+	model->conv2d(Shape(64, 64, 3, 3), layer::Stride{1, 1}, new ReLUActivation());
+	model->linear(512, new ReLUActivation());
+	model->linear(256, new ReLUActivation());
+	model->linear(128, new ReLUActivation());
+	model->linear(output_shape, new SigmoidActivation());
+
+	model->set_loss(new loss::CrossEntropy());
+	model->set_optimizer(new optim::SGDMomentum(model->parameters(), 0.15f, ZERO_NN_BETA_1));
 
 	model->summarize();
 

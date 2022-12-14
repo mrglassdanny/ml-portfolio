@@ -3,12 +3,27 @@
 using namespace zero::core;
 using namespace zero::nn::layer;
 
-Parameters::Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out)
+void XavierInitializer::initialize(Tensor *tensor, int fan_in, int fan_out)
 {
-    this->w_ = Tensor::random(true, w_shape, 0.0f, sqrt(1.0f / fan_in));
+    tensor->random(0.0f, sqrt(1.0f / fan_in));
+}
+
+void HeInitializer::initialize(Tensor *tensor, int fan_in, int fan_out)
+{
+    tensor->random(0.0f, sqrt(2.0f / fan_in));
+}
+
+Parameters::Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out, Initializer *initializer)
+{
+    this->w_ = Tensor::zeros(true, w_shape);
     this->b_ = Tensor::zeros(true, b_shape);
     this->dw_ = Tensor::zeros(true, w_shape);
     this->db_ = Tensor::zeros(true, b_shape);
+
+    if (initializer != nullptr)
+    {
+        initializer->initialize(this->w_, fan_in, fan_out);
+    }
 }
 
 Parameters::~Parameters()

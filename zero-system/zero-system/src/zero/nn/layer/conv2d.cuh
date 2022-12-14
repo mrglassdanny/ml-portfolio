@@ -24,7 +24,7 @@ namespace zero
                 int out_col_cnt_;
 
             public:
-                Conv2d(bool shared_params, Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation);
+                Conv2d(bool shared_params, Shape in_shape, Shape filter_shape, Stride stride, Activation *activation, Initializer *initializer);
 
                 virtual void evaluate(Tensor *out) override;
                 virtual void derive(Tensor *in, Tensor *in_n) override;

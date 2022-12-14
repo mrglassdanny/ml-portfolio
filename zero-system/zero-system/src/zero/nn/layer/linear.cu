@@ -67,21 +67,20 @@ __global__ void k_linear_agg_derivatives(float *in, float *w, float *out, int ba
     }
 }
 
-Linear::Linear(bool shared_params, Shape in_shape, Shape out_shape, ActivationType activation)
+Linear::Linear(bool shared_params, Shape in_shape, Shape out_shape, Activation *activation, Initializer *initializer)
     : Learnable(shared_params)
 {
     this->n_ = new Tensor(true, in_shape);
     this->dn_ = Tensor::zeros(true, in_shape);
+    this->activation_ = activation;
 
     int in_cnt = (in_shape.dims_size() / this->batch_size());
     int out_cnt = (out_shape.dims_size() / this->batch_size());
 
     if (!this->shared_params_)
     {
-        this->params_ = new Parameters(Shape(in_cnt, out_cnt), Shape(out_cnt), in_cnt, out_cnt);
+        this->params_ = new Parameters(Shape(in_cnt, out_cnt), Shape(out_cnt), in_cnt, out_cnt, initializer);
     }
-
-    this->activation_ = activation;
 }
 
 void Linear::evaluate(Tensor *out)
@@ -99,7 +98,10 @@ void Linear::evaluate(Tensor *out)
     k_linear_evaluate<<<grid_dims, block_dims>>>(n->data(), w->data(), b->data(), out->data(),
                                                  this->batch_size(), this->in_features(), this->out_features());
 
-    Activation::evaluate(out, this->batch_size(), this->out_features(), this->activation_);
+    if (this->activation_ != nullptr)
+    {
+        this->activation_->evaluate(out, this->batch_size(), this->out_features());
+    }
 }
 
 void Linear::derive(Tensor *in, Tensor *in_n)
@@ -111,7 +113,10 @@ void Linear::derive(Tensor *in, Tensor *in_n)
     Tensor *dw = this->params_->weight_gradients();
     Tensor *db = this->params_->bias_gradients();
 
-    Activation::derive(in, in_n, this->batch_size(), this->out_features(), this->activation_);
+    if (this->activation_ != nullptr)
+    {
+        this->activation_->derive(in, in_n, this->batch_size(), this->out_features());
+    }
 
     {
         int grid_row_cnt = (this->weight_rows() / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
@@ -149,7 +154,7 @@ Shape Linear::output_shape()
 
 Layer *Linear::copy()
 {
-    auto lyr = new Linear(true, this->input_shape(), this->output_shape(), this->activation_);
+    auto lyr = new Linear(true, this->input_shape(), this->output_shape(), this->activation_->copy(), nullptr);
     lyr->share_parameters(this->params_);
     return lyr;
 }
@@ -170,7 +175,11 @@ void Linear::validate()
 void Linear::summarize()
 {
     Layer::summarize();
-    Activation::summarize(this->activation_);
+
+    if (this->activation_ != nullptr)
+    {
+        this->activation_->summarize();
+    }
 }
 
 int Linear::weight_rows()

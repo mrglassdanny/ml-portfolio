@@ -9,6 +9,67 @@ using namespace zero::core;
 using namespace zero::nn;
 using namespace chess;
 
+__global__ void k_co_weight_step(float *w, float *dw, int w_cnt, float lr, int batch_size)
+{
+    int w_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (w_elem_idx < w_cnt)
+    {
+        w[w_elem_idx] -= (lr * dw[w_elem_idx] / batch_size);
+        if (w[w_elem_idx] < 0.0f)
+        {
+            w[w_elem_idx] = 0.0f;
+        }
+    }
+}
+
+__global__ void k_co_bias_step(float *b, float *db, int b_cnt, float lr, int batch_size)
+{
+    int b_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (b_elem_idx < b_cnt)
+    {
+        b[b_elem_idx] -= (lr * db[b_elem_idx] / batch_size);
+        if (b[b_elem_idx] < 0.0f)
+        {
+            b[b_elem_idx] = 0.0f;
+        }
+    }
+}
+
+class ChessOptimizer : public Optimizer
+{
+public:
+    ChessOptimizer(std::vector<Parameters *> model_params, float learning_rate)
+        : Optimizer(model_params, learning_rate)
+    {
+    }
+
+    void ChessOptimizer::step(int batch_size)
+    {
+        for (Parameters *params : this->model_params_)
+        {
+            Tensor *w = params->weights();
+            Tensor *b = params->biases();
+            Tensor *dw = params->weight_gradients();
+            Tensor *db = params->bias_gradients();
+
+            int w_cnt = w->count();
+            int b_cnt = b->count();
+
+            k_co_weight_step<<<w_cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK + 1, ZERO_CORE_CUDA_THREADS_PER_BLOCK>>>(w->data(), dw->data(), w_cnt, this->lr_, batch_size);
+            k_co_bias_step<<<b_cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK + 1, ZERO_CORE_CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), b_cnt, this->lr_, batch_size);
+        }
+
+        this->step_num_++;
+    }
+
+    Optimizer *ChessOptimizer::copy()
+    {
+        return new SGD(this->model_params_, this->lr_);
+    }
+};
+
 struct Game
 {
     std::vector<Board> boards;
@@ -295,7 +356,7 @@ void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::v
 
             auto p = model->forward(x);
             loss += model->loss(p, y);
-            acc += model->accuracy(p, y);
+            acc += model->accuracy(p, y, Model::regression_tanh_accuracy_fn);
             delete p;
         }
 
@@ -320,11 +381,28 @@ void grad_tests()
 
     {
         auto model = new Model();
-        model->hadamard_product(x_shape, 4, ActivationType::Tanh);
-        model->hadamard_product(4, ActivationType::Tanh);
-        model->matrix_product(4, ActivationType::Tanh);
-        model->matrix_product(4, ActivationType::Tanh);
-        model->linear(y_shape, ActivationType::Tanh);
+        model->set_initializer(new XavierInitializer());
+        model->hadamard_product(x_shape, 4, new TanhActivation());
+        model->hadamard_product(4, new TanhActivation());
+        model->matrix_product(4, new TanhActivation());
+        model->matrix_product(4, new TanhActivation());
+        model->linear(y_shape, new TanhActivation());
+        model->set_loss(new MSE());
+
+        model->summarize();
+        model->validate_gradients(x, y, true);
+
+        delete model;
+    }
+
+    {
+        auto model = new Model();
+        model->set_initializer(new XavierInitializer());
+        model->hadamard_product(x_shape, 4, new TanhActivation());
+        model->hadamard_product(4, new TanhActivation());
+        model->matrix_product(4, new TanhActivation());
+        model->matrix_product(4, new TanhActivation());
+        model->linear(y_shape, new TanhActivation());
         model->set_loss(new MSE());
 
         model->summarize();
@@ -335,26 +413,12 @@ void grad_tests()
 
     {
         auto model = new Model();
-        model->hadamard_product(x_shape, 4, ActivationType::Tanh);
-        model->hadamard_product(4, ActivationType::Tanh);
-        model->matrix_product(4, ActivationType::Tanh);
-        model->matrix_product(4, ActivationType::Tanh);
-        model->linear(y_shape, ActivationType::Tanh);
-        model->set_loss(new MSE());
-
-        model->summarize();
-        model->validate_gradients(x, y, false);
-
-        delete model;
-    }
-
-    {
-        auto model = new Model();
-        model->hadamard_product(x_shape, 4, ActivationType::Tanh);
-        model->hadamard_product(4, ActivationType::Tanh);
-        model->matrix_product(4, ActivationType::Tanh);
-        model->matrix_product(4, ActivationType::Tanh);
-        model->linear(y_shape, ActivationType::Tanh);
+        model->set_initializer(new XavierInitializer());
+        model->hadamard_product(x_shape, 4, new TanhActivation());
+        model->hadamard_product(4, new TanhActivation());
+        model->matrix_product(4, new TanhActivation());
+        model->matrix_product(4, new TanhActivation());
+        model->linear(y_shape, new TanhActivation());
         model->set_loss(new MSE());
 
         model->summarize();
@@ -379,9 +443,10 @@ void compare_models(int epochs)
     {
         printf("\n\n");
         auto model = new Model();
-        model->hadamard_product(x_shape, 16, ActivationType::Tanh);
-        model->matrix_product(16, ActivationType::Tanh);
-        model->linear(y_shape, ActivationType::Tanh);
+        model->set_initializer(new XavierInitializer());
+        model->hadamard_product(x_shape, 16, new TanhActivation());
+        model->matrix_product(16, new TanhActivation());
+        model->linear(y_shape, new TanhActivation());
         model->set_loss(new MSE());
         model->set_optimizer(new SGD(model->parameters(), 0.1f));
 
@@ -393,34 +458,16 @@ void compare_models(int epochs)
     {
         printf("\n\n");
         auto model = new Model();
-        model->hadamard_product(x_shape, 64, ActivationType::Tanh);
-        model->matrix_product(64, ActivationType::Tanh);
-        model->linear(y_shape, ActivationType::Tanh);
+        model->hadamard_product(x_shape, 16, new TanhActivation());
+        model->matrix_product(16, new TanhActivation());
+        model->linear(y_shape, new TanhActivation());
         model->set_loss(new MSE());
-        model->set_optimizer(new SGD(model->parameters(), 0.1f));
+        model->set_optimizer(new ChessOptimizer(model->parameters(), 0.1f));
 
         train_n_test(model, epochs, &train_ds, &test_ds);
 
         delete model;
     }
-
-    {
-        printf("\n\n");
-        auto model = new Model();
-        model->hadamard_product(x_shape, 16, ActivationType::Tanh);
-        model->hadamard_product(16, ActivationType::Tanh);
-        model->matrix_product(16, ActivationType::Tanh);
-        model->matrix_product(16, ActivationType::Tanh);
-        model->linear(y_shape, ActivationType::Tanh);
-        model->set_loss(new MSE());
-        model->set_optimizer(new SGD(model->parameters(), 0.1f));
-
-        train_n_test(model, epochs, &train_ds, &test_ds);
-
-        delete model;
-    }
-
-    // Clean up:
 
     for (auto batch : train_ds)
     {

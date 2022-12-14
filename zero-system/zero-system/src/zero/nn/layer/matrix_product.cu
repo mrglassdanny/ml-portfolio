@@ -96,20 +96,19 @@ __global__ void k_matrix_product_agg_derivatives(float *in, float *w, float *out
     }
 }
 
-MatrixProduct::MatrixProduct(bool shared_params, Shape in_shape, int filter_cnt, ActivationType activation)
+MatrixProduct::MatrixProduct(bool shared_params, Shape in_shape, int filter_cnt, Activation *activation, Initializer *initializer)
     : Learnable(shared_params)
 {
 
     this->n_ = new Tensor(true, in_shape);
     this->dn_ = Tensor::zeros(true, in_shape);
+    this->activation_ = activation;
 
     if (!this->shared_params_)
     {
         this->params_ = new Parameters(Shape(filter_cnt, this->channels(), this->rows(), this->cols()),
-                                       Shape(1), this->rows(), this->cols());
+                                       Shape(1), this->rows(), this->cols(), initializer);
     }
-
-    this->activation_ = activation;
 }
 
 void MatrixProduct::evaluate(Tensor *out)
@@ -127,7 +126,10 @@ void MatrixProduct::evaluate(Tensor *out)
                                                          this->rows(), this->cols(), this->rows() * this->cols(),
                                                          this->batch_size(), this->channels(), this->filters());
 
-    Activation::evaluate(out, this->batch_size(), this->out_features(), this->activation_);
+    if (this->activation_ != nullptr)
+    {
+        this->activation_->evaluate(out, this->batch_size(), this->out_features());
+    }
 }
 
 void MatrixProduct::derive(Tensor *in, Tensor *in_n)
@@ -139,7 +141,10 @@ void MatrixProduct::derive(Tensor *in, Tensor *in_n)
     Tensor *dw = this->params_->weight_gradients();
     Tensor *db = this->params_->bias_gradients();
 
-    Activation::derive(in, in_n, this->batch_size(), this->out_features(), this->activation_);
+    if (this->activation_ != nullptr)
+    {
+        this->activation_->derive(in, in_n, this->batch_size(), this->out_features());
+    }
 
     {
         int grid_row_cnt = (this->filters() / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
@@ -178,7 +183,7 @@ Shape MatrixProduct::output_shape()
 
 Layer *MatrixProduct::copy()
 {
-    auto lyr = new MatrixProduct(true, this->input_shape(), this->filters(), this->activation_);
+    auto lyr = new MatrixProduct(true, this->input_shape(), this->filters(), this->activation_->copy(), nullptr);
     lyr->share_parameters(this->params_);
     return lyr;
 }
@@ -208,7 +213,10 @@ void MatrixProduct::summarize()
 
     printf("\tFilters: %d\t", this->filters());
 
-    Activation::summarize(this->activation_);
+    if (this->activation_ != nullptr)
+    {
+        this->activation_->summarize();
+    }
 }
 
 int MatrixProduct::channels()

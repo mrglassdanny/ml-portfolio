@@ -9,6 +9,5 @@
 #include "conv2d.cuh"
 #include "hadamard_product.cuh"
 #include "matrix_product.cuh"
-#include "activation.cuh"
 
 #endif

@@ -16,7 +16,6 @@
     <ClInclude Include="src\zero\core\tensor.cuh" />
     <ClInclude Include="src\zero\core\util.cuh" />
     <ClInclude Include="src\zero\mod.cuh" />
-    <ClInclude Include="src\zero\nn\layer\activation.cuh" />
     <ClInclude Include="src\zero\nn\layer\conv2d.cuh" />
     <ClInclude Include="src\zero\nn\layer\hadamard_product.cuh" />
     <ClInclude Include="src\zero\nn\layer\layer.cuh" />
@@ -35,7 +34,6 @@
     <CudaCompile Include="src\zero\core\tensor.cu" />
     <CudaCompile Include="src\zero\core\util.cu" />
     <CudaCompile Include="src\zero\nn\constants.cuh" />
-    <CudaCompile Include="src\zero\nn\layer\activation.cu" />
     <CudaCompile Include="src\zero\nn\layer\conv2d.cu" />
     <CudaCompile Include="src\zero\nn\layer\hadamard_product.cu" />
     <CudaCompile Include="src\zero\nn\layer\layer.cu" />

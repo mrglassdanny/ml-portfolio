@@ -110,23 +110,22 @@ __global__ void k_conv2d_agg_derivatives(float *in, float *w, float *out, int ba
     }
 }
 
-Conv2d::Conv2d(bool shared_params, Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation)
+Conv2d::Conv2d(bool shared_params, Shape in_shape, Shape filter_shape, Stride stride, Activation *activation, Initializer *initializer)
     : Learnable(shared_params)
 {
     this->n_ = new Tensor(true, in_shape);
     this->dn_ = Tensor::zeros(true, in_shape);
+    this->activation_ = activation;
 
     if (!this->shared_params_)
     {
-        this->params_ = new Parameters(filter_shape, Shape(filter_shape[0], filter_shape[1]), this->in_feature_rows(), this->in_feature_cols());
+        this->params_ = new Parameters(filter_shape, Shape(filter_shape[0], filter_shape[1]), this->in_feature_rows(), this->in_feature_cols(), initializer);
     }
 
     this->stride_ = stride;
 
     this->out_row_cnt_ = ((this->in_feature_rows() - this->filter_rows()) / this->stride_rows()) + 1;
     this->out_col_cnt_ = ((this->in_feature_cols() - this->filter_cols()) / this->stride_cols()) + 1;
-
-    this->activation_ = activation;
 }
 
 void Conv2d::evaluate(Tensor *out)
@@ -145,7 +144,10 @@ void Conv2d::evaluate(Tensor *out)
                                                  this->filters(), this->filter_rows(), this->filter_cols(), this->out_feature_rows(), this->out_feature_cols(),
                                                  this->stride_rows(), this->stride_cols());
 
-    Activation::evaluate(out, this->batch_size(), this->out_features(), this->activation_);
+    if (this->activation_ != nullptr)
+    {
+        this->activation_->evaluate(out, this->batch_size(), this->out_features());
+    }
 }
 
 void Conv2d::derive(Tensor *in, Tensor *in_n)
@@ -157,7 +159,10 @@ void Conv2d::derive(Tensor *in, Tensor *in_n)
     Tensor *dw = this->params_->weight_gradients();
     Tensor *db = this->params_->bias_gradients();
 
-    Activation::derive(in, in_n, this->batch_size(), this->out_features(), this->activation_);
+    if (this->activation_ != nullptr)
+    {
+        this->activation_->derive(in, in_n, this->batch_size(), this->out_features());
+    }
 
     {
         int grid_row_cnt = (this->filters() / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
@@ -200,7 +205,7 @@ Shape Conv2d::output_shape()
 
 Layer *Conv2d::copy()
 {
-    auto lyr = new Conv2d(true, this->input_shape(), this->filter_shape(), this->stride_, this->activation_);
+    auto lyr = new Conv2d(true, this->input_shape(), this->filter_shape(), this->stride_, this->activation_->copy(), nullptr);
     lyr->share_parameters(this->params_);
     return lyr;
 }
@@ -274,7 +279,10 @@ void Conv2d::summarize()
 
     printf("\tStride (%d, %d)\t", this->stride_rows(), this->stride_cols());
 
-    Activation::summarize(this->activation_);
+    if (this->activation_ != nullptr)
+    {
+        this->activation_->summarize();
+    }
 }
 
 int Conv2d::channels()

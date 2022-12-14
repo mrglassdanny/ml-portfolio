@@ -9,6 +9,7 @@ Model::Model()
 
     this->loss_ = nullptr;
     this->optim_ = nullptr;
+    this->initializer_ = nullptr;
 
     this->validations_ = Validations{false, false, false};
 }
@@ -19,6 +20,7 @@ Model::Model(bool shared_params)
 
     this->loss_ = nullptr;
     this->optim_ = nullptr;
+    this->initializer_ = nullptr;
 
     this->validations_ = Validations{false, false, false};
 }
@@ -40,6 +42,12 @@ Model::~Model()
     {
         delete this->optim_;
         this->optim_ = nullptr;
+    }
+
+    if (this->initializer_ != nullptr)
+    {
+        delete this->initializer_;
+        this->initializer_ = nullptr;
     }
 }
 
@@ -111,95 +119,11 @@ float Model::loss(Tensor *p, Tensor *y)
     return mean_loss;
 }
 
-float Model::accuracy(Tensor *p, Tensor *y)
+float Model::accuracy(Tensor *p, Tensor *y, int (*acc_fn)(Tensor *p, Tensor *y, int batch_size))
 {
-    int correct_cnt = 0;
-
     int batch_size = this->batch_size();
-    int output_cnt = p->shape()[1];
 
-    if (output_cnt > 1)
-    {
-        for (int i = 0; i < batch_size; i++)
-        {
-            float max_val = p->get_val(i * output_cnt + 0);
-            int max_idx = 0;
-            for (int j = 1; j < output_cnt; j++)
-            {
-                float val = p->get_val(i * output_cnt + j);
-                if (val > max_val)
-                {
-                    max_val = val;
-                    max_idx = j;
-                }
-            }
-
-            if (y->get_val(i * output_cnt + max_idx) == 1.0f)
-            {
-                correct_cnt++;
-            }
-        }
-    }
-    else
-    {
-        switch (this->last_layer()->activation())
-        {
-        case Sigmoid:
-        {
-            for (int i = 0; i < batch_size; i++)
-            {
-                float p_val = p->get_val(i) >= 0.50 ? 1.0f : 0.0f;
-
-                if (p_val == y->get_val(i))
-                {
-                    correct_cnt++;
-                }
-            }
-        }
-        break;
-        case Tanh:
-        {
-            for (int i = 0; i < batch_size; i++)
-            {
-                float p_val = p->get_val(i);
-                if (p_val < 0.0f)
-                {
-                    if (p_val <= -0.5f)
-                    {
-                        p_val = -1.0f;
-                    }
-                    else
-                    {
-                        p_val = 0.0f;
-                    }
-                }
-                else if (p_val > 0.0f)
-                {
-                    if (p_val >= 0.5f)
-                    {
-                        p_val = 1.0f;
-                    }
-                    else
-                    {
-                        p_val = 0.0f;
-                    }
-                }
-
-                if (p_val == y->get_val(i))
-                {
-                    correct_cnt++;
-                }
-            }
-        }
-        break;
-        case ReLU:
-            // TODO
-            break;
-        default:
-            // TODO
-            break;
-        }
-    }
+    int correct_cnt = acc_fn(p, y, batch_size);
 
     return ((float)correct_cnt / (float)batch_size);
 }
@@ -503,59 +427,64 @@ void Model::set_optimizer(Optimizer *optim)
     this->optim_ = optim;
 }
 
-void Model::linear(int out_feature_cnt, ActivationType activation)
+void Model::set_initializer(Initializer *initializer)
 {
-    this->add_layer(new Linear(this->shared_params_, this->output_shape(), Shape(this->batch_size(), out_feature_cnt), activation));
+    this->initializer_ = initializer;
 }
 
-void Model::linear(Shape y_shape, ActivationType activation)
+void Model::linear(int out_feature_cnt, Activation *activation)
 {
-    this->add_layer(new Linear(this->shared_params_, this->output_shape(), y_shape, activation));
+    this->add_layer(new Linear(this->shared_params_, this->output_shape(), Shape(this->batch_size(), out_feature_cnt), activation, this->initializer_));
 }
 
-void Model::linear(int batch_size, int in_feature_cnt, int out_feature_cnt, ActivationType activation)
+void Model::linear(Shape y_shape, Activation *activation)
 {
-    this->add_layer(new Linear(this->shared_params_, Shape(batch_size, in_feature_cnt), Shape(batch_size, out_feature_cnt), activation));
+    this->add_layer(new Linear(this->shared_params_, this->output_shape(), y_shape, activation, this->initializer_));
 }
 
-void Model::linear(Shape in_shape, int out_feature_cnt, ActivationType activation)
+void Model::linear(int batch_size, int in_feature_cnt, int out_feature_cnt, Activation *activation)
 {
-    this->add_layer(new Linear(this->shared_params_, in_shape, Shape(in_shape[0], out_feature_cnt), activation));
+    this->add_layer(new Linear(this->shared_params_, Shape(batch_size, in_feature_cnt), Shape(batch_size, out_feature_cnt), activation, this->initializer_));
 }
 
-void Model::conv2d(Shape filter_shape, ActivationType activation)
+void Model::linear(Shape in_shape, int out_feature_cnt, Activation *activation)
 {
-    this->add_layer(new Conv2d(this->shared_params_, this->output_shape(), filter_shape, Stride{1, 1}, activation));
+    this->add_layer(new Linear(this->shared_params_, in_shape, Shape(in_shape[0], out_feature_cnt), activation, this->initializer_));
 }
 
-void Model::conv2d(Shape filter_shape, Stride stride, ActivationType activation)
+void Model::conv2d(Shape filter_shape, Activation *activation)
 {
-    this->add_layer(new Conv2d(this->shared_params_, this->output_shape(), filter_shape, stride, activation));
+    this->add_layer(new Conv2d(this->shared_params_, this->output_shape(), filter_shape, Stride{1, 1}, activation, this->initializer_));
 }
 
-void Model::conv2d(Shape in_shape, Shape filter_shape, Stride stride, ActivationType activation)
+void Model::conv2d(Shape filter_shape, Stride stride, Activation *activation)
 {
-    this->add_layer(new Conv2d(this->shared_params_, in_shape, filter_shape, stride, activation));
+    this->add_layer(new Conv2d(this->shared_params_, this->output_shape(), filter_shape, stride, activation, this->initializer_));
 }
 
-void Model::hadamard_product(int filter_cnt, ActivationType activation)
+void Model::conv2d(Shape in_shape, Shape filter_shape, Stride stride, Activation *activation)
 {
-    this->add_layer(new HadamardProduct(this->shared_params_, this->output_shape(), filter_cnt, activation));
+    this->add_layer(new Conv2d(this->shared_params_, in_shape, filter_shape, stride, activation, this->initializer_));
 }
 
-void Model::hadamard_product(Shape in_shape, int filter_cnt, ActivationType activation)
+void Model::hadamard_product(int filter_cnt, Activation *activation)
 {
-    this->add_layer(new HadamardProduct(this->shared_params_, in_shape, filter_cnt, activation));
+    this->add_layer(new HadamardProduct(this->shared_params_, this->output_shape(), filter_cnt, activation, this->initializer_));
 }
 
-void Model::matrix_product(int filter_cnt, ActivationType activation)
+void Model::hadamard_product(Shape in_shape, int filter_cnt, Activation *activation)
 {
-    this->add_layer(new MatrixProduct(this->shared_params_, this->output_shape(), filter_cnt, activation));
+    this->add_layer(new HadamardProduct(this->shared_params_, in_shape, filter_cnt, activation, this->initializer_));
 }
 
-void Model::matrix_product(Shape in_shape, int filter_cnt, ActivationType activation)
+void Model::matrix_product(int filter_cnt, Activation *activation)
 {
-    this->add_layer(new MatrixProduct(this->shared_params_, in_shape, filter_cnt, activation));
+    this->add_layer(new MatrixProduct(this->shared_params_, this->output_shape(), filter_cnt, activation, this->initializer_));
+}
+
+void Model::matrix_product(Shape in_shape, int filter_cnt, Activation *activation)
+{
+    this->add_layer(new MatrixProduct(this->shared_params_, in_shape, filter_cnt, activation, this->initializer_));
 }
 
 std::vector<Layer *> Model::layers()
@@ -650,4 +579,104 @@ void Model::performance_check(Tensor *x, Tensor *y, int epoch_cnt)
     sw->print_elapsed_seconds();
 
     delete sw;
+}
+
+int Model::regression_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
+{
+    int correct_cnt = 0;
+
+    for (int i = 0; i < batch_size; i++)
+    {
+        if (p->get_val(i) == y->get_val(i))
+        {
+            correct_cnt++;
+        }
+    }
+
+    return correct_cnt;
+}
+
+int Model::regression_sigmoid_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
+{
+    int correct_cnt = 0;
+
+    for (int i = 0; i < batch_size; i++)
+    {
+        float p_val = p->get_val(i) >= 0.50 ? 1.0f : 0.0f;
+
+        if (p_val == y->get_val(i))
+        {
+            correct_cnt++;
+        }
+    }
+
+    return correct_cnt;
+}
+
+int Model::regression_tanh_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
+{
+    int correct_cnt = 0;
+
+    for (int i = 0; i < batch_size; i++)
+    {
+        float p_val = p->get_val(i);
+        if (p_val < 0.0f)
+        {
+            if (p_val <= -0.5f)
+            {
+                p_val = -1.0f;
+            }
+            else
+            {
+                p_val = 0.0f;
+            }
+        }
+        else if (p_val > 0.0f)
+        {
+            if (p_val >= 0.5f)
+            {
+                p_val = 1.0f;
+            }
+            else
+            {
+                p_val = 0.0f;
+            }
+        }
+
+        if (p_val == y->get_val(i))
+        {
+            correct_cnt++;
+        }
+    }
+
+    return correct_cnt;
+}
+
+int Model::classification_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
+{
+    int correct_cnt = 0;
+
+    int output_cnt = p->dims_size() / batch_size;
+
+    for (int i = 0; i < batch_size; i++)
+    {
+        float max_val = p->get_val(i * output_cnt + 0);
+        int max_idx = 0;
+        for (int j = 1; j < output_cnt; j++)
+        {
+            float val = p->get_val(i * output_cnt + j);
+            if (val > max_val)
+            {
+                max_val = val;
+                max_idx = j;
+            }
+        }
+
+        if (y->get_val(i * output_cnt + max_idx) == 1.0f)
+        {
+            correct_cnt++;
+        }
+    }
+
+    return correct_cnt;
 }
