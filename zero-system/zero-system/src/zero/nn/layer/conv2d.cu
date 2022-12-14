@@ -279,9 +279,14 @@ void Conv2d::summarize()
 
     printf("\tStride (%d, %d)\t", this->stride_rows(), this->stride_cols());
 
+    printf("Activation: ");
     if (this->activation_ != nullptr)
     {
         this->activation_->summarize();
+    }
+    else
+    {
+        printf("None");
     }
 }
 

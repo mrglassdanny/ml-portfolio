@@ -191,9 +191,14 @@ void HadamardProduct::summarize()
 
     printf("\tFilters: %d\t", this->filters());
 
+    printf("Activation: ");
     if (this->activation_ != nullptr)
     {
         this->activation_->summarize();
+    }
+    else
+    {
+        printf("None");
     }
 }
 

@@ -105,6 +105,12 @@ __global__ void k_relu_derive(float *in, float *n, int batch_size, int cnt)
     }
 }
 
+void Activation::summarize()
+{
+    std::string cls_name(typeid(*this).name());
+    printf("%s", cls_name.c_str());
+}
+
 void SigmoidActivation::evaluate(Tensor *in, int batch_size, int cnt)
 {
     int grid_row_cnt = (batch_size / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
@@ -130,11 +136,6 @@ void SigmoidActivation::derive(Tensor *in, Tensor *n, int batch_size, int cnt)
 Activation *SigmoidActivation::copy()
 {
     return new SigmoidActivation();
-}
-
-void SigmoidActivation::summarize()
-{
-    printf("Activation: Sigmoid");
 }
 
 void TanhActivation::evaluate(Tensor *in, int batch_size, int cnt)
@@ -164,11 +165,6 @@ Activation *TanhActivation::copy()
     return new TanhActivation();
 }
 
-void TanhActivation::summarize()
-{
-    printf("Activation: Tanh");
-}
-
 void ReLUActivation::evaluate(Tensor *in, int batch_size, int cnt)
 {
     int grid_row_cnt = (batch_size / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
@@ -196,11 +192,6 @@ Activation *ReLUActivation::copy()
     return new ReLUActivation();
 }
 
-void ReLUActivation::summarize()
-{
-    printf("Activation: ReLU");
-}
-
 Layer::~Layer()
 {
     delete this->n_;
@@ -224,6 +215,16 @@ void Layer::summarize()
     this->input_shape().print_pad(16, true);
     printf(" -> ");
     this->output_shape().print_pad(16, false);
+
+    printf("\tActivation: ");
+    if (this->activation_ != nullptr)
+    {
+        this->activation_->summarize();
+    }
+    else
+    {
+        printf("None");
+    }
 }
 
 int Layer::in_features()

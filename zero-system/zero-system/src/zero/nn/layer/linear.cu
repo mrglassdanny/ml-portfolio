@@ -175,11 +175,6 @@ void Linear::validate()
 void Linear::summarize()
 {
     Layer::summarize();
-
-    if (this->activation_ != nullptr)
-    {
-        this->activation_->summarize();
-    }
 }
 
 int Linear::weight_rows()

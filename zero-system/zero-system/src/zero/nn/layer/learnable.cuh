@@ -13,19 +13,24 @@ namespace zero
             class Initializer
             {
             public:
-                virtual void initialize(Tensor* tensor, int fan_in, int fan_out) = 0;
+                virtual void initialize(Tensor *tensor, int fan_in, int fan_out) = 0;
+                virtual Initializer *copy() = 0;
+
+                void summarize();
             };
 
             class XavierInitializer : public Initializer
             {
             public:
-                virtual void initialize(Tensor* tensor, int fan_in, int fan_out) override;
+                virtual void initialize(Tensor *tensor, int fan_in, int fan_out) override;
+                virtual Initializer *copy() override;
             };
 
             class HeInitializer : public Initializer
             {
             public:
-                virtual void initialize(Tensor* tensor, int fan_in, int fan_out) override;
+                virtual void initialize(Tensor *tensor, int fan_in, int fan_out) override;
+                virtual Initializer *copy() override;
             };
 
             class Parameters

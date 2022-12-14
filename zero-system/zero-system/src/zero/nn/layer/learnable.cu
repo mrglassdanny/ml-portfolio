@@ -3,14 +3,30 @@
 using namespace zero::core;
 using namespace zero::nn::layer;
 
+void Initializer::summarize()
+{
+    std::string cls_name(typeid(*this).name());
+    printf("%s", cls_name.c_str());
+}
+
 void XavierInitializer::initialize(Tensor *tensor, int fan_in, int fan_out)
 {
     tensor->random(0.0f, sqrt(1.0f / fan_in));
 }
 
+Initializer *XavierInitializer::copy()
+{
+    return new XavierInitializer();
+}
+
 void HeInitializer::initialize(Tensor *tensor, int fan_in, int fan_out)
 {
     tensor->random(0.0f, sqrt(2.0f / fan_in));
+}
+
+Initializer *HeInitializer::copy()
+{
+    return new HeInitializer();
 }
 
 Parameters::Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out, Initializer *initializer)

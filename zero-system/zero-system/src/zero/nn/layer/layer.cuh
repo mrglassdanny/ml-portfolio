@@ -16,7 +16,8 @@ namespace zero
                 virtual void evaluate(Tensor *in, int batch_size, int cnt) = 0;
                 virtual void derive(Tensor *in, Tensor *n, int batch_size, int cnt) = 0;
                 virtual Activation *copy() = 0;
-                virtual void summarize() = 0;
+
+                void summarize();
             };
 
             class SigmoidActivation : public Activation
@@ -25,7 +26,6 @@ namespace zero
                 virtual void evaluate(Tensor *in, int batch_size, int cnt) override;
                 virtual void derive(Tensor *in, Tensor *n, int batch_size, int cnt) override;
                 virtual Activation *copy() override;
-                virtual void summarize() override;
             };
 
             class TanhActivation : public Activation
@@ -34,7 +34,6 @@ namespace zero
                 virtual void evaluate(Tensor *in, int batch_size, int cnt) override;
                 virtual void derive(Tensor *in, Tensor *n, int batch_size, int cnt) override;
                 virtual Activation *copy() override;
-                virtual void summarize() override;
             };
 
             class ReLUActivation : public Activation
@@ -43,7 +42,6 @@ namespace zero
                 virtual void evaluate(Tensor *in, int batch_size, int cnt) override;
                 virtual void derive(Tensor *in, Tensor *n, int batch_size, int cnt) override;
                 virtual Activation *copy() override;
-                virtual void summarize() override;
             };
 
             class Layer

@@ -37,6 +37,8 @@ namespace zero
         public:
             Model();
             Model(bool shared_params);
+            Model(Initializer *initializer);
+            Model(Loss *loss, Initializer *initializer);
             ~Model();
 
             Model *copy();

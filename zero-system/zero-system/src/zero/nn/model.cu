@@ -25,6 +25,28 @@ Model::Model(bool shared_params)
     this->validations_ = Validations{false, false, false};
 }
 
+Model::Model(Initializer *initializer)
+{
+    this->shared_params_ = false;
+
+    this->loss_ = nullptr;
+    this->optim_ = nullptr;
+    this->initializer_ = initializer;
+
+    this->validations_ = Validations{false, false, false};
+}
+
+Model::Model(Loss *loss, Initializer *initializer)
+{
+    this->shared_params_ = false;
+
+    this->loss_ = loss;
+    this->optim_ = nullptr;
+    this->initializer_ = initializer;
+
+    this->validations_ = Validations{false, false, false};
+}
+
 Model::~Model()
 {
     for (Layer *lyr : this->lyrs_)
@@ -68,6 +90,11 @@ Model *Model::copy()
     if (this->optim_ != nullptr)
     {
         model->optim_ = this->optim_->copy();
+    }
+
+    if (this->initializer_ != nullptr)
+    {
+        model->initializer_ = this->initializer_->copy();
     }
 
     return model;
@@ -409,26 +436,58 @@ void Model::summarize()
     }
     printf("\n\n");
 
+    printf("Initializer: ");
+    if (this->initializer_ != nullptr)
+    {
+        this->initializer_->summarize();
+    }
+    else
+    {
+        printf("None");
+    }
+    printf("\n\n");
+
     printf("=====================================================================================================================================================================\n");
 }
 
 void Model::add_layer(Layer *lyr)
 {
     this->lyrs_.push_back(lyr);
+
+    this->validations_.layers = false;
 }
 
 void Model::set_loss(Loss *loss)
 {
+    if (this->loss_ != nullptr)
+    {
+        delete this->loss_;
+    }
+
     this->loss_ = loss;
+
+    this->validations_.loss = false;
 }
 
 void Model::set_optimizer(Optimizer *optim)
 {
+    if (this->optim_ != nullptr)
+    {
+        delete this->optim_;
+    }
+
     this->optim_ = optim;
+
+    this->validations_.optimizer = false;
 }
 
 void Model::set_initializer(Initializer *initializer)
 {
+    if (this->initializer_ != nullptr)
+    {
+        delete this->initializer_;
+    }
+
     this->initializer_ = initializer;
 }
 
