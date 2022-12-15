@@ -7,6 +7,7 @@
 
 using namespace zero::core;
 using namespace zero::nn;
+using namespace zero::cluster;
 using namespace chess;
 
 __global__ void k_co_weight_step(float *w, float *dw, int w_cnt, float lr, int batch_size)
@@ -247,6 +248,61 @@ void export_pgn(const char *path)
     printf("GAME COUNT: %d\tMOVE COUNT: %ld", game_cnt, move_cnt);
 }
 
+// NOTE: excludes ties and openings.
+void export_pgn_cluster(const char *path)
+{
+    auto pgn_games = PGN::import(path);
+
+    int game_cnt = 0;
+    long move_cnt = 0;
+
+    FILE *data_file = fopen("temp/cluster.data", "wb");
+    FILE *lbl_file = fopen("temp/cluster.lbl", "wb");
+
+    float data_buf[CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT];
+    float lbl_buf;
+
+    for (auto pgn_game : pgn_games)
+    {
+        // Only save games where there was a winner.
+        if (pgn_game->lbl != 0)
+        {
+            Board board;
+            bool white = true;
+
+            int game_move_cnt = 0;
+
+            for (auto move_str : pgn_game->move_strs)
+            {
+                auto move = board.change(move_str, white);
+                white = !white;
+
+                // Skip openings.
+                if (game_move_cnt > 6)
+                {
+                    board.one_hot_encode(data_buf);
+                    lbl_buf = (float)pgn_game->lbl;
+
+                    fwrite(data_buf, sizeof(data_buf), 1, data_file);
+                    fwrite(&lbl_buf, sizeof(lbl_buf), 1, lbl_file);
+
+                    move_cnt++;
+                }
+
+                game_move_cnt++;
+            }
+            game_cnt++;
+        }
+
+        delete pgn_game;
+    }
+
+    fclose(data_file);
+    fclose(lbl_file);
+
+    printf("GAME COUNT: %d\tMOVE COUNT: %ld", game_cnt, move_cnt);
+}
+
 struct Batch
 {
     zero::core::Tensor *x;
@@ -323,6 +379,37 @@ std::vector<Batch> get_test_dataset(int batch_size)
     free(lbl_buf);
 
     return batches;
+}
+
+Batch get_cluster_dataset()
+{
+    int oh_board_len = CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT;
+    int oh_board_size = oh_board_len * sizeof(float);
+
+    long long data_file_size = zero::core::FileUtils::get_file_size("temp/test.data");
+    size_t data_cnt = data_file_size / oh_board_size;
+
+    std::vector<Batch> batches;
+
+    FILE *data_file = fopen("temp/test.data", "rb");
+    FILE *lbl_file = fopen("temp/test.lbl", "rb");
+
+    float *data_buf = (float *)malloc(data_file_size);
+    fread(data_buf, oh_board_size, data_cnt, data_file);
+
+    float *lbl_buf = (float *)malloc(sizeof(float) * data_cnt);
+    fread(lbl_buf, sizeof(float), data_cnt, lbl_file);
+
+    fclose(data_file);
+    fclose(lbl_file);
+
+    auto x = Tensor::from_data(Shape(data_cnt, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT), data_buf);
+    auto y = Tensor::from_data(Shape(data_cnt, 1), lbl_buf);
+
+    free(data_buf);
+    free(lbl_buf);
+
+    return Batch{x, y};
 }
 
 void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::vector<Batch> *test_ds)
@@ -504,17 +591,30 @@ void compare_models(int epochs)
     }
 }
 
+void cluster_tests()
+{
+    auto batch = get_cluster_dataset();
+
+    KMeans::elbow_analysis(batch.x, 100, 10000, 3, "temp/cluster.csv");
+
+    delete batch.x;
+    delete batch.y;
+}
+
 int main()
 {
     srand(time(NULL));
 
     // export_pgn("data/data.pgn");
+    export_pgn_cluster("data/data.pgn");
 
     // grad_tests();
 
     // compare_models(4);
 
-    self_play(5, 3, true);
+    cluster_tests();
+
+    // self_play(5, 3, true);
 
     return 0;
 }
