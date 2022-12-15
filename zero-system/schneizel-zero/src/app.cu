@@ -91,7 +91,7 @@ struct Game
     float lbl;
 };
 
-Game self_play(int white_depth, int black_depth, bool print, Model *model)
+Game self_play(int white_depth, int black_depth, bool print)
 {
     Board board;
     Move prev_move;
@@ -105,7 +105,7 @@ Game self_play(int white_depth, int black_depth, bool print, Model *model)
     {
         if (print)
         {
-            printf("\nWHITE TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
+            printf("\nWHITE TURN\n");
             if (move_cnt == 0)
             {
                 board.print();
@@ -132,7 +132,9 @@ Game self_play(int white_depth, int black_depth, bool print, Model *model)
             break;
         }
 
-        prev_move = board.change_minimax_async(true, white_depth, model);
+        auto evals = board.minimax_alphabeta(true, white_depth);
+        board.change(evals[0].move);
+        prev_move = evals[0].move;
         Board cpy_board;
         cpy_board.copy(&board);
         game.boards.push_back(cpy_board);
@@ -141,7 +143,7 @@ Game self_play(int white_depth, int black_depth, bool print, Model *model)
 
         if (print)
         {
-            printf("\nBLACK TURN\tCURRENT MATERIAL EVAL: %d\n", board.evaluate_material());
+            printf("\nBLACK TURN\n");
             board.print(prev_move);
         }
 
@@ -161,7 +163,9 @@ Game self_play(int white_depth, int black_depth, bool print, Model *model)
             break;
         }
 
-        prev_move = board.change_minimax_async(false, black_depth);
+        evals = board.minimax_alphabeta(false, black_depth);
+        board.change(evals[0].move);
+        prev_move = evals[0].move;
         Board cpy_board2;
         cpy_board2.copy(&board);
         game.boards.push_back(cpy_board2);
@@ -504,7 +508,9 @@ int main()
 
     // grad_tests();
 
-    compare_models(4);
+    // compare_models(4);
+
+    self_play(3, 3, true);
 
     return 0;
 }

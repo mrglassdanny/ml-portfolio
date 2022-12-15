@@ -32,8 +32,8 @@
 
 #define CHESS_INVALID_SQUARE -1
 
-#define CHESS_EVAL_MIN_VAL -1000.0f
-#define CHESS_EVAL_MAX_VAL 1000.0f
+#define CHESS_EVAL_MIN_VAL -1000
+#define CHESS_EVAL_MAX_VAL 1000
 
 #define CHESS_BOARD_CHANNEL_CNT 6
 
@@ -106,8 +106,10 @@ namespace chess
         std::vector<Move> get_diagonal_moves(int square, char piece, int row, int col);
         std::vector<Move> get_straight_moves(int square, char piece, int row, int col);
 
-        static float sim_minimax_sync(Simulation sim, bool white, int depth, float alpha, float beta);
-        static void sim_minimax_async(Simulation sim, bool white, int depth, float alpha, float beta, Evaluation *evals);
+        int evaluate_material();
+
+        static int sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int alpha, int beta);
+        static void sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals);
 
     public:
         Board();
@@ -121,6 +123,8 @@ namespace chess
 
         char *get_data();
 
+        void one_hot_encode(float *out);
+
         char get_piece(int square);
         int get_king_square(bool white);
         bool is_piece_in_king_pin(int square, bool white_king_pin);
@@ -128,13 +132,7 @@ namespace chess
         std::vector<Move> get_moves(int square, bool test_check);
         std::vector<Move> get_all_moves(bool white);
 
-        /*
-            Move string will be either 3, 5, or 7 characters long:
-                - O-O
-                - O-O-O or Ng1f3
-                - Pd7d8=Q
-            NOTE: this will only work if invoked BEFORE move is made to board!
-        */
+        // NOTE: this will only work if invoked BEFORE move is made to board!
         std::string convert_move_to_move_str(Move move);
 
         bool has_moves(bool white);
@@ -148,12 +146,7 @@ namespace chess
         Simulation simulate(Move move);
         std::vector<Simulation> simulate_all(bool white);
 
-        int evaluate_material();
-
-        Move change_minimax_async(bool white, int depth);
-        Move change_minimax_async(bool white, int depth, zero::nn::Model *model);
-
-        void one_hot_encode(float *out);
+        std::vector<Evaluation> minimax_alphabeta(bool white, int depth);
     };
 
     struct Simulation
@@ -165,7 +158,7 @@ namespace chess
 
     struct Evaluation
     {
-        float value;
+        int value;
         Move move;
         Board board;
     };

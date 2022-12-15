@@ -493,6 +493,86 @@ char *Board::get_data()
     return this->data_;
 }
 
+void Board::one_hot_encode(float *out)
+{
+    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
+    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
+    {
+        for (int i = 0; i < CHESS_ROW_CNT; i++)
+        {
+            for (int j = 0; j < CHESS_COL_CNT; j++)
+            {
+                int out_idx = (c * CHESS_BOARD_LEN) + (i * CHESS_COL_CNT) + j;
+                int square = (i * CHESS_COL_CNT) + j;
+
+                switch (c)
+                {
+                case 0:
+                    if (this->get_piece(square) == WP)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    else if (this->get_piece(square) == BP)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 1:
+                    if (this->get_piece(square) == WN)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    else if (this->get_piece(square) == BN)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 2:
+                    if (this->get_piece(square) == WB)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    else if (this->get_piece(square) == BB)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 3:
+                    if (this->get_piece(square) == WR)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    else if (this->get_piece(square) == BR)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 4:
+                    if (this->get_piece(square) == WQ)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    else if (this->get_piece(square) == BQ)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                default:
+                    if (this->get_piece(square) == WK)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    else if (this->get_piece(square) == BK)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                }
+            }
+        }
+    }
+}
+
 char Board::get_piece(int square)
 {
     return this->data_[square];
@@ -2211,7 +2291,7 @@ int Board::evaluate_material()
     return mat_eval;
 }
 
-float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha, float beta)
+int Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int alpha, int beta)
 {
     if (sim.board.is_checkmate(!white, false))
     {
@@ -2227,17 +2307,17 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha
 
     if (depth == 0)
     {
-        return (float)sim.board.evaluate_material();
+        return sim.board.evaluate_material();
     }
 
     if (!white)
     {
-        float best_eval_val = CHESS_EVAL_MIN_VAL;
+        int best_eval_val = CHESS_EVAL_MIN_VAL;
         auto sim_sims = sim.board.simulate_all(true);
 
         for (auto sim_sim : sim_sims)
         {
-            float eval_val = Board::sim_minimax_sync(sim_sim, true, depth - 1, alpha, beta);
+            int eval_val = Board::sim_minimax_alphabeta_sync(sim_sim, true, depth - 1, alpha, beta);
 
             best_eval_val = eval_val > best_eval_val ? eval_val : best_eval_val;
 
@@ -2252,12 +2332,12 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha
     }
     else
     {
-        float best_eval_val = CHESS_EVAL_MAX_VAL;
+        int best_eval_val = CHESS_EVAL_MAX_VAL;
         auto sim_sims = sim.board.simulate_all(false);
 
         for (auto sim_sim : sim_sims)
         {
-            float eval_val = Board::sim_minimax_sync(sim_sim, false, depth - 1, alpha, beta);
+            int eval_val = Board::sim_minimax_alphabeta_sync(sim_sim, false, depth - 1, alpha, beta);
 
             best_eval_val = eval_val < best_eval_val ? eval_val : best_eval_val;
 
@@ -2272,32 +2352,33 @@ float Board::sim_minimax_sync(Simulation sim, bool white, int depth, float alpha
     }
 }
 
-void Board::sim_minimax_async(Simulation sim, bool white, int depth, float alpha, float beta, Evaluation *evals)
+void Board::sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals)
 {
-    float eval_val = Board::sim_minimax_sync(sim, white, depth, alpha, beta);
+    int eval_val = Board::sim_minimax_alphabeta_sync(sim, white, depth, alpha, beta);
     evals[sim.idx] = Evaluation{eval_val, sim.move, sim.board};
 }
 
-Move Board::change_minimax_async(bool white, int depth)
+std::vector<Evaluation> Board::minimax_alphabeta(bool white, int depth)
 {
     auto sw = new zero::core::CpuStopWatch();
     sw->start();
+
+    std::vector<Evaluation> best_moves;
 
     Evaluation evals[CHESS_BOARD_LEN];
 
     auto sims = this->simulate_all(white);
 
-    float min = CHESS_EVAL_MIN_VAL;
-    float max = CHESS_EVAL_MAX_VAL;
+    int min = CHESS_EVAL_MIN_VAL;
+    int max = CHESS_EVAL_MAX_VAL;
 
-    float best_eval_val = white ? min : max;
-    Move best_move;
+    int best_eval_val = white ? min : max;
 
     std::vector<std::thread> threads;
 
     for (auto sim : sims)
     {
-        threads.push_back(std::thread(Board::sim_minimax_async, sim, white, depth, min, max, evals));
+        threads.push_back(std::thread(Board::sim_minimax_alphabeta_async, sim, white, depth, min, max, evals));
     }
 
     for (auto &th : threads)
@@ -2305,191 +2386,29 @@ Move Board::change_minimax_async(bool white, int depth)
         th.join();
     }
 
-    std::vector<Evaluation> ties;
-
     for (int i = 0; i < sims.size(); i++)
     {
         auto eval = evals[i];
 
         if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
         {
-            best_eval_val = eval.value;
-            best_move = eval.move;
+            best_moves.clear();
 
-            ties.clear();
+            best_eval_val = eval.value;
+
+            best_moves.push_back(eval);
         }
         else if (eval.value == best_eval_val)
         {
-            ties.push_back(eval);
+            best_moves.push_back(eval);
         }
     }
-
-    if (ties.size() > 0)
-    {
-        int rand_idx = rand() % ties.size();
-        best_move = ties[rand_idx].move;
-    }
-
-    this->change(best_move);
 
     sw->stop();
     sw->print_elapsed_seconds();
     delete sw;
 
-    return best_move;
-}
-
-Move Board::change_minimax_async(bool white, int depth, zero::nn::Model *model)
-{
-    auto sw = new zero::core::CpuStopWatch();
-    sw->start();
-
-    Evaluation evals[CHESS_BOARD_LEN];
-
-    auto sims = this->simulate_all(white);
-
-    float min = CHESS_EVAL_MIN_VAL;
-    float max = CHESS_EVAL_MAX_VAL;
-
-    float best_eval_val = white ? min : max;
-    Move best_move;
-
-    std::vector<std::thread> threads;
-
-    for (auto sim : sims)
-    {
-        threads.push_back(std::thread(Board::sim_minimax_async, sim, white, depth, min, max, evals));
-    }
-
-    for (auto &th : threads)
-    {
-        th.join();
-    }
-
-    std::vector<Evaluation> ties;
-
-    for (int i = 0; i < sims.size(); i++)
-    {
-        auto eval = evals[i];
-
-        if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
-        {
-            best_eval_val = eval.value;
-            best_move = eval.move;
-
-            ties.clear();
-        }
-        else if (eval.value == best_eval_val)
-        {
-            ties.push_back(eval);
-        }
-    }
-
-    for (auto tie : ties)
-    {
-        auto x = zero::core::Tensor::zeros(false, model->input_shape());
-        tie.board.one_hot_encode(x->data());
-        x->to_cuda();
-        auto p = model->forward(x);
-        delete x;
-
-        float eval_val = tie.value + p->get_val(0);
-        delete p;
-
-        if ((white && eval_val > best_eval_val) || (!white && eval_val < best_eval_val))
-        {
-            best_eval_val = tie.value;
-            best_move = tie.move;
-        }
-    }
-
-    this->change(best_move);
-
-    sw->stop();
-    sw->print_elapsed_seconds();
-    delete sw;
-
-    return best_move;
-}
-
-void Board::one_hot_encode(float *out)
-{
-    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
-    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
-    {
-        for (int i = 0; i < CHESS_ROW_CNT; i++)
-        {
-            for (int j = 0; j < CHESS_COL_CNT; j++)
-            {
-                int out_idx = (c * CHESS_BOARD_LEN) + (i * CHESS_COL_CNT) + j;
-                int square = (i * CHESS_COL_CNT) + j;
-
-                switch (c)
-                {
-                case 0:
-                    if (this->get_piece(square) == WP)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    else if (this->get_piece(square) == BP)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 1:
-                    if (this->get_piece(square) == WN)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    else if (this->get_piece(square) == BN)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 2:
-                    if (this->get_piece(square) == WB)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    else if (this->get_piece(square) == BB)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 3:
-                    if (this->get_piece(square) == WR)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    else if (this->get_piece(square) == BR)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 4:
-                    if (this->get_piece(square) == WQ)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    else if (this->get_piece(square) == BQ)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                default:
-                    if (this->get_piece(square) == WK)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    else if (this->get_piece(square) == BK)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                }
-            }
-        }
-    }
+    return best_moves;
 }
 
 std::vector<PGNGame *> PGN::import(const char *path)

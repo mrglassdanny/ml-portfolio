@@ -11,6 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\zero\cluster\kmeans.cuh" />
+    <ClInclude Include="src\zero\cluster\mod.cuh" />
     <ClInclude Include="src\zero\core\err.cuh" />
     <ClInclude Include="src\zero\core\mod.cuh" />
     <ClInclude Include="src\zero\core\tensor.cuh" />
@@ -31,6 +33,7 @@
     <ClInclude Include="src\zero\nn\optim\optim.cuh" />
   </ItemGroup>
   <ItemGroup>
+    <CudaCompile Include="src\zero\cluster\kmeans.cu" />
     <CudaCompile Include="src\zero\core\tensor.cu" />
     <CudaCompile Include="src\zero\core\util.cu" />
     <CudaCompile Include="src\zero\nn\constants.cuh" />
