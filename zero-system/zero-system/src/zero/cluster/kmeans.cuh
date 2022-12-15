@@ -13,9 +13,9 @@ namespace zero
         class KMeans
         {
         private:
-            int cluster_cnt;
-            int feature_cnt;
-            Tensor *clusters;
+            int cluster_cnt_;
+            int feature_cnt_;
+            Tensor *clusters_;
 
         public:
             KMeans();
@@ -26,17 +26,17 @@ namespace zero
             void load(const char *path);
             void save(const char *path);
 
-            void print();
+            void initialize(Tensor *x);
+            float train(Tensor *x);
+            Tensor *predict(Tensor *x);
 
-            void initialize_clusters(Tensor *xs);
-            void reset_clusters();
+            void validate_input(Tensor *x);
 
-            float train(Tensor *xs);
-            Tensor *predict(Tensor *xs);
+            Tensor *clusters();
 
-            static float save_best(Tensor *xs, int cluster_cnt, int iter_cnt, const char *path);
-            static void run_elbow_analysis(Tensor *xs, int cluster_cnt_lower, int cluster_cnt_upper,
-                                           int iter_cnt, const char *csv_path);
+            static float save_best(Tensor *x, int cluster_cnt, int iter_cnt, const char *path);
+            static void elbow_analysis(Tensor *x, int cluster_cnt_lower, int cluster_cnt_upper,
+                                       int iter_cnt, const char *csv_path);
         };
     }
 }
