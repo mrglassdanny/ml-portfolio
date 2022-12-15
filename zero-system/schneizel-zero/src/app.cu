@@ -386,13 +386,13 @@ Batch get_cluster_dataset()
     int oh_board_len = CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT;
     int oh_board_size = oh_board_len * sizeof(float);
 
-    long long data_file_size = zero::core::FileUtils::get_file_size("temp/test.data");
+    long long data_file_size = zero::core::FileUtils::get_file_size("temp/cluster.data");
     size_t data_cnt = data_file_size / oh_board_size;
 
     std::vector<Batch> batches;
 
-    FILE *data_file = fopen("temp/test.data", "rb");
-    FILE *lbl_file = fopen("temp/test.lbl", "rb");
+    FILE *data_file = fopen("temp/cluster.data", "rb");
+    FILE *lbl_file = fopen("temp/cluster.lbl", "rb");
 
     float *data_buf = (float *)malloc(data_file_size);
     fread(data_buf, oh_board_size, data_cnt, data_file);
@@ -595,7 +595,7 @@ void cluster_tests()
 {
     auto batch = get_cluster_dataset();
 
-    KMeans::elbow_analysis(batch.x, 100, 10000, 3, "temp/cluster.csv");
+    KMeans::save_best(batch.x, 10000, 3, "temp/model.km");
 
     delete batch.x;
     delete batch.y;
@@ -606,7 +606,7 @@ int main()
     srand(time(NULL));
 
     // export_pgn("data/data.pgn");
-    export_pgn_cluster("data/data.pgn");
+    // export_pgn_cluster("data/data.pgn");
 
     // grad_tests();
 
