@@ -89,6 +89,16 @@ __global__ void k_variance(float *data, int cnt, float mean_val, float *variance
     }
 }
 
+__global__ void k_abs(float *data, int cnt)
+{
+    int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (tid < cnt)
+    {
+        data[tid] = abs(data[tid]);
+    }
+}
+
 Shape::Shape()
 {
 }
@@ -1094,6 +1104,22 @@ float Tensor::variance()
 float Tensor::stddev()
 {
     return sqrt(this->variance());
+}
+
+void Tensor::abs()
+{
+    int cnt = this->count();
+    if (this->cuda_)
+    {
+        k_abs<<<cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK + 1, ZERO_CORE_CUDA_THREADS_PER_BLOCK>>>(this->data_, cnt);
+    }
+    else
+    {
+        for (int i = 0; i < cnt; i++)
+        {
+            this->data_[i] = fabs(this->data_[i]);
+        }
+    }
 }
 
 float Tensor::get_val(int idx)

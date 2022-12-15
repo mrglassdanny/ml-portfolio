@@ -70,6 +70,20 @@ public:
     }
 };
 
+class ChessInitializer : public Initializer
+{
+public:
+    void initialize(Tensor *tensor, int fan_in, int fan_out)
+    {
+        tensor->random(0.0f, sqrt(2.0f / fan_in));
+    }
+
+    Initializer *copy()
+    {
+        return new ChessInitializer();
+    }
+};
+
 struct Game
 {
     std::vector<Board> boards;
@@ -397,7 +411,7 @@ void grad_tests()
 
     {
         auto model = new Model();
-        model->set_initializer(new XavierInitializer());
+        model->set_initializer(new ChessInitializer());
         model->hadamard_product(x_shape, 4, new TanhActivation());
         model->hadamard_product(4, new TanhActivation());
         model->matrix_product(4, new TanhActivation());
@@ -442,8 +456,7 @@ void compare_models(int epochs)
 
     {
         printf("\n\n");
-        auto model = new Model();
-        model->set_initializer(new XavierInitializer());
+        auto model = new Model(new XavierInitializer());
         model->hadamard_product(x_shape, 16, new TanhActivation());
         model->matrix_product(16, new TanhActivation());
         model->linear(y_shape, new TanhActivation());
@@ -457,7 +470,7 @@ void compare_models(int epochs)
 
     {
         printf("\n\n");
-        auto model = new Model();
+        auto model = new Model(new ChessInitializer());
         model->hadamard_product(x_shape, 16, new TanhActivation());
         model->matrix_product(16, new TanhActivation());
         model->linear(y_shape, new TanhActivation());
@@ -488,9 +501,9 @@ int main()
 
     // export_pgn("data/data.pgn");
 
-    grad_tests();
+    // grad_tests();
 
-    // compare_models(4);
+    compare_models(4);
 
     return 0;
 }

@@ -99,6 +99,8 @@ namespace zero
 			float variance();
 			float stddev();
 
+			void abs();
+
 			float get_val(int idx);
 			void set_val(int idx, float val);
 
