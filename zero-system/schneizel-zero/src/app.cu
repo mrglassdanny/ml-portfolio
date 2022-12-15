@@ -479,6 +479,11 @@ void compare_models(int epochs)
 
         train_n_test(model, epochs, &train_ds, &test_ds);
 
+        for (auto params : model->parameters())
+        {
+            params->weights()->print();
+        }
+
         delete model;
     }
 
