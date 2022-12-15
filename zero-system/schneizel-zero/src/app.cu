@@ -457,8 +457,8 @@ void compare_models(int epochs)
     {
         printf("\n\n");
         auto model = new Model(new XavierInitializer());
-        model->hadamard_product(x_shape, 16, new TanhActivation());
-        model->matrix_product(16, new TanhActivation());
+        model->hadamard_product(x_shape, 32, new TanhActivation());
+        model->matrix_product(32, new TanhActivation());
         model->linear(y_shape, new TanhActivation());
         model->set_loss(new MSE());
         model->set_optimizer(new SGD(model->parameters(), 0.1f));
@@ -471,8 +471,8 @@ void compare_models(int epochs)
     {
         printf("\n\n");
         auto model = new Model(new ChessInitializer());
-        model->hadamard_product(x_shape, 16, new TanhActivation());
-        model->matrix_product(16, new TanhActivation());
+        model->hadamard_product(x_shape, 32, new TanhActivation());
+        model->matrix_product(32, new TanhActivation());
         model->linear(y_shape, new TanhActivation());
         model->set_loss(new MSE());
         model->set_optimizer(new ChessOptimizer(model->parameters(), 0.1f));
@@ -503,7 +503,7 @@ int main()
 
     // grad_tests();
 
-    compare_models(4);
+    compare_models(10);
 
     return 0;
 }
