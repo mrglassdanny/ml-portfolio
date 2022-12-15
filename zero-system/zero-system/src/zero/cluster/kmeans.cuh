@@ -34,7 +34,7 @@ namespace zero
 
             Tensor *clusters();
 
-            static float save_best(Tensor *x, int cluster_cnt, int iter_cnt, const char *path);
+            static KMeans *save_best(Tensor *x, int cluster_cnt, int iter_cnt, const char *path);
             static void elbow_analysis(Tensor *x, int cluster_cnt_lower, int cluster_cnt_upper,
                                        int iter_cnt, const char *csv_path);
         };

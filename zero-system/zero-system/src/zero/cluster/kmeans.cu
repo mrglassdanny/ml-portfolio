@@ -299,7 +299,7 @@ Tensor *KMeans::clusters()
     return this->clusters_;
 }
 
-float KMeans::save_best(Tensor *x, int cluster_cnt, int iter_cnt, const char *path)
+KMeans *KMeans::save_best(Tensor *x, int cluster_cnt, int iter_cnt, const char *path)
 {
     int batch_size = x->shape()[0];
     int feature_cnt = x->dims_size() / batch_size;
@@ -327,9 +327,8 @@ float KMeans::save_best(Tensor *x, int cluster_cnt, int iter_cnt, const char *pa
     best_kmeans->save(path);
 
     delete kmeans;
-    delete best_kmeans;
 
-    return min_loss;
+    return best_kmeans;
 }
 
 void KMeans::elbow_analysis(Tensor *x, int cluster_cnt_lower, int cluster_cnt_upper,
