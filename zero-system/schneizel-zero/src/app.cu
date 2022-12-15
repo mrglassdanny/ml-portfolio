@@ -133,8 +133,10 @@ Game self_play(int white_depth, int black_depth, bool print)
         }
 
         auto evals = board.minimax_alphabeta(true, white_depth);
-        board.change(evals[0].move);
-        prev_move = evals[0].move;
+        printf("Ties: %d\n", evals.size());
+        int r = rand() % evals.size();
+        board.change(evals[r].move);
+        prev_move = evals[r].move;
         Board cpy_board;
         cpy_board.copy(&board);
         game.boards.push_back(cpy_board);
@@ -164,8 +166,10 @@ Game self_play(int white_depth, int black_depth, bool print)
         }
 
         evals = board.minimax_alphabeta(false, black_depth);
-        board.change(evals[0].move);
-        prev_move = evals[0].move;
+        printf("Ties: %d\n", evals.size());
+        r = rand() % evals.size();
+        board.change(evals[r].move);
+        prev_move = evals[r].move;
         Board cpy_board2;
         cpy_board2.copy(&board);
         game.boards.push_back(cpy_board2);
@@ -510,7 +514,7 @@ int main()
 
     // compare_models(4);
 
-    self_play(3, 3, true);
+    self_play(5, 3, true);
 
     return 0;
 }

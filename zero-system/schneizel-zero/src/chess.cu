@@ -2405,6 +2405,7 @@ std::vector<Evaluation> Board::minimax_alphabeta(bool white, int depth)
     }
 
     sw->stop();
+    printf("ab\t");
     sw->print_elapsed_seconds();
     delete sw;
 
