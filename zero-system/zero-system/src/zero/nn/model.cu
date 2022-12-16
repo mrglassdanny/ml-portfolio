@@ -681,25 +681,11 @@ int Model::regression_tanh_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
         float p_val = p->get_val(i);
         if (p_val < 0.0f)
         {
-            if (p_val <= -0.5f)
-            {
-                p_val = -1.0f;
-            }
-            else
-            {
-                p_val = 0.0f;
-            }
+            p_val = -1.0f;
         }
         else if (p_val > 0.0f)
         {
-            if (p_val >= 0.5f)
-            {
-                p_val = 1.0f;
-            }
-            else
-            {
-                p_val = 0.0f;
-            }
+            p_val = 1.0f;
         }
 
         if (p_val == y->get_val(i))

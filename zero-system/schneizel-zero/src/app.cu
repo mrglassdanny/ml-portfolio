@@ -366,40 +366,49 @@ void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::v
     int train_batch_cnt = train_ds->size();
     int test_batch_cnt = test_ds->size();
 
-    bool quit = false;
-
     // Train:
-    for (int epoch = 0; epoch < epochs; epoch++)
     {
-        for (int j = 0; j < train_batch_cnt; j++)
+        FILE *train_csv = fopen("temp/train.csv", "w");
+        fprintf(train_csv, "epoch,batch,loss,accuracy\n");
+
+        bool quit = false;
+
+        for (int epoch = 0; epoch < epochs; epoch++)
         {
-            auto batch = &train_ds->at(j);
-            auto x = batch->x;
-            auto y = batch->y;
-
-            auto p = model->forward(x);
-
-            model->backward(p, y);
-            model->step();
-
-            delete p;
-
-            if (_kbhit())
+            for (int batch_idx = 0; batch_idx < train_batch_cnt; batch_idx++)
             {
-                if (_getch() == 'q')
+                auto batch = &train_ds->at(batch_idx);
+                auto x = batch->x;
+                auto y = batch->y;
+
+                auto p = model->forward(x);
+
+                float loss = model->loss(p, y);
+                float acc = model->accuracy(p, y, Model::regression_tanh_accuracy_fn);
+                fprintf(train_csv, "%d,%d,%f,%f\n", epoch, batch_idx, loss, acc);
+
+                model->backward(p, y);
+                model->step();
+
+                delete p;
+
+                if (_kbhit())
                 {
-                    quit = true;
-                    break;
+                    if (_getch() == 'q')
+                    {
+                        quit = true;
+                        break;
+                    }
                 }
+            }
+
+            if (quit)
+            {
+                break;
             }
         }
 
-        if (quit)
-        {
-            break;
-        }
-
-        printf("EPOCH COMPLETE: %d\n", epoch);
+        fclose(train_csv);
     }
 
     // Test:
@@ -407,17 +416,18 @@ void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::v
         float loss = 0.0f;
         float acc = 0.0f;
 
-        for (int j = 0; j < test_batch_cnt; j++)
+        for (int batch_idx = 0; batch_idx < test_batch_cnt; batch_idx++)
         {
-            auto batch = &test_ds->at(j);
+            auto batch = &test_ds->at(batch_idx);
             auto x = batch->x;
             auto y = batch->y;
 
             auto p = model->forward(x);
+
             loss += model->loss(p, y);
             acc += model->accuracy(p, y, Model::regression_tanh_accuracy_fn);
 
-            if (j == test_batch_cnt - 1)
+            if (batch_idx == test_batch_cnt - 1)
             {
                 p->print();
                 y->print();
@@ -432,32 +442,6 @@ void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::v
         printf("TEST LOSS: %f\tTEST ACCURACY: %f%%\n",
                (loss / (float)test_batch_cnt),
                test_acc_pct);
-    }
-
-    // Test train:
-    {
-        float loss = 0.0f;
-        float acc = 0.0f;
-
-        for (int j = 0; j < train_batch_cnt; j++)
-        {
-            auto batch = &train_ds->at(j);
-            auto x = batch->x;
-            auto y = batch->y;
-
-            auto p = model->forward(x);
-            loss += model->loss(p, y);
-            acc += model->accuracy(p, y, Model::regression_tanh_accuracy_fn);
-
-            delete p;
-        }
-
-        float train_acc_pct = (acc / (float)train_batch_cnt) * 100.0f;
-
-        model->summarize();
-        printf("TRAIN LOSS: %f\tTRAIN ACCURACY: %f%%\n",
-               (loss / (float)train_batch_cnt),
-               train_acc_pct);
     }
 }
 
@@ -536,6 +520,23 @@ void compare_models(int epochs)
     {
         printf("\n\n");
         auto model = new Model(new ChessInitializer());
+        model->hadamard_product(x_shape, 32, new Tanh());
+        model->hadamard_product(32, new Tanh());
+        model->linear(128, new Tanh());
+        model->linear(y_shape, new Tanh());
+        model->set_loss(new MSE());
+        model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
+
+        model->summarize();
+
+        train_n_test(model, epochs, &train_ds, &test_ds);
+
+        delete model;
+    }
+
+    {
+        printf("\n\n");
+        auto model = new Model(new ChessInitializer());
         model->hadamard_product(x_shape, 128, new Tanh());
         model->hadamard_product(64, new Tanh());
         model->matrix_product(64, new Tanh());
@@ -546,25 +547,12 @@ void compare_models(int epochs)
         model->set_loss(new MSE());
         model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
 
+        model->summarize();
+
         train_n_test(model, epochs, &train_ds, &test_ds);
 
         delete model;
     }
-
-    // {
-    //     printf("\n\n");
-    //     auto model = new Model(new ChessInitializer());
-    //     model->hadamard_product(x_shape, 32, new Tanh());
-    //     model->hadamard_product(32, new Tanh());
-    //     model->linear(128, new Tanh());
-    //     model->linear(y_shape, new Tanh());
-    //     model->set_loss(new MSE());
-    //     model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
-
-    //     train_n_test(model, epochs, &train_ds, &test_ds);
-
-    //     delete model;
-    // }
 
     for (auto batch : train_ds)
     {
