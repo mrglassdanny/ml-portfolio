@@ -298,9 +298,9 @@ void grad_tests()
 
 		m1->set_initializer(new XavierInitializer());
 
-		m1->linear(x->shape(), 16, new SigmoidActivation());
-		m1->linear(16, new TanhActivation());
-		m1->linear(y->shape(), new SigmoidActivation());
+		m1->linear(x->shape(), 16, new Sigmoid());
+		m1->linear(16, new Tanh());
+		m1->linear(y->shape(), new Sigmoid());
 
 		m1->set_loss(new loss::MSE());
 		m1->set_optimizer(new optim::SGD(m1->parameters(), 0.01f));
@@ -320,9 +320,9 @@ void grad_tests()
 
 		m2->set_initializer(new XavierInitializer());
 
-		m2->linear(x->shape(), 16, new TanhActivation());
-		m2->linear(16, new SigmoidActivation());
-		m2->linear(y->shape(), new SigmoidActivation());
+		m2->linear(x->shape(), 16, new Tanh());
+		m2->linear(16, new Sigmoid());
+		m2->linear(y->shape(), new Sigmoid());
 
 		m2->set_loss(new loss::CrossEntropy());
 		m2->set_optimizer(new optim::SGD(m2->parameters(), 0.01f));
@@ -342,10 +342,10 @@ void grad_tests()
 
 		m3->set_initializer(new XavierInitializer());
 
-		m3->conv2d(x->shape(), Shape(4, 2, 3, 2), layer::Stride{3, 2}, new SigmoidActivation());
-		m3->conv2d(Shape(4, 4, 2, 2), layer::Stride{1, 1}, new SigmoidActivation());
-		m3->linear(16, new SigmoidActivation());
-		m3->linear(y->shape(), new SigmoidActivation());
+		m3->conv2d(x->shape(), Shape(4, 2, 3, 2), layer::Stride{3, 2}, new Sigmoid());
+		m3->conv2d(Shape(4, 4, 2, 2), layer::Stride{1, 1}, new Sigmoid());
+		m3->linear(16, new Sigmoid());
+		m3->linear(y->shape(), new Sigmoid());
 
 		m3->set_loss(new loss::MSE());
 		m3->set_optimizer(new optim::SGD(m3->parameters(), 0.01f));
@@ -365,11 +365,11 @@ void grad_tests()
 
 		m4->set_initializer(new XavierInitializer());
 
-		m4->conv2d(x->shape(), Shape(4, 1, 3, 3), layer::Stride{1, 1}, new SigmoidActivation());
-		m4->conv2d(Shape(4, 4, 4, 4), layer::Stride{1, 1}, new TanhActivation());
+		m4->conv2d(x->shape(), Shape(4, 1, 3, 3), layer::Stride{1, 1}, new Sigmoid());
+		m4->conv2d(Shape(4, 4, 4, 4), layer::Stride{1, 1}, new Tanh());
 		m4->conv2d(Shape(4, 4, 2, 2), layer::Stride{1, 1}, nullptr);
-		m4->linear(16, new SigmoidActivation());
-		m4->linear(y->shape(), new SigmoidActivation());
+		m4->linear(16, new Sigmoid());
+		m4->linear(y->shape(), new Sigmoid());
 
 		m4->set_loss(new loss::CrossEntropy());
 		m4->set_optimizer(new optim::SGD(m4->parameters(), 0.01f));
@@ -396,13 +396,13 @@ void mnist_conv(int batch_size, int epochs)
 
 	model->set_initializer(new XavierInitializer());
 
-	model->conv2d(input_shape, Shape(64, 1, 5, 5), layer::Stride{1, 1}, new ReLUActivation());
-	model->conv2d(Shape(64, 64, 3, 3), layer::Stride{3, 3}, new ReLUActivation());
-	model->conv2d(Shape(64, 64, 3, 3), layer::Stride{1, 1}, new ReLUActivation());
-	model->linear(512, new ReLUActivation());
-	model->linear(256, new ReLUActivation());
-	model->linear(128, new ReLUActivation());
-	model->linear(output_shape, new SigmoidActivation());
+	model->conv2d(input_shape, Shape(64, 1, 5, 5), layer::Stride{1, 1}, new ReLU());
+	model->conv2d(Shape(64, 64, 3, 3), layer::Stride{3, 3}, new ReLU());
+	model->conv2d(Shape(64, 64, 3, 3), layer::Stride{1, 1}, new ReLU());
+	model->linear(512, new ReLU());
+	model->linear(256, new ReLU());
+	model->linear(128, new ReLU());
+	model->linear(output_shape, new Sigmoid());
 
 	model->set_loss(new loss::CrossEntropy());
 	model->set_optimizer(new optim::SGDMomentum(model->parameters(), 0.15f, ZERO_NN_BETA_1));

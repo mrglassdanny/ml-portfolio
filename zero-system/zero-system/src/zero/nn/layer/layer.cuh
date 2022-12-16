@@ -20,7 +20,7 @@ namespace zero
                 void summarize();
             };
 
-            class SigmoidActivation : public Activation
+            class Sigmoid : public Activation
             {
             public:
                 virtual void evaluate(Tensor *in, int batch_size, int cnt) override;
@@ -28,7 +28,7 @@ namespace zero
                 virtual Activation *copy() override;
             };
 
-            class TanhActivation : public Activation
+            class Tanh : public Activation
             {
             public:
                 virtual void evaluate(Tensor *in, int batch_size, int cnt) override;
@@ -36,7 +36,7 @@ namespace zero
                 virtual Activation *copy() override;
             };
 
-            class ReLUActivation : public Activation
+            class ReLU : public Activation
             {
             public:
                 virtual void evaluate(Tensor *in, int batch_size, int cnt) override;

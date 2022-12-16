@@ -536,11 +536,11 @@ void grad_tests()
     {
         auto model = new Model();
         model->set_initializer(new XavierInitializer());
-        model->hadamard_product(x_shape, 4, new TanhActivation());
-        model->hadamard_product(4, new TanhActivation());
-        model->matrix_product(4, new TanhActivation());
-        model->matrix_product(4, new TanhActivation());
-        model->linear(y_shape, new TanhActivation());
+        model->hadamard_product(x_shape, 4, new Tanh());
+        model->hadamard_product(4, new Tanh());
+        model->matrix_product(4, new Tanh());
+        model->matrix_product(4, new Tanh());
+        model->linear(y_shape, new Tanh());
         model->set_loss(new MSE());
 
         model->summarize();
@@ -552,12 +552,12 @@ void grad_tests()
     {
         auto model = new Model();
         model->set_initializer(new ChessInitializer());
-        model->hadamard_product(x_shape, 4, new TanhActivation());
-        model->hadamard_product(4, new TanhActivation());
-        model->matrix_product(4, new TanhActivation());
-        model->matrix_product(4, new TanhActivation());
-        model->linear(128, new TanhActivation());
-        model->linear(y_shape, new TanhActivation());
+        model->hadamard_product(x_shape, 4, new Tanh());
+        model->hadamard_product(4, new Tanh());
+        model->matrix_product(4, new Tanh());
+        model->matrix_product(4, new Tanh());
+        model->linear(128, new Tanh());
+        model->linear(y_shape, new Tanh());
         model->set_loss(new MSE());
 
         model->summarize();
@@ -569,11 +569,11 @@ void grad_tests()
     {
         auto model = new Model();
         model->set_initializer(new XavierInitializer());
-        model->hadamard_product(x_shape, 4, new TanhActivation());
-        model->hadamard_product(4, new TanhActivation());
-        model->matrix_product(4, new TanhActivation());
-        model->matrix_product(4, new TanhActivation());
-        model->linear(y_shape, new TanhActivation());
+        model->hadamard_product(x_shape, 4, new Tanh());
+        model->hadamard_product(4, new Tanh());
+        model->matrix_product(4, new Tanh());
+        model->matrix_product(4, new Tanh());
+        model->linear(y_shape, new Tanh());
         model->set_loss(new MSE());
 
         model->summarize();
@@ -598,12 +598,12 @@ void compare_models(int epochs)
     {
         printf("\n\n");
         auto model = new Model(new XavierInitializer());
-        model->hadamard_product(x_shape, 16, new TanhActivation());
-        model->hadamard_product(16, new TanhActivation());
-        model->matrix_product(16, new TanhActivation());
-        model->matrix_product(16, new TanhActivation());
-        model->linear(128, new TanhActivation());
-        model->linear(y_shape, new TanhActivation());
+        model->hadamard_product(x_shape, 16, new Tanh());
+        model->hadamard_product(16, new Tanh());
+        model->matrix_product(16, new Tanh());
+        model->matrix_product(16, new Tanh());
+        model->linear(128, new Tanh());
+        model->linear(y_shape, new Tanh());
         model->set_loss(new MSE());
         model->set_optimizer(new SGDMomentum(model->parameters(), 0.01f, ZERO_NN_BETA_1));
 
@@ -615,12 +615,12 @@ void compare_models(int epochs)
     {
         printf("\n\n");
         auto model = new Model(new ChessInitializer());
-        model->hadamard_product(x_shape, 16, new TanhActivation());
-        model->hadamard_product(16, new TanhActivation());
-        model->matrix_product(16, new TanhActivation());
-        model->matrix_product(16, new TanhActivation());
-        model->linear(128, new TanhActivation());
-        model->linear(y_shape, new TanhActivation());
+        model->hadamard_product(x_shape, 16, new Tanh());
+        model->hadamard_product(16, new Tanh());
+        model->matrix_product(16, new Tanh());
+        model->matrix_product(16, new Tanh());
+        model->linear(128, new Tanh());
+        model->linear(y_shape, new Tanh());
         model->set_loss(new MSE());
         model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
 
@@ -632,10 +632,10 @@ void compare_models(int epochs)
     {
         printf("\n\n");
         auto model = new Model(new ChessInitializer());
-        model->hadamard_product(x_shape, 16, new TanhActivation());
-        model->hadamard_product(16, new TanhActivation());
-        model->linear(128, new TanhActivation());
-        model->linear(y_shape, new TanhActivation());
+        model->hadamard_product(x_shape, 16, new Tanh());
+        model->hadamard_product(16, new Tanh());
+        model->linear(128, new Tanh());
+        model->linear(y_shape, new Tanh());
         model->set_loss(new MSE());
         model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
 

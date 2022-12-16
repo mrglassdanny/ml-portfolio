@@ -111,7 +111,7 @@ void Activation::summarize()
     printf("%s", cls_name.c_str());
 }
 
-void SigmoidActivation::evaluate(Tensor *in, int batch_size, int cnt)
+void Sigmoid::evaluate(Tensor *in, int batch_size, int cnt)
 {
     int grid_row_cnt = (batch_size / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
     int grid_col_cnt = (cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
@@ -122,7 +122,7 @@ void SigmoidActivation::evaluate(Tensor *in, int batch_size, int cnt)
     k_sigmoid_evaluate<<<grid_dims, block_dims>>>(in->data(), batch_size, cnt);
 }
 
-void SigmoidActivation::derive(Tensor *in, Tensor *n, int batch_size, int cnt)
+void Sigmoid::derive(Tensor *in, Tensor *n, int batch_size, int cnt)
 {
     int grid_row_cnt = (batch_size / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
     int grid_col_cnt = (cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
@@ -133,12 +133,12 @@ void SigmoidActivation::derive(Tensor *in, Tensor *n, int batch_size, int cnt)
     k_sigmoid_derive<<<grid_dims, block_dims>>>(in->data(), n->data(), batch_size, cnt);
 }
 
-Activation *SigmoidActivation::copy()
+Activation *Sigmoid::copy()
 {
-    return new SigmoidActivation();
+    return new Sigmoid();
 }
 
-void TanhActivation::evaluate(Tensor *in, int batch_size, int cnt)
+void Tanh::evaluate(Tensor *in, int batch_size, int cnt)
 {
     int grid_row_cnt = (batch_size / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
     int grid_col_cnt = (cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
@@ -149,7 +149,7 @@ void TanhActivation::evaluate(Tensor *in, int batch_size, int cnt)
     k_tanh_evaluate<<<grid_dims, block_dims>>>(in->data(), batch_size, cnt);
 }
 
-void TanhActivation::derive(Tensor *in, Tensor *n, int batch_size, int cnt)
+void Tanh::derive(Tensor *in, Tensor *n, int batch_size, int cnt)
 {
     int grid_row_cnt = (batch_size / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
     int grid_col_cnt = (cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
@@ -160,12 +160,12 @@ void TanhActivation::derive(Tensor *in, Tensor *n, int batch_size, int cnt)
     k_tanh_derive<<<grid_dims, block_dims>>>(in->data(), n->data(), batch_size, cnt);
 }
 
-Activation *TanhActivation::copy()
+Activation *Tanh::copy()
 {
-    return new TanhActivation();
+    return new Tanh();
 }
 
-void ReLUActivation::evaluate(Tensor *in, int batch_size, int cnt)
+void ReLU::evaluate(Tensor *in, int batch_size, int cnt)
 {
     int grid_row_cnt = (batch_size / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
     int grid_col_cnt = (cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
@@ -176,7 +176,7 @@ void ReLUActivation::evaluate(Tensor *in, int batch_size, int cnt)
     k_relu_evaluate<<<grid_dims, block_dims>>>(in->data(), batch_size, cnt);
 }
 
-void ReLUActivation::derive(Tensor *in, Tensor *n, int batch_size, int cnt)
+void ReLU::derive(Tensor *in, Tensor *n, int batch_size, int cnt)
 {
     int grid_row_cnt = (batch_size / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
     int grid_col_cnt = (cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK) + 1;
@@ -187,9 +187,9 @@ void ReLUActivation::derive(Tensor *in, Tensor *n, int batch_size, int cnt)
     k_relu_derive<<<grid_dims, block_dims>>>(in->data(), n->data(), batch_size, cnt);
 }
 
-Activation *ReLUActivation::copy()
+Activation *ReLU::copy()
 {
-    return new ReLUActivation();
+    return new ReLU();
 }
 
 Layer::~Layer()
