@@ -271,6 +271,9 @@ float KMeans::train(Tensor *x)
 
 Tensor *KMeans::predict(Tensor *x)
 {
+    this->clusters_->to_cuda();
+    x->to_cuda();
+
     int batch_size = x->shape()[0];
 
     Tensor *cluster_assignments = new Tensor(true, Shape(batch_size, 1));

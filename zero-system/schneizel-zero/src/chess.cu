@@ -493,6 +493,15 @@ char *Board::get_data()
     return this->data_;
 }
 
+void Board::material_encode(float *out)
+{
+    memset(out, 0, sizeof(float) * CHESS_BOARD_LEN);
+    for (int i = 0; i < CHESS_BOARD_LEN; i++)
+    {
+        out[i] = (float)Piece::get_value(this->get_piece(i));
+    }
+}
+
 void Board::one_hot_encode(float *out)
 {
     memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);

@@ -123,6 +123,7 @@ namespace chess
 
         char *get_data();
 
+        void material_encode(float *out);
         void one_hot_encode(float *out);
 
         char get_piece(int square);

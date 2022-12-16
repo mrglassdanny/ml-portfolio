@@ -86,6 +86,13 @@ public:
     }
 };
 
+struct ClusterData
+{
+    KMeans *model;
+    Tensor *white_win_cnts;
+    Tensor *black_win_cnts;
+};
+
 struct Game
 {
     std::vector<Board> boards;
@@ -248,7 +255,7 @@ void export_pgn(const char *path)
     printf("GAME COUNT: %d\tMOVE COUNT: %ld", game_cnt, move_cnt);
 }
 
-// NOTE: excludes ties and openings.
+// NOTE: excludes ties.
 void export_pgn_cluster(const char *path)
 {
     auto pgn_games = PGN::import(path);
@@ -259,28 +266,25 @@ void export_pgn_cluster(const char *path)
     FILE *data_file = fopen("temp/cluster.data", "wb");
     FILE *lbl_file = fopen("temp/cluster.lbl", "wb");
 
-    float data_buf[CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT];
+    float data_buf[CHESS_ROW_CNT * CHESS_COL_CNT];
     float lbl_buf;
 
     for (auto pgn_game : pgn_games)
     {
-        // Only save games where there was a winner.
-        if (pgn_game->lbl != 0)
+        if (game_cnt < 250)
         {
-            Board board;
-            bool white = true;
-
-            int game_move_cnt = 0;
-
-            for (auto move_str : pgn_game->move_strs)
+            // Only save games where there was a winner.
+            if (pgn_game->lbl != 0)
             {
-                auto move = board.change(move_str, white);
-                white = !white;
+                Board board;
+                bool white = true;
 
-                // Skip openings.
-                if (game_move_cnt > 6)
+                for (auto move_str : pgn_game->move_strs)
                 {
-                    board.one_hot_encode(data_buf);
+                    auto move = board.change(move_str, white);
+                    white = !white;
+
+                    board.material_encode(data_buf);
                     lbl_buf = (float)pgn_game->lbl;
 
                     fwrite(data_buf, sizeof(data_buf), 1, data_file);
@@ -289,9 +293,8 @@ void export_pgn_cluster(const char *path)
                     move_cnt++;
                 }
 
-                game_move_cnt++;
+                game_cnt++;
             }
-            game_cnt++;
         }
 
         delete pgn_game;
@@ -383,19 +386,18 @@ std::vector<Batch> get_test_dataset(int batch_size)
 
 Batch get_cluster_dataset()
 {
-    int oh_board_len = CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT;
-    int oh_board_size = oh_board_len * sizeof(float);
+    int mat_board_len = CHESS_ROW_CNT * CHESS_COL_CNT;
+    int mat_board_size = mat_board_len * sizeof(float);
 
     long long data_file_size = zero::core::FileUtils::get_file_size("temp/cluster.data");
-    size_t data_cnt = data_file_size / oh_board_size;
-
+    size_t data_cnt = data_file_size / mat_board_size;
     std::vector<Batch> batches;
 
     FILE *data_file = fopen("temp/cluster.data", "rb");
     FILE *lbl_file = fopen("temp/cluster.lbl", "rb");
 
     float *data_buf = (float *)malloc(data_file_size);
-    fread(data_buf, oh_board_size, data_cnt, data_file);
+    fread(data_buf, mat_board_size, data_cnt, data_file);
 
     float *lbl_buf = (float *)malloc(sizeof(float) * data_cnt);
     fread(lbl_buf, sizeof(float), data_cnt, lbl_file);
@@ -403,7 +405,7 @@ Batch get_cluster_dataset()
     fclose(data_file);
     fclose(lbl_file);
 
-    auto x = Tensor::from_data(Shape(data_cnt, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT), data_buf);
+    auto x = Tensor::from_data(Shape(data_cnt, CHESS_ROW_CNT, CHESS_COL_CNT), data_buf);
     auto y = Tensor::from_data(Shape(data_cnt, 1), lbl_buf);
 
     free(data_buf);
@@ -591,14 +593,36 @@ void compare_models(int epochs)
     }
 }
 
-void cluster_tests()
+ClusterData cluster_tests()
 {
     auto batch = get_cluster_dataset();
 
-    KMeans::save_best(batch.x, 10000, 3, "temp/model.km");
+    auto model = KMeans::save_best(batch.x, 100, 3, "temp/model.km");
+
+    auto preds = model->predict(batch.x);
+
+    auto white_win_cnts = Tensor::zeros(false, Shape(model->clusters()->shape()[0], 1));
+    auto black_win_cnts = Tensor::zeros(false, Shape(model->clusters()->shape()[0], 1));
+
+    for (int i = 0; i < preds->count(); i++)
+    {
+        int cluster_idx = (int)preds->get_val(i);
+        if (batch.y->get_val(i) == 1.0f)
+        {
+            white_win_cnts->set_val(cluster_idx, white_win_cnts->get_val(cluster_idx) + 1);
+        }
+        else if (batch.y->get_val(i) == -1.0f)
+        {
+            black_win_cnts->set_val(cluster_idx, black_win_cnts->get_val(cluster_idx) + 1);
+        }
+    }
+
+    delete preds;
 
     delete batch.x;
     delete batch.y;
+
+    return ClusterData{model, white_win_cnts, black_win_cnts};
 }
 
 int main()
@@ -606,13 +630,16 @@ int main()
     srand(time(NULL));
 
     // export_pgn("data/data.pgn");
-    // export_pgn_cluster("data/data.pgn");
+    export_pgn_cluster("data/data.pgn");
 
     // grad_tests();
 
     // compare_models(4);
 
-    cluster_tests();
+    auto data = cluster_tests();
+
+    data.white_win_cnts->print();
+    data.black_win_cnts->print();
 
     // self_play(5, 3, true);
 
