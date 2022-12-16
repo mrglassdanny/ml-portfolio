@@ -19,14 +19,14 @@ namespace zero
                 void summarize();
             };
 
-            class XavierInitializer : public Initializer
+            class Xavier : public Initializer
             {
             public:
                 virtual void initialize(Tensor *tensor, int fan_in, int fan_out) override;
                 virtual Initializer *copy() override;
             };
 
-            class HeInitializer : public Initializer
+            class He : public Initializer
             {
             public:
                 virtual void initialize(Tensor *tensor, int fan_in, int fan_out) override;

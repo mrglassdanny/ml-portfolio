@@ -296,7 +296,7 @@ void grad_tests()
 		auto x = Tensor::random(true, Shape(batch_size, 64), 0.0f, 1.0f);
 		auto y = Tensor::ones(true, Shape(batch_size, 1));
 
-		m1->set_initializer(new XavierInitializer());
+		m1->set_initializer(new Xavier());
 
 		m1->linear(x->shape(), 16, new Sigmoid());
 		m1->linear(16, new Tanh());
@@ -318,7 +318,7 @@ void grad_tests()
 		auto y = Tensor::zeros(true, Shape(batch_size, 10));
 		y->set_val(3, 1.0f);
 
-		m2->set_initializer(new XavierInitializer());
+		m2->set_initializer(new Xavier());
 
 		m2->linear(x->shape(), 16, new Tanh());
 		m2->linear(16, new Sigmoid());
@@ -340,7 +340,7 @@ void grad_tests()
 		auto y = Tensor::zeros(true, Shape(batch_size, 4));
 		y->set_val(3, 1.0f);
 
-		m3->set_initializer(new XavierInitializer());
+		m3->set_initializer(new Xavier());
 
 		m3->conv2d(x->shape(), Shape(4, 2, 3, 2), layer::Stride{3, 2}, new Sigmoid());
 		m3->conv2d(Shape(4, 4, 2, 2), layer::Stride{1, 1}, new Sigmoid());
@@ -363,7 +363,7 @@ void grad_tests()
 		auto y = Tensor::zeros(true, Shape(batch_size, 4));
 		y->set_val(3, 1.0f);
 
-		m4->set_initializer(new XavierInitializer());
+		m4->set_initializer(new Xavier());
 
 		m4->conv2d(x->shape(), Shape(4, 1, 3, 3), layer::Stride{1, 1}, new Sigmoid());
 		m4->conv2d(Shape(4, 4, 4, 4), layer::Stride{1, 1}, new Tanh());
@@ -394,7 +394,7 @@ void mnist_conv(int batch_size, int epochs)
 
 	auto model = new Model();
 
-	model->set_initializer(new XavierInitializer());
+	model->set_initializer(new Xavier());
 
 	model->conv2d(input_shape, Shape(64, 1, 5, 5), layer::Stride{1, 1}, new ReLU());
 	model->conv2d(Shape(64, 64, 3, 3), layer::Stride{3, 3}, new ReLU());

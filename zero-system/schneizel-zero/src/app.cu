@@ -535,7 +535,7 @@ void grad_tests()
 
     {
         auto model = new Model();
-        model->set_initializer(new XavierInitializer());
+        model->set_initializer(new Xavier());
         model->hadamard_product(x_shape, 4, new Tanh());
         model->hadamard_product(4, new Tanh());
         model->matrix_product(4, new Tanh());
@@ -568,7 +568,7 @@ void grad_tests()
 
     {
         auto model = new Model();
-        model->set_initializer(new XavierInitializer());
+        model->set_initializer(new Xavier());
         model->hadamard_product(x_shape, 4, new Tanh());
         model->hadamard_product(4, new Tanh());
         model->matrix_product(4, new Tanh());
@@ -597,7 +597,7 @@ void compare_models(int epochs)
 
     {
         printf("\n\n");
-        auto model = new Model(new XavierInitializer());
+        auto model = new Model(new Xavier());
         model->hadamard_product(x_shape, 16, new Tanh());
         model->hadamard_product(16, new Tanh());
         model->matrix_product(16, new Tanh());

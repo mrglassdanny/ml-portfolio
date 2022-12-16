@@ -9,24 +9,24 @@ void Initializer::summarize()
     printf("%s", cls_name.c_str());
 }
 
-void XavierInitializer::initialize(Tensor *tensor, int fan_in, int fan_out)
+void Xavier::initialize(Tensor *tensor, int fan_in, int fan_out)
 {
     tensor->random(0.0f, sqrt(1.0f / fan_in));
 }
 
-Initializer *XavierInitializer::copy()
+Initializer *Xavier::copy()
 {
-    return new XavierInitializer();
+    return new Xavier();
 }
 
-void HeInitializer::initialize(Tensor *tensor, int fan_in, int fan_out)
+void He::initialize(Tensor *tensor, int fan_in, int fan_out)
 {
     tensor->random(0.0f, sqrt(2.0f / fan_in));
 }
 
-Initializer *HeInitializer::copy()
+Initializer *He::copy()
 {
-    return new HeInitializer();
+    return new He();
 }
 
 Parameters::Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out, Initializer *initializer)
