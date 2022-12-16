@@ -433,6 +433,32 @@ void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::v
                (loss / (float)test_batch_cnt),
                test_acc_pct);
     }
+
+    // Test train:
+    {
+        float loss = 0.0f;
+        float acc = 0.0f;
+
+        for (int j = 0; j < train_batch_cnt; j++)
+        {
+            auto batch = &train_ds->at(j);
+            auto x = batch->x;
+            auto y = batch->y;
+
+            auto p = model->forward(x);
+            loss += model->loss(p, y);
+            acc += model->accuracy(p, y, Model::regression_tanh_accuracy_fn);
+
+            delete p;
+        }
+
+        float train_acc_pct = (acc / (float)train_batch_cnt) * 100.0f;
+
+        model->summarize();
+        printf("TRAIN LOSS: %f\tTRAIN ACCURACY: %f%%\n",
+               (loss / (float)train_batch_cnt),
+               train_acc_pct);
+    }
 }
 
 void grad_tests()
@@ -507,61 +533,14 @@ void compare_models(int epochs)
     Shape x_shape = train_ds[0].x->shape();
     Shape y_shape = train_ds[0].y->shape();
 
-    // {
-    //     printf("\n\n");
-    //     auto model = new Model(new Xavier());
-    //     model->hadamard_product(x_shape, 32, new Tanh());
-    //     model->hadamard_product(32, new Tanh());
-    //     model->matrix_product(32, new Tanh());
-    //     model->matrix_product(32, new Tanh());
-    //     model->linear(128, new Tanh());
-    //     model->linear(y_shape, new Tanh());
-    //     model->set_loss(new MSE());
-    //     model->set_optimizer(new SGDMomentum(model->parameters(), 0.01f, ZERO_NN_BETA_1));
-
-    //     train_n_test(model, epochs, &train_ds, &test_ds);
-
-    //     delete model;
-    // }
-
-    // {
-    //     printf("\n\n");
-    //     auto model = new Model(new ChessInitializer());
-    //     model->hadamard_product(x_shape, 32, new Tanh());
-    //     model->hadamard_product(32, new Tanh());
-    //     model->matrix_product(32, new Tanh());
-    //     model->matrix_product(32, new Tanh());
-    //     model->linear(128, new Tanh());
-    //     model->linear(y_shape, new Tanh());
-    //     model->set_loss(new MSE());
-    //     model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
-
-    //     train_n_test(model, epochs, &train_ds, &test_ds);
-
-    //     delete model;
-    // }
-
-    // {
-    //     printf("\n\n");
-    //     auto model = new Model(new ChessInitializer());
-    //     model->hadamard_product(x_shape, 32, new Tanh());
-    //     model->hadamard_product(32, new Tanh());
-    //     model->linear(128, new Tanh());
-    //     model->linear(y_shape, new Tanh());
-    //     model->set_loss(new MSE());
-    //     model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
-
-    //     train_n_test(model, epochs, &train_ds, &test_ds);
-
-    //     delete model;
-    // }
-
     {
         printf("\n\n");
         auto model = new Model(new ChessInitializer());
-        model->linear(x_shape, 512, new Tanh());
-        model->linear(512, new Tanh());
-        model->linear(128, new Tanh());
+        model->hadamard_product(x_shape, 128, new Tanh());
+        model->hadamard_product(64, new Tanh());
+        model->matrix_product(64, new Tanh());
+        model->matrix_product(32, new Tanh());
+        model->linear(256, new Tanh());
         model->linear(32, new Tanh());
         model->linear(y_shape, new Tanh());
         model->set_loss(new MSE());
@@ -571,6 +550,21 @@ void compare_models(int epochs)
 
         delete model;
     }
+
+    // {
+    //     printf("\n\n");
+    //     auto model = new Model(new ChessInitializer());
+    //     model->hadamard_product(x_shape, 32, new Tanh());
+    //     model->hadamard_product(32, new Tanh());
+    //     model->linear(128, new Tanh());
+    //     model->linear(y_shape, new Tanh());
+    //     model->set_loss(new MSE());
+    //     model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
+
+    //     train_n_test(model, epochs, &train_ds, &test_ds);
+
+    //     delete model;
+    // }
 
     for (auto batch : train_ds)
     {
@@ -593,7 +587,7 @@ int main()
 
     // grad_tests();
 
-    compare_models(5);
+    compare_models(8);
 
     // self_play(3, 3, true);
 
