@@ -10,13 +10,17 @@ using namespace zero::nn;
 using namespace zero::cluster;
 using namespace chess;
 
-__global__ void k_co_weight_step(float *w, float *dw, int w_cnt, float lr, int batch_size)
+__global__ void k_co_weight_step(float *w, float *dw, float *mdw, int w_cnt, float lr, float beta1, int step_num, int batch_size)
 {
     int w_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (w_elem_idx < w_cnt)
     {
-        w[w_elem_idx] -= (lr * dw[w_elem_idx] / batch_size);
+        mdw[w_elem_idx] = beta1 * mdw[w_elem_idx] + (1.0f - beta1) * dw[w_elem_idx];
+
+        float corrected_mdw = mdw[w_elem_idx] / (1.0f - pow(beta1, step_num));
+
+        w[w_elem_idx] -= (lr * corrected_mdw / batch_size);
         if (w[w_elem_idx] < 0.0f)
         {
             w[w_elem_idx] = 0.0f;
@@ -24,13 +28,17 @@ __global__ void k_co_weight_step(float *w, float *dw, int w_cnt, float lr, int b
     }
 }
 
-__global__ void k_co_bias_step(float *b, float *db, int b_cnt, float lr, int batch_size)
+__global__ void k_co_bias_step(float *b, float *db, float *mdb, int b_cnt, float lr, float beta1, int step_num, int batch_size)
 {
     int b_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
 
     if (b_elem_idx < b_cnt)
     {
-        b[b_elem_idx] -= (lr * db[b_elem_idx] / batch_size);
+        mdb[b_elem_idx] = beta1 * mdb[b_elem_idx] + (1.0f - beta1) * db[b_elem_idx];
+
+        float corrected_mdb = mdb[b_elem_idx] / (1.0f - pow(beta1, step_num));
+
+        b[b_elem_idx] -= (lr * corrected_mdb / batch_size);
         if (b[b_elem_idx] < 0.0f)
         {
             b[b_elem_idx] = 0.0f;
@@ -40,26 +48,53 @@ __global__ void k_co_bias_step(float *b, float *db, int b_cnt, float lr, int bat
 
 class ChessOptimizer : public Optimizer
 {
+private:
+    float beta1_;
+    std::vector<Tensor *> mdws_;
+    std::vector<Tensor *> mdbs_;
+
 public:
-    ChessOptimizer(std::vector<Parameters *> model_params, float learning_rate)
+    ChessOptimizer(std::vector<Parameters *> model_params, float learning_rate, float beta1)
         : Optimizer(model_params, learning_rate)
     {
+        this->beta1_ = beta1;
+
+        for (Parameters *params : model_params)
+        {
+            this->mdws_.push_back(Tensor::zeros(true, params->weight_gradients()->shape()));
+            this->mdbs_.push_back(Tensor::zeros(true, params->bias_gradients()->shape()));
+        }
     }
 
-    void ChessOptimizer::step(int batch_size)
+    ~ChessOptimizer()
     {
-        for (Parameters *params : this->model_params_)
+        for (int i = 0; i < this->mdws_.size(); i++)
         {
+            delete this->mdws_[i];
+            delete this->mdbs_[i];
+        }
+    }
+
+    void step(int batch_size)
+    {
+        for (int i = 0; i < this->model_params_.size(); i++)
+        {
+            Parameters *params = this->model_params_[i];
+
             Tensor *w = params->weights();
             Tensor *b = params->biases();
             Tensor *dw = params->weight_gradients();
             Tensor *db = params->bias_gradients();
+            Tensor *mdw = this->mdws_[i];
+            Tensor *mdb = this->mdbs_[i];
 
             int w_cnt = w->count();
             int b_cnt = b->count();
 
-            k_co_weight_step<<<w_cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK + 1, ZERO_CORE_CUDA_THREADS_PER_BLOCK>>>(w->data(), dw->data(), w_cnt, this->lr_, batch_size);
-            k_co_bias_step<<<b_cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK + 1, ZERO_CORE_CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), b_cnt, this->lr_, batch_size);
+            k_co_weight_step<<<w_cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK + 1, ZERO_CORE_CUDA_THREADS_PER_BLOCK>>>(w->data(), dw->data(), mdw->data(),
+                                                                                                                 w_cnt, this->lr_, this->beta1_, this->step_num_, batch_size);
+            k_co_bias_step<<<b_cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK + 1, ZERO_CORE_CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), mdb->data(),
+                                                                                                               b_cnt, this->lr_, this->beta1_, this->step_num_, batch_size);
         }
 
         this->step_num_++;
@@ -67,7 +102,7 @@ public:
 
     Optimizer *ChessOptimizer::copy()
     {
-        return new SGD(this->model_params_, this->lr_);
+        return new ChessOptimizer(this->model_params_, this->lr_, this->beta1_);
     }
 };
 
@@ -469,6 +504,13 @@ void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::v
             auto p = model->forward(x);
             loss += model->loss(p, y);
             acc += model->accuracy(p, y, Model::regression_tanh_accuracy_fn);
+
+            if (j == test_batch_cnt - 1)
+            {
+                p->print();
+                y->print();
+            }
+
             delete p;
         }
 
@@ -502,7 +544,7 @@ void grad_tests()
         model->set_loss(new MSE());
 
         model->summarize();
-        model->validate_gradients(x, y, true);
+        model->validate_gradients(x, y, false);
 
         delete model;
     }
@@ -514,6 +556,7 @@ void grad_tests()
         model->hadamard_product(4, new TanhActivation());
         model->matrix_product(4, new TanhActivation());
         model->matrix_product(4, new TanhActivation());
+        model->linear(128, new TanhActivation());
         model->linear(y_shape, new TanhActivation());
         model->set_loss(new MSE());
 
@@ -556,10 +599,13 @@ void compare_models(int epochs)
         printf("\n\n");
         auto model = new Model(new XavierInitializer());
         model->hadamard_product(x_shape, 16, new TanhActivation());
+        model->hadamard_product(16, new TanhActivation());
         model->matrix_product(16, new TanhActivation());
+        model->matrix_product(16, new TanhActivation());
+        model->linear(128, new TanhActivation());
         model->linear(y_shape, new TanhActivation());
         model->set_loss(new MSE());
-        model->set_optimizer(new SGD(model->parameters(), 0.1f));
+        model->set_optimizer(new SGDMomentum(model->parameters(), 0.01f, ZERO_NN_BETA_1));
 
         train_n_test(model, epochs, &train_ds, &test_ds);
 
@@ -570,10 +616,28 @@ void compare_models(int epochs)
         printf("\n\n");
         auto model = new Model(new ChessInitializer());
         model->hadamard_product(x_shape, 16, new TanhActivation());
+        model->hadamard_product(16, new TanhActivation());
         model->matrix_product(16, new TanhActivation());
+        model->matrix_product(16, new TanhActivation());
+        model->linear(128, new TanhActivation());
         model->linear(y_shape, new TanhActivation());
         model->set_loss(new MSE());
-        model->set_optimizer(new ChessOptimizer(model->parameters(), 0.1f));
+        model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
+
+        train_n_test(model, epochs, &train_ds, &test_ds);
+
+        delete model;
+    }
+
+    {
+        printf("\n\n");
+        auto model = new Model(new ChessInitializer());
+        model->hadamard_product(x_shape, 16, new TanhActivation());
+        model->hadamard_product(16, new TanhActivation());
+        model->linear(128, new TanhActivation());
+        model->linear(y_shape, new TanhActivation());
+        model->set_loss(new MSE());
+        model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
 
         train_n_test(model, epochs, &train_ds, &test_ds);
 
@@ -629,19 +693,13 @@ int main()
 {
     srand(time(NULL));
 
-    // export_pgn("data/data.pgn");
-    // export_pgn_cluster("data/data.pgn");
+    export_pgn("data/data.pgn");
 
-    // grad_tests();
+    grad_tests();
 
-    // compare_models(4);
+    compare_models(2);
 
-    // auto data = cluster_tests();
-
-    // data.white_win_cnts->print();
-    // data.black_win_cnts->print();
-
-    self_play(3, 3, true);
+    // self_play(3, 3, true);
 
     return 0;
 }
