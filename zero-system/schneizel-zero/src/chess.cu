@@ -2421,6 +2421,139 @@ std::vector<Evaluation> Board::minimax_alphabeta(bool white, int depth)
     return best_moves;
 }
 
+int Board::sim_dyn_minimax_alphabeta_dyn_sync(Simulation sim, bool white, int depth, int alpha, int beta, int depth_inc_cnt)
+{
+    if (sim.board.is_checkmate(!white, false))
+    {
+        if (white)
+        {
+            return CHESS_EVAL_MAX_VAL;
+        }
+        else
+        {
+            return CHESS_EVAL_MIN_VAL;
+        }
+    }
+
+    if (depth == 0)
+    {
+        return sim.board.evaluate_material();
+    }
+
+    if (!white)
+    {
+        int best_eval_val = CHESS_EVAL_MIN_VAL;
+        auto sim_sims = sim.board.simulate_all(true);
+
+        if (sim_sims.size() <= 10 && depth_inc_cnt < 7)
+        {
+            depth++;
+            depth_inc_cnt++;
+        }
+
+        for (auto sim_sim : sim_sims)
+        {
+            int eval_val = Board::sim_dyn_minimax_alphabeta_dyn_sync(sim_sim, true, depth - 1, alpha, beta, depth_inc_cnt);
+
+            best_eval_val = eval_val > best_eval_val ? eval_val : best_eval_val;
+
+            alpha = eval_val > alpha ? eval_val : alpha;
+            if (beta <= alpha)
+            {
+                break;
+            }
+        }
+
+        return best_eval_val;
+    }
+    else
+    {
+        int best_eval_val = CHESS_EVAL_MAX_VAL;
+        auto sim_sims = sim.board.simulate_all(false);
+
+        if (sim_sims.size() <= 10 && depth_inc_cnt < 7)
+        {
+            depth++;
+            depth_inc_cnt++;
+        }
+
+        for (auto sim_sim : sim_sims)
+        {
+            int eval_val = Board::sim_dyn_minimax_alphabeta_dyn_sync(sim_sim, false, depth - 1, alpha, beta, depth_inc_cnt);
+
+            best_eval_val = eval_val < best_eval_val ? eval_val : best_eval_val;
+
+            beta = eval_val < beta ? eval_val : beta;
+            if (beta <= alpha)
+            {
+                break;
+            }
+        }
+
+        return best_eval_val;
+    }
+}
+
+void Board::sim_minimax_alphabeta_dyn_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals)
+{
+    int eval_val = Board::sim_dyn_minimax_alphabeta_dyn_sync(sim, white, depth, alpha, beta, 0);
+    evals[sim.idx] = Evaluation{eval_val, sim.move, sim.board};
+}
+
+std::vector<Evaluation> Board::minimax_alphabeta_dyn(bool white, int depth)
+{
+    auto sw = new zero::core::CpuStopWatch();
+    sw->start();
+
+    std::vector<Evaluation> best_moves;
+
+    Evaluation evals[CHESS_BOARD_LEN];
+
+    auto sims = this->simulate_all(white);
+
+    int min = CHESS_EVAL_MIN_VAL;
+    int max = CHESS_EVAL_MAX_VAL;
+
+    int best_eval_val = white ? min : max;
+
+    std::vector<std::thread> threads;
+
+    for (auto sim : sims)
+    {
+        threads.push_back(std::thread(Board::sim_minimax_alphabeta_dyn_async, sim, white, depth, min, max, evals));
+    }
+
+    for (auto &th : threads)
+    {
+        th.join();
+    }
+
+    for (int i = 0; i < sims.size(); i++)
+    {
+        auto eval = evals[i];
+
+        if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
+        {
+            best_moves.clear();
+
+            best_eval_val = eval.value;
+
+            best_moves.push_back(eval);
+        }
+        else if (eval.value == best_eval_val)
+        {
+            best_moves.push_back(eval);
+        }
+    }
+
+    sw->stop();
+    printf("ab\t");
+    sw->print_elapsed_seconds();
+    delete sw;
+
+    return best_moves;
+}
+
 std::vector<PGNGame *> PGN::import(const char *path)
 {
     FILE *file_ptr = fopen(path, "rb");

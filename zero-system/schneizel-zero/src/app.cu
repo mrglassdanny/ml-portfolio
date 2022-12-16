@@ -140,7 +140,7 @@ Game self_play(int white_depth, int black_depth, bool print)
             break;
         }
 
-        auto evals = board.minimax_alphabeta(true, white_depth);
+        auto evals = board.minimax_alphabeta_dyn(true, white_depth);
         printf("Ties: %d\n", evals.size());
         int r = rand() % evals.size();
         board.change(evals[r].move);
@@ -252,7 +252,7 @@ void export_pgn(const char *path)
     fclose(test_data_file);
     fclose(test_lbl_file);
 
-    printf("GAME COUNT: %d\tMOVE COUNT: %ld", game_cnt, move_cnt);
+    printf("GAME COUNT: %d\tMOVE COUNT: %ld\n", game_cnt, move_cnt);
 }
 
 // NOTE: excludes ties.
@@ -271,7 +271,7 @@ void export_pgn_cluster(const char *path)
 
     for (auto pgn_game : pgn_games)
     {
-        if (game_cnt < 250)
+        // if (game_cnt < 1000)
         {
             // Only save games where there was a winner.
             if (pgn_game->lbl != 0)
@@ -303,7 +303,7 @@ void export_pgn_cluster(const char *path)
     fclose(data_file);
     fclose(lbl_file);
 
-    printf("GAME COUNT: %d\tMOVE COUNT: %ld", game_cnt, move_cnt);
+    printf("GAME COUNT: %d\tMOVE COUNT: %ld\n", game_cnt, move_cnt);
 }
 
 struct Batch
@@ -597,7 +597,7 @@ ClusterData cluster_tests()
 {
     auto batch = get_cluster_dataset();
 
-    auto model = KMeans::save_best(batch.x, 100, 3, "temp/model.km");
+    auto model = KMeans::save_best(batch.x, 100000, 3, "temp/model.km");
 
     auto preds = model->predict(batch.x);
 
@@ -630,18 +630,18 @@ int main()
     srand(time(NULL));
 
     // export_pgn("data/data.pgn");
-    export_pgn_cluster("data/data.pgn");
+    // export_pgn_cluster("data/data.pgn");
 
     // grad_tests();
 
     // compare_models(4);
 
-    auto data = cluster_tests();
+    // auto data = cluster_tests();
 
-    data.white_win_cnts->print();
-    data.black_win_cnts->print();
+    // data.white_win_cnts->print();
+    // data.black_win_cnts->print();
 
-    // self_play(5, 3, true);
+    self_play(3, 3, true);
 
     return 0;
 }

@@ -111,6 +111,9 @@ namespace chess
         static int sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int alpha, int beta);
         static void sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals);
 
+        static int sim_dyn_minimax_alphabeta_dyn_sync(Simulation sim, bool white, int depth, int alpha, int beta, int depth_inc_cnt);
+        static void sim_minimax_alphabeta_dyn_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals);
+
     public:
         Board();
         ~Board();
@@ -148,6 +151,7 @@ namespace chess
         std::vector<Simulation> simulate_all(bool white);
 
         std::vector<Evaluation> minimax_alphabeta(bool white, int depth);
+        std::vector<Evaluation> minimax_alphabeta_dyn(bool white, int depth);
     };
 
     struct Simulation
