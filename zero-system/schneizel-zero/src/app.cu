@@ -511,19 +511,23 @@ void grad_tests()
 
 void compare_models(int epochs)
 {
-    auto train_ds = get_train_dataset(64);
-    auto test_ds = get_test_dataset(64);
+    auto train_ds = get_train_dataset(256);
+    auto test_ds = get_test_dataset(256);
 
     Shape x_shape = train_ds[0].x->shape();
     Shape y_shape = train_ds[0].y->shape();
 
     {
-        printf("\n\n");
         auto model = new Model(new ChessInitializer());
+
         model->hadamard_product(x_shape, 32, new Tanh());
         model->hadamard_product(32, new Tanh());
+        model->matrix_product(32, new Tanh());
+        model->matrix_product(32, new Tanh());
         model->linear(128, new Tanh());
+        model->linear(32, new Tanh());
         model->linear(y_shape, new Tanh());
+
         model->set_loss(new MSE());
         model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
 
@@ -535,15 +539,14 @@ void compare_models(int epochs)
     }
 
     {
-        printf("\n\n");
         auto model = new Model(new ChessInitializer());
-        model->hadamard_product(x_shape, 128, new Tanh());
-        model->hadamard_product(64, new Tanh());
-        model->matrix_product(64, new Tanh());
-        model->matrix_product(32, new Tanh());
+
+        model->hadamard_product(x_shape, 32, new Tanh());
         model->linear(256, new Tanh());
-        model->linear(32, new Tanh());
+        model->linear(64, new Tanh());
+        model->linear(16, new Tanh());
         model->linear(y_shape, new Tanh());
+
         model->set_loss(new MSE());
         model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
 
