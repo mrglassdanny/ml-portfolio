@@ -525,7 +525,6 @@ void compare_models(int epochs)
         model->matrix_product(32, new Tanh());
         model->matrix_product(32, new Tanh());
         model->linear(128, new Tanh());
-        model->linear(32, new Tanh());
         model->linear(y_shape, new Tanh());
 
         model->set_loss(new MSE());
@@ -544,7 +543,6 @@ void compare_models(int epochs)
         model->hadamard_product(x_shape, 32, new Tanh());
         model->linear(256, new Tanh());
         model->linear(64, new Tanh());
-        model->linear(16, new Tanh());
         model->linear(y_shape, new Tanh());
 
         model->set_loss(new MSE());
