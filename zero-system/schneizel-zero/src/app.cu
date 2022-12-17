@@ -220,6 +220,8 @@ void export_pgn(const char *path)
 {
     auto pgn_games = PGN::import(path);
 
+    int even_game_cnt = 4000;
+
     int game_cnt = 0;
     long move_cnt = 0;
 
@@ -240,7 +242,7 @@ void export_pgn(const char *path)
         if (pgn_game->lbl != 0)
         {
             // Try to make sure that we have the same amount of white wins to black wins.
-            if ((white_win_cnt <= 5000 && pgn_game->lbl == 1) || (black_win_cnt <= 5000 && pgn_game->lbl == -1))
+            if ((white_win_cnt < even_game_cnt && pgn_game->lbl == 1) || (black_win_cnt < even_game_cnt && pgn_game->lbl == -1))
             {
                 Board board;
                 bool white = true;
@@ -586,7 +588,7 @@ int main()
 {
     srand(time(NULL));
 
-    // export_pgn("data/data.pgn");
+    export_pgn("data/data.pgn");
 
     // grad_tests();
 
