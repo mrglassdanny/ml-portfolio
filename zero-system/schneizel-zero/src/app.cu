@@ -216,7 +216,6 @@ Game self_play(int white_depth, int black_depth, bool print)
     return game;
 }
 
-// NOTE: excludes ties and openings.
 void export_pgn(const char *path)
 {
     auto pgn_games = PGN::import(path);
@@ -232,44 +231,61 @@ void export_pgn(const char *path)
     float data_buf[CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT];
     float lbl_buf;
 
+    int white_win_cnt = 0;
+    int black_win_cnt = 0;
+
     for (auto pgn_game : pgn_games)
     {
         // Only save games where there was a winner.
         if (pgn_game->lbl != 0)
         {
-            Board board;
-            bool white = true;
-
-            int game_move_cnt = 0;
-
-            for (auto move_str : pgn_game->move_strs)
+            // Try to make sure that we have the same amount of white wins to black wins.
+            if ((white_win_cnt <= 5000 && pgn_game->lbl == 1) || (black_win_cnt <= 5000 && pgn_game->lbl == -1))
             {
-                auto move = board.change(move_str, white);
-                white = !white;
+                Board board;
+                bool white = true;
 
-                // Skip openings.
-                if (game_move_cnt > 6)
+                int game_move_cnt = 0;
+
+                for (auto move_str : pgn_game->move_strs)
                 {
-                    board.one_hot_encode(data_buf);
-                    lbl_buf = (float)pgn_game->lbl;
+                    auto move = board.change(move_str, white);
+                    white = !white;
 
-                    if (rand() % 20 == 0)
+                    // Skip openings.
+                    if (game_move_cnt > 6)
                     {
-                        fwrite(data_buf, sizeof(data_buf), 1, test_data_file);
-                        fwrite(&lbl_buf, sizeof(lbl_buf), 1, test_lbl_file);
-                    }
-                    else
-                    {
-                        fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
-                        fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
+                        board.one_hot_encode(data_buf);
+                        lbl_buf = (float)pgn_game->lbl;
+
+                        if (rand() % 20 == 0)
+                        {
+                            fwrite(data_buf, sizeof(data_buf), 1, test_data_file);
+                            fwrite(&lbl_buf, sizeof(lbl_buf), 1, test_lbl_file);
+                        }
+                        else
+                        {
+                            fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
+                            fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
+                        }
+
+                        move_cnt++;
                     }
 
-                    move_cnt++;
+                    game_move_cnt++;
                 }
 
-                game_move_cnt++;
+                game_cnt++;
+
+                if (pgn_game->lbl == 1)
+                {
+                    white_win_cnt++;
+                }
+                else
+                {
+                    black_win_cnt++;
+                }
             }
-            game_cnt++;
         }
 
         delete pgn_game;
@@ -475,10 +491,9 @@ void grad_tests()
         auto model = new Model();
         model->set_initializer(new ChessInitializer());
         model->hadamard_product(x_shape, 4, new Tanh());
-        model->hadamard_product(4, new Tanh());
-        model->matrix_product(4, new Tanh());
         model->matrix_product(4, new Tanh());
         model->linear(128, new Tanh());
+        model->linear(32, new Tanh());
         model->linear(y_shape, new Tanh());
         model->set_loss(new MSE());
 
@@ -521,10 +536,9 @@ void compare_models(int epochs)
         auto model = new Model(new ChessInitializer());
 
         model->hadamard_product(x_shape, 32, new Tanh());
-        model->hadamard_product(32, new Tanh());
         model->matrix_product(32, new Tanh());
-        model->matrix_product(32, new Tanh());
-        model->linear(128, new Tanh());
+        model->linear(256, new Tanh());
+        model->linear(64, new Tanh());
         model->linear(y_shape, new Tanh());
 
         model->set_loss(new MSE());
@@ -576,7 +590,7 @@ int main()
 
     // grad_tests();
 
-    compare_models(8);
+    compare_models(5);
 
     // self_play(3, 3, true);
 
