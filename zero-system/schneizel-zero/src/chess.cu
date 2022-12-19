@@ -493,6 +493,18 @@ char *Board::get_data()
     return this->data_;
 }
 
+int Board::evaluate_material()
+{
+    int mat_eval = 0;
+
+    for (int i = 0; i < CHESS_BOARD_LEN; i++)
+    {
+        mat_eval += Piece::get_value(this->get_piece(i));
+    }
+
+    return mat_eval;
+}
+
 void Board::material_encode(float *out)
 {
     memset(out, 0, sizeof(float) * CHESS_BOARD_LEN);
@@ -2286,18 +2298,6 @@ std::vector<Simulation> Board::simulate_all(bool white)
     }
 
     return sims;
-}
-
-int Board::evaluate_material()
-{
-    int mat_eval = 0;
-
-    for (int i = 0; i < CHESS_BOARD_LEN; i++)
-    {
-        mat_eval += Piece::get_value(this->get_piece(i));
-    }
-
-    return mat_eval;
 }
 
 int Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int alpha, int beta)

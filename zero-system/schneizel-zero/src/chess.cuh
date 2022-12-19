@@ -106,8 +106,6 @@ namespace chess
         std::vector<Move> get_diagonal_moves(int square, char piece, int row, int col);
         std::vector<Move> get_straight_moves(int square, char piece, int row, int col);
 
-        int evaluate_material();
-
         static int sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int alpha, int beta);
         static void sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals);
 
@@ -125,6 +123,8 @@ namespace chess
         void print(Move move);
 
         char *get_data();
+
+        int evaluate_material();
 
         void material_encode(float *out);
         void one_hot_encode(float *out);
