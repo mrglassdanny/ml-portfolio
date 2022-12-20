@@ -580,14 +580,32 @@ void Model::share_parameters(std::vector<Parameters *> params)
     }
 }
 
-// TODO
-void Model::save_parameters(const char *file)
+void Model::save_parameters(const char *path)
 {
+    FILE *file = fopen(path, "wb");
+
     auto params = this->parameters();
 
     for (auto p : params)
     {
+        p->save(file);
     }
+
+    fclose(file);
+}
+
+void Model::load_parameters(const char *path)
+{
+    FILE *file = fopen(path, "rb");
+
+    auto params = this->parameters();
+
+    for (auto p : params)
+    {
+        p->load(file);
+    }
+
+    fclose(file);
 }
 
 Layer *Model::first_layer()

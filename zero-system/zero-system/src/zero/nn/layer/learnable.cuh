@@ -45,6 +45,9 @@ namespace zero
                 Parameters(Shape w_shape, Shape b_shape, int fan_in, int fan_out, Initializer *initializer);
                 ~Parameters();
 
+                void save(FILE *file);
+                void load(FILE *file);
+
                 void zero_grad();
 
                 size_t count();

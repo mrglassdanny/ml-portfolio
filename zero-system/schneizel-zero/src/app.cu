@@ -111,7 +111,7 @@ class ChessInitializer : public Initializer
 public:
     void initialize(Tensor *tensor, int fan_in, int fan_out)
     {
-        tensor->random(0.0f, sqrt(0.5f / fan_in));
+        tensor->random(0.0f, sqrt(1.0f / fan_in));
         tensor->abs();
     }
 
@@ -221,7 +221,7 @@ void export_pgn(const char *path)
     auto pgn_games = PGN::import(path);
 
     int game_cnt = 0;
-    long move_cnt = 0;
+    long total_move_cnt = 0;
 
     FILE *train_data_file = fopen("temp/train.data", "wb");
     FILE *train_lbl_file = fopen("temp/train.lbl", "wb");
@@ -229,46 +229,45 @@ void export_pgn(const char *path)
     FILE *test_lbl_file = fopen("temp/test.lbl", "wb");
 
     float data_buf[CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT];
-    float lbl_buf[CHESS_ROW_CNT * CHESS_COL_CNT];
+    float lbl_buf;
 
     for (auto pgn_game : pgn_games)
     {
-        Board board;
-        bool white = true;
-
-        for (auto move_str : pgn_game->move_strs)
+        if (pgn_game->lbl != 0)
         {
-            board.one_hot_encode(data_buf);
+            Board board;
+            bool white = true;
 
-            auto move = board.change(move_str, white);
+            int game_move_cnt = 0;
 
-            memset(lbl_buf, 0, sizeof(lbl_buf));
-            if (white)
+            for (auto move_str : pgn_game->move_strs)
             {
-                lbl_buf[move.src_square] = 1.0f;
-            }
-            else
-            {
-                lbl_buf[move.src_square] = -1.0f;
+                auto move = board.change(move_str, white);
+                white = !white;
+
+                if (game_move_cnt > 6)
+                {
+                    board.one_hot_encode(data_buf);
+                    lbl_buf = (float)pgn_game->lbl;
+
+                    if (rand() % 20 == 0)
+                    {
+                        fwrite(data_buf, sizeof(data_buf), 1, test_data_file);
+                        fwrite(&lbl_buf, sizeof(lbl_buf), 1, test_lbl_file);
+                    }
+                    else
+                    {
+                        fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
+                        fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
+                    }
+                }
+
+                game_move_cnt++;
+                total_move_cnt++;
             }
 
-            white = !white;
-
-            if (rand() % 20 == 0)
-            {
-                fwrite(data_buf, sizeof(data_buf), 1, test_data_file);
-                fwrite(lbl_buf, sizeof(lbl_buf), 1, test_lbl_file);
-            }
-            else
-            {
-                fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
-                fwrite(lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
-            }
-
-            move_cnt++;
+            game_cnt++;
         }
-
-        game_cnt++;
 
         delete pgn_game;
     }
@@ -278,7 +277,7 @@ void export_pgn(const char *path)
     fclose(test_data_file);
     fclose(test_lbl_file);
 
-    printf("GAME COUNT: %d\tMOVE COUNT: %ld\n", game_cnt, move_cnt);
+    printf("GAME COUNT: %d\tMOVE COUNT: %ld\n", game_cnt, total_move_cnt);
 }
 
 struct Batch
@@ -303,8 +302,8 @@ std::vector<Batch> get_dataset(const char *data_path, const char *lbl_path, int 
     float *data_buf = (float *)malloc(data_file_size);
     fread(data_buf, 1, (data_file_size), data_file);
 
-    float *lbl_buf = (float *)malloc(sizeof(float) * CHESS_BOARD_LEN * data_cnt);
-    fread(lbl_buf, 1, (sizeof(float) * CHESS_BOARD_LEN * data_cnt), lbl_file);
+    float *lbl_buf = (float *)malloc(sizeof(float) * data_cnt);
+    fread(lbl_buf, 1, (sizeof(float) * data_cnt), lbl_file);
 
     fclose(data_file);
     fclose(lbl_file);
@@ -312,7 +311,7 @@ std::vector<Batch> get_dataset(const char *data_path, const char *lbl_path, int 
     for (int i = 0; i < data_cnt / batch_size; i++)
     {
         auto x = Tensor::from_data(Shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT), &data_buf[i * batch_size * oh_board_len]);
-        auto y = Tensor::from_data(Shape(batch_size, CHESS_ROW_CNT, CHESS_COL_CNT), &lbl_buf[i * batch_size * CHESS_BOARD_LEN]);
+        auto y = Tensor::from_data(Shape(batch_size, 1), &lbl_buf[i * batch_size]);
 
         batches.push_back({x, y});
     }
@@ -418,11 +417,12 @@ void grad_tests()
 
     {
         auto model = new Model();
-        model->set_initializer(new Xavier());
+        model->set_initializer(new ChessInitializer());
         model->hadamard_product(x_shape, 4, new Tanh());
         model->hadamard_product(4, new Tanh());
         model->matrix_product(4, new Tanh());
         model->matrix_product(4, new Tanh());
+        model->linear(32, new Tanh());
         model->linear(y_shape, new Tanh());
         model->set_loss(new MSE());
 
@@ -435,9 +435,9 @@ void grad_tests()
     {
         auto model = new Model();
         model->set_initializer(new ChessInitializer());
-        model->hadamard_product(x_shape, 4, new Tanh());
+        model->hadamard_product(x_shape, 1, new Tanh());
         model->matrix_product(4, new Tanh());
-        model->linear(128, new Tanh());
+        model->matrix_product(1, new Tanh());
         model->linear(32, new Tanh());
         model->linear(y_shape, new Tanh());
         model->set_loss(new MSE());
@@ -450,29 +450,40 @@ void grad_tests()
 
     {
         auto model = new Model();
-        model->set_initializer(new Xavier());
-        model->hadamard_product(x_shape, 4, new Tanh());
-        model->hadamard_product(4, new Tanh());
-        model->matrix_product(4, new Tanh());
-        model->matrix_product(4, new Tanh());
+        model->set_initializer(new ChessInitializer());
+        model->hadamard_product(x_shape, 1, new Tanh());
+        model->linear(32, new Tanh());
+        model->linear(32, new Tanh());
         model->linear(y_shape, new Tanh());
         model->set_loss(new MSE());
 
         model->summarize();
         model->validate_gradients(x, y, false);
 
-        auto cpy = model->copy();
-        cpy->validate_gradients(x, y, false);
+        delete model;
+    }
+
+    {
+        auto model = new Model();
+        model->set_initializer(new ChessInitializer());
+        model->hadamard_product(x_shape, 8, new Tanh());
+        model->hadamard_product(1, new Tanh());
+        model->linear(32, new Tanh());
+        model->linear(32, new Tanh());
+        model->linear(y_shape, new Tanh());
+        model->set_loss(new MSE());
+
+        model->summarize();
+        model->validate_gradients(x, y, false);
 
         delete model;
-        delete cpy;
     }
 }
 
 void compare_models(int epochs)
 {
-    auto train_ds = get_dataset("temp/train.data", "temp/train.lbl", 64);
-    auto test_ds = get_dataset("temp/test.data", "temp/test.lbl", 64);
+    auto train_ds = get_dataset("temp/train.data", "temp/train.lbl", 256);
+    auto test_ds = get_dataset("temp/test.data", "temp/test.lbl", 256);
 
     Shape x_shape = train_ds[0].x->shape();
     Shape y_shape = train_ds[0].y->shape();
@@ -480,16 +491,15 @@ void compare_models(int epochs)
     {
         auto model = new Model(new ChessInitializer());
 
-        model->hadamard_product(x_shape, 64, new Tanh());
-        model->hadamard_product(64, new Tanh());
-        model->linear(2048, new Tanh());
-        model->linear(512, new Tanh());
+        model->hadamard_product(x_shape, 16, new Tanh());
+        model->hadamard_product(16, new Tanh());
+        model->linear(256, new Tanh());
         model->linear(128, new Tanh());
         model->linear(32, new Tanh());
         model->linear(y_shape, new Tanh());
 
         model->set_loss(new MSE());
-        model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
+        model->set_optimizer(new ChessOptimizer(model->parameters(), 0.1f, ZERO_NN_BETA_1));
 
         model->summarize();
 
@@ -516,6 +526,10 @@ int main()
     srand(time(NULL));
 
     // export_pgn("data/data.pgn");
+
+    // grad_tests();
+
+    compare_models(5);
 
     return 0;
 }

@@ -83,8 +83,8 @@ namespace zero
 
             std::vector<Parameters *> parameters();
             void share_parameters(std::vector<Parameters *> params);
-            void save_parameters(const char *file);
-            void load_parameters(const char *file);
+            void save_parameters(const char *path);
+            void load_parameters(const char *path);
 
             Layer *first_layer();
             Layer *last_layer();

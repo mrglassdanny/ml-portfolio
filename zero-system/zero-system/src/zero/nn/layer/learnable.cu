@@ -50,6 +50,18 @@ Parameters::~Parameters()
     delete this->db_;
 }
 
+void Parameters::save(FILE *file)
+{
+    fwrite(this->w_, this->w_->size(), 1, file);
+    fwrite(this->b_, this->b_->size(), 1, file);
+}
+
+void Parameters::load(FILE *file)
+{
+    fread(this->w_, this->w_->size(), 1, file);
+    fread(this->b_, this->b_->size(), 1, file);
+}
+
 void Parameters::zero_grad()
 {
     this->dw_->zeros();
