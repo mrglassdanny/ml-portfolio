@@ -412,6 +412,37 @@ void mnist_conv(int batch_size, int epochs)
 	train_mnist(model, batch_size, epochs, true);
 	test_mnist(model, epochs, true, false);
 
+	model->save_parameters("temp/model.params");
+
+	delete model;
+}
+
+void mnist_conv_load_params(int batch_size, const char *params_path)
+{
+	auto input_shape = Shape(batch_size, 1, 28, 28);
+	auto output_shape = Shape(batch_size, 10);
+
+	auto model = new Model();
+
+	model->set_initializer(new Xavier());
+
+	model->conv2d(input_shape, Shape(64, 1, 5, 5), layer::Stride{1, 1}, new ReLU());
+	model->conv2d(Shape(64, 64, 3, 3), layer::Stride{3, 3}, new ReLU());
+	model->conv2d(Shape(64, 64, 3, 3), layer::Stride{1, 1}, new ReLU());
+	model->linear(512, new ReLU());
+	model->linear(256, new ReLU());
+	model->linear(128, new ReLU());
+	model->linear(output_shape, new Sigmoid());
+
+	model->set_loss(new loss::CrossEntropy());
+	model->set_optimizer(new optim::SGDMomentum(model->parameters(), 0.15f, ZERO_NN_BETA_1));
+
+	model->load_parameters(params_path);
+
+	model->summarize();
+
+	test_mnist(model, 0, false, false);
+
 	delete model;
 }
 
@@ -422,7 +453,9 @@ int main(int argc, char **argv)
 
 	// grad_tests();
 
-	mnist_conv(50, 30);
+	// mnist_conv(50, 30);
+
+	mnist_conv_load_params(50, "temp/model.params");
 
 	return 0;
 }

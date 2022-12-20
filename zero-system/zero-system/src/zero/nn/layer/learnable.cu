@@ -52,14 +52,26 @@ Parameters::~Parameters()
 
 void Parameters::save(FILE *file)
 {
-    fwrite(this->w_, this->w_->size(), 1, file);
-    fwrite(this->b_, this->b_->size(), 1, file);
+    this->w_->to_cpu();
+    this->b_->to_cpu();
+
+    fwrite(this->w_->data(), this->w_->size(), 1, file);
+    fwrite(this->b_->data(), this->b_->size(), 1, file);
+
+    this->w_->to_cuda();
+    this->b_->to_cuda();
 }
 
 void Parameters::load(FILE *file)
 {
-    fread(this->w_, this->w_->size(), 1, file);
-    fread(this->b_, this->b_->size(), 1, file);
+    this->w_->to_cpu();
+    this->b_->to_cpu();
+
+    fread(this->w_->data(), this->w_->size(), 1, file);
+    fread(this->b_->data(), this->b_->size(), 1, file);
+
+    this->w_->to_cuda();
+    this->b_->to_cuda();
 }
 
 void Parameters::zero_grad()
