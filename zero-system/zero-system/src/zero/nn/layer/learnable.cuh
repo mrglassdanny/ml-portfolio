@@ -70,8 +70,6 @@ namespace zero
 
                 Parameters *parameters();
                 void share_parameters(Parameters *params);
-
-                void load_parameters();
             };
         }
     }

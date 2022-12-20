@@ -122,8 +122,3 @@ void Learnable::share_parameters(Parameters *params)
     this->params_ = params;
     this->shared_params_ = true;
 }
-
-void Learnable::load_parameters()
-{
-    this->shared_params_ = false;
-}
