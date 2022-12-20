@@ -2440,12 +2440,14 @@ int Board::sim_dyn_minimax_alphabeta_dyn_sync(Simulation sim, bool white, int de
         return sim.board.evaluate_material();
     }
 
+    int max_depth_inc_cnt = 7;
+
     if (!white)
     {
         int best_eval_val = CHESS_EVAL_MIN_VAL;
         auto sim_sims = sim.board.simulate_all(true);
 
-        if (sim_sims.size() <= 10 && depth_inc_cnt < 7)
+        if (sim_sims.size() <= 10 && depth_inc_cnt < max_depth_inc_cnt)
         {
             depth++;
             depth_inc_cnt++;
@@ -2471,7 +2473,7 @@ int Board::sim_dyn_minimax_alphabeta_dyn_sync(Simulation sim, bool white, int de
         int best_eval_val = CHESS_EVAL_MAX_VAL;
         auto sim_sims = sim.board.simulate_all(false);
 
-        if (sim_sims.size() <= 10 && depth_inc_cnt < 7)
+        if (sim_sims.size() <= 10 && depth_inc_cnt < max_depth_inc_cnt)
         {
             depth++;
             depth_inc_cnt++;
