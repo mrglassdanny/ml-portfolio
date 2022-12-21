@@ -124,11 +124,6 @@ namespace chess
 
         char *get_data();
 
-        int evaluate_material();
-
-        void material_encode(float *out);
-        void one_hot_encode(float *out);
-
         char get_piece(int square);
         int get_king_square(bool white);
         bool is_piece_in_king_pin(int square, bool white_king_pin);
@@ -150,8 +145,14 @@ namespace chess
         Simulation simulate(Move move);
         std::vector<Simulation> simulate_all(bool white);
 
+        int evaluate_material();
+
         std::vector<Evaluation> minimax_alphabeta(bool white, int depth);
         std::vector<Evaluation> minimax_alphabeta_dyn(bool white, int depth);
+
+        void material_encode(float *out);
+        void one_hot_encode(float *out);
+        void one_hot_encode_w_moves(float *out, bool white);
     };
 
     struct Simulation

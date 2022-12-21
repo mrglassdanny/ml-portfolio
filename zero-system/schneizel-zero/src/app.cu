@@ -121,6 +121,35 @@ public:
     }
 };
 
+int chess_tanh_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
+{
+    int correct_cnt = 0;
+
+    for (int i = 0; i < batch_size; i++)
+    {
+        float p_val = p->get_val(i);
+        if (p_val < -0.25f)
+        {
+            p_val = -1.0f;
+        }
+        else if (p_val > 0.25f)
+        {
+            p_val = 1.0f;
+        }
+        else
+        {
+            p_val = 0.0f;
+        }
+
+        if (p_val == y->get_val(i))
+        {
+            correct_cnt++;
+        }
+    }
+
+    return correct_cnt;
+}
+
 struct Game
 {
     std::vector<Board> boards;
@@ -273,6 +302,61 @@ void export_pgn(const char *path)
     printf("GAME COUNT: %d\tMOVE COUNT: %ld\n", game_cnt, total_move_cnt);
 }
 
+void export_pgn2(const char *path)
+{
+    auto pgn_games = PGN::import(path);
+
+    int game_cnt = 0;
+    long total_move_cnt = 0;
+
+    FILE *train_data_file = fopen("temp/train2.data", "wb");
+    FILE *train_lbl_file = fopen("temp/train2.lbl", "wb");
+    FILE *test_data_file = fopen("temp/test2.data", "wb");
+    FILE *test_lbl_file = fopen("temp/test2.lbl", "wb");
+
+    float data_buf[CHESS_BOARD_CHANNEL_CNT * 2 * CHESS_ROW_CNT * CHESS_COL_CNT];
+    float lbl_buf;
+
+    for (auto pgn_game : pgn_games)
+    {
+        Board board;
+        bool white = true;
+
+        for (auto move_str : pgn_game->move_strs)
+        {
+            auto move = board.change(move_str, white);
+            white = !white;
+
+            board.one_hot_encode_w_moves(data_buf, white);
+            lbl_buf = (float)pgn_game->lbl;
+
+            if (rand() % 20 == 0)
+            {
+                fwrite(data_buf, sizeof(data_buf), 1, test_data_file);
+                fwrite(&lbl_buf, sizeof(lbl_buf), 1, test_lbl_file);
+            }
+            else
+            {
+                fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
+                fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
+            }
+
+            total_move_cnt++;
+        }
+
+        game_cnt++;
+
+        delete pgn_game;
+    }
+
+    fclose(train_data_file);
+    fclose(train_lbl_file);
+    fclose(test_data_file);
+    fclose(test_lbl_file);
+
+    printf("GAME COUNT: %d\tMOVE COUNT: %ld\n", game_cnt, total_move_cnt);
+}
+
 struct Batch
 {
     zero::core::Tensor *x;
@@ -315,6 +399,42 @@ std::vector<Batch> get_dataset(const char *data_path, const char *lbl_path, int 
     return batches;
 }
 
+std::vector<Batch> get_dataset2(const char *data_path, const char *lbl_path, int batch_size)
+{
+    int oh_board_len = CHESS_BOARD_CHANNEL_CNT * 2 * CHESS_ROW_CNT * CHESS_COL_CNT;
+    int oh_board_size = oh_board_len * sizeof(float);
+
+    long long data_file_size = FileUtils::get_file_size(data_path);
+    size_t data_cnt = data_file_size / oh_board_size;
+
+    std::vector<Batch> batches;
+
+    FILE *data_file = fopen(data_path, "rb");
+    FILE *lbl_file = fopen(lbl_path, "rb");
+
+    float *data_buf = (float *)malloc(data_file_size);
+    fread(data_buf, 1, (data_file_size), data_file);
+
+    float *lbl_buf = (float *)malloc(sizeof(float) * data_cnt);
+    fread(lbl_buf, 1, (sizeof(float) * data_cnt), lbl_file);
+
+    fclose(data_file);
+    fclose(lbl_file);
+
+    for (int i = 0; i < data_cnt / batch_size; i++)
+    {
+        auto x = Tensor::from_data(Shape(batch_size, CHESS_BOARD_CHANNEL_CNT * 2, CHESS_ROW_CNT, CHESS_COL_CNT), &data_buf[i * batch_size * oh_board_len]);
+        auto y = Tensor::from_data(Shape(batch_size, 1), &lbl_buf[i * batch_size]);
+
+        batches.push_back({x, y});
+    }
+
+    free(data_buf);
+    free(lbl_buf);
+
+    return batches;
+}
+
 void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::vector<Batch> *test_ds)
 {
     int train_batch_cnt = train_ds->size();
@@ -338,7 +458,7 @@ void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::v
                 auto p = model->forward(x);
 
                 float loss = model->loss(p, y);
-                float acc = model->accuracy(p, y, Model::regression_tanh_accuracy_fn);
+                float acc = model->accuracy(p, y, chess_tanh_accuracy_fn);
                 fprintf(train_csv, "%d,%d,%f,%f\n", epoch, batch_idx, loss, acc);
 
                 model->backward(p, y);
@@ -379,7 +499,7 @@ void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::v
             auto p = model->forward(x);
 
             loss += model->loss(p, y);
-            acc += model->accuracy(p, y, Model::regression_tanh_accuracy_fn);
+            acc += model->accuracy(p, y, chess_tanh_accuracy_fn);
 
             if (batch_idx == 0)
             {
@@ -424,10 +544,67 @@ void grad_tests()
     }
 }
 
+void grad_tests2()
+{
+    auto test_ds = get_dataset2("temp/test2.data", "temp/test2.lbl", 1);
+
+    auto x = test_ds[0].x;
+    auto y = test_ds[0].y;
+
+    Shape x_shape = x->shape();
+    Shape y_shape = y->shape();
+
+    x->print();
+    y->print();
+
+    {
+        auto model = new Model();
+        model->set_initializer(new ChessInitializer());
+        model->linear(x_shape, 8, new Tanh());
+        model->linear(8, new Tanh());
+        model->linear(y_shape, new Tanh());
+        model->set_loss(new MSE());
+
+        model->summarize();
+        model->validate_gradients(x, y, false);
+
+        delete model;
+    }
+
+    {
+        auto model = new Model();
+        model->set_initializer(new ChessInitializer());
+        model->hadamard_product(x_shape, 1, new Tanh());
+        model->linear(32, new Tanh());
+        model->linear(y_shape, new Tanh());
+        model->set_loss(new MSE());
+
+        model->summarize();
+        model->validate_gradients(x, y, false);
+
+        delete model;
+    }
+
+    {
+        auto model = new Model();
+        model->set_initializer(new ChessInitializer());
+        model->hadamard_product(x_shape, 4, new Tanh());
+        model->matrix_product(4, new Tanh());
+        model->linear(16, new Tanh());
+        model->linear(y_shape, new Tanh());
+        model->set_loss(new MSE());
+
+        model->summarize();
+        model->validate_gradients(x, y, false);
+
+        delete model;
+    }
+}
+
 void compare_models(int epochs)
 {
-    auto train_ds = get_dataset("temp/train.data", "temp/train.lbl", 64);
-    auto test_ds = get_dataset("temp/test.data", "temp/test.lbl", 64);
+    auto train_ds = get_dataset("temp/train.data", "temp/train.lbl", 128);
+    auto test_ds = get_dataset("temp/test.data", "temp/test.lbl", 128);
 
     Shape x_shape = train_ds[0].x->shape();
     Shape y_shape = train_ds[0].y->shape();
@@ -435,12 +612,47 @@ void compare_models(int epochs)
     {
         auto model = new Model(new ChessInitializer());
 
-        model->linear(x_shape, 1024, new Tanh());
-        model->linear(1024, new Tanh());
-        model->linear(512, new Tanh());
+        model->linear(x_shape, 2048, new Tanh());
+        model->linear(128, new Tanh());
+        model->linear(y_shape, new Tanh());
+
+        model->set_loss(new MSE());
+        model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
+
+        model->summarize();
+
+        train_n_test(model, epochs, &train_ds, &test_ds);
+
+        delete model;
+    }
+
+    for (auto batch : train_ds)
+    {
+        delete batch.x;
+        delete batch.y;
+    }
+
+    for (auto batch : test_ds)
+    {
+        delete batch.x;
+        delete batch.y;
+    }
+}
+
+void compare_models2(int epochs)
+{
+    auto train_ds = get_dataset2("temp/train2.data", "temp/train2.lbl", 128);
+    auto test_ds = get_dataset2("temp/test2.data", "temp/test2.lbl", 128);
+
+    Shape x_shape = train_ds[0].x->shape();
+    Shape y_shape = train_ds[0].y->shape();
+
+    {
+        auto model = new Model(new ChessInitializer());
+
+        model->hadamard_product(x_shape, 1, new Tanh());
         model->linear(512, new Tanh());
         model->linear(128, new Tanh());
-        model->linear(32, new Tanh());
         model->linear(y_shape, new Tanh());
 
         model->set_loss(new MSE());
@@ -474,7 +686,13 @@ int main()
 
     // grad_tests();
 
-    compare_models(5);
+    // compare_models(5);
+
+    // export_pgn2("data/data.pgn");
+
+    grad_tests2();
+
+    // compare_models(5);
 
     return 0;
 }
