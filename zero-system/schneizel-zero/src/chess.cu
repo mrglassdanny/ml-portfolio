@@ -2740,6 +2740,199 @@ void Board::one_hot_encode_w_moves(float *out, bool white)
                         }
                     }
                     break;
+                default:
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void Board::one_hot_encode_w_moves_flip(float *out, bool white)
+{
+    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * 2 * CHESS_BOARD_LEN);
+    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT * 2; c++)
+    {
+        for (int i = 0; i < CHESS_ROW_CNT; i++)
+        {
+            for (int j = 0; j < CHESS_COL_CNT; j++)
+            {
+                int channel_offset = (c * CHESS_BOARD_LEN);
+                int square = (i * CHESS_COL_CNT) + j;
+                int out_idx = channel_offset + square;
+
+                switch (c)
+                {
+                case 0:
+                    if (this->get_piece(square) == WP)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    else if (this->get_piece(square) == BP)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 1:
+                    if (this->get_piece(square) == WN)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    else if (this->get_piece(square) == BN)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 2:
+                    if (this->get_piece(square) == WB)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    else if (this->get_piece(square) == BB)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 3:
+                    if (this->get_piece(square) == WR)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    else if (this->get_piece(square) == BR)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 4:
+                    if (this->get_piece(square) == WQ)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    else if (this->get_piece(square) == BQ)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 5:
+                    if (this->get_piece(square) == WK)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    else if (this->get_piece(square) == BK)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 6:
+                    if (this->get_piece(square) == WP && white)
+                    {
+                        auto moves = this->get_moves(square, true);
+                        for (auto move : moves)
+                        {
+                            out[channel_offset + move.dst_square] = -1.0f;
+                        }
+                    }
+                    else if (this->get_piece(square) == BP && !white)
+                    {
+                        auto moves = this->get_moves(square, true);
+                        for (auto move : moves)
+                        {
+                            out[channel_offset + move.dst_square] = 1.0f;
+                        }
+                    }
+                    break;
+                case 7:
+                    if (this->get_piece(square) == WN && white)
+                    {
+                        auto moves = this->get_moves(square, true);
+                        for (auto move : moves)
+                        {
+                            out[channel_offset + move.dst_square] = -1.0f;
+                        }
+                    }
+                    else if (this->get_piece(square) == BN && !white)
+                    {
+                        auto moves = this->get_moves(square, true);
+                        for (auto move : moves)
+                        {
+                            out[channel_offset + move.dst_square] = 1.0f;
+                        }
+                    }
+                    break;
+                case 8:
+                    if (this->get_piece(square) == WB && white)
+                    {
+                        auto moves = this->get_moves(square, true);
+                        for (auto move : moves)
+                        {
+                            out[channel_offset + move.dst_square] = -1.0f;
+                        }
+                    }
+                    else if (this->get_piece(square) == BB && !white)
+                    {
+                        auto moves = this->get_moves(square, true);
+                        for (auto move : moves)
+                        {
+                            out[channel_offset + move.dst_square] = 1.0f;
+                        }
+                    }
+                    break;
+                case 9:
+                    if (this->get_piece(square) == WR && white)
+                    {
+                        auto moves = this->get_moves(square, true);
+                        for (auto move : moves)
+                        {
+                            out[channel_offset + move.dst_square] = -1.0f;
+                        }
+                    }
+                    else if (this->get_piece(square) == BR && !white)
+                    {
+                        auto moves = this->get_moves(square, true);
+                        for (auto move : moves)
+                        {
+                            out[channel_offset + move.dst_square] = 1.0f;
+                        }
+                    }
+                    break;
+                case 10:
+                    if (this->get_piece(square) == WQ && white)
+                    {
+                        auto moves = this->get_moves(square, true);
+                        for (auto move : moves)
+                        {
+                            out[channel_offset + move.dst_square] = -1.0f;
+                        }
+                    }
+                    else if (this->get_piece(square) == BQ && !white)
+                    {
+                        auto moves = this->get_moves(square, true);
+                        for (auto move : moves)
+                        {
+                            out[channel_offset + move.dst_square] = 1.0f;
+                        }
+                    }
+                    break;
+                case 11:
+                    if (this->get_piece(square) == WK && white)
+                    {
+                        auto moves = this->get_moves(square, true);
+                        for (auto move : moves)
+                        {
+                            out[channel_offset + move.dst_square] = -1.0f;
+                        }
+                    }
+                    else if (this->get_piece(square) == BK && !white)
+                    {
+                        auto moves = this->get_moves(square, true);
+                        for (auto move : moves)
+                        {
+                            out[channel_offset + move.dst_square] = 1.0f;
+                        }
+                    }
+                    break;
+                default:
+                    break;
                 }
             }
         }

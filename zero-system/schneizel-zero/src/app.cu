@@ -333,9 +333,43 @@ void export_pgn2(const char *path)
                 {
                     fwrite(data_buf, sizeof(data_buf), 1, test_data_file);
                     fwrite(&lbl_buf, sizeof(lbl_buf), 1, test_lbl_file);
+
+                    board.one_hot_encode_w_moves_flip(data_buf, white);
+                    if (pgn_game->lbl == 1)
+                    {
+                        lbl_buf = -1.0f;
+                    }
+                    else if (pgn_game->lbl == -1)
+                    {
+                        lbl_buf = 1.0f;
+                    }
+                    else
+                    {
+                        lbl_buf = 0.0f;
+                    }
+
+                    fwrite(data_buf, sizeof(data_buf), 1, test_data_file);
+                    fwrite(&lbl_buf, sizeof(lbl_buf), 1, test_lbl_file);
                 }
                 else
                 {
+                    fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
+                    fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
+
+                    board.one_hot_encode_w_moves_flip(data_buf, white);
+                    if (pgn_game->lbl == 1)
+                    {
+                        lbl_buf = -1.0f;
+                    }
+                    else if (pgn_game->lbl == -1)
+                    {
+                        lbl_buf = 1.0f;
+                    }
+                    else
+                    {
+                        lbl_buf = 0.0f;
+                    }
+
                     fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
                     fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
                 }
@@ -695,7 +729,15 @@ int main()
 
     // grad_tests2();
 
-    compare_models2(10);
+    // compare_models2(10);
+
+    auto test_ds = get_dataset2("temp/test2.data", "temp/test2.lbl", 8);
+
+    auto x = test_ds[0].x;
+    auto y = test_ds[0].y;
+
+    x->print();
+    y->print();
 
     return 0;
 }
