@@ -500,7 +500,7 @@ void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::v
             loss += model->loss(p, y);
             acc += model->accuracy(p, y, chess_tanh_accuracy_fn);
 
-            if (batch_idx == 0)
+            if (batch_idx < 3)
             {
                 p->print();
                 y->print();
@@ -634,8 +634,9 @@ void compare_models2(int epochs)
     {
         auto model = new Model(new ChessInitializer());
 
-        model->linear(x_shape, 512, new Tanh());
-        model->linear(128, new Tanh());
+        model->linear(x_shape, 1024, new Tanh());
+        model->linear(512, new Tanh());
+        model->linear(64, new Tanh());
         model->linear(y_shape, new Tanh());
 
         model->set_loss(new MSE());
@@ -651,27 +652,10 @@ void compare_models2(int epochs)
     {
         auto model = new Model(new ChessInitializer());
 
-        model->hadamard_product(x_shape, 1, new Tanh());
+        model->hadamard_product(x_shape, 16, new Tanh());
+        model->linear(1024, new Tanh());
         model->linear(512, new Tanh());
-        model->linear(128, new Tanh());
-        model->linear(y_shape, new Tanh());
-
-        model->set_loss(new MSE());
-        model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
-
-        model->summarize();
-
-        train_n_test(model, epochs, &train_ds, &test_ds);
-
-        delete model;
-    }
-
-    {
-        auto model = new Model(new ChessInitializer());
-
-        model->hadamard_product(x_shape, 4, new Tanh());
-        model->linear(512, new Tanh());
-        model->linear(128, new Tanh());
+        model->linear(64, new Tanh());
         model->linear(y_shape, new Tanh());
 
         model->set_loss(new MSE());
@@ -711,7 +695,7 @@ int main()
 
     // grad_tests2();
 
-    compare_models2(5);
+    compare_models2(10);
 
     return 0;
 }
