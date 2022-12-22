@@ -153,7 +153,6 @@ namespace chess
         void material_encode(float *out);
         void one_hot_encode(float *out);
         void one_hot_encode_w_moves(float *out, bool white);
-        void one_hot_encode_w_moves_flip(float *out, bool white);
     };
 
     struct Simulation

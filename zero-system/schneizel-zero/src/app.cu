@@ -306,11 +306,11 @@ void export_pgn2(const char *path)
 
     FILE *train_data_file = fopen("temp/train2.data", "wb");
     FILE *train_lbl_file = fopen("temp/train2.lbl", "wb");
-    FILE *test_data_file = fopen("temp/test2.data", "wb");
-    FILE *test_lbl_file = fopen("temp/test2.lbl", "wb");
 
     float data_buf[CHESS_BOARD_CHANNEL_CNT * 2 * CHESS_ROW_CNT * CHESS_COL_CNT];
     float lbl_buf;
+
+    int g = 0;
 
     for (auto pgn_game : pgn_games)
     {
@@ -324,67 +324,33 @@ void export_pgn2(const char *path)
             auto move = board.change(move_str, white);
             white = !white;
 
+            if (g == 1509)
+            {
+                printf("%s\n", move_str.c_str());
+                board.print(move);
+            }
+
             if (game_move_cnt > 6)
             {
                 board.one_hot_encode_w_moves(data_buf, white);
                 lbl_buf = (float)pgn_game->lbl;
 
-                if (rand() % 20 == 0)
-                {
-                    fwrite(data_buf, sizeof(data_buf), 1, test_data_file);
-                    fwrite(&lbl_buf, sizeof(lbl_buf), 1, test_lbl_file);
-
-                    board.one_hot_encode_w_moves_flip(data_buf, white);
-                    if (pgn_game->lbl == 1)
-                    {
-                        lbl_buf = -1.0f;
-                    }
-                    else if (pgn_game->lbl == -1)
-                    {
-                        lbl_buf = 1.0f;
-                    }
-                    else
-                    {
-                        lbl_buf = 0.0f;
-                    }
-
-                    fwrite(data_buf, sizeof(data_buf), 1, test_data_file);
-                    fwrite(&lbl_buf, sizeof(lbl_buf), 1, test_lbl_file);
-                }
-                else
-                {
-                    fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
-                    fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
-
-                    board.one_hot_encode_w_moves_flip(data_buf, white);
-                    if (pgn_game->lbl == 1)
-                    {
-                        lbl_buf = -1.0f;
-                    }
-                    else if (pgn_game->lbl == -1)
-                    {
-                        lbl_buf = 1.0f;
-                    }
-                    else
-                    {
-                        lbl_buf = 0.0f;
-                    }
-
-                    fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
-                    fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
-                }
+                fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
+                fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
             }
 
             game_move_cnt++;
         }
+
+        printf("g: %d\n", g);
+
+        g++;
 
         delete pgn_game;
     }
 
     fclose(train_data_file);
     fclose(train_lbl_file);
-    fclose(test_data_file);
-    fclose(test_lbl_file);
 }
 
 struct Batch
@@ -554,6 +520,95 @@ void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::v
     }
 }
 
+void train2(Model *model, int epochs, int batch_size)
+{
+    const char *data_path = "temp/train2.data";
+    const char *lbl_path = "temp/train2.lbl";
+
+    int input_size = (CHESS_BOARD_CHANNEL_CNT * 2 * CHESS_ROW_CNT * CHESS_COL_CNT) * sizeof(float);
+
+    long long data_file_size = FileUtils::get_file_size(data_path);
+    size_t data_cnt = data_file_size / input_size;
+
+    int batch_cnt = data_cnt / batch_size;
+
+    FILE *data_file = fopen(data_path, "rb");
+    FILE *lbl_file = fopen(lbl_path, "rb");
+
+    // Train:
+    {
+        FILE *train_csv = fopen("temp/train.csv", "w");
+        fprintf(train_csv, "epoch,batch,loss,accuracy\n");
+
+        bool quit = false;
+
+        auto x = Tensor::zeros(false, Shape(batch_size, CHESS_BOARD_CHANNEL_CNT * 2, CHESS_ROW_CNT, CHESS_COL_CNT));
+        auto y = Tensor::zeros(false, Shape(batch_size, 1));
+
+        for (int epoch = 0; epoch < epochs; epoch++)
+        {
+            for (int batch_idx = 0; batch_idx < batch_cnt; batch_idx++)
+            {
+                x->to_cpu();
+                y->to_cpu();
+
+                fread(x->data(), 1, (input_size * batch_size), data_file);
+                fread(y->data(), 1, (sizeof(float) * batch_size), lbl_file);
+
+                auto p = model->forward(x);
+
+                if (batch_idx % 100 == 0)
+                {
+                    float loss = model->loss(p, y);
+                    float acc = model->accuracy(p, y, chess_tanh_accuracy_fn);
+                    fprintf(train_csv, "%d,%d,%f,%f\n", epoch, batch_idx, loss, acc);
+                }
+
+                model->backward(p, y);
+                model->step();
+
+                if (batch_idx == 0)
+                {
+                    p->print();
+                    y->print();
+                    for (int i = 0; i < batch_size; i++)
+                    {
+                        p->set_val(i, p->get_val(i) - y->get_val(i));
+                    }
+                    p->print();
+                }
+
+                delete p;
+
+                if (_kbhit())
+                {
+                    if (_getch() == 'q')
+                    {
+                        quit = true;
+                        break;
+                    }
+                }
+            }
+
+            fseek(data_file, 0, SEEK_SET);
+            fseek(lbl_file, 0, SEEK_SET);
+
+            if (quit)
+            {
+                break;
+            }
+        }
+
+        delete x;
+        delete y;
+
+        fclose(train_csv);
+    }
+
+    fclose(data_file);
+    fclose(lbl_file);
+}
+
 void grad_tests()
 {
     auto test_ds = get_dataset("temp/test.data", "temp/test.lbl", 1);
@@ -569,45 +624,6 @@ void grad_tests()
         model->set_initializer(new ChessInitializer());
         model->linear(x_shape, 32, new Tanh());
         model->linear(32, new Tanh());
-        model->linear(32, new Tanh());
-        model->linear(y_shape, new Tanh());
-        model->set_loss(new MSE());
-
-        model->summarize();
-        model->validate_gradients(x, y, false);
-
-        delete model;
-    }
-}
-
-void grad_tests2()
-{
-    auto test_ds = get_dataset2("temp/test2.data", "temp/test2.lbl", 1);
-
-    auto x = test_ds[0].x;
-    auto y = test_ds[0].y;
-
-    Shape x_shape = x->shape();
-    Shape y_shape = y->shape();
-
-    {
-        auto model = new Model();
-        model->set_initializer(new ChessInitializer());
-        model->linear(x_shape, 16, new Tanh());
-        model->linear(8, new Tanh());
-        model->linear(y_shape, new Tanh());
-        model->set_loss(new MSE());
-
-        model->summarize();
-        model->validate_gradients(x, y, false);
-
-        delete model;
-    }
-
-    {
-        auto model = new Model();
-        model->set_initializer(new ChessInitializer());
-        model->hadamard_product(x_shape, 1, new Tanh());
         model->linear(32, new Tanh());
         model->linear(y_shape, new Tanh());
         model->set_loss(new MSE());
@@ -657,13 +673,29 @@ void compare_models(int epochs)
     }
 }
 
-void compare_models2(int epochs)
+void compare_models2(int epochs, int batch_size)
 {
-    auto train_ds = get_dataset2("temp/train2.data", "temp/train2.lbl", 128);
-    auto test_ds = get_dataset2("temp/test2.data", "temp/test2.lbl", 128);
+    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT * 2, CHESS_ROW_CNT, CHESS_COL_CNT);
+    Shape y_shape(batch_size, 1);
 
-    Shape x_shape = train_ds[0].x->shape();
-    Shape y_shape = train_ds[0].y->shape();
+    // {
+    //     auto model = new Model(new ChessInitializer());
+
+    //     model->hadamard_product(x_shape, 1, new Tanh());
+    //     model->linear(512, new Tanh());
+    //     model->linear(512, new Tanh());
+    //     model->linear(64, new Tanh());
+    //     model->linear(y_shape, new Tanh());
+
+    //     model->set_loss(new MSE());
+    //     model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
+
+    //     model->summarize();
+
+    //     train2(model, epochs, batch_size);
+
+    //     delete model;
+    // }
 
     {
         auto model = new Model(new ChessInitializer());
@@ -674,44 +706,13 @@ void compare_models2(int epochs)
         model->linear(y_shape, new Tanh());
 
         model->set_loss(new MSE());
-        model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
+        model->set_optimizer(new ChessOptimizer(model->parameters(), 0.001f, ZERO_NN_BETA_1));
 
         model->summarize();
 
-        train_n_test(model, epochs, &train_ds, &test_ds);
+        train2(model, epochs, batch_size);
 
         delete model;
-    }
-
-    {
-        auto model = new Model(new ChessInitializer());
-
-        model->hadamard_product(x_shape, 16, new Tanh());
-        model->linear(1024, new Tanh());
-        model->linear(512, new Tanh());
-        model->linear(64, new Tanh());
-        model->linear(y_shape, new Tanh());
-
-        model->set_loss(new MSE());
-        model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
-
-        model->summarize();
-
-        train_n_test(model, epochs, &train_ds, &test_ds);
-
-        delete model;
-    }
-
-    for (auto batch : train_ds)
-    {
-        delete batch.x;
-        delete batch.y;
-    }
-
-    for (auto batch : test_ds)
-    {
-        delete batch.x;
-        delete batch.y;
     }
 }
 
@@ -725,19 +726,9 @@ int main()
 
     // compare_models(5);
 
-    // export_pgn2("data/data.pgn");
+    export_pgn2("data/all.pgn");
 
-    // grad_tests2();
-
-    // compare_models2(10);
-
-    auto test_ds = get_dataset2("temp/test2.data", "temp/test2.lbl", 8);
-
-    auto x = test_ds[0].x;
-    auto y = test_ds[0].y;
-
-    x->print();
-    y->print();
+    // compare_models2(10, 128);
 
     return 0;
 }

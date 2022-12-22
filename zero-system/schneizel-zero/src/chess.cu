@@ -1773,11 +1773,53 @@ void Board::change(Move move)
         {
             this->data_[0] = MT;
             this->data_[3] = WR;
+
+            // Check new moves for moved rook.
+            {
+                auto moves = this->get_moves(3, false);
+                int opp_king_square = this->get_king_square(!white);
+                for (auto move : moves)
+                {
+                    if (move.dst_square == opp_king_square)
+                    {
+                        if (white)
+                        {
+                            this->check_state_.black_checked = true;
+                        }
+                        else
+                        {
+                            this->check_state_.white_checked = true;
+                        }
+                        break;
+                    }
+                }
+            }
         }
         else if (src_col - dst_col == -2)
         {
             this->data_[7] = MT;
             this->data_[5] = WR;
+
+            // Check new moves for moved rook.
+            {
+                auto moves = this->get_moves(5, false);
+                int opp_king_square = this->get_king_square(!white);
+                for (auto move : moves)
+                {
+                    if (move.dst_square == opp_king_square)
+                    {
+                        if (white)
+                        {
+                            this->check_state_.black_checked = true;
+                        }
+                        else
+                        {
+                            this->check_state_.white_checked = true;
+                        }
+                        break;
+                    }
+                }
+            }
         }
 
         this->castle_state_.white_king_moved = true;
@@ -1791,11 +1833,53 @@ void Board::change(Move move)
         {
             this->data_[56] = MT;
             this->data_[59] = BR;
+
+            // Check new moves for moved rook.
+            {
+                auto moves = this->get_moves(59, false);
+                int opp_king_square = this->get_king_square(!white);
+                for (auto move : moves)
+                {
+                    if (move.dst_square == opp_king_square)
+                    {
+                        if (white)
+                        {
+                            this->check_state_.black_checked = true;
+                        }
+                        else
+                        {
+                            this->check_state_.white_checked = true;
+                        }
+                        break;
+                    }
+                }
+            }
         }
         else if (src_col - dst_col == -2)
         {
             this->data_[63] = MT;
             this->data_[61] = BR;
+
+            // Check new moves for moved rook.
+            {
+                auto moves = this->get_moves(61, false);
+                int opp_king_square = this->get_king_square(!white);
+                for (auto move : moves)
+                {
+                    if (move.dst_square == opp_king_square)
+                    {
+                        if (white)
+                        {
+                            this->check_state_.black_checked = true;
+                        }
+                        else
+                        {
+                            this->check_state_.white_checked = true;
+                        }
+                        break;
+                    }
+                }
+            }
         }
 
         this->castle_state_.black_king_moved = true;
@@ -1938,7 +2022,9 @@ Move Board::change(std::string move_str, bool white)
                 dst_col = Board::get_col(mut_move_str[1]);
                 dst_square = Board::get_square(dst_row, dst_col);
 
-                bool found = false;
+                // It is possible that move will not be properly disambiguated. Using piece closest to destination may help.
+                int dist = INT_MAX;
+
                 for (int square = 0; square < CHESS_BOARD_LEN; square++)
                 {
                     if (this->get_piece(square) == piece)
@@ -1948,15 +2034,16 @@ Move Board::change(std::string move_str, bool white)
                         {
                             if (move.dst_square == dst_square)
                             {
-                                src_square = square;
-                                found = true;
-                                break;
-                            }
-                        }
+                                src_row = Board::get_row(square);
+                                src_col = Board::get_col(square);
 
-                        if (found)
-                        {
-                            break;
+                                int cur_dist = ((dst_row - src_row) * (dst_row - src_row)) + ((dst_col - src_col) * (dst_col - src_col));
+                                if (cur_dist < dist)
+                                {
+                                    dist = cur_dist;
+                                    src_square = square;
+                                }
+                            }
                         }
                     }
                 }
@@ -2737,197 +2824,6 @@ void Board::one_hot_encode_w_moves(float *out, bool white)
                         for (auto move : moves)
                         {
                             out[channel_offset + move.dst_square] = -1.0f;
-                        }
-                    }
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-    }
-}
-
-void Board::one_hot_encode_w_moves_flip(float *out, bool white)
-{
-    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * 2 * CHESS_BOARD_LEN);
-    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT * 2; c++)
-    {
-        for (int i = 0; i < CHESS_ROW_CNT; i++)
-        {
-            for (int j = 0; j < CHESS_COL_CNT; j++)
-            {
-                int channel_offset = (c * CHESS_BOARD_LEN);
-                int square = (i * CHESS_COL_CNT) + j;
-                int out_idx = channel_offset + square;
-
-                switch (c)
-                {
-                case 0:
-                    if (this->get_piece(square) == WP)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    else if (this->get_piece(square) == BP)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 1:
-                    if (this->get_piece(square) == WN)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    else if (this->get_piece(square) == BN)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 2:
-                    if (this->get_piece(square) == WB)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    else if (this->get_piece(square) == BB)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 3:
-                    if (this->get_piece(square) == WR)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    else if (this->get_piece(square) == BR)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 4:
-                    if (this->get_piece(square) == WQ)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    else if (this->get_piece(square) == BQ)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 5:
-                    if (this->get_piece(square) == WK)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    else if (this->get_piece(square) == BK)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 6:
-                    if (this->get_piece(square) == WP && white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
-                        {
-                            out[channel_offset + move.dst_square] = -1.0f;
-                        }
-                    }
-                    else if (this->get_piece(square) == BP && !white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
-                        {
-                            out[channel_offset + move.dst_square] = 1.0f;
-                        }
-                    }
-                    break;
-                case 7:
-                    if (this->get_piece(square) == WN && white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
-                        {
-                            out[channel_offset + move.dst_square] = -1.0f;
-                        }
-                    }
-                    else if (this->get_piece(square) == BN && !white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
-                        {
-                            out[channel_offset + move.dst_square] = 1.0f;
-                        }
-                    }
-                    break;
-                case 8:
-                    if (this->get_piece(square) == WB && white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
-                        {
-                            out[channel_offset + move.dst_square] = -1.0f;
-                        }
-                    }
-                    else if (this->get_piece(square) == BB && !white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
-                        {
-                            out[channel_offset + move.dst_square] = 1.0f;
-                        }
-                    }
-                    break;
-                case 9:
-                    if (this->get_piece(square) == WR && white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
-                        {
-                            out[channel_offset + move.dst_square] = -1.0f;
-                        }
-                    }
-                    else if (this->get_piece(square) == BR && !white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
-                        {
-                            out[channel_offset + move.dst_square] = 1.0f;
-                        }
-                    }
-                    break;
-                case 10:
-                    if (this->get_piece(square) == WQ && white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
-                        {
-                            out[channel_offset + move.dst_square] = -1.0f;
-                        }
-                    }
-                    else if (this->get_piece(square) == BQ && !white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
-                        {
-                            out[channel_offset + move.dst_square] = 1.0f;
-                        }
-                    }
-                    break;
-                case 11:
-                    if (this->get_piece(square) == WK && white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
-                        {
-                            out[channel_offset + move.dst_square] = -1.0f;
-                        }
-                    }
-                    else if (this->get_piece(square) == BK && !white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
-                        {
-                            out[channel_offset + move.dst_square] = 1.0f;
                         }
                     }
                     break;
