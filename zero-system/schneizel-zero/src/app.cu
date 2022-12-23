@@ -324,12 +324,6 @@ void export_pgn2(const char *path)
             auto move = board.change(move_str, white);
             white = !white;
 
-            if (g == 1509)
-            {
-                printf("%s\n", move_str.c_str());
-                board.print(move);
-            }
-
             if (game_move_cnt > 6)
             {
                 board.one_hot_encode_w_moves(data_buf, white);
@@ -341,8 +335,6 @@ void export_pgn2(const char *path)
 
             game_move_cnt++;
         }
-
-        printf("g: %d\n", g);
 
         g++;
 

@@ -307,6 +307,7 @@ void Board::reset()
 {
     memcpy(this->data_, BOARD_START_STATE, sizeof(char) * CHESS_BOARD_LEN);
 
+    memset(&this->castle_state_, 0, sizeof(this->castle_state_));
     memset(&this->check_state_, 0, sizeof(this->check_state_));
 }
 
@@ -1484,6 +1485,46 @@ std::vector<Move> Board::get_all_moves(bool white)
     return all_moves;
 }
 
+void Board::update_pins(bool white)
+{
+    if (white)
+    {
+        memset(this->check_state_.black_king_pins, 0, sizeof(this->check_state_.black_king_pins));
+
+        for (int i = 0; i < CHESS_BOARD_LEN; i++)
+        {
+            switch (this->get_piece(i))
+            {
+            case WB:
+            case WR:
+            case WQ:
+                this->get_moves(i, true);
+                break;
+            default:
+                break;
+            }
+        }
+    }
+    else
+    {
+        memset(this->check_state_.white_king_pins, 0, sizeof(this->check_state_.white_king_pins));
+
+        for (int i = 0; i < CHESS_BOARD_LEN; i++)
+        {
+            switch (this->get_piece(i))
+            {
+            case BB:
+            case BR:
+            case BQ:
+                this->get_moves(i, true);
+                break;
+            default:
+                break;
+            }
+        }
+    }
+}
+
 std::string Board::convert_move_to_move_str(Move move)
 {
     std::string move_str;
@@ -1933,8 +1974,7 @@ void Board::change(Move move)
 
 Move Board::change(std::string move_str, bool white)
 {
-    // Need to reset pins state.
-    this->get_all_moves(white);
+    this->update_pins(white);
 
     char piece;
     char promo_piece = MT;
@@ -2251,6 +2291,8 @@ Move Board::change(std::string move_str, bool white)
     }
 
     this->change(move);
+
+    this->update_pins(white);
 
     return move;
 }

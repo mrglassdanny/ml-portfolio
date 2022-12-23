@@ -130,6 +130,7 @@ namespace chess
 
         std::vector<Move> get_moves(int square, bool test_check);
         std::vector<Move> get_all_moves(bool white);
+        void update_pins(bool white);
 
         // NOTE: this will only work if invoked BEFORE move is made to board!
         std::string convert_move_to_move_str(Move move);
