@@ -1498,7 +1498,7 @@ void Board::update_pins(bool white)
             case WB:
             case WR:
             case WQ:
-                this->get_moves(i, true);
+                this->get_moves(i, false);
                 break;
             default:
                 break;
@@ -1516,7 +1516,7 @@ void Board::update_pins(bool white)
             case BB:
             case BR:
             case BQ:
-                this->get_moves(i, true);
+                this->get_moves(i, false);
                 break;
             default:
                 break;
@@ -1970,6 +1970,8 @@ void Board::change(Move move)
             this->check_state_.white_checked = true;
         }
     }
+
+    this->update_pins(white);
 }
 
 Move Board::change(std::string move_str, bool white)
@@ -2291,8 +2293,6 @@ Move Board::change(std::string move_str, bool white)
     }
 
     this->change(move);
-
-    this->update_pins(white);
 
     return move;
 }

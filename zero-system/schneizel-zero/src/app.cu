@@ -718,9 +718,11 @@ int main()
 
     // compare_models(5);
 
-    export_pgn2("data/all.pgn");
+    // export_pgn2("data/data.pgn");
 
     // compare_models2(10, 128);
+
+    self_play(3, 3, true);
 
     return 0;
 }
