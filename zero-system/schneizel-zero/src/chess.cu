@@ -1971,6 +1971,7 @@ void Board::change(Move move)
         }
     }
 
+    // New is pin possible as a result of moving piece.
     this->update_pins(white);
 }
 
