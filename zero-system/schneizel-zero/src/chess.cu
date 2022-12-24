@@ -1028,6 +1028,292 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
     return moves;
 }
 
+std::vector<Move> Board::get_diagonal_influence(int square, char piece, int row, int col)
+{
+    std::vector<Move> moves;
+
+    bool white = Piece::is_white(this->get_piece(square));
+
+    int cnt;
+    switch (piece)
+    {
+    case WB:
+    case BB:
+    case WQ:
+    case BQ:
+        cnt = 8;
+        break;
+    case WK:
+    case BK:
+        cnt = 2;
+        break;
+    default:
+        return moves;
+    }
+
+    int test_square;
+    int test_row;
+    int test_col;
+
+    bool ne = false;
+    bool sw = false;
+    bool se = false;
+    bool nw = false;
+
+    // Northeast.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row + i;
+        test_col = col + i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!ne)
+            {
+                if (test_piece == MT)
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+                else
+                {
+                    moves.push_back(Move{square, test_square});
+
+                    ne = true;
+                }
+            }
+        }
+    }
+
+    // Southwest.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row - i;
+        test_col = col - i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!sw)
+            {
+                if (test_piece == MT)
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+                else
+                {
+                    moves.push_back(Move{square, test_square});
+
+                    sw = true;
+                }
+            }
+        }
+    }
+
+    // Southeast.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row - i;
+        test_col = col + i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!se)
+            {
+                if (test_piece == MT)
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+                else
+                {
+                    moves.push_back(Move{square, test_square});
+
+                    se = true;
+                }
+            }
+        }
+    }
+
+    // Northwest.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row + i;
+        test_col = col - i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!nw)
+            {
+                if (test_piece == MT)
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+                else
+                {
+                    moves.push_back(Move{square, test_square});
+
+                    nw = true;
+                }
+            }
+        }
+    }
+
+    return moves;
+}
+
+std::vector<Move> Board::get_straight_influence(int square, char piece, int row, int col)
+{
+    std::vector<Move> moves;
+
+    bool white = Piece::is_white(this->get_piece(square));
+
+    int cnt;
+    switch (piece)
+    {
+    case WR:
+    case BR:
+    case WQ:
+    case BQ:
+        cnt = 8;
+        break;
+    case WK:
+    case BK:
+        cnt = 2;
+        break;
+    default:
+        return moves;
+    }
+
+    int test_square;
+    int test_row;
+    int test_col;
+
+    bool n = false;
+    bool s = false;
+    bool e = false;
+    bool w = false;
+
+    // North.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row + i;
+        test_col = col;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!n)
+            {
+                if (test_piece == MT)
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+                else
+                {
+                    moves.push_back(Move{square, test_square});
+
+                    n = true;
+                }
+            }
+        }
+    }
+
+    // South.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row - i;
+        test_col = col;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!s)
+            {
+                if (test_piece == MT)
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+                else
+                {
+                    moves.push_back(Move{square, test_square});
+
+                    s = true;
+                }
+            }
+        }
+    }
+
+    // East.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row;
+        test_col = col + i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!e)
+            {
+                if (test_piece == MT)
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+                else
+                {
+                    moves.push_back(Move{square, test_square});
+
+                    e = true;
+                }
+            }
+        }
+    }
+
+    // West.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row;
+        test_col = col - i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!w)
+            {
+                if (test_piece == MT)
+                {
+                    moves.push_back(Move{square, test_square});
+                }
+                else
+                {
+                    moves.push_back(Move{square, test_square});
+
+                    w = true;
+                }
+            }
+        }
+    }
+
+    return moves;
+}
+
 std::vector<Move> Board::get_moves(int square, bool test_check)
 {
     std::vector<Move> moves;
@@ -1288,11 +1574,13 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
     case WK:
     case BK:
     {
+        std::vector<Move> king_moves;
+
         auto diagonal_moves = this->get_diagonal_moves(square, piece, row, col);
-        moves.insert(moves.end(), diagonal_moves.begin(), diagonal_moves.end());
+        king_moves.insert(king_moves.end(), diagonal_moves.begin(), diagonal_moves.end());
 
         auto straight_moves = this->get_straight_moves(square, piece, row, col);
-        moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
+        king_moves.insert(king_moves.end(), straight_moves.begin(), straight_moves.end());
 
         if (test_check)
         {
@@ -1304,7 +1592,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                     {
                         if (!this->is_square_under_attack(2, false) && !this->is_square_under_attack(3, false))
                         {
-                            moves.push_back(Move{square, 2});
+                            king_moves.push_back(Move{square, 2});
                         }
                     }
                 }
@@ -1315,7 +1603,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                     {
                         if (!this->is_square_under_attack(5, false) && !this->is_square_under_attack(6, false))
                         {
-                            moves.push_back(Move{square, 6});
+                            king_moves.push_back(Move{square, 6});
                         }
                     }
                 }
@@ -1328,7 +1616,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                     {
                         if (!this->is_square_under_attack(58, true) && !this->is_square_under_attack(59, true))
                         {
-                            moves.push_back(Move{square, 58});
+                            king_moves.push_back(Move{square, 58});
                         }
                     }
                 }
@@ -1339,7 +1627,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                     {
                         if (!this->is_square_under_attack(61, true) && !this->is_square_under_attack(62, true))
                         {
-                            moves.push_back(Move{square, 62});
+                            king_moves.push_back(Move{square, 62});
                         }
                     }
                 }
@@ -1349,7 +1637,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
             {
                 std::vector<Move> tested_moves;
 
-                for (auto move : moves)
+                for (auto move : king_moves)
                 {
                     auto sim = this->simulate(move);
 
@@ -1359,9 +1647,11 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                     }
                 }
 
-                moves = tested_moves;
+                king_moves = tested_moves;
             }
         }
+
+        moves.insert(moves.end(), king_moves.begin(), king_moves.end());
     }
     break;
     default:
@@ -1445,6 +1735,230 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                     moves = tested_moves;
                 }
             }
+        }
+    }
+
+    return moves;
+}
+
+std::vector<Move> Board::get_influence(int square, bool test_check)
+{
+    std::vector<Move> moves;
+
+    char piece = this->get_piece(square);
+    bool white = Piece::is_white(piece);
+
+    if (piece == MT)
+    {
+        return moves;
+    }
+
+    int row = Board::get_row(square);
+    int col = Board::get_col(square);
+
+    int test_square;
+    int test_row;
+    int test_col;
+
+    switch (piece)
+    {
+    case WP:
+    {
+        test_row = row + 1;
+        test_col = col - 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row + 1;
+        test_col = col + 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+    }
+    break;
+    case BP:
+    {
+        test_row = row - 1;
+        test_col = col - 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row - 1;
+        test_col = col + 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+    }
+    break;
+    case WN:
+    case BN:
+    {
+        test_row = row + 2;
+        test_col = col + 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row - 2;
+        test_col = col + 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row + 2;
+        test_col = col - 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row - 2;
+        test_col = col - 1;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row + 1;
+        test_col = col + 2;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row - 1;
+        test_col = col + 2;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row + 1;
+        test_col = col - 2;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+
+        test_row = row - 1;
+        test_col = col - 2;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            moves.push_back(Move{square, test_square});
+        }
+    }
+    break;
+    case WB:
+    case BB:
+    {
+        auto diagonal_moves = this->get_diagonal_influence(square, piece, row, col);
+        moves.insert(moves.end(), diagonal_moves.begin(), diagonal_moves.end());
+    }
+    break;
+    case WR:
+    case BR:
+    {
+        auto straight_moves = this->get_straight_influence(square, piece, row, col);
+        moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
+    }
+    break;
+    case WQ:
+    case BQ:
+    {
+        auto diagonal_moves = this->get_diagonal_influence(square, piece, row, col);
+        moves.insert(moves.end(), diagonal_moves.begin(), diagonal_moves.end());
+
+        auto straight_moves = this->get_straight_influence(square, piece, row, col);
+        moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
+    }
+    break;
+    case WK:
+    case BK:
+    {
+        std::vector<Move> king_moves;
+
+        auto diagonal_moves = this->get_diagonal_moves(square, piece, row, col);
+        king_moves.insert(king_moves.end(), diagonal_moves.begin(), diagonal_moves.end());
+
+        auto straight_moves = this->get_straight_moves(square, piece, row, col);
+        king_moves.insert(king_moves.end(), straight_moves.begin(), straight_moves.end());
+
+        if (test_check)
+        {
+            // Make sure king is not moving into check.
+            {
+                std::vector<Move> tested_moves;
+
+                for (auto move : king_moves)
+                {
+                    auto sim = this->simulate(move);
+
+                    if (!sim.board.is_check(!white, true))
+                    {
+                        tested_moves.push_back(move);
+                    }
+                }
+
+                king_moves = tested_moves;
+            }
+        }
+
+        moves.insert(moves.end(), king_moves.begin(), king_moves.end());
+    }
+    break;
+    default:
+        break;
+    }
+
+    if (test_check)
+    {
+        if (this->is_piece_in_king_pin(square, white))
+        {
+            std::vector<Move> tested_moves;
+
+            for (auto move : moves)
+            {
+                auto sim = this->simulate(move);
+
+                if (!sim.board.is_check(!white, true))
+                {
+                    tested_moves.push_back(move);
+                }
+            }
+
+            moves = tested_moves;
         }
     }
 
@@ -1971,7 +2485,7 @@ void Board::change(Move move)
         }
     }
 
-    // New is pin possible as a result of moving piece.
+    // New pin is possible as a result of moving piece.
     this->update_pins(white);
 }
 
@@ -2597,17 +3111,11 @@ std::vector<Evaluation> Board::minimax_alphabeta_dyn(bool white, int depth)
     return best_moves;
 }
 
-void Board::material_encode(float *out)
+void Board::one_hot_encode(float *out, bool white)
 {
-    memset(out, 0, sizeof(float) * CHESS_BOARD_LEN);
-    for (int i = 0; i < CHESS_BOARD_LEN; i++)
-    {
-        out[i] = (float)Piece::get_value(this->get_piece(i));
-    }
-}
+    // Need to update pins for the sake of the opponents influence calculation.
+    this->update_pins(white);
 
-void Board::one_hot_encode(float *out)
-{
     memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
     for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
     {
@@ -2626,19 +3134,11 @@ void Board::one_hot_encode(float *out)
                     {
                         out[out_idx] = 1.0f;
                     }
-                    else if (this->get_piece(square) == BP)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
                     break;
                 case 1:
                     if (this->get_piece(square) == WN)
                     {
                         out[out_idx] = 1.0f;
-                    }
-                    else if (this->get_piece(square) == BN)
-                    {
-                        out[out_idx] = -1.0f;
                     }
                     break;
                 case 2:
@@ -2646,110 +3146,17 @@ void Board::one_hot_encode(float *out)
                     {
                         out[out_idx] = 1.0f;
                     }
-                    else if (this->get_piece(square) == BB)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
                     break;
                 case 3:
                     if (this->get_piece(square) == WR)
                     {
                         out[out_idx] = 1.0f;
                     }
-                    else if (this->get_piece(square) == BR)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
                     break;
                 case 4:
                     if (this->get_piece(square) == WQ)
                     {
                         out[out_idx] = 1.0f;
-                    }
-                    else if (this->get_piece(square) == BQ)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                default:
-                    if (this->get_piece(square) == WK)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    else if (this->get_piece(square) == BK)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                }
-            }
-        }
-    }
-}
-
-void Board::one_hot_encode_w_moves(float *out, bool white)
-{
-    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * 2 * CHESS_BOARD_LEN);
-    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT * 2; c++)
-    {
-        for (int i = 0; i < CHESS_ROW_CNT; i++)
-        {
-            for (int j = 0; j < CHESS_COL_CNT; j++)
-            {
-                int channel_offset = (c * CHESS_BOARD_LEN);
-                int square = (i * CHESS_COL_CNT) + j;
-                int out_idx = channel_offset + square;
-
-                switch (c)
-                {
-                case 0:
-                    if (this->get_piece(square) == WP)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    else if (this->get_piece(square) == BP)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 1:
-                    if (this->get_piece(square) == WN)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    else if (this->get_piece(square) == BN)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 2:
-                    if (this->get_piece(square) == WB)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    else if (this->get_piece(square) == BB)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 3:
-                    if (this->get_piece(square) == WR)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    else if (this->get_piece(square) == BR)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 4:
-                    if (this->get_piece(square) == WQ)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    else if (this->get_piece(square) == BQ)
-                    {
-                        out[out_idx] = -1.0f;
                     }
                     break;
                 case 5:
@@ -2757,116 +3164,292 @@ void Board::one_hot_encode_w_moves(float *out, bool white)
                     {
                         out[out_idx] = 1.0f;
                     }
-                    else if (this->get_piece(square) == BK)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
                     break;
                 case 6:
-                    if (this->get_piece(square) == WP && white)
+                    if (this->get_piece(square) == WP)
                     {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
+                        if (white)
                         {
-                            out[channel_offset + move.dst_square] = 1.0f;
+                            auto moves = this->get_moves(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += 1.0f;
+                            }
                         }
-                    }
-                    else if (this->get_piece(square) == BP && !white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
+                        else
                         {
-                            out[channel_offset + move.dst_square] = -1.0f;
+                            auto moves = this->get_influence(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += 1.0f;
+                            }
                         }
                     }
                     break;
                 case 7:
-                    if (this->get_piece(square) == WN && white)
+                    if (this->get_piece(square) == WN)
                     {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
+                        if (white)
                         {
-                            out[channel_offset + move.dst_square] = 1.0f;
+                            auto moves = this->get_moves(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += 1.0f;
+                            }
                         }
-                    }
-                    else if (this->get_piece(square) == BN && !white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
+                        else
                         {
-                            out[channel_offset + move.dst_square] = -1.0f;
+                            auto moves = this->get_influence(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += 1.0f;
+                            }
                         }
                     }
                     break;
                 case 8:
-                    if (this->get_piece(square) == WB && white)
+                    if (this->get_piece(square) == WB)
                     {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
+                        if (white)
                         {
-                            out[channel_offset + move.dst_square] = 1.0f;
+                            auto moves = this->get_moves(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += 1.0f;
+                            }
                         }
-                    }
-                    else if (this->get_piece(square) == BB && !white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
+                        else
                         {
-                            out[channel_offset + move.dst_square] = -1.0f;
+                            auto moves = this->get_influence(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += 1.0f;
+                            }
                         }
                     }
                     break;
                 case 9:
-                    if (this->get_piece(square) == WR && white)
+                    if (this->get_piece(square) == WR)
                     {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
+                        if (white)
                         {
-                            out[channel_offset + move.dst_square] = 1.0f;
+                            auto moves = this->get_moves(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += 1.0f;
+                            }
                         }
-                    }
-                    else if (this->get_piece(square) == BR && !white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
+                        else
                         {
-                            out[channel_offset + move.dst_square] = -1.0f;
+                            auto moves = this->get_influence(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += 1.0f;
+                            }
                         }
                     }
                     break;
                 case 10:
-                    if (this->get_piece(square) == WQ && white)
+                    if (this->get_piece(square) == WQ)
                     {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
+                        if (white)
                         {
-                            out[channel_offset + move.dst_square] = 1.0f;
+                            auto moves = this->get_moves(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += 1.0f;
+                            }
                         }
-                    }
-                    else if (this->get_piece(square) == BQ && !white)
-                    {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
+                        else
                         {
-                            out[channel_offset + move.dst_square] = -1.0f;
+                            auto moves = this->get_influence(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += 1.0f;
+                            }
                         }
                     }
                     break;
                 case 11:
-                    if (this->get_piece(square) == WK && white)
+                    if (this->get_piece(square) == WK)
                     {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
+                        if (white)
                         {
-                            out[channel_offset + move.dst_square] = 1.0f;
+                            auto moves = this->get_moves(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += 1.0f;
+                            }
+                        }
+                        else
+                        {
+                            auto moves = this->get_influence(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += 1.0f;
+                            }
                         }
                     }
-                    else if (this->get_piece(square) == BK && !white)
+                    break;
+                case 12:
+                    if (this->get_piece(square) == BP)
                     {
-                        auto moves = this->get_moves(square, true);
-                        for (auto move : moves)
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 13:
+                    if (this->get_piece(square) == BN)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 14:
+                    if (this->get_piece(square) == BB)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 15:
+                    if (this->get_piece(square) == BR)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 16:
+                    if (this->get_piece(square) == BQ)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 17:
+                    if (this->get_piece(square) == BK)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 18:
+                    if (this->get_piece(square) == BP)
+                    {
+                        if (!white)
                         {
-                            out[channel_offset + move.dst_square] = -1.0f;
+                            auto moves = this->get_moves(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += -1.0f;
+                            }
+                        }
+                        else
+                        {
+                            auto moves = this->get_influence(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += -1.0f;
+                            }
+                        }
+                    }
+                    break;
+                case 19:
+                    if (this->get_piece(square) == BN)
+                    {
+                        if (!white)
+                        {
+                            auto moves = this->get_moves(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += -1.0f;
+                            }
+                        }
+                        else
+                        {
+                            auto moves = this->get_influence(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += -1.0f;
+                            }
+                        }
+                    }
+                    break;
+                case 20:
+                    if (this->get_piece(square) == BB)
+                    {
+                        if (!white)
+                        {
+                            auto moves = this->get_moves(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += -1.0f;
+                            }
+                        }
+                        else
+                        {
+                            auto moves = this->get_influence(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += -1.0f;
+                            }
+                        }
+                    }
+                    break;
+                case 21:
+                    if (this->get_piece(square) == BR)
+                    {
+                        if (!white)
+                        {
+                            auto moves = this->get_moves(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += -1.0f;
+                            }
+                        }
+                        else
+                        {
+                            auto moves = this->get_influence(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += -1.0f;
+                            }
+                        }
+                    }
+                    break;
+                case 22:
+                    if (this->get_piece(square) == BQ)
+                    {
+                        if (!white)
+                        {
+                            auto moves = this->get_moves(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += -1.0f;
+                            }
+                        }
+                        else
+                        {
+                            auto moves = this->get_influence(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += -1.0f;
+                            }
+                        }
+                    }
+                    break;
+                case 23:
+                    if (this->get_piece(square) == BK)
+                    {
+                        if (!white)
+                        {
+                            auto moves = this->get_moves(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += -1.0f;
+                            }
+                        }
+                        else
+                        {
+                            auto moves = this->get_influence(square, true);
+                            for (auto move : moves)
+                            {
+                                out[channel_offset + move.dst_square] += -1.0f;
+                            }
                         }
                     }
                     break;

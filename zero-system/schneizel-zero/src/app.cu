@@ -251,11 +251,11 @@ void export_pgn(const char *path)
 
     FILE *train_data_file = fopen("temp/train.data", "wb");
     FILE *train_lbl_file = fopen("temp/train.lbl", "wb");
-    FILE *test_data_file = fopen("temp/test.data", "wb");
-    FILE *test_lbl_file = fopen("temp/test.lbl", "wb");
 
-    float data_buf[CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1];
+    float data_buf[CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT];
     float lbl_buf;
+
+    int game_cnt = 0;
 
     for (auto pgn_game : pgn_games)
     {
@@ -269,64 +269,9 @@ void export_pgn(const char *path)
             auto move = board.change(move_str, white);
             white = !white;
 
-            if (game_move_cnt > 6)
+            if (game_move_cnt > -1)
             {
-                board.one_hot_encode(data_buf);
-                data_buf[CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT] = white ? 1.0f : -1.0f;
-
-                lbl_buf = (float)pgn_game->lbl;
-
-                if (rand() % 20 == 0)
-                {
-                    fwrite(data_buf, sizeof(data_buf), 1, test_data_file);
-                    fwrite(&lbl_buf, sizeof(lbl_buf), 1, test_lbl_file);
-                }
-                else
-                {
-                    fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
-                    fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
-                }
-            }
-
-            game_move_cnt++;
-        }
-
-        delete pgn_game;
-    }
-
-    fclose(train_data_file);
-    fclose(train_lbl_file);
-    fclose(test_data_file);
-    fclose(test_lbl_file);
-}
-
-void export_pgn2(const char *path)
-{
-    auto pgn_games = PGN::import(path);
-
-    FILE *train_data_file = fopen("temp/train2.data", "wb");
-    FILE *train_lbl_file = fopen("temp/train2.lbl", "wb");
-
-    float data_buf[CHESS_BOARD_CHANNEL_CNT * 2 * CHESS_ROW_CNT * CHESS_COL_CNT];
-    float lbl_buf;
-
-    int g = 0;
-
-    for (auto pgn_game : pgn_games)
-    {
-        Board board;
-        bool white = true;
-
-        int game_move_cnt = 0;
-
-        for (auto move_str : pgn_game->move_strs)
-        {
-            auto move = board.change(move_str, white);
-            white = !white;
-
-            if (game_move_cnt > 6)
-            {
-                board.one_hot_encode_w_moves(data_buf, white);
+                board.one_hot_encode(data_buf, white);
                 lbl_buf = (float)pgn_game->lbl;
 
                 fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
@@ -336,7 +281,12 @@ void export_pgn2(const char *path)
             game_move_cnt++;
         }
 
-        g++;
+        game_cnt++;
+
+        if (game_cnt % 1000 == 0)
+        {
+            printf("Game: %d\n", game_cnt);
+        }
 
         delete pgn_game;
     }
@@ -350,78 +300,6 @@ struct Batch
     zero::core::Tensor *x;
     zero::core::Tensor *y;
 };
-
-std::vector<Batch> get_dataset(const char *data_path, const char *lbl_path, int batch_size)
-{
-    int oh_board_len = CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1;
-    int oh_board_size = oh_board_len * sizeof(float);
-
-    long long data_file_size = FileUtils::get_file_size(data_path);
-    size_t data_cnt = data_file_size / oh_board_size;
-
-    std::vector<Batch> batches;
-
-    FILE *data_file = fopen(data_path, "rb");
-    FILE *lbl_file = fopen(lbl_path, "rb");
-
-    float *data_buf = (float *)malloc(data_file_size);
-    fread(data_buf, 1, (data_file_size), data_file);
-
-    float *lbl_buf = (float *)malloc(sizeof(float) * data_cnt);
-    fread(lbl_buf, 1, (sizeof(float) * data_cnt), lbl_file);
-
-    fclose(data_file);
-    fclose(lbl_file);
-
-    for (int i = 0; i < data_cnt / batch_size; i++)
-    {
-        auto x = Tensor::from_data(Shape(batch_size, oh_board_len), &data_buf[i * batch_size * oh_board_len]);
-        auto y = Tensor::from_data(Shape(batch_size, 1), &lbl_buf[i * batch_size]);
-
-        batches.push_back({x, y});
-    }
-
-    free(data_buf);
-    free(lbl_buf);
-
-    return batches;
-}
-
-std::vector<Batch> get_dataset2(const char *data_path, const char *lbl_path, int batch_size)
-{
-    int oh_board_len = CHESS_BOARD_CHANNEL_CNT * 2 * CHESS_ROW_CNT * CHESS_COL_CNT;
-    int oh_board_size = oh_board_len * sizeof(float);
-
-    long long data_file_size = FileUtils::get_file_size(data_path);
-    size_t data_cnt = data_file_size / oh_board_size;
-
-    std::vector<Batch> batches;
-
-    FILE *data_file = fopen(data_path, "rb");
-    FILE *lbl_file = fopen(lbl_path, "rb");
-
-    float *data_buf = (float *)malloc(data_file_size);
-    fread(data_buf, 1, (data_file_size), data_file);
-
-    float *lbl_buf = (float *)malloc(sizeof(float) * data_cnt);
-    fread(lbl_buf, 1, (sizeof(float) * data_cnt), lbl_file);
-
-    fclose(data_file);
-    fclose(lbl_file);
-
-    for (int i = 0; i < data_cnt / batch_size; i++)
-    {
-        auto x = Tensor::from_data(Shape(batch_size, CHESS_BOARD_CHANNEL_CNT * 2, CHESS_ROW_CNT, CHESS_COL_CNT), &data_buf[i * batch_size * oh_board_len]);
-        auto y = Tensor::from_data(Shape(batch_size, 1), &lbl_buf[i * batch_size]);
-
-        batches.push_back({x, y});
-    }
-
-    free(data_buf);
-    free(lbl_buf);
-
-    return batches;
-}
 
 void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::vector<Batch> *test_ds)
 {
@@ -512,12 +390,12 @@ void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::v
     }
 }
 
-void train2(Model *model, int epochs, int batch_size)
+void train(Model *model, int epochs, int batch_size)
 {
-    const char *data_path = "temp/train2.data";
-    const char *lbl_path = "temp/train2.lbl";
+    const char *data_path = "temp/train.data";
+    const char *lbl_path = "temp/train.lbl";
 
-    int input_size = (CHESS_BOARD_CHANNEL_CNT * 2 * CHESS_ROW_CNT * CHESS_COL_CNT) * sizeof(float);
+    int input_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT) * sizeof(float);
 
     long long data_file_size = FileUtils::get_file_size(data_path);
     size_t data_cnt = data_file_size / input_size;
@@ -534,7 +412,7 @@ void train2(Model *model, int epochs, int batch_size)
 
         bool quit = false;
 
-        auto x = Tensor::zeros(false, Shape(batch_size, CHESS_BOARD_CHANNEL_CNT * 2, CHESS_ROW_CNT, CHESS_COL_CNT));
+        auto x = Tensor::zeros(false, Shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT));
         auto y = Tensor::zeros(false, Shape(batch_size, 1));
 
         for (int epoch = 0; epoch < epochs; epoch++)
@@ -546,6 +424,9 @@ void train2(Model *model, int epochs, int batch_size)
 
                 fread(x->data(), 1, (input_size * batch_size), data_file);
                 fread(y->data(), 1, (sizeof(float) * batch_size), lbl_file);
+
+                x->print();
+                y->print();
 
                 auto p = model->forward(x);
 
@@ -601,45 +482,18 @@ void train2(Model *model, int epochs, int batch_size)
     fclose(lbl_file);
 }
 
-void grad_tests()
+void compare_models(int epochs, int batch_size)
 {
-    auto test_ds = get_dataset("temp/test.data", "temp/test.lbl", 1);
-
-    auto x = test_ds[0].x;
-    auto y = test_ds[0].y;
-
-    Shape x_shape = x->shape();
-    Shape y_shape = y->shape();
-
-    {
-        auto model = new Model();
-        model->set_initializer(new ChessInitializer());
-        model->linear(x_shape, 32, new Tanh());
-        model->linear(32, new Tanh());
-        model->linear(32, new Tanh());
-        model->linear(y_shape, new Tanh());
-        model->set_loss(new MSE());
-
-        model->summarize();
-        model->validate_gradients(x, y, false);
-
-        delete model;
-    }
-}
-
-void compare_models(int epochs)
-{
-    auto train_ds = get_dataset("temp/train.data", "temp/train.lbl", 128);
-    auto test_ds = get_dataset("temp/test.data", "temp/test.lbl", 128);
-
-    Shape x_shape = train_ds[0].x->shape();
-    Shape y_shape = train_ds[0].y->shape();
+    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
+    Shape y_shape(batch_size, 1);
 
     {
         auto model = new Model(new ChessInitializer());
 
-        model->linear(x_shape, 2048, new Tanh());
-        model->linear(128, new Tanh());
+        model->hadamard_product(x_shape, 4, new Tanh());
+        model->linear(512, new Tanh());
+        model->linear(256, new Tanh());
+        model->linear(64, new Tanh());
         model->linear(y_shape, new Tanh());
 
         model->set_loss(new MSE());
@@ -647,62 +501,7 @@ void compare_models(int epochs)
 
         model->summarize();
 
-        train_n_test(model, epochs, &train_ds, &test_ds);
-
-        delete model;
-    }
-
-    for (auto batch : train_ds)
-    {
-        delete batch.x;
-        delete batch.y;
-    }
-
-    for (auto batch : test_ds)
-    {
-        delete batch.x;
-        delete batch.y;
-    }
-}
-
-void compare_models2(int epochs, int batch_size)
-{
-    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT * 2, CHESS_ROW_CNT, CHESS_COL_CNT);
-    Shape y_shape(batch_size, 1);
-
-    // {
-    //     auto model = new Model(new ChessInitializer());
-
-    //     model->hadamard_product(x_shape, 1, new Tanh());
-    //     model->linear(512, new Tanh());
-    //     model->linear(512, new Tanh());
-    //     model->linear(64, new Tanh());
-    //     model->linear(y_shape, new Tanh());
-
-    //     model->set_loss(new MSE());
-    //     model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
-
-    //     model->summarize();
-
-    //     train2(model, epochs, batch_size);
-
-    //     delete model;
-    // }
-
-    {
-        auto model = new Model(new ChessInitializer());
-
-        model->linear(x_shape, 1024, new Tanh());
-        model->linear(512, new Tanh());
-        model->linear(64, new Tanh());
-        model->linear(y_shape, new Tanh());
-
-        model->set_loss(new MSE());
-        model->set_optimizer(new ChessOptimizer(model->parameters(), 0.001f, ZERO_NN_BETA_1));
-
-        model->summarize();
-
-        train2(model, epochs, batch_size);
+        train(model, epochs, batch_size);
 
         delete model;
     }
@@ -712,17 +511,11 @@ int main()
 {
     srand(time(NULL));
 
-    // export_pgn("data/data.pgn");
+    export_pgn("data/test.pgn");
 
-    // grad_tests();
+    compare_models(10, 1);
 
-    // compare_models(5);
-
-    // export_pgn2("data/data.pgn");
-
-    // compare_models2(10, 128);
-
-    self_play(3, 3, true);
+    // self_play(3, 3, true);
 
     return 0;
 }

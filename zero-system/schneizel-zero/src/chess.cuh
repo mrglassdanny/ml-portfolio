@@ -35,7 +35,7 @@
 #define CHESS_EVAL_MIN_VAL -1000
 #define CHESS_EVAL_MAX_VAL 1000
 
-#define CHESS_BOARD_CHANNEL_CNT 6
+#define CHESS_BOARD_CHANNEL_CNT 24
 
 namespace chess
 {
@@ -105,6 +105,8 @@ namespace chess
 
         std::vector<Move> get_diagonal_moves(int square, char piece, int row, int col);
         std::vector<Move> get_straight_moves(int square, char piece, int row, int col);
+        std::vector<Move> get_diagonal_influence(int square, char piece, int row, int col);
+        std::vector<Move> get_straight_influence(int square, char piece, int row, int col);
 
         static int sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int alpha, int beta);
         static void sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals);
@@ -129,7 +131,9 @@ namespace chess
         bool is_piece_in_king_pin(int square, bool white_king_pin);
 
         std::vector<Move> get_moves(int square, bool test_check);
+        std::vector<Move> get_influence(int square, bool test_check);
         std::vector<Move> get_all_moves(bool white);
+
         void update_pins(bool white);
 
         // NOTE: this will only work if invoked BEFORE move is made to board!
@@ -151,9 +155,7 @@ namespace chess
         std::vector<Evaluation> minimax_alphabeta(bool white, int depth);
         std::vector<Evaluation> minimax_alphabeta_dyn(bool white, int depth);
 
-        void material_encode(float *out);
-        void one_hot_encode(float *out);
-        void one_hot_encode_w_moves(float *out, bool white);
+        void one_hot_encode(float *out, bool white);
     };
 
     struct Simulation
