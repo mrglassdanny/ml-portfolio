@@ -131,6 +131,7 @@ namespace chess
         bool is_piece_in_king_pin(int square, bool white_king_pin);
 
         std::vector<Move> get_moves(int square, bool test_check);
+        // NOTE: influence calculation does not require update pin info and does not contribute to pin info.
         std::vector<Move> get_influence(int square, bool test_check);
         std::vector<Move> get_all_moves(bool white);
 

@@ -269,7 +269,7 @@ void export_pgn(const char *path)
             auto move = board.change(move_str, white);
             white = !white;
 
-            if (game_move_cnt > -1)
+            if (game_move_cnt > 6)
             {
                 board.one_hot_encode(data_buf, white);
                 lbl_buf = (float)pgn_game->lbl;
@@ -508,9 +508,9 @@ int main()
 {
     srand(time(NULL));
 
-    export_pgn("data/test.pgn");
+    export_pgn("data/data.pgn");
 
-    compare_models(10, 1);
+    compare_models(10, 128);
 
     // self_play(3, 3, true);
 

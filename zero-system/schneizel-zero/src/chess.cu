@@ -1907,35 +1907,11 @@ std::vector<Move> Board::get_influence(int square, bool test_check)
     case WK:
     case BK:
     {
-        std::vector<Move> king_moves;
-
         auto diagonal_moves = this->get_diagonal_moves(square, piece, row, col);
-        king_moves.insert(king_moves.end(), diagonal_moves.begin(), diagonal_moves.end());
+        moves.insert(moves.end(), diagonal_moves.begin(), diagonal_moves.end());
 
         auto straight_moves = this->get_straight_moves(square, piece, row, col);
-        king_moves.insert(king_moves.end(), straight_moves.begin(), straight_moves.end());
-
-        if (test_check)
-        {
-            // Make sure king is not moving into check.
-            {
-                std::vector<Move> tested_moves;
-
-                for (auto move : king_moves)
-                {
-                    auto sim = this->simulate(move);
-
-                    if (!sim.board.is_check(!white, true))
-                    {
-                        tested_moves.push_back(move);
-                    }
-                }
-
-                king_moves = tested_moves;
-            }
-        }
-
-        moves.insert(moves.end(), king_moves.begin(), king_moves.end());
+        moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
     }
     break;
     default:
@@ -1944,22 +1920,19 @@ std::vector<Move> Board::get_influence(int square, bool test_check)
 
     if (test_check)
     {
-        if (this->is_piece_in_king_pin(square, white))
+        std::vector<Move> tested_moves;
+
+        for (auto move : moves)
         {
-            std::vector<Move> tested_moves;
+            auto sim = this->simulate(move);
 
-            for (auto move : moves)
+            if (!sim.board.is_check(!white, true))
             {
-                auto sim = this->simulate(move);
-
-                if (!sim.board.is_check(!white, true))
-                {
-                    tested_moves.push_back(move);
-                }
+                tested_moves.push_back(move);
             }
-
-            moves = tested_moves;
         }
+
+        moves = tested_moves;
     }
 
     return moves;
@@ -3113,9 +3086,6 @@ std::vector<Evaluation> Board::minimax_alphabeta_dyn(bool white, int depth)
 
 void Board::one_hot_encode(float *out, bool white)
 {
-    // Need to update pins for the sake of the opponents influence calculation.
-    this->update_pins(white);
-
     memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
     for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
     {
