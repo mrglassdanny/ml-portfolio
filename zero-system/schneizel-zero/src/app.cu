@@ -425,9 +425,6 @@ void train(Model *model, int epochs, int batch_size)
                 fread(x->data(), 1, (input_size * batch_size), data_file);
                 fread(y->data(), 1, (sizeof(float) * batch_size), lbl_file);
 
-                x->print();
-                y->print();
-
                 auto p = model->forward(x);
 
                 if (batch_idx % 100 == 0)
