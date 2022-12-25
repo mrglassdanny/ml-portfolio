@@ -574,9 +574,6 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
     bool se = false;
     bool nw = false;
 
-    int opp_king_square = this->get_king_square(!white);
-    bool opp_king_white = Piece::is_white(this->get_piece(opp_king_square));
-
     // Northeast.
     for (int i = 1; i < cnt; i++)
     {
