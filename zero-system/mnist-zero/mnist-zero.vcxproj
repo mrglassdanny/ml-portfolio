@@ -14,6 +14,9 @@
     <CudaCompile Include="src\main.cu" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\libzero\libzero.vcxproj">
+      <Project>{11c2cc46-0537-4e2b-8145-433c34dbc7ed}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\zero-system\zero-system.vcxproj">
       <Project>{11c2cc46-0537-4e2b-8145-433c34dbc7ed}</Project>
     </ProjectReference>
@@ -71,7 +74,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CompileOut>$(SolutionDir)$(ProjectName)\bin\$(Platform)-$(Configuration)\%(Filename)%(Extension).obj</CompileOut>
-      <Include>$(SolutionDir)zero-system\src\;%(Include)</Include>
+      <Include>$(SolutionDir)libzero\src\;%(Include)</Include>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -92,7 +95,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CompileOut>$(SolutionDir)$(ProjectName)\bin\$(Platform)-$(Configuration)\%(Filename)%(Extension).obj</CompileOut>
-      <Include>$(SolutionDir)zero-system\src\;%(Include)</Include>
+      <Include>$(SolutionDir)libzero\src\;%(Include)</Include>
     </CudaCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.2.32616.157
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "zero-system", "zero-system\zero-system.vcxproj", "{11C2CC46-0537-4E2B-8145-433C34DBC7ED}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libzero", "libzero\libzero.vcxproj", "{11C2CC46-0537-4E2B-8145-433C34DBC7ED}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mnist-zero", "mnist-zero\mnist-zero.vcxproj", "{9357AA95-1113-4CA7-8A1D-2FFA82DC4137}"
 EndProject
