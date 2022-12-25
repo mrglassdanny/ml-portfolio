@@ -568,7 +568,6 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
     int test_square;
     int test_row;
     int test_col;
-    int test_pin_square;
 
     bool ne = false;
     bool sw = false;
@@ -602,28 +601,7 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
                         moves.push_back(Move{square, test_square});
                     }
 
-                    test_pin_square = test_square;
-
                     ne = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
                 }
             }
         }
@@ -653,28 +631,7 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
                         moves.push_back(Move{square, test_square});
                     }
 
-                    test_pin_square = test_square;
-
                     sw = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
                 }
             }
         }
@@ -704,28 +661,7 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
                         moves.push_back(Move{square, test_square});
                     }
 
-                    test_pin_square = test_square;
-
                     se = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
                 }
             }
         }
@@ -755,28 +691,7 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
                         moves.push_back(Move{square, test_square});
                     }
 
-                    test_pin_square = test_square;
-
                     nw = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
                 }
             }
         }
@@ -811,392 +726,6 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
     int test_square;
     int test_row;
     int test_col;
-    int test_pin_square;
-
-    bool n = false;
-    bool s = false;
-    bool e = false;
-    bool w = false;
-
-    int opp_king_square = this->get_king_square(!white);
-    bool opp_king_white = Piece::is_white(this->get_piece(opp_king_square));
-
-    // North.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row + i;
-        test_col = col;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!n)
-            {
-                if (test_piece == MT)
-                {
-                    moves.push_back(Move{square, test_square});
-                }
-                else
-                {
-                    if (!Piece::is_same_color(piece, test_piece))
-                    {
-                        moves.push_back(Move{square, test_square});
-                    }
-
-                    test_pin_square = test_square;
-
-                    n = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
-                }
-            }
-        }
-    }
-
-    // South.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row - i;
-        test_col = col;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!s)
-            {
-                if (test_piece == MT)
-                {
-                    moves.push_back(Move{square, test_square});
-                }
-                else
-                {
-                    if (!Piece::is_same_color(piece, test_piece))
-                    {
-                        moves.push_back(Move{square, test_square});
-                    }
-
-                    test_pin_square = test_square;
-
-                    s = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
-                }
-            }
-        }
-    }
-
-    // East.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row;
-        test_col = col + i;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!e)
-            {
-                if (test_piece == MT)
-                {
-                    moves.push_back(Move{square, test_square});
-                }
-                else
-                {
-                    if (!Piece::is_same_color(piece, test_piece))
-                    {
-                        moves.push_back(Move{square, test_square});
-                    }
-
-                    test_pin_square = test_square;
-
-                    e = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
-                }
-            }
-        }
-    }
-
-    // West.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row;
-        test_col = col - i;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!w)
-            {
-                if (test_piece == MT)
-                {
-                    moves.push_back(Move{square, test_square});
-                }
-                else
-                {
-                    if (!Piece::is_same_color(piece, test_piece))
-                    {
-                        moves.push_back(Move{square, test_square});
-                    }
-
-                    test_pin_square = test_square;
-
-                    w = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
-                }
-            }
-        }
-    }
-
-    return moves;
-}
-
-std::vector<Move> Board::get_diagonal_influence(int square, char piece, int row, int col)
-{
-    std::vector<Move> moves;
-
-    bool white = Piece::is_white(this->get_piece(square));
-
-    int cnt;
-    switch (piece)
-    {
-    case WB:
-    case BB:
-    case WQ:
-    case BQ:
-        cnt = 8;
-        break;
-    case WK:
-    case BK:
-        cnt = 2;
-        break;
-    default:
-        return moves;
-    }
-
-    int test_square;
-    int test_row;
-    int test_col;
-
-    bool ne = false;
-    bool sw = false;
-    bool se = false;
-    bool nw = false;
-
-    // Northeast.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row + i;
-        test_col = col + i;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!ne)
-            {
-                if (test_piece == MT)
-                {
-                    moves.push_back(Move{square, test_square});
-                }
-                else
-                {
-                    moves.push_back(Move{square, test_square});
-
-                    ne = true;
-                }
-            }
-        }
-    }
-
-    // Southwest.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row - i;
-        test_col = col - i;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!sw)
-            {
-                if (test_piece == MT)
-                {
-                    moves.push_back(Move{square, test_square});
-                }
-                else
-                {
-                    moves.push_back(Move{square, test_square});
-
-                    sw = true;
-                }
-            }
-        }
-    }
-
-    // Southeast.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row - i;
-        test_col = col + i;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!se)
-            {
-                if (test_piece == MT)
-                {
-                    moves.push_back(Move{square, test_square});
-                }
-                else
-                {
-                    moves.push_back(Move{square, test_square});
-
-                    se = true;
-                }
-            }
-        }
-    }
-
-    // Northwest.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row + i;
-        test_col = col - i;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!nw)
-            {
-                if (test_piece == MT)
-                {
-                    moves.push_back(Move{square, test_square});
-                }
-                else
-                {
-                    moves.push_back(Move{square, test_square});
-
-                    nw = true;
-                }
-            }
-        }
-    }
-
-    return moves;
-}
-
-std::vector<Move> Board::get_straight_influence(int square, char piece, int row, int col)
-{
-    std::vector<Move> moves;
-
-    bool white = Piece::is_white(this->get_piece(square));
-
-    int cnt;
-    switch (piece)
-    {
-    case WR:
-    case BR:
-    case WQ:
-    case BQ:
-        cnt = 8;
-        break;
-    case WK:
-    case BK:
-        cnt = 2;
-        break;
-    default:
-        return moves;
-    }
-
-    int test_square;
-    int test_row;
-    int test_col;
 
     bool n = false;
     bool s = false;
@@ -1222,7 +751,10 @@ std::vector<Move> Board::get_straight_influence(int square, char piece, int row,
                 }
                 else
                 {
-                    moves.push_back(Move{square, test_square});
+                    if (!Piece::is_same_color(piece, test_piece))
+                    {
+                        moves.push_back(Move{square, test_square});
+                    }
 
                     n = true;
                 }
@@ -1249,7 +781,10 @@ std::vector<Move> Board::get_straight_influence(int square, char piece, int row,
                 }
                 else
                 {
-                    moves.push_back(Move{square, test_square});
+                    if (!Piece::is_same_color(piece, test_piece))
+                    {
+                        moves.push_back(Move{square, test_square});
+                    }
 
                     s = true;
                 }
@@ -1276,7 +811,10 @@ std::vector<Move> Board::get_straight_influence(int square, char piece, int row,
                 }
                 else
                 {
-                    moves.push_back(Move{square, test_square});
+                    if (!Piece::is_same_color(piece, test_piece))
+                    {
+                        moves.push_back(Move{square, test_square});
+                    }
 
                     e = true;
                 }
@@ -1303,7 +841,10 @@ std::vector<Move> Board::get_straight_influence(int square, char piece, int row,
                 }
                 else
                 {
-                    moves.push_back(Move{square, test_square});
+                    if (!Piece::is_same_color(piece, test_piece))
+                    {
+                        moves.push_back(Move{square, test_square});
+                    }
 
                     w = true;
                 }
@@ -1741,211 +1282,12 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
     return moves;
 }
 
-std::vector<Move> Board::get_influence(int square, bool test_check)
-{
-    std::vector<Move> moves;
-
-    char piece = this->get_piece(square);
-    bool white = Piece::is_white(piece);
-
-    if (piece == MT)
-    {
-        return moves;
-    }
-
-    int row = Board::get_row(square);
-    int col = Board::get_col(square);
-
-    int test_square;
-    int test_row;
-    int test_col;
-
-    switch (piece)
-    {
-    case WP:
-    {
-        test_row = row + 1;
-        test_col = col - 1;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            moves.push_back(Move{square, test_square});
-        }
-
-        test_row = row + 1;
-        test_col = col + 1;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            moves.push_back(Move{square, test_square});
-        }
-    }
-    break;
-    case BP:
-    {
-        test_row = row - 1;
-        test_col = col - 1;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            moves.push_back(Move{square, test_square});
-        }
-
-        test_row = row - 1;
-        test_col = col + 1;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            moves.push_back(Move{square, test_square});
-        }
-    }
-    break;
-    case WN:
-    case BN:
-    {
-        test_row = row + 2;
-        test_col = col + 1;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            moves.push_back(Move{square, test_square});
-        }
-
-        test_row = row - 2;
-        test_col = col + 1;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            moves.push_back(Move{square, test_square});
-        }
-
-        test_row = row + 2;
-        test_col = col - 1;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            moves.push_back(Move{square, test_square});
-        }
-
-        test_row = row - 2;
-        test_col = col - 1;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            moves.push_back(Move{square, test_square});
-        }
-
-        test_row = row + 1;
-        test_col = col + 2;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            moves.push_back(Move{square, test_square});
-        }
-
-        test_row = row - 1;
-        test_col = col + 2;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            moves.push_back(Move{square, test_square});
-        }
-
-        test_row = row + 1;
-        test_col = col - 2;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            moves.push_back(Move{square, test_square});
-        }
-
-        test_row = row - 1;
-        test_col = col - 2;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            moves.push_back(Move{square, test_square});
-        }
-    }
-    break;
-    case WB:
-    case BB:
-    {
-        auto diagonal_moves = this->get_diagonal_influence(square, piece, row, col);
-        moves.insert(moves.end(), diagonal_moves.begin(), diagonal_moves.end());
-    }
-    break;
-    case WR:
-    case BR:
-    {
-        auto straight_moves = this->get_straight_influence(square, piece, row, col);
-        moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
-    }
-    break;
-    case WQ:
-    case BQ:
-    {
-        auto diagonal_moves = this->get_diagonal_influence(square, piece, row, col);
-        moves.insert(moves.end(), diagonal_moves.begin(), diagonal_moves.end());
-
-        auto straight_moves = this->get_straight_influence(square, piece, row, col);
-        moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
-    }
-    break;
-    case WK:
-    case BK:
-    {
-        auto diagonal_moves = this->get_diagonal_moves(square, piece, row, col);
-        moves.insert(moves.end(), diagonal_moves.begin(), diagonal_moves.end());
-
-        auto straight_moves = this->get_straight_moves(square, piece, row, col);
-        moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
-    }
-    break;
-    default:
-        break;
-    }
-
-    if (test_check)
-    {
-        std::vector<Move> tested_moves;
-
-        for (auto move : moves)
-        {
-            auto sim = this->simulate(move);
-
-            if (!sim.board.is_check(!white, true))
-            {
-                tested_moves.push_back(move);
-            }
-        }
-
-        moves = tested_moves;
-    }
-
-    return moves;
-}
-
 std::vector<Move> Board::get_all_moves(bool white)
 {
     std::vector<Move> all_moves;
 
     if (white)
     {
-        memset(this->check_state_.black_king_pins, 0, sizeof(this->check_state_.black_king_pins));
-
         for (int i = 0; i < CHESS_BOARD_LEN; i++)
         {
             if (Piece::is_white(this->get_piece(i)))
@@ -1957,8 +1299,6 @@ std::vector<Move> Board::get_all_moves(bool white)
     }
     else
     {
-        memset(this->check_state_.white_king_pins, 0, sizeof(this->check_state_.white_king_pins));
-
         for (int i = 0; i < CHESS_BOARD_LEN; i++)
         {
             if (Piece::is_black(this->get_piece(i)))
@@ -1972,6 +1312,410 @@ std::vector<Move> Board::get_all_moves(bool white)
     return all_moves;
 }
 
+void Board::update_diagonal_pins(int square)
+{
+    int row = Board::get_row(square);
+    int col = Board::get_col(square);
+    char piece = this->get_piece(square);
+    bool white = Piece::is_white(piece);
+
+    int cnt;
+    switch (piece)
+    {
+    case WB:
+    case BB:
+    case WQ:
+    case BQ:
+        cnt = 8;
+        break;
+    case WK:
+    case BK:
+        cnt = 2;
+        break;
+    default:
+        break;
+    }
+
+    int test_square;
+    int test_row;
+    int test_col;
+    int test_pin_square;
+
+    bool ne = false;
+    bool sw = false;
+    bool se = false;
+    bool nw = false;
+
+    int opp_king_square = this->get_king_square(!white);
+    bool opp_king_white = Piece::is_white(this->get_piece(opp_king_square));
+
+    // Northeast.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row + i;
+        test_col = col + i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!ne)
+            {
+                if (test_piece != MT)
+                {
+                    test_pin_square = test_square;
+                    ne = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    // Southwest.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row - i;
+        test_col = col - i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!sw)
+            {
+                if (test_piece != MT)
+                {
+                    test_pin_square = test_square;
+                    sw = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    // Southeast.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row - i;
+        test_col = col + i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!se)
+            {
+                if (test_piece != MT)
+                {
+                    test_pin_square = test_square;
+                    se = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    // Northwest.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row + i;
+        test_col = col - i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!nw)
+            {
+                if (test_piece != MT)
+                {
+                    test_pin_square = test_square;
+                    nw = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void Board::update_straight_pins(int square)
+{
+    int row = Board::get_row(square);
+    int col = Board::get_col(square);
+    char piece = this->get_piece(square);
+    bool white = Piece::is_white(piece);
+
+    int cnt;
+    switch (piece)
+    {
+    case WR:
+    case BR:
+    case WQ:
+    case BQ:
+        cnt = 8;
+        break;
+    case WK:
+    case BK:
+        cnt = 2;
+        break;
+    default:
+        break;
+    }
+
+    int test_square;
+    int test_row;
+    int test_col;
+    int test_pin_square;
+
+    bool n = false;
+    bool s = false;
+    bool e = false;
+    bool w = false;
+
+    int opp_king_square = this->get_king_square(!white);
+    bool opp_king_white = Piece::is_white(this->get_piece(opp_king_square));
+
+    // North.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row + i;
+        test_col = col;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!n)
+            {
+                if (test_piece != MT)
+                {
+                    test_pin_square = test_square;
+                    n = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    // South.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row - i;
+        test_col = col;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!s)
+            {
+                if (test_piece != MT)
+                {
+                    test_pin_square = test_square;
+                    s = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    // East.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row;
+        test_col = col + i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!e)
+            {
+                if (test_piece != MT)
+                {
+                    test_pin_square = test_square;
+                    e = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    // West.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row;
+        test_col = col - i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!w)
+            {
+                if (test_piece != MT)
+                {
+                    test_pin_square = test_square;
+                    w = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+}
+
 void Board::update_pins(bool white)
 {
     if (white)
@@ -1983,9 +1727,14 @@ void Board::update_pins(bool white)
             switch (this->get_piece(i))
             {
             case WB:
+                this->update_diagonal_pins(i);
+                break;
             case WR:
+                this->update_straight_pins(i);
+                break;
             case WQ:
-                this->get_moves(i, false);
+                this->update_diagonal_pins(i);
+                this->update_straight_pins(i);
                 break;
             default:
                 break;
@@ -2001,9 +1750,14 @@ void Board::update_pins(bool white)
             switch (this->get_piece(i))
             {
             case BB:
+                this->update_diagonal_pins(i);
+                break;
             case BR:
+                this->update_straight_pins(i);
+                break;
             case BQ:
-                this->get_moves(i, false);
+                this->update_diagonal_pins(i);
+                this->update_straight_pins(i);
                 break;
             default:
                 break;
@@ -2445,14 +2199,14 @@ void Board::change(Move move)
     // Check if piece was pinned to opponent king.
     if (white)
     {
-        if (this->check_state_.black_king_pins[move.src_square])
+        if (this->is_piece_in_king_pin(move.src_square, false))
         {
             this->check_state_.black_checked = true;
         }
     }
     else
     {
-        if (this->check_state_.white_king_pins[move.src_square])
+        if (this->is_piece_in_king_pin(move.src_square, true))
         {
             this->check_state_.white_checked = true;
         }
@@ -2942,7 +2696,6 @@ std::vector<Evaluation> Board::minimax_alphabeta(bool white, int depth)
     }
 
     sw->stop();
-    printf("ab\t");
     sw->print_elapsed_seconds();
     delete sw;
 
@@ -3077,7 +2830,6 @@ std::vector<Evaluation> Board::minimax_alphabeta_dyn(bool white, int depth)
     }
 
     sw->stop();
-    printf("ab\t");
     sw->print_elapsed_seconds();
     delete sw;
 
@@ -3136,291 +2888,39 @@ void Board::one_hot_encode(float *out, bool white)
                     }
                     break;
                 case 6:
-                    if (this->get_piece(square) == WP)
+                    if (this->get_piece(square) == BP)
                     {
-                        if (white)
-                        {
-                            auto moves = this->get_moves(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += 1.0f;
-                            }
-                        }
-                        else
-                        {
-                            auto moves = this->get_influence(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += 1.0f;
-                            }
-                        }
+                        out[out_idx] = -1.0f;
                     }
                     break;
                 case 7:
-                    if (this->get_piece(square) == WN)
+                    if (this->get_piece(square) == BN)
                     {
-                        if (white)
-                        {
-                            auto moves = this->get_moves(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += 1.0f;
-                            }
-                        }
-                        else
-                        {
-                            auto moves = this->get_influence(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += 1.0f;
-                            }
-                        }
+                        out[out_idx] = -1.0f;
                     }
                     break;
                 case 8:
-                    if (this->get_piece(square) == WB)
+                    if (this->get_piece(square) == BB)
                     {
-                        if (white)
-                        {
-                            auto moves = this->get_moves(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += 1.0f;
-                            }
-                        }
-                        else
-                        {
-                            auto moves = this->get_influence(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += 1.0f;
-                            }
-                        }
+                        out[out_idx] = -1.0f;
                     }
                     break;
                 case 9:
-                    if (this->get_piece(square) == WR)
+                    if (this->get_piece(square) == BR)
                     {
-                        if (white)
-                        {
-                            auto moves = this->get_moves(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += 1.0f;
-                            }
-                        }
-                        else
-                        {
-                            auto moves = this->get_influence(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += 1.0f;
-                            }
-                        }
+                        out[out_idx] = -1.0f;
                     }
                     break;
                 case 10:
-                    if (this->get_piece(square) == WQ)
+                    if (this->get_piece(square) == BQ)
                     {
-                        if (white)
-                        {
-                            auto moves = this->get_moves(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += 1.0f;
-                            }
-                        }
-                        else
-                        {
-                            auto moves = this->get_influence(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += 1.0f;
-                            }
-                        }
+                        out[out_idx] = -1.0f;
                     }
                     break;
                 case 11:
-                    if (this->get_piece(square) == WK)
-                    {
-                        if (white)
-                        {
-                            auto moves = this->get_moves(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += 1.0f;
-                            }
-                        }
-                        else
-                        {
-                            auto moves = this->get_influence(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += 1.0f;
-                            }
-                        }
-                    }
-                    break;
-                case 12:
-                    if (this->get_piece(square) == BP)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 13:
-                    if (this->get_piece(square) == BN)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 14:
-                    if (this->get_piece(square) == BB)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 15:
-                    if (this->get_piece(square) == BR)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 16:
-                    if (this->get_piece(square) == BQ)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 17:
                     if (this->get_piece(square) == BK)
                     {
                         out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 18:
-                    if (this->get_piece(square) == BP)
-                    {
-                        if (!white)
-                        {
-                            auto moves = this->get_moves(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += -1.0f;
-                            }
-                        }
-                        else
-                        {
-                            auto moves = this->get_influence(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += -1.0f;
-                            }
-                        }
-                    }
-                    break;
-                case 19:
-                    if (this->get_piece(square) == BN)
-                    {
-                        if (!white)
-                        {
-                            auto moves = this->get_moves(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += -1.0f;
-                            }
-                        }
-                        else
-                        {
-                            auto moves = this->get_influence(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += -1.0f;
-                            }
-                        }
-                    }
-                    break;
-                case 20:
-                    if (this->get_piece(square) == BB)
-                    {
-                        if (!white)
-                        {
-                            auto moves = this->get_moves(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += -1.0f;
-                            }
-                        }
-                        else
-                        {
-                            auto moves = this->get_influence(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += -1.0f;
-                            }
-                        }
-                    }
-                    break;
-                case 21:
-                    if (this->get_piece(square) == BR)
-                    {
-                        if (!white)
-                        {
-                            auto moves = this->get_moves(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += -1.0f;
-                            }
-                        }
-                        else
-                        {
-                            auto moves = this->get_influence(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += -1.0f;
-                            }
-                        }
-                    }
-                    break;
-                case 22:
-                    if (this->get_piece(square) == BQ)
-                    {
-                        if (!white)
-                        {
-                            auto moves = this->get_moves(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += -1.0f;
-                            }
-                        }
-                        else
-                        {
-                            auto moves = this->get_influence(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += -1.0f;
-                            }
-                        }
-                    }
-                    break;
-                case 23:
-                    if (this->get_piece(square) == BK)
-                    {
-                        if (!white)
-                        {
-                            auto moves = this->get_moves(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += -1.0f;
-                            }
-                        }
-                        else
-                        {
-                            auto moves = this->get_influence(square, true);
-                            for (auto move : moves)
-                            {
-                                out[channel_offset + move.dst_square] += -1.0f;
-                            }
-                        }
                     }
                     break;
                 default:

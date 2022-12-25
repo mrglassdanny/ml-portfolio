@@ -269,6 +269,7 @@ void export_pgn(const char *path)
             auto move = board.change(move_str, white);
             white = !white;
 
+            // Skip openings.
             if (game_move_cnt > 6)
             {
                 board.one_hot_encode(data_buf, white);
@@ -293,101 +294,6 @@ void export_pgn(const char *path)
 
     fclose(train_data_file);
     fclose(train_lbl_file);
-}
-
-struct Batch
-{
-    zero::core::Tensor *x;
-    zero::core::Tensor *y;
-};
-
-void train_n_test(Model *model, int epochs, std::vector<Batch> *train_ds, std::vector<Batch> *test_ds)
-{
-    int train_batch_cnt = train_ds->size();
-    int test_batch_cnt = test_ds->size();
-
-    // Train:
-    {
-        FILE *train_csv = fopen("temp/train.csv", "w");
-        fprintf(train_csv, "epoch,batch,loss,accuracy\n");
-
-        bool quit = false;
-
-        for (int epoch = 0; epoch < epochs; epoch++)
-        {
-            for (int batch_idx = 0; batch_idx < train_batch_cnt; batch_idx++)
-            {
-                auto batch = &train_ds->at(batch_idx);
-                auto x = batch->x;
-                auto y = batch->y;
-
-                auto p = model->forward(x);
-
-                float loss = model->loss(p, y);
-                float acc = model->accuracy(p, y, chess_tanh_accuracy_fn);
-                fprintf(train_csv, "%d,%d,%f,%f\n", epoch, batch_idx, loss, acc);
-
-                model->backward(p, y);
-                model->step();
-
-                delete p;
-
-                x->to_cpu();
-                y->to_cpu();
-
-                if (_kbhit())
-                {
-                    if (_getch() == 'q')
-                    {
-                        quit = true;
-                        break;
-                    }
-                }
-            }
-
-            if (quit)
-            {
-                break;
-            }
-        }
-
-        fclose(train_csv);
-    }
-
-    // Test:
-    {
-        float loss = 0.0f;
-        float acc = 0.0f;
-
-        for (int batch_idx = 0; batch_idx < test_batch_cnt; batch_idx++)
-        {
-            auto batch = &test_ds->at(batch_idx);
-            auto x = batch->x;
-            auto y = batch->y;
-
-            auto p = model->forward(x);
-
-            loss += model->loss(p, y);
-            acc += model->accuracy(p, y, chess_tanh_accuracy_fn);
-
-            if (batch_idx < 3)
-            {
-                p->print();
-                y->print();
-            }
-
-            delete p;
-
-            x->to_cpu();
-            y->to_cpu();
-        }
-
-        float test_acc_pct = (acc / (float)test_batch_cnt) * 100.0f;
-
-        printf("TEST LOSS: %f\tTEST ACCURACY: %f%%\n",
-               (loss / (float)test_batch_cnt),
-               test_acc_pct);
-    }
 }
 
 void train(Model *model, int epochs, int batch_size)
@@ -487,7 +393,7 @@ void compare_models(int epochs, int batch_size)
     {
         auto model = new Model(new ChessInitializer());
 
-        model->hadamard_product(x_shape, 4, new Tanh());
+        model->linear(x_shape, 1024, new Tanh());
         model->linear(512, new Tanh());
         model->linear(256, new Tanh());
         model->linear(64, new Tanh());
@@ -508,9 +414,9 @@ int main()
 {
     srand(time(NULL));
 
-    export_pgn("data/data.pgn");
+    // export_pgn("data/data.pgn");
 
-    compare_models(10, 128);
+    // compare_models(10, 128);
 
     // self_play(3, 3, true);
 
