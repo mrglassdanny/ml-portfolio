@@ -306,6 +306,93 @@ void play(bool white, int depth)
     }
 }
 
+void play_no_opening_engine(bool white, int depth)
+{
+    Board board;
+    Move prev_move;
+
+    int move_cnt = 0;
+
+    while (true)
+    {
+        printf("\nWHITE TURN\n");
+        if (move_cnt == 0)
+        {
+            board.print();
+        }
+        else
+        {
+            board.print(prev_move);
+        }
+
+        if (board.is_checkmate(false))
+        {
+            printf("WHITE CHECKMATED!\n");
+            break;
+        }
+        else if (!board.has_moves(true))
+        {
+            printf("WHITE STALEMATED!\n");
+            break;
+        }
+
+        if (white)
+        {
+            std::string move_str;
+            printf("Enter Move: ");
+            std::cin >> move_str;
+            prev_move = board.change(move_str, true);
+        }
+        else
+        {
+            if (move_cnt == 0)
+            {
+                prev_move = board.change("e4", true);
+            }
+            else
+            {
+                auto evals = board.minimax_alphabeta_dyn(true, depth);
+                int r = rand() % evals.size();
+                board.change(evals[r].move);
+                prev_move = evals[r].move;
+            }
+        }
+
+        move_cnt++;
+
+        printf("\nBLACK TURN\n");
+        board.print(prev_move);
+
+        if (board.is_checkmate(true))
+        {
+            printf("BLACK CHECKMATED!\n");
+            break;
+        }
+        else if (!board.has_moves(false))
+        {
+            printf("BLACK STALEMATED!\n");
+            break;
+        }
+
+        if (!white)
+        {
+            std::string move_str;
+            printf("Enter Move: ");
+            std::cin >> move_str;
+            prev_move = board.change(move_str, false);
+        }
+        else
+        {
+            auto evals = board.minimax_alphabeta_dyn(false, depth);
+            int r = rand() % evals.size();
+            board.change(evals[r].move);
+            prev_move = evals[r].move;
+        }
+
+        move_cnt++;
+    }
+}
+
 void export_pgn(const char *path)
 {
     auto pgn_games = PGN::import(path, FileUtils::get_file_size(path));
@@ -483,7 +570,9 @@ int main()
 
     // self_play(3, 3, true);
 
-    play(true, 3);
+    // play_no_opening_engine(true, 3);
+
+    play(false, 5);
 
     return 0;
 }
