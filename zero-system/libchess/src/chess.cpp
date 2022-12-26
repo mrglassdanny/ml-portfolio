@@ -2785,6 +2785,8 @@ std::vector<Evaluation> Board::minimax_alphabeta_dyn(bool white, int depth)
 
 OpeningEngine::OpeningEngine()
 {
+    // KINGS PAWN:
+
     // RuyLopezOpening
     {
         std::vector<Board> boards;
@@ -2857,103 +2859,49 @@ OpeningEngine::OpeningEngine()
         this->openings_.push_back(Opening{"ViennaGame", boards});
     }
 
-    // switch (typ)
-    // {
-    // case QueensGambit:
-    //     board.change("d4");
-    //     board.change("d5");
-    //     board.change("c4");
-    //     break;
-    // case SlavDefense:
-    //     board.change("d4");
-    //     board.change("d5");
-    //     board.change("c4");
-    //     board.change("c6");
-    //     break;
-    // case KingsIndianDefense:
-    //     board.change("d4");
-    //     board.change("Nf6");
-    //     board.change("c4");
-    //     board.change("g6");
-    //     break;
-    // case NimzoIndianDefense:
-    //     board.change("d4");
-    //     board.change("Nf6");
-    //     board.change("c4");
-    //     board.change("e6");
-    //     board.change("Nc3");
-    //     board.change("Bb4");
-    //     break;
-    // case QueensIndianDefense:
-    //     board.change("d4");
-    //     board.change("Nf6");
-    //     board.change("c4");
-    //     board.change("e6");
-    //     board.change("Nf3");
-    //     board.change("b6");
-    //     break;
-    // case CatalanOpening:
-    //     board.change("d4");
-    //     board.change("Nf6");
-    //     board.change("c4");
-    //     board.change("e6");
-    //     board.change("g3");
-    //     break;
-    // case BogoIndianDefense:
-    //     board.change("d4");
-    //     board.change("Nf6");
-    //     board.change("c4");
-    //     board.change("e6");
-    //     board.change("Nf3");
-    //     board.change("Bb4+");
-    //     break;
-    // case GrunfeldDefense:
-    //     board.change("d4");
-    //     board.change("Nf6");
-    //     board.change("c4");
-    //     board.change("g6");
-    //     board.change("Nc3");
-    //     board.change("d5");
-    //     break;
-    // case DutchDefense:
-    //     board.change("d4");
-    //     board.change("f5");
-    //     break;
-    // case TrompowskyAttack:
-    //     board.change("d4");
-    //     board.change("Nf6");
-    //     board.change("Bg5");
-    //     break;
-    // case BenkoGambit:
-    //     board.change("d4");
-    //     board.change("Nf6");
-    //     board.change("c4");
-    //     board.change("c5");
-    //     board.change("d5");
-    //     board.change("b5");
-    //     break;
-    // case LondonSystem:
-    //     board.change("d4");
-    //     board.change("d5");
-    //     board.change("Nf3");
-    //     board.change("Nf6");
-    //     board.change("Bf4");
-    //     break;
-    // case BenoniDefense:
-    //     board.change("d4");
-    //     board.change("Nf6");
-    //     board.change("c4");
-    //     board.change("c5");
-    //     board.change("d5");
-    //     board.change("e6");
-    //     board.change("Nc3");
-    //     board.change("exd5");
-    //     board.change("cxd5");
-    //     board.change("d6");
-    //     break;
-    // default:
-    //     break;
-    // }
+    // QUEENS PAWN
+
+    // NimzoIndianDefense
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("d4", true);
+        boards.push_back(board);
+        board.change("Nf6", false);
+        boards.push_back(board);
+        board.change("c4", true);
+        boards.push_back(board);
+        board.change("e6", false);
+        boards.push_back(board);
+        board.change("Nc3", true);
+        boards.push_back(board);
+        board.change("Bb4", false);
+        boards.push_back(board);
+
+        this->openings_.push_back(Opening{"NimzoIndianDefense", boards});
+    }
+
+    // QueensIndianDefense
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("d4", true);
+        boards.push_back(board);
+        board.change("Nf6", false);
+        boards.push_back(board);
+        board.change("c4", true);
+        boards.push_back(board);
+        board.change("e6", false);
+        boards.push_back(board);
+        board.change("Nf3", true);
+        boards.push_back(board);
+        board.change("b6", false);
+        boards.push_back(board);
+
+        this->openings_.push_back(Opening{"QueensIndianDefense", boards});
+    }
 }
 
 OpeningEngine::~OpeningEngine() {}
