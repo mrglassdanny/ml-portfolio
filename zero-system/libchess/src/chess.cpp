@@ -2,12 +2,6 @@
 
 using namespace chess;
 
-long long get_file_size(const char *path)
-{
-    std::filesystem::path p{path};
-    return std::filesystem::file_size(p);
-}
-
 char CHESS_BOARD_START_STATE[CHESS_BOARD_LEN] =
     {
         CHESS_WR, CHESS_WN, CHESS_WB, CHESS_WQ, CHESS_WK, CHESS_WB, CHESS_WN, CHESS_WR,
@@ -2784,13 +2778,9 @@ std::vector<Evaluation> Board::minimax_alphabeta_dyn(bool white, int depth)
     return best_moves;
 }
 
-std::vector<PGNGame *> PGN::import(const char *path)
+std::vector<PGNGame *> PGN::import(const char *path, long long file_size)
 {
     FILE *file_ptr = fopen(path, "rb");
-
-    fseek(file_ptr, 0L, SEEK_END);
-    long long file_size = get_file_size(path);
-    rewind(file_ptr);
 
     char *buf = (char *)malloc(file_size);
     fread(buf, 1, file_size, file_ptr);

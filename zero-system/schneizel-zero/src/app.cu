@@ -204,7 +204,7 @@ Game self_play(int white_depth, int black_depth, bool print)
 
 void export_pgn(const char *path)
 {
-    auto pgn_games = PGN::import(path);
+    auto pgn_games = PGN::import(path, FileUtils::get_file_size(path));
 
     FILE *train_data_file = fopen("temp/train.data", "wb");
     FILE *train_lbl_file = fopen("temp/train.lbl", "wb");
@@ -371,7 +371,9 @@ int main()
 {
     srand(time(NULL));
 
-    export_pgn("c:/dev/ml-portfolio/zero-system/schneizel-zero/data/data.pgn");
+    const char *path = "C:\\dev\\ml-portfolio\\zero-system\\schneizel-zero\\data\\data.pgn";
+
+    export_pgn(path);
 
     // compare_models(10, 128);
 

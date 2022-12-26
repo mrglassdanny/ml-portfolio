@@ -3,7 +3,6 @@
 #include <iostream>
 #include <vector>
 #include <thread>
-#include <filesystem>
 
 #include <windows.h>
 
@@ -174,6 +173,6 @@ namespace chess
     class PGN
     {
     public:
-        static std::vector<PGNGame *> import(const char *path);
+        static std::vector<PGNGame *> import(const char *path, long long file_size);
     };
 }
