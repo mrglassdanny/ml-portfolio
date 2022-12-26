@@ -1,28 +1,48 @@
-#include "chess.cuh"
+#include "chess.h"
 
 using namespace chess;
 
-char BOARD_START_STATE[CHESS_BOARD_LEN] =
+long long get_file_size(const char *path)
+{
+
+    HANDLE hFile = CreateFile((LPCWSTR)path, GENERIC_READ,
+                              FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
+                              FILE_ATTRIBUTE_NORMAL, NULL);
+    if (hFile == INVALID_HANDLE_VALUE)
+        return -1; // error condition, could call GetLastError to find out more
+
+    LARGE_INTEGER size;
+    if (!GetFileSizeEx(hFile, &size))
     {
-        WR, WN, WB, WQ, WK, WB, WN, WR,
-        WP, WP, WP, WP, WP, WP, WP, WP,
-        MT, MT, MT, MT, MT, MT, MT, MT,
-        MT, MT, MT, MT, MT, MT, MT, MT,
-        MT, MT, MT, MT, MT, MT, MT, MT,
-        MT, MT, MT, MT, MT, MT, MT, MT,
-        BP, BP, BP, BP, BP, BP, BP, BP,
-        BR, BN, BB, BQ, BK, BB, BN, BR};
+        CloseHandle(hFile);
+        return -1; // error condition, could call GetLastError to find out more
+    }
+
+    CloseHandle(hFile);
+    return size.QuadPart;
+}
+
+char CHESS_BOARD_START_STATE[CHESS_BOARD_LEN] =
+    {
+        CHESS_WR, CHESS_WN, CHESS_WB, CHESS_WQ, CHESS_WK, CHESS_WB, CHESS_WN, CHESS_WR,
+        CHESS_WP, CHESS_WP, CHESS_WP, CHESS_WP, CHESS_WP, CHESS_WP, CHESS_WP, CHESS_WP,
+        CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT,
+        CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT,
+        CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT,
+        CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT, CHESS_MT,
+        CHESS_BP, CHESS_BP, CHESS_BP, CHESS_BP, CHESS_BP, CHESS_BP, CHESS_BP, CHESS_BP,
+        CHESS_BR, CHESS_BN, CHESS_BB, CHESS_BQ, CHESS_BK, CHESS_BB, CHESS_BN, CHESS_BR};
 
 bool Piece::is_white(char piece)
 {
     switch (piece)
     {
-    case WP:
-    case WN:
-    case WB:
-    case WR:
-    case WQ:
-    case WK:
+    case CHESS_WP:
+    case CHESS_WN:
+    case CHESS_WB:
+    case CHESS_WR:
+    case CHESS_WQ:
+    case CHESS_WK:
         return true;
     default:
         return false;
@@ -33,12 +53,12 @@ bool Piece::is_black(char piece)
 {
     switch (piece)
     {
-    case BP:
-    case BN:
-    case BB:
-    case BR:
-    case BQ:
-    case BK:
+    case CHESS_BP:
+    case CHESS_BN:
+    case CHESS_BB:
+    case CHESS_BR:
+    case CHESS_BQ:
+    case CHESS_BK:
         return true;
     default:
         return false;
@@ -62,29 +82,29 @@ const char *Piece::to_str(char piece)
 {
     switch (piece)
     {
-    case WP:
+    case CHESS_WP:
         return " P ";
-    case BP:
+    case CHESS_BP:
         return " p ";
-    case WN:
+    case CHESS_WN:
         return " N ";
-    case BN:
+    case CHESS_BN:
         return " n ";
-    case WB:
+    case CHESS_WB:
         return " B ";
-    case BB:
+    case CHESS_BB:
         return " b ";
-    case WR:
+    case CHESS_WR:
         return " R ";
-    case BR:
+    case CHESS_BR:
         return " r ";
-    case WQ:
+    case CHESS_WQ:
         return " Q ";
-    case BQ:
+    case CHESS_BQ:
         return " q ";
-    case WK:
+    case CHESS_WK:
         return " K ";
-    case BK:
+    case CHESS_BK:
         return " k ";
     default:
         return "   ";
@@ -95,29 +115,29 @@ int Piece::get_value(char piece)
 {
     switch (piece)
     {
-    case WP:
+    case CHESS_WP:
         return 1;
-    case BP:
+    case CHESS_BP:
         return -1;
-    case WN:
+    case CHESS_WN:
         return 3;
-    case BN:
+    case CHESS_BN:
         return -3;
-    case WB:
+    case CHESS_WB:
         return 3;
-    case BB:
+    case CHESS_BB:
         return -3;
-    case WR:
+    case CHESS_WR:
         return 5;
-    case BR:
+    case CHESS_BR:
         return -5;
-    case WQ:
+    case CHESS_WQ:
         return 9;
-    case BQ:
+    case CHESS_BQ:
         return -9;
-    case WK:
+    case CHESS_WK:
         return 2;
-    case BK:
+    case CHESS_BK:
         return -2;
     default:
         return 0;
@@ -128,20 +148,20 @@ char Piece::get_pgn_piece(char piece)
 {
     switch (piece)
     {
-    case WN:
-    case BN:
+    case CHESS_WN:
+    case CHESS_BN:
         return 'N';
-    case WB:
-    case BB:
+    case CHESS_WB:
+    case CHESS_BB:
         return 'B';
-    case WR:
-    case BR:
+    case CHESS_WR:
+    case CHESS_BR:
         return 'R';
-    case WQ:
-    case BQ:
+    case CHESS_WQ:
+    case CHESS_BQ:
         return 'Q';
-    case WK:
-    case BK:
+    case CHESS_WK:
+    case CHESS_BK:
         return 'K';
     default:
         return 'P';
@@ -155,57 +175,57 @@ char Piece::get_piece_fr_pgn_piece(char pgn_piece, bool white)
     case 'N':
         if (white)
         {
-            return WN;
+            return CHESS_WN;
         }
         else
         {
-            return BN;
+            return CHESS_BN;
         }
     case 'B':
         if (white)
         {
-            return WB;
+            return CHESS_WB;
         }
         else
         {
-            return BB;
+            return CHESS_BB;
         }
     case 'R':
         if (white)
         {
-            return WR;
+            return CHESS_WR;
         }
         else
         {
-            return BR;
+            return CHESS_BR;
         }
     case 'Q':
         if (white)
         {
-            return WQ;
+            return CHESS_WQ;
         }
         else
         {
-            return BQ;
+            return CHESS_BQ;
         }
     case 'K':
         if (white)
         {
-            return WK;
+            return CHESS_WK;
         }
         else
         {
-            return BK;
+            return CHESS_BK;
         }
     default:
         // Pawn will be 'P' (optional).
         if (white)
         {
-            return WP;
+            return CHESS_WP;
         }
         else
         {
-            return BP;
+            return CHESS_BP;
         }
     }
 }
@@ -305,7 +325,7 @@ bool Board::is_col_valid(int col)
 
 void Board::reset()
 {
-    memcpy(this->data_, BOARD_START_STATE, sizeof(char) * CHESS_BOARD_LEN);
+    memcpy(this->data_, CHESS_BOARD_START_STATE, sizeof(char) * CHESS_BOARD_LEN);
 
     memset(&this->castle_state_, 0, sizeof(this->castle_state_));
     memset(&this->check_state_, 0, sizeof(this->check_state_));
@@ -499,47 +519,458 @@ char Board::get_piece(int square)
     return this->data_[square];
 }
 
-int Board::get_king_square(bool white)
+void Board::update_diagonal_pins(int square)
 {
-    int king_square = -1;
-    if (white)
+    int row = Board::get_row(square);
+    int col = Board::get_col(square);
+    char piece = this->get_piece(square);
+    bool white = Piece::is_white(piece);
+
+    int cnt;
+    switch (piece)
     {
-        for (int i = 0; i < CHESS_BOARD_LEN; i++)
-        {
-            if (this->get_piece(i) == WK)
-            {
-                king_square = i;
-                break;
-            }
-        }
+    case CHESS_WB:
+    case CHESS_BB:
+    case CHESS_WQ:
+    case CHESS_BQ:
+        cnt = 8;
+        break;
+    case CHESS_WK:
+    case CHESS_BK:
+        cnt = 2;
+        break;
+    default:
+        break;
     }
-    else
+
+    int test_square;
+    int test_row;
+    int test_col;
+    int test_pin_square;
+
+    bool ne = false;
+    bool sw = false;
+    bool se = false;
+    bool nw = false;
+
+    int opp_king_square = this->get_king_square(!white);
+    bool opp_king_white = Piece::is_white(this->get_piece(opp_king_square));
+
+    // Northeast.
+    for (int i = 1; i < cnt; i++)
     {
-        for (int i = CHESS_BOARD_LEN - 1; i >= 0; i--)
+        test_row = row + i;
+        test_col = col + i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
         {
-            if (this->get_piece(i) == BK)
+            char test_piece = this->get_piece(test_square);
+
+            if (!ne)
             {
-                king_square = i;
-                break;
+                if (test_piece != CHESS_MT)
+                {
+                    test_pin_square = test_square;
+                    ne = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != CHESS_MT)
+                {
+                    break;
+                }
             }
         }
     }
 
-    return king_square;
+    // Southwest.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row - i;
+        test_col = col - i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!sw)
+            {
+                if (test_piece != CHESS_MT)
+                {
+                    test_pin_square = test_square;
+                    sw = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != CHESS_MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    // Southeast.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row - i;
+        test_col = col + i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!se)
+            {
+                if (test_piece != CHESS_MT)
+                {
+                    test_pin_square = test_square;
+                    se = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != CHESS_MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    // Northwest.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row + i;
+        test_col = col - i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!nw)
+            {
+                if (test_piece != CHESS_MT)
+                {
+                    test_pin_square = test_square;
+                    nw = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != CHESS_MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
 }
 
-bool Board::is_piece_in_king_pin(int square, bool white_king_pin)
+void Board::update_straight_pins(int square)
 {
-    if (white_king_pin)
+    int row = Board::get_row(square);
+    int col = Board::get_col(square);
+    char piece = this->get_piece(square);
+    bool white = Piece::is_white(piece);
+
+    int cnt;
+    switch (piece)
     {
-        return this->check_state_.white_king_pins[square];
+    case CHESS_WR:
+    case CHESS_BR:
+    case CHESS_WQ:
+    case CHESS_BQ:
+        cnt = 8;
+        break;
+    case CHESS_WK:
+    case CHESS_BK:
+        cnt = 2;
+        break;
+    default:
+        break;
+    }
+
+    int test_square;
+    int test_row;
+    int test_col;
+    int test_pin_square;
+
+    bool n = false;
+    bool s = false;
+    bool e = false;
+    bool w = false;
+
+    int opp_king_square = this->get_king_square(!white);
+    bool opp_king_white = Piece::is_white(this->get_piece(opp_king_square));
+
+    // North.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row + i;
+        test_col = col;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!n)
+            {
+                if (test_piece != CHESS_MT)
+                {
+                    test_pin_square = test_square;
+                    n = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != CHESS_MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    // South.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row - i;
+        test_col = col;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!s)
+            {
+                if (test_piece != CHESS_MT)
+                {
+                    test_pin_square = test_square;
+                    s = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != CHESS_MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    // East.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row;
+        test_col = col + i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!e)
+            {
+                if (test_piece != CHESS_MT)
+                {
+                    test_pin_square = test_square;
+                    e = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != CHESS_MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+
+    // West.
+    for (int i = 1; i < cnt; i++)
+    {
+        test_row = row;
+        test_col = col - i;
+        test_square = Board::get_square(test_row, test_col);
+
+        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
+        {
+            char test_piece = this->get_piece(test_square);
+
+            if (!w)
+            {
+                if (test_piece != CHESS_MT)
+                {
+                    test_pin_square = test_square;
+                    w = true;
+                }
+            }
+            else
+            {
+                if (test_square == opp_king_square)
+                {
+                    if (opp_king_white)
+                    {
+                        this->check_state_.white_king_pins[test_pin_square] = true;
+                    }
+                    else
+                    {
+                        this->check_state_.black_king_pins[test_pin_square] = true;
+                    }
+                    break;
+                }
+                else if (test_piece != CHESS_MT)
+                {
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void Board::update_pins(bool white)
+{
+    if (white)
+    {
+        memset(this->check_state_.black_king_pins, 0, sizeof(this->check_state_.black_king_pins));
+
+        for (int i = 0; i < CHESS_BOARD_LEN; i++)
+        {
+            switch (this->get_piece(i))
+            {
+            case CHESS_WB:
+                this->update_diagonal_pins(i);
+                break;
+            case CHESS_WR:
+                this->update_straight_pins(i);
+                break;
+            case CHESS_WQ:
+                this->update_diagonal_pins(i);
+                this->update_straight_pins(i);
+                break;
+            default:
+                break;
+            }
+        }
     }
     else
     {
-        return this->check_state_.black_king_pins[square];
-    }
+        memset(this->check_state_.white_king_pins, 0, sizeof(this->check_state_.white_king_pins));
 
-    return false;
+        for (int i = 0; i < CHESS_BOARD_LEN; i++)
+        {
+            switch (this->get_piece(i))
+            {
+            case CHESS_BB:
+                this->update_diagonal_pins(i);
+                break;
+            case CHESS_BR:
+                this->update_straight_pins(i);
+                break;
+            case CHESS_BQ:
+                this->update_diagonal_pins(i);
+                this->update_straight_pins(i);
+                break;
+            default:
+                break;
+            }
+        }
+    }
 }
 
 std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int col)
@@ -551,14 +982,14 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
     int cnt;
     switch (piece)
     {
-    case WB:
-    case BB:
-    case WQ:
-    case BQ:
+    case CHESS_WB:
+    case CHESS_BB:
+    case CHESS_WQ:
+    case CHESS_BQ:
         cnt = 8;
         break;
-    case WK:
-    case BK:
+    case CHESS_WK:
+    case CHESS_BK:
         cnt = 2;
         break;
     default:
@@ -587,7 +1018,7 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
 
             if (!ne)
             {
-                if (test_piece == MT)
+                if (test_piece == CHESS_MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
@@ -617,7 +1048,7 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
 
             if (!sw)
             {
-                if (test_piece == MT)
+                if (test_piece == CHESS_MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
@@ -647,7 +1078,7 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
 
             if (!se)
             {
-                if (test_piece == MT)
+                if (test_piece == CHESS_MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
@@ -677,7 +1108,7 @@ std::vector<Move> Board::get_diagonal_moves(int square, char piece, int row, int
 
             if (!nw)
             {
-                if (test_piece == MT)
+                if (test_piece == CHESS_MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
@@ -706,14 +1137,14 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
     int cnt;
     switch (piece)
     {
-    case WR:
-    case BR:
-    case WQ:
-    case BQ:
+    case CHESS_WR:
+    case CHESS_BR:
+    case CHESS_WQ:
+    case CHESS_BQ:
         cnt = 8;
         break;
-    case WK:
-    case BK:
+    case CHESS_WK:
+    case CHESS_BK:
         cnt = 2;
         break;
     default:
@@ -742,7 +1173,7 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
 
             if (!n)
             {
-                if (test_piece == MT)
+                if (test_piece == CHESS_MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
@@ -772,7 +1203,7 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
 
             if (!s)
             {
-                if (test_piece == MT)
+                if (test_piece == CHESS_MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
@@ -802,7 +1233,7 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
 
             if (!e)
             {
-                if (test_piece == MT)
+                if (test_piece == CHESS_MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
@@ -832,7 +1263,7 @@ std::vector<Move> Board::get_straight_moves(int square, char piece, int row, int
 
             if (!w)
             {
-                if (test_piece == MT)
+                if (test_piece == CHESS_MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
@@ -859,7 +1290,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
     char piece = this->get_piece(square);
     bool white = Piece::is_white(piece);
 
-    if (piece == MT)
+    if (piece == CHESS_MT)
     {
         return moves;
     }
@@ -873,13 +1304,13 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
 
     switch (piece)
     {
-    case WP:
+    case CHESS_WP:
     {
         test_row = row + 1;
         test_col = col;
         test_square = Board::get_square(test_row, test_col);
 
-        if (Board::is_row_valid(test_row) && this->get_piece(test_square) == MT)
+        if (Board::is_row_valid(test_row) && this->get_piece(test_square) == CHESS_MT)
         {
             moves.push_back(Move{square, test_square});
         }
@@ -908,13 +1339,13 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
             test_col = col;
             test_square = Board::get_square(test_row, test_col);
 
-            if (this->get_piece(test_square) == MT)
+            if (this->get_piece(test_square) == CHESS_MT)
             {
                 test_row = row + 2;
                 test_col = col;
                 test_square = Board::get_square(test_row, test_col);
 
-                if (this->get_piece(test_square) == MT)
+                if (this->get_piece(test_square) == CHESS_MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
@@ -937,13 +1368,13 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
         }
     }
     break;
-    case BP:
+    case CHESS_BP:
     {
         test_row = row - 1;
         test_col = col;
         test_square = Board::get_square(test_row, test_col);
 
-        if (Board::is_row_valid(test_row) && this->get_piece(test_square) == MT)
+        if (Board::is_row_valid(test_row) && this->get_piece(test_square) == CHESS_MT)
         {
             moves.push_back(Move{square, test_square});
         }
@@ -972,13 +1403,13 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
             test_col = col;
             test_square = Board::get_square(test_row, test_col);
 
-            if (this->get_piece(test_square) == MT)
+            if (this->get_piece(test_square) == CHESS_MT)
             {
                 test_row = row - 2;
                 test_col = col;
                 test_square = Board::get_square(test_row, test_col);
 
-                if (this->get_piece(test_square) == MT)
+                if (this->get_piece(test_square) == CHESS_MT)
                 {
                     moves.push_back(Move{square, test_square});
                 }
@@ -1001,8 +1432,8 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
         }
     }
     break;
-    case WN:
-    case BN:
+    case CHESS_WN:
+    case CHESS_BN:
     {
         test_row = row + 2;
         test_col = col + 1;
@@ -1085,22 +1516,22 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
         }
     }
     break;
-    case WB:
-    case BB:
+    case CHESS_WB:
+    case CHESS_BB:
     {
         auto diagonal_moves = this->get_diagonal_moves(square, piece, row, col);
         moves.insert(moves.end(), diagonal_moves.begin(), diagonal_moves.end());
     }
     break;
-    case WR:
-    case BR:
+    case CHESS_WR:
+    case CHESS_BR:
     {
         auto straight_moves = this->get_straight_moves(square, piece, row, col);
         moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
     }
     break;
-    case WQ:
-    case BQ:
+    case CHESS_WQ:
+    case CHESS_BQ:
     {
         auto diagonal_moves = this->get_diagonal_moves(square, piece, row, col);
         moves.insert(moves.end(), diagonal_moves.begin(), diagonal_moves.end());
@@ -1109,8 +1540,8 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
         moves.insert(moves.end(), straight_moves.begin(), straight_moves.end());
     }
     break;
-    case WK:
-    case BK:
+    case CHESS_WK:
+    case CHESS_BK:
     {
         std::vector<Move> king_moves;
 
@@ -1122,11 +1553,11 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
 
         if (test_check)
         {
-            if (piece == WK && !this->castle_state_.white_king_moved)
+            if (piece == CHESS_WK && !this->castle_state_.white_king_moved)
             {
-                if (this->get_piece(0) == WR && !this->castle_state_.white_left_rook_moved)
+                if (this->get_piece(0) == CHESS_WR && !this->castle_state_.white_left_rook_moved)
                 {
-                    if (this->get_piece(1) == MT && this->get_piece(2) == MT && this->get_piece(3) == MT)
+                    if (this->get_piece(1) == CHESS_MT && this->get_piece(2) == CHESS_MT && this->get_piece(3) == CHESS_MT)
                     {
                         if (!this->is_square_under_attack(2, false) && !this->is_square_under_attack(3, false))
                         {
@@ -1135,9 +1566,9 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                     }
                 }
 
-                if (this->get_piece(7) == WR && !this->castle_state_.white_right_rook_moved)
+                if (this->get_piece(7) == CHESS_WR && !this->castle_state_.white_right_rook_moved)
                 {
-                    if (this->get_piece(5) == MT && this->get_piece(6) == MT)
+                    if (this->get_piece(5) == CHESS_MT && this->get_piece(6) == CHESS_MT)
                     {
                         if (!this->is_square_under_attack(5, false) && !this->is_square_under_attack(6, false))
                         {
@@ -1146,11 +1577,11 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                     }
                 }
             }
-            else if (piece == BK && !this->castle_state_.black_king_moved)
+            else if (piece == CHESS_BK && !this->castle_state_.black_king_moved)
             {
-                if (this->get_piece(56) == BR && !this->castle_state_.black_left_rook_moved)
+                if (this->get_piece(56) == CHESS_BR && !this->castle_state_.black_left_rook_moved)
                 {
-                    if (this->get_piece(57) == MT && this->get_piece(58) == MT && this->get_piece(59) == MT)
+                    if (this->get_piece(57) == CHESS_MT && this->get_piece(58) == CHESS_MT && this->get_piece(59) == CHESS_MT)
                     {
                         if (!this->is_square_under_attack(58, true) && !this->is_square_under_attack(59, true))
                         {
@@ -1159,9 +1590,9 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
                     }
                 }
 
-                if (this->get_piece(63) == BR && !this->castle_state_.black_right_rook_moved)
+                if (this->get_piece(63) == CHESS_BR && !this->castle_state_.black_right_rook_moved)
                 {
-                    if (this->get_piece(61) == MT && this->get_piece(62) == MT)
+                    if (this->get_piece(61) == CHESS_MT && this->get_piece(62) == CHESS_MT)
                     {
                         if (!this->is_square_under_attack(61, true) && !this->is_square_under_attack(62, true))
                         {
@@ -1309,511 +1740,6 @@ std::vector<Move> Board::get_all_moves(bool white)
     return all_moves;
 }
 
-void Board::update_diagonal_pins(int square)
-{
-    int row = Board::get_row(square);
-    int col = Board::get_col(square);
-    char piece = this->get_piece(square);
-    bool white = Piece::is_white(piece);
-
-    int cnt;
-    switch (piece)
-    {
-    case WB:
-    case BB:
-    case WQ:
-    case BQ:
-        cnt = 8;
-        break;
-    case WK:
-    case BK:
-        cnt = 2;
-        break;
-    default:
-        break;
-    }
-
-    int test_square;
-    int test_row;
-    int test_col;
-    int test_pin_square;
-
-    bool ne = false;
-    bool sw = false;
-    bool se = false;
-    bool nw = false;
-
-    int opp_king_square = this->get_king_square(!white);
-    bool opp_king_white = Piece::is_white(this->get_piece(opp_king_square));
-
-    // Northeast.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row + i;
-        test_col = col + i;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!ne)
-            {
-                if (test_piece != MT)
-                {
-                    test_pin_square = test_square;
-                    ne = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
-                }
-            }
-        }
-    }
-
-    // Southwest.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row - i;
-        test_col = col - i;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!sw)
-            {
-                if (test_piece != MT)
-                {
-                    test_pin_square = test_square;
-                    sw = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
-                }
-            }
-        }
-    }
-
-    // Southeast.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row - i;
-        test_col = col + i;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!se)
-            {
-                if (test_piece != MT)
-                {
-                    test_pin_square = test_square;
-                    se = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
-                }
-            }
-        }
-    }
-
-    // Northwest.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row + i;
-        test_col = col - i;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!nw)
-            {
-                if (test_piece != MT)
-                {
-                    test_pin_square = test_square;
-                    nw = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
-                }
-            }
-        }
-    }
-}
-
-void Board::update_straight_pins(int square)
-{
-    int row = Board::get_row(square);
-    int col = Board::get_col(square);
-    char piece = this->get_piece(square);
-    bool white = Piece::is_white(piece);
-
-    int cnt;
-    switch (piece)
-    {
-    case WR:
-    case BR:
-    case WQ:
-    case BQ:
-        cnt = 8;
-        break;
-    case WK:
-    case BK:
-        cnt = 2;
-        break;
-    default:
-        break;
-    }
-
-    int test_square;
-    int test_row;
-    int test_col;
-    int test_pin_square;
-
-    bool n = false;
-    bool s = false;
-    bool e = false;
-    bool w = false;
-
-    int opp_king_square = this->get_king_square(!white);
-    bool opp_king_white = Piece::is_white(this->get_piece(opp_king_square));
-
-    // North.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row + i;
-        test_col = col;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!n)
-            {
-                if (test_piece != MT)
-                {
-                    test_pin_square = test_square;
-                    n = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
-                }
-            }
-        }
-    }
-
-    // South.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row - i;
-        test_col = col;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!s)
-            {
-                if (test_piece != MT)
-                {
-                    test_pin_square = test_square;
-                    s = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
-                }
-            }
-        }
-    }
-
-    // East.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row;
-        test_col = col + i;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!e)
-            {
-                if (test_piece != MT)
-                {
-                    test_pin_square = test_square;
-                    e = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
-                }
-            }
-        }
-    }
-
-    // West.
-    for (int i = 1; i < cnt; i++)
-    {
-        test_row = row;
-        test_col = col - i;
-        test_square = Board::get_square(test_row, test_col);
-
-        if (Board::is_row_valid(test_row) && Board::is_col_valid(test_col))
-        {
-            char test_piece = this->get_piece(test_square);
-
-            if (!w)
-            {
-                if (test_piece != MT)
-                {
-                    test_pin_square = test_square;
-                    w = true;
-                }
-            }
-            else
-            {
-                if (test_square == opp_king_square)
-                {
-                    if (opp_king_white)
-                    {
-                        this->check_state_.white_king_pins[test_pin_square] = true;
-                    }
-                    else
-                    {
-                        this->check_state_.black_king_pins[test_pin_square] = true;
-                    }
-                    break;
-                }
-                else if (test_piece != MT)
-                {
-                    break;
-                }
-            }
-        }
-    }
-}
-
-void Board::update_pins(bool white)
-{
-    if (white)
-    {
-        memset(this->check_state_.black_king_pins, 0, sizeof(this->check_state_.black_king_pins));
-
-        for (int i = 0; i < CHESS_BOARD_LEN; i++)
-        {
-            switch (this->get_piece(i))
-            {
-            case WB:
-                this->update_diagonal_pins(i);
-                break;
-            case WR:
-                this->update_straight_pins(i);
-                break;
-            case WQ:
-                this->update_diagonal_pins(i);
-                this->update_straight_pins(i);
-                break;
-            default:
-                break;
-            }
-        }
-    }
-    else
-    {
-        memset(this->check_state_.white_king_pins, 0, sizeof(this->check_state_.white_king_pins));
-
-        for (int i = 0; i < CHESS_BOARD_LEN; i++)
-        {
-            switch (this->get_piece(i))
-            {
-            case BB:
-                this->update_diagonal_pins(i);
-                break;
-            case BR:
-                this->update_straight_pins(i);
-                break;
-            case BQ:
-                this->update_diagonal_pins(i);
-                this->update_straight_pins(i);
-                break;
-            default:
-                break;
-            }
-        }
-    }
-}
-
-std::string Board::convert_move_to_move_str(Move move)
-{
-    std::string move_str;
-
-    char piece = this->get_piece(move.src_square);
-    char pgn_piece = Piece::get_pgn_piece(piece);
-    int src_col = Board::get_col(move.src_square);
-    int src_row = Board::get_row(move.src_square);
-    int dst_col = Board::get_col(move.dst_square);
-    int dst_row = Board::get_row(move.dst_square);
-
-    if (piece == WK || piece == BK)
-    {
-        if ((src_col - dst_col) == -2)
-        {
-            move_str = "O-O";
-            return move_str;
-        }
-        else if ((src_col - dst_col) == 2)
-        {
-            move_str = "O-O-O";
-            return move_str;
-        }
-    }
-
-    move_str += pgn_piece;
-
-    move_str += Board::get_alpha_col(src_col);
-    move_str += (char)(src_row + 1 + '0');
-
-    move_str += Board::get_alpha_col(dst_col);
-    move_str += (char)(dst_row + 1 + '0');
-
-    // Check for pawn promotion.
-    if ((piece == WP && dst_row == 7) || (piece == BP && dst_row == 0))
-    {
-        move_str += '=';
-
-        if (move.promo_piece != MT)
-        {
-            move_str += move.promo_piece;
-        }
-        else
-        {
-            move_str += 'Q';
-        }
-    }
-
-    return move_str;
-}
-
 bool Board::has_moves(bool white)
 {
     if (white)
@@ -1888,6 +1814,49 @@ bool Board::is_square_under_attack(int square, bool by_white)
     return false;
 }
 
+int Board::get_king_square(bool white)
+{
+    int king_square = -1;
+    if (white)
+    {
+        for (int i = 0; i < CHESS_BOARD_LEN; i++)
+        {
+            if (this->get_piece(i) == CHESS_WK)
+            {
+                king_square = i;
+                break;
+            }
+        }
+    }
+    else
+    {
+        for (int i = CHESS_BOARD_LEN - 1; i >= 0; i--)
+        {
+            if (this->get_piece(i) == CHESS_BK)
+            {
+                king_square = i;
+                break;
+            }
+        }
+    }
+
+    return king_square;
+}
+
+bool Board::is_piece_in_king_pin(int square, bool white_king_pin)
+{
+    if (white_king_pin)
+    {
+        return this->check_state_.white_king_pins[square];
+    }
+    else
+    {
+        return this->check_state_.black_king_pins[square];
+    }
+
+    return false;
+}
+
 bool Board::is_check(bool by_white, bool hard_way)
 {
     if (hard_way)
@@ -1916,6 +1885,11 @@ bool Board::is_check(bool by_white, bool hard_way)
     return false;
 }
 
+bool Board::is_check(bool by_white)
+{
+    return this->is_check(by_white, true);
+}
+
 bool Board::is_checkmate(bool by_white, bool hard_way)
 {
     if (this->is_check(by_white, hard_way))
@@ -1927,6 +1901,11 @@ bool Board::is_checkmate(bool by_white, bool hard_way)
     }
 
     return false;
+}
+
+bool Board::is_checkmate(bool by_white)
+{
+    return this->is_checkmate(by_white, true);
 }
 
 void Board::change(Move move)
@@ -1950,15 +1929,15 @@ void Board::change(Move move)
 
     switch (src_piece)
     {
-    case WP:
+    case CHESS_WP:
     {
         // Look for promotion and au passant.
 
         if (dst_row == 7)
         {
-            if (move.promo_piece == MT)
+            if (move.promo_piece == CHESS_MT)
             {
-                dst_piece = WQ;
+                dst_piece = CHESS_WQ;
             }
             else
             {
@@ -1967,12 +1946,12 @@ void Board::change(Move move)
         }
         else if (dst_row == 5)
         {
-            if (this->get_piece(move.dst_square) == MT)
+            if (this->get_piece(move.dst_square) == CHESS_MT)
             {
                 int test_au_passant_square = Board::get_square(dst_row - 1, dst_col);
-                if (this->get_piece(test_au_passant_square) == BP)
+                if (this->get_piece(test_au_passant_square) == CHESS_BP)
                 {
-                    this->data_[test_au_passant_square] = MT;
+                    this->data_[test_au_passant_square] = CHESS_MT;
                 }
             }
         }
@@ -1985,15 +1964,15 @@ void Board::change(Move move)
         }
     }
     break;
-    case BP:
+    case CHESS_BP:
     {
         // Look for promotion and au passant.
 
         if (dst_row == 0)
         {
-            if (move.promo_piece == MT)
+            if (move.promo_piece == CHESS_MT)
             {
-                dst_piece = BQ;
+                dst_piece = CHESS_BQ;
             }
             else
             {
@@ -2002,12 +1981,12 @@ void Board::change(Move move)
         }
         else if (dst_row == 2)
         {
-            if (this->get_piece(move.dst_square) == MT)
+            if (this->get_piece(move.dst_square) == CHESS_MT)
             {
                 int test_au_passant_square = Board::get_square(dst_row + 1, dst_col);
-                if (this->get_piece(test_au_passant_square) == WP)
+                if (this->get_piece(test_au_passant_square) == CHESS_WP)
                 {
-                    this->data_[test_au_passant_square] = MT;
+                    this->data_[test_au_passant_square] = CHESS_MT;
                 }
             }
         }
@@ -2020,7 +1999,7 @@ void Board::change(Move move)
         }
     }
     break;
-    case WR:
+    case CHESS_WR:
     {
         if (src_row == 0 && src_col == 0)
         {
@@ -2032,7 +2011,7 @@ void Board::change(Move move)
         }
     }
     break;
-    case BR:
+    case CHESS_BR:
     {
         if (src_row == 7 && src_col == 0)
         {
@@ -2044,14 +2023,14 @@ void Board::change(Move move)
         }
     }
     break;
-    case WK:
+    case CHESS_WK:
     {
         // Look for castle.
 
         if (src_col - dst_col == 2)
         {
-            this->data_[0] = MT;
-            this->data_[3] = WR;
+            this->data_[0] = CHESS_MT;
+            this->data_[3] = CHESS_WR;
 
             // Check new moves for moved rook.
             {
@@ -2076,8 +2055,8 @@ void Board::change(Move move)
         }
         else if (src_col - dst_col == -2)
         {
-            this->data_[7] = MT;
-            this->data_[5] = WR;
+            this->data_[7] = CHESS_MT;
+            this->data_[5] = CHESS_WR;
 
             // Check new moves for moved rook.
             {
@@ -2104,14 +2083,14 @@ void Board::change(Move move)
         this->castle_state_.white_king_moved = true;
     }
     break;
-    case BK:
+    case CHESS_BK:
     {
         // Look for castle.
 
         if (src_col - dst_col == 2)
         {
-            this->data_[56] = MT;
-            this->data_[59] = BR;
+            this->data_[56] = CHESS_MT;
+            this->data_[59] = CHESS_BR;
 
             // Check new moves for moved rook.
             {
@@ -2136,8 +2115,8 @@ void Board::change(Move move)
         }
         else if (src_col - dst_col == -2)
         {
-            this->data_[63] = MT;
-            this->data_[61] = BR;
+            this->data_[63] = CHESS_MT;
+            this->data_[61] = CHESS_BR;
 
             // Check new moves for moved rook.
             {
@@ -2168,7 +2147,7 @@ void Board::change(Move move)
         break;
     }
 
-    this->data_[move.src_square] = MT;
+    this->data_[move.src_square] = CHESS_MT;
     this->data_[move.dst_square] = dst_piece;
 
     this->check_state_.white_checked = false;
@@ -2218,7 +2197,7 @@ Move Board::change(std::string move_str, bool white)
     this->update_pins(white);
 
     char piece;
-    char promo_piece = MT;
+    char promo_piece = CHESS_MT;
 
     int src_row;
     int src_col;
@@ -2252,11 +2231,11 @@ Move Board::change(std::string move_str, bool white)
             int prev_square = Board::get_square(dst_row - 1, dst_col);
             int prev_square_2 = Board::get_square(dst_row - 2, dst_col);
 
-            if (this->get_piece(prev_square) == WP)
+            if (this->get_piece(prev_square) == CHESS_WP)
             {
                 src_square = prev_square;
             }
-            else if (this->get_piece(prev_square_2) == WP)
+            else if (this->get_piece(prev_square_2) == CHESS_WP)
             {
                 src_square = prev_square_2;
             }
@@ -2266,11 +2245,11 @@ Move Board::change(std::string move_str, bool white)
             int prev_square = Board::get_square(dst_row + 1, dst_col);
             int prev_square_2 = Board::get_square(dst_row + 2, dst_col);
 
-            if (this->get_piece(prev_square) == BP)
+            if (this->get_piece(prev_square) == CHESS_BP)
             {
                 src_square = prev_square;
             }
-            else if (this->get_piece(prev_square_2) == BP)
+            else if (this->get_piece(prev_square_2) == CHESS_BP)
             {
                 src_square = prev_square_2;
             }
@@ -2401,11 +2380,11 @@ Move Board::change(std::string move_str, bool white)
 
                 if (white)
                 {
-                    piece = WP;
+                    piece = CHESS_WP;
                 }
                 else
                 {
-                    piece = BP;
+                    piece = CHESS_BP;
                 }
 
                 bool found = false;
@@ -2456,7 +2435,7 @@ Move Board::change(std::string move_str, bool white)
             {
                 // Disambiguated queen move.
                 piece = Piece::get_piece_fr_pgn_piece(mut_move_str[0], white);
-                if (piece == WQ || piece == BQ)
+                if (piece == CHESS_WQ || piece == CHESS_BQ)
                 {
                     src_row = Board::get_row(mut_move_str[2]);
                     src_col = Board::get_col(mut_move_str[1]);
@@ -2648,9 +2627,6 @@ void Board::sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, i
 
 std::vector<Evaluation> Board::minimax_alphabeta(bool white, int depth)
 {
-    auto sw = new zero::core::CpuStopWatch();
-    sw->start();
-
     std::vector<Evaluation> best_moves;
 
     Evaluation evals[CHESS_BOARD_LEN];
@@ -2691,10 +2667,6 @@ std::vector<Evaluation> Board::minimax_alphabeta(bool white, int depth)
             best_moves.push_back(eval);
         }
     }
-
-    sw->stop();
-    sw->print_elapsed_seconds();
-    delete sw;
 
     return best_moves;
 }
@@ -2782,9 +2754,6 @@ void Board::sim_minimax_alphabeta_dyn_async(Simulation sim, bool white, int dept
 
 std::vector<Evaluation> Board::minimax_alphabeta_dyn(bool white, int depth)
 {
-    auto sw = new zero::core::CpuStopWatch();
-    sw->start();
-
     std::vector<Evaluation> best_moves;
 
     Evaluation evals[CHESS_BOARD_LEN];
@@ -2826,106 +2795,7 @@ std::vector<Evaluation> Board::minimax_alphabeta_dyn(bool white, int depth)
         }
     }
 
-    sw->stop();
-    sw->print_elapsed_seconds();
-    delete sw;
-
     return best_moves;
-}
-
-void Board::one_hot_encode(float *out, bool white)
-{
-    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
-    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
-    {
-        for (int i = 0; i < CHESS_ROW_CNT; i++)
-        {
-            for (int j = 0; j < CHESS_COL_CNT; j++)
-            {
-                int channel_offset = (c * CHESS_BOARD_LEN);
-                int square = (i * CHESS_COL_CNT) + j;
-                int out_idx = channel_offset + square;
-
-                switch (c)
-                {
-                case 0:
-                    if (this->get_piece(square) == WP)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 1:
-                    if (this->get_piece(square) == WN)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 2:
-                    if (this->get_piece(square) == WB)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 3:
-                    if (this->get_piece(square) == WR)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 4:
-                    if (this->get_piece(square) == WQ)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 5:
-                    if (this->get_piece(square) == WK)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 6:
-                    if (this->get_piece(square) == BP)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 7:
-                    if (this->get_piece(square) == BN)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 8:
-                    if (this->get_piece(square) == BB)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 9:
-                    if (this->get_piece(square) == BR)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 10:
-                    if (this->get_piece(square) == BQ)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 11:
-                    if (this->get_piece(square) == BK)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-    }
 }
 
 std::vector<PGNGame *> PGN::import(const char *path)
@@ -2933,7 +2803,7 @@ std::vector<PGNGame *> PGN::import(const char *path)
     FILE *file_ptr = fopen(path, "rb");
 
     fseek(file_ptr, 0L, SEEK_END);
-    long long file_size = zero::core::FileUtils::get_file_size(path);
+    long long file_size = get_file_size(path);
     rewind(file_ptr);
 
     char *buf = (char *)malloc(file_size);

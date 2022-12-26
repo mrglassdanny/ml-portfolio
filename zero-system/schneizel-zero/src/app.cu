@@ -3,151 +3,108 @@
 
 #include <zero/mod.cuh>
 
-#include "chess.cuh"
+#include "chess.h"
 
 using namespace zero::core;
 using namespace zero::nn;
-using namespace zero::cluster;
+
 using namespace chess;
 
-__global__ void k_co_weight_step(float *w, float *dw, float *mdw, int w_cnt, float lr, float beta1, int step_num, int batch_size)
+#define CHESS_BOARD_CHANNEL_CNT 12
+
+void one_hot_encode_chess_board(Board *board, float *out, bool white)
 {
-    int w_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if (w_elem_idx < w_cnt)
+    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
+    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
     {
-        mdw[w_elem_idx] = beta1 * mdw[w_elem_idx] + (1.0f - beta1) * dw[w_elem_idx];
-
-        float corrected_mdw = mdw[w_elem_idx] / (1.0f - pow(beta1, step_num));
-
-        w[w_elem_idx] -= (lr * corrected_mdw / batch_size);
-        if (w[w_elem_idx] < 0.0f)
+        for (int i = 0; i < CHESS_ROW_CNT; i++)
         {
-            w[w_elem_idx] = 0.0f;
+            for (int j = 0; j < CHESS_COL_CNT; j++)
+            {
+                int channel_offset = (c * CHESS_BOARD_LEN);
+                int square = (i * CHESS_COL_CNT) + j;
+                int out_idx = channel_offset + square;
+
+                switch (c)
+                {
+                case 0:
+                    if (board->get_piece(square) == CHESS_WP)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 1:
+                    if (board->get_piece(square) == CHESS_WN)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 2:
+                    if (board->get_piece(square) == CHESS_WB)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 3:
+                    if (board->get_piece(square) == CHESS_WR)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 4:
+                    if (board->get_piece(square) == CHESS_WQ)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 5:
+                    if (board->get_piece(square) == CHESS_WK)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 6:
+                    if (board->get_piece(square) == CHESS_BP)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 7:
+                    if (board->get_piece(square) == CHESS_BN)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 8:
+                    if (board->get_piece(square) == CHESS_BB)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 9:
+                    if (board->get_piece(square) == CHESS_BR)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 10:
+                    if (board->get_piece(square) == CHESS_BQ)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 11:
+                    if (board->get_piece(square) == CHESS_BK)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                default:
+                    break;
+                }
+            }
         }
     }
-}
-
-__global__ void k_co_bias_step(float *b, float *db, float *mdb, int b_cnt, float lr, float beta1, int step_num, int batch_size)
-{
-    int b_elem_idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if (b_elem_idx < b_cnt)
-    {
-        mdb[b_elem_idx] = beta1 * mdb[b_elem_idx] + (1.0f - beta1) * db[b_elem_idx];
-
-        float corrected_mdb = mdb[b_elem_idx] / (1.0f - pow(beta1, step_num));
-
-        b[b_elem_idx] -= (lr * corrected_mdb / batch_size);
-        if (b[b_elem_idx] < 0.0f)
-        {
-            b[b_elem_idx] = 0.0f;
-        }
-    }
-}
-
-class ChessOptimizer : public Optimizer
-{
-private:
-    float beta1_;
-    std::vector<Tensor *> mdws_;
-    std::vector<Tensor *> mdbs_;
-
-public:
-    ChessOptimizer(std::vector<Parameters *> model_params, float learning_rate, float beta1)
-        : Optimizer(model_params, learning_rate)
-    {
-        this->beta1_ = beta1;
-
-        for (Parameters *params : model_params)
-        {
-            this->mdws_.push_back(Tensor::zeros(true, params->weight_gradients()->shape()));
-            this->mdbs_.push_back(Tensor::zeros(true, params->bias_gradients()->shape()));
-        }
-    }
-
-    ~ChessOptimizer()
-    {
-        for (int i = 0; i < this->mdws_.size(); i++)
-        {
-            delete this->mdws_[i];
-            delete this->mdbs_[i];
-        }
-    }
-
-    void step(int batch_size)
-    {
-        for (int i = 0; i < this->model_params_.size(); i++)
-        {
-            Parameters *params = this->model_params_[i];
-
-            Tensor *w = params->weights();
-            Tensor *b = params->biases();
-            Tensor *dw = params->weight_gradients();
-            Tensor *db = params->bias_gradients();
-            Tensor *mdw = this->mdws_[i];
-            Tensor *mdb = this->mdbs_[i];
-
-            int w_cnt = w->count();
-            int b_cnt = b->count();
-
-            k_co_weight_step<<<w_cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK + 1, ZERO_CORE_CUDA_THREADS_PER_BLOCK>>>(w->data(), dw->data(), mdw->data(),
-                                                                                                                 w_cnt, this->lr_, this->beta1_, this->step_num_, batch_size);
-            k_co_bias_step<<<b_cnt / ZERO_CORE_CUDA_THREADS_PER_BLOCK + 1, ZERO_CORE_CUDA_THREADS_PER_BLOCK>>>(b->data(), db->data(), mdb->data(),
-                                                                                                               b_cnt, this->lr_, this->beta1_, this->step_num_, batch_size);
-        }
-
-        this->step_num_++;
-    }
-
-    Optimizer *ChessOptimizer::copy()
-    {
-        return new ChessOptimizer(this->model_params_, this->lr_, this->beta1_);
-    }
-};
-
-class ChessInitializer : public Initializer
-{
-public:
-    void initialize(Tensor *tensor, int fan_in, int fan_out)
-    {
-        tensor->random(0.0f, sqrt(1.0f / fan_in));
-        tensor->abs();
-    }
-
-    Initializer *copy()
-    {
-        return new ChessInitializer();
-    }
-};
-
-int chess_tanh_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
-{
-    int correct_cnt = 0;
-
-    for (int i = 0; i < batch_size; i++)
-    {
-        float p_val = p->get_val(i);
-        if (p_val < -0.25f)
-        {
-            p_val = -1.0f;
-        }
-        else if (p_val > 0.25f)
-        {
-            p_val = 1.0f;
-        }
-        else
-        {
-            p_val = 0.0f;
-        }
-
-        if (p_val == y->get_val(i))
-        {
-            correct_cnt++;
-        }
-    }
-
-    return correct_cnt;
 }
 
 struct Game
@@ -181,7 +138,7 @@ Game self_play(int white_depth, int black_depth, bool print)
             }
         }
 
-        if (board.is_checkmate(false, true))
+        if (board.is_checkmate(false))
         {
             if (print)
                 printf("WHITE CHECKMATED!\n");
@@ -214,7 +171,7 @@ Game self_play(int white_depth, int black_depth, bool print)
             board.print(prev_move);
         }
 
-        if (board.is_checkmate(true, true))
+        if (board.is_checkmate(true))
         {
             if (print)
                 printf("BLACK CHECKMATED!\n");
@@ -272,7 +229,7 @@ void export_pgn(const char *path)
             // Skip openings.
             if (game_move_cnt > 6)
             {
-                board.one_hot_encode(data_buf, white);
+                one_hot_encode_chess_board(&board, data_buf, white);
                 lbl_buf = (float)pgn_game->lbl;
 
                 fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
@@ -336,7 +293,7 @@ void train(Model *model, int epochs, int batch_size)
                 if (batch_idx % 100 == 0)
                 {
                     float loss = model->loss(p, y);
-                    float acc = model->accuracy(p, y, chess_tanh_accuracy_fn);
+                    float acc = model->accuracy(p, y, Model::classification_accuracy_fn);
                     fprintf(train_csv, "%d,%d,%f,%f\n", epoch, batch_idx, loss, acc);
                 }
 
@@ -391,7 +348,7 @@ void compare_models(int epochs, int batch_size)
     Shape y_shape(batch_size, 1);
 
     {
-        auto model = new Model(new ChessInitializer());
+        auto model = new Model(new Xavier());
 
         model->linear(x_shape, 1024, new Tanh());
         model->linear(512, new Tanh());
@@ -400,7 +357,7 @@ void compare_models(int epochs, int batch_size)
         model->linear(y_shape, new Tanh());
 
         model->set_loss(new MSE());
-        model->set_optimizer(new ChessOptimizer(model->parameters(), 0.01f, ZERO_NN_BETA_1));
+        model->set_optimizer(new SGDMomentum(model->parameters(), 0.01f, ZERO_NN_BETA_1));
 
         model->summarize();
 

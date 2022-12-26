@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mnist-zero", "mnist-zero\mn
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "schneizel-zero", "schneizel-zero\schneizel-zero.vcxproj", "{49C2E6AD-4E24-4E6F-805A-2C745CF9822D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libchess", "libchess\libchess.vcxproj", "{6ACA51DF-D6DC-46B4-B0CE-85A7C2BF3A66}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -27,6 +29,10 @@ Global
 		{49C2E6AD-4E24-4E6F-805A-2C745CF9822D}.Debug|x64.Build.0 = Debug|x64
 		{49C2E6AD-4E24-4E6F-805A-2C745CF9822D}.Release|x64.ActiveCfg = Release|x64
 		{49C2E6AD-4E24-4E6F-805A-2C745CF9822D}.Release|x64.Build.0 = Release|x64
+		{6ACA51DF-D6DC-46B4-B0CE-85A7C2BF3A66}.Debug|x64.ActiveCfg = Debug|x64
+		{6ACA51DF-D6DC-46B4-B0CE-85A7C2BF3A66}.Debug|x64.Build.0 = Debug|x64
+		{6ACA51DF-D6DC-46B4-B0CE-85A7C2BF3A66}.Release|x64.ActiveCfg = Release|x64
+		{6ACA51DF-D6DC-46B4-B0CE-85A7C2BF3A66}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

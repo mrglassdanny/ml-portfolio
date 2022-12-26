@@ -17,9 +17,6 @@
     <ProjectReference Include="..\libzero\libzero.vcxproj">
       <Project>{11c2cc46-0537-4e2b-8145-433c34dbc7ed}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\zero-system\zero-system.vcxproj">
-      <Project>{11c2cc46-0537-4e2b-8145-433c34dbc7ed}</Project>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{9357AA95-1113-4CA7-8A1D-2FFA82DC4137}</ProjectGuid>
