@@ -4,22 +4,8 @@ using namespace chess;
 
 long long get_file_size(const char *path)
 {
-
-    HANDLE hFile = CreateFile((LPCWSTR)path, GENERIC_READ,
-                              FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, OPEN_EXISTING,
-                              FILE_ATTRIBUTE_NORMAL, NULL);
-    if (hFile == INVALID_HANDLE_VALUE)
-        return -1; // error condition, could call GetLastError to find out more
-
-    LARGE_INTEGER size;
-    if (!GetFileSizeEx(hFile, &size))
-    {
-        CloseHandle(hFile);
-        return -1; // error condition, could call GetLastError to find out more
-    }
-
-    CloseHandle(hFile);
-    return size.QuadPart;
+    std::filesystem::path p{path};
+    return std::filesystem::file_size(p);
 }
 
 char CHESS_BOARD_START_STATE[CHESS_BOARD_LEN] =

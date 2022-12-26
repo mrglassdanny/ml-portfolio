@@ -371,7 +371,7 @@ int main()
 {
     srand(time(NULL));
 
-    // export_pgn("data/data.pgn");
+    export_pgn("c:/dev/ml-portfolio/zero-system/schneizel-zero/data/data.pgn");
 
     // compare_models(10, 128);
 
