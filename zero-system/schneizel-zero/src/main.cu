@@ -203,6 +203,9 @@ void play(bool white, int depth)
     Board board;
     Move prev_move;
 
+    OpeningEngine opening_engine;
+    bool opening_stage = true;
+
     int move_cnt = 0;
 
     while (true)
@@ -237,10 +240,26 @@ void play(bool white, int depth)
         }
         else
         {
-            auto evals = board.minimax_alphabeta_dyn(true, depth);
-            int r = rand() % evals.size();
-            board.change(evals[r].move);
-            prev_move = evals[r].move;
+            if (move_cnt == 0)
+            {
+                prev_move = board.change("e4", true);
+            }
+            else
+            {
+                if (opening_stage && !opening_engine.matches(&board, move_cnt))
+                {
+                    printf("End of book opening\n");
+                    opening_stage = false;
+                }
+
+                if (!opening_stage)
+                {
+                    auto evals = board.minimax_alphabeta_dyn(true, depth);
+                    int r = rand() % evals.size();
+                    board.change(evals[r].move);
+                    prev_move = evals[r].move;
+                }
+            }
         }
 
         move_cnt++;
@@ -268,10 +287,19 @@ void play(bool white, int depth)
         }
         else
         {
-            auto evals = board.minimax_alphabeta_dyn(false, depth);
-            int r = rand() % evals.size();
-            board.change(evals[r].move);
-            prev_move = evals[r].move;
+            if (opening_stage && !opening_engine.matches(&board, move_cnt))
+            {
+                printf("End of book opening\n");
+                opening_stage = false;
+            }
+
+            if (!opening_stage)
+            {
+                auto evals = board.minimax_alphabeta_dyn(false, depth);
+                int r = rand() % evals.size();
+                board.change(evals[r].move);
+                prev_move = evals[r].move;
+            }
         }
 
         move_cnt++;

@@ -125,6 +125,8 @@ namespace chess
 
         void copy(Board *src);
 
+        int compare(Board *other);
+
         void print();
         void print(Move move);
 
@@ -164,14 +166,22 @@ namespace chess
         Board board;
     };
 
+    struct Opening
+    {
+        std::string name;
+        std::vector<Board> boards;
+    };
+
     class OpeningEngine
     {
     private:
-        std::vector<std::vector<Board>> openings_;
+        std::vector<Opening> openings_;
 
     public:
         OpeningEngine();
         ~OpeningEngine();
+
+        bool matches(Board *board, int move_cnt);
     };
 
     struct PGNGame
