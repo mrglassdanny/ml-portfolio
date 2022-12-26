@@ -373,7 +373,7 @@ int main()
 
     const char *path = "C:\\dev\\ml-portfolio\\zero-system\\schneizel-zero\\data\\data.pgn";
 
-    export_pgn(path);
+    // export_pgn(path);
 
     // compare_models(10, 128);
 
