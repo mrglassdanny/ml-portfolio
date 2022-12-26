@@ -2778,6 +2778,367 @@ std::vector<Evaluation> Board::minimax_alphabeta_dyn(bool white, int depth)
     return best_moves;
 }
 
+OpeningEngine::OpeningEngine()
+{
+    // SicilianDefense
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("e4", true);
+        boards.push_back(board);
+        board.change("c5", false);
+        boards.push_back(board);
+
+        this->openings_.push_back(boards);
+    }
+
+    // FrenchDefense
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("e4", true);
+        boards.push_back(board);
+        board.change("e6", false);
+        boards.push_back(board);
+
+        this->openings_.push_back(boards);
+    }
+
+    // RuyLopezOpening
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("e4", true);
+        boards.push_back(board);
+        board.change("e5", false);
+        boards.push_back(board);
+        board.change("Nf3", true);
+        boards.push_back(board);
+        board.change("Nc6", false);
+        boards.push_back(board);
+        board.change("Bb5", true);
+        boards.push_back(board);
+
+        this->openings_.push_back(boards);
+    }
+
+    // CaroKannDefense
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("e4", true);
+        boards.push_back(board);
+        board.change("c6", false);
+        boards.push_back(board);
+
+        this->openings_.push_back(boards);
+    }
+
+    // ItalianGame
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("e4", true);
+        boards.push_back(board);
+        board.change("e5", false);
+        boards.push_back(board);
+        board.change("Nf3", true);
+        boards.push_back(board);
+        board.change("Nc6", false);
+        boards.push_back(board);
+        board.change("Bc4", true);
+        boards.push_back(board);
+
+        this->openings_.push_back(boards);
+    }
+    // SicilianDefenseClosed
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("e4", true);
+        boards.push_back(board);
+        board.change("c5", false);
+        boards.push_back(board);
+        board.change("Nc3", true);
+        boards.push_back(board);
+
+        this->openings_.push_back(boards);
+    }
+    // ScandinavianDefense
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("e4", true);
+        boards.push_back(board);
+        board.change("d5", false);
+        boards.push_back(board);
+
+        this->openings_.push_back(boards);
+    }
+    // PircDefense
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("e4", true);
+        boards.push_back(board);
+        board.change("d6", false);
+        boards.push_back(board);
+        board.change("d4", true);
+        boards.push_back(board);
+        board.change("Nf6", false);
+        boards.push_back(board);
+
+        this->openings_.push_back(boards);
+    }
+    // SicilianDefenseAlapinVariation
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("e4", true);
+        boards.push_back(board);
+        board.change("c5", false);
+        boards.push_back(board);
+        board.change("c3", true);
+        boards.push_back(board);
+
+        this->openings_.push_back(boards);
+    }
+    // AlekhinesDefense
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("e4", true);
+        boards.push_back(board);
+        board.change("Nf6", false);
+        boards.push_back(board);
+
+        this->openings_.push_back(boards);
+    }
+    // KingsGambit
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("e4", true);
+        boards.push_back(board);
+        board.change("e5", false);
+        boards.push_back(board);
+        board.change("f4", true);
+        boards.push_back(board);
+
+        this->openings_.push_back(boards);
+    }
+    // ScotchGame
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("e4", true);
+        boards.push_back(board);
+        board.change("e5", false);
+        boards.push_back(board);
+        board.change("Nf3", true);
+        boards.push_back(board);
+        board.change("Nc6", false);
+        boards.push_back(board);
+        board.change("d4", true);
+        boards.push_back(board);
+
+        this->openings_.push_back(boards);
+    }
+    // ViennaGame
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("e4", true);
+        boards.push_back(board);
+        board.change("e5", false);
+        boards.push_back(board);
+        board.change("Nc3", true);
+        boards.push_back(board);
+
+        this->openings_.push_back(boards);
+    }
+
+    // switch (typ)
+    // {
+    // case SicilianDefense:
+    //     board.change("e4");
+    //     board.change("c5");
+    //     break;
+    // case FrenchDefense:
+    //     board.change("e4");
+    //     board.change("e6");
+    //     break;
+    // case RuyLopezOpening:
+    //     board.change("e4");
+    //     board.change("e5");
+    //     board.change("Nf3");
+    //     board.change("Nc6");
+    //     board.change("Bb5");
+    //     break;
+    // case CaroKannDefense:
+    //     board.change("e4");
+    //     board.change("c6");
+    //     break;
+    // case ItalianGame:
+    //     board.change("e4");
+    //     board.change("e5");
+    //     board.change("Nf3");
+    //     board.change("Nc6");
+    //     board.change("Bc4");
+    //     break;
+    // case SicilianDefenseClosed:
+    //     board.change("e4");
+    //     board.change("c5");
+    //     board.change("Nc3");
+    //     break;
+    // case ScandinavianDefense:
+    //     board.change("e4");
+    //     board.change("d5");
+    //     break;
+    // case PircDefense:
+    //     board.change("e4");
+    //     board.change("d6");
+    //     board.change("d4");
+    //     board.change("Nf6");
+    //     break;
+    // case SicilianDefenseAlapinVariation:
+    //     board.change("e4");
+    //     board.change("c5");
+    //     board.change("c3");
+    //     break;
+    // case AlekhinesDefense:
+    //     board.change("e4");
+    //     board.change("Nf6");
+    //     break;
+    // case KingsGambit:
+    //     board.change("e4");
+    //     board.change("e5");
+    //     board.change("f4");
+    //     break;
+    // case ScotchGame:
+    //     board.change("e4");
+    //     board.change("e5");
+    //     board.change("Nf3");
+    //     board.change("Nc6");
+    //     board.change("d4");
+    //     break;
+    // case ViennaGame:
+    //     board.change("e4");
+    //     board.change("e5");
+    //     board.change("Nc3");
+    //     break;
+    // case QueensGambit:
+    //     board.change("d4");
+    //     board.change("d5");
+    //     board.change("c4");
+    //     break;
+    // case SlavDefense:
+    //     board.change("d4");
+    //     board.change("d5");
+    //     board.change("c4");
+    //     board.change("c6");
+    //     break;
+    // case KingsIndianDefense:
+    //     board.change("d4");
+    //     board.change("Nf6");
+    //     board.change("c4");
+    //     board.change("g6");
+    //     break;
+    // case NimzoIndianDefense:
+    //     board.change("d4");
+    //     board.change("Nf6");
+    //     board.change("c4");
+    //     board.change("e6");
+    //     board.change("Nc3");
+    //     board.change("Bb4");
+    //     break;
+    // case QueensIndianDefense:
+    //     board.change("d4");
+    //     board.change("Nf6");
+    //     board.change("c4");
+    //     board.change("e6");
+    //     board.change("Nf3");
+    //     board.change("b6");
+    //     break;
+    // case CatalanOpening:
+    //     board.change("d4");
+    //     board.change("Nf6");
+    //     board.change("c4");
+    //     board.change("e6");
+    //     board.change("g3");
+    //     break;
+    // case BogoIndianDefense:
+    //     board.change("d4");
+    //     board.change("Nf6");
+    //     board.change("c4");
+    //     board.change("e6");
+    //     board.change("Nf3");
+    //     board.change("Bb4+");
+    //     break;
+    // case GrunfeldDefense:
+    //     board.change("d4");
+    //     board.change("Nf6");
+    //     board.change("c4");
+    //     board.change("g6");
+    //     board.change("Nc3");
+    //     board.change("d5");
+    //     break;
+    // case DutchDefense:
+    //     board.change("d4");
+    //     board.change("f5");
+    //     break;
+    // case TrompowskyAttack:
+    //     board.change("d4");
+    //     board.change("Nf6");
+    //     board.change("Bg5");
+    //     break;
+    // case BenkoGambit:
+    //     board.change("d4");
+    //     board.change("Nf6");
+    //     board.change("c4");
+    //     board.change("c5");
+    //     board.change("d5");
+    //     board.change("b5");
+    //     break;
+    // case LondonSystem:
+    //     board.change("d4");
+    //     board.change("d5");
+    //     board.change("Nf3");
+    //     board.change("Nf6");
+    //     board.change("Bf4");
+    //     break;
+    // case BenoniDefense:
+    //     board.change("d4");
+    //     board.change("Nf6");
+    //     board.change("c4");
+    //     board.change("c5");
+    //     board.change("d5");
+    //     board.change("e6");
+    //     board.change("Nc3");
+    //     board.change("exd5");
+    //     board.change("cxd5");
+    //     board.change("d6");
+    //     break;
+    // default:
+    //     break;
+    // }
+}
+
+OpeningEngine::~OpeningEngine() {}
+
 std::vector<PGNGame *> PGN::import(const char *path, long long file_size)
 {
     FILE *file_ptr = fopen(path, "rb");

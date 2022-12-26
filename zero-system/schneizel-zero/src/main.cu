@@ -159,9 +159,7 @@ Game self_play(int white_depth, int black_depth, bool print)
         int r = rand() % evals.size();
         board.change(evals[r].move);
         prev_move = evals[r].move;
-        Board cpy_board;
-        cpy_board.copy(&board);
-        game.boards.push_back(cpy_board);
+        game.boards.push_back(board);
 
         move_cnt++;
 
@@ -192,14 +190,92 @@ Game self_play(int white_depth, int black_depth, bool print)
         r = rand() % evals.size();
         board.change(evals[r].move);
         prev_move = evals[r].move;
-        Board cpy_board2;
-        cpy_board2.copy(&board);
-        game.boards.push_back(cpy_board2);
+        game.boards.push_back(board);
 
         move_cnt++;
     }
 
     return game;
+}
+
+void play(bool white, int depth)
+{
+    Board board;
+    Move prev_move;
+
+    int move_cnt = 0;
+
+    while (true)
+    {
+        printf("\nWHITE TURN\n");
+        if (move_cnt == 0)
+        {
+            board.print();
+        }
+        else
+        {
+            board.print(prev_move);
+        }
+
+        if (board.is_checkmate(false))
+        {
+            printf("WHITE CHECKMATED!\n");
+            break;
+        }
+        else if (!board.has_moves(true))
+        {
+            printf("WHITE STALEMATED!\n");
+            break;
+        }
+
+        if (white)
+        {
+            std::string move_str;
+            printf("Enter Move: ");
+            std::cin >> move_str;
+            prev_move = board.change(move_str, true);
+        }
+        else
+        {
+            auto evals = board.minimax_alphabeta_dyn(true, depth);
+            int r = rand() % evals.size();
+            board.change(evals[r].move);
+            prev_move = evals[r].move;
+        }
+
+        move_cnt++;
+
+        printf("\nBLACK TURN\n");
+        board.print(prev_move);
+
+        if (board.is_checkmate(true))
+        {
+            printf("BLACK CHECKMATED!\n");
+            break;
+        }
+        else if (!board.has_moves(false))
+        {
+            printf("BLACK STALEMATED!\n");
+            break;
+        }
+
+        if (!white)
+        {
+            std::string move_str;
+            printf("Enter Move: ");
+            std::cin >> move_str;
+            prev_move = board.change(move_str, false);
+        }
+        else
+        {
+            auto evals = board.minimax_alphabeta_dyn(false, depth);
+            int r = rand() % evals.size();
+            board.change(evals[r].move);
+            prev_move = evals[r].move;
+        }
+
+        move_cnt++;
+    }
 }
 
 void export_pgn(const char *path)
@@ -371,13 +447,15 @@ int main()
 {
     srand(time(NULL));
 
-    const char *path = "C:\\dev\\ml-portfolio\\zero-system\\schneizel-zero\\data\\data.pgn";
+    // const char *path = "C:\\dev\\ml-portfolio\\zero-system\\schneizel-zero\\data\\data.pgn";
 
     // export_pgn(path);
 
     // compare_models(10, 128);
 
     // self_play(3, 3, true);
+
+    play(true, 3);
 
     return 0;
 }

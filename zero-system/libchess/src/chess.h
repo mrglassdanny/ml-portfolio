@@ -164,6 +164,16 @@ namespace chess
         Board board;
     };
 
+    class OpeningEngine
+    {
+    private:
+        std::vector<std::vector<Board>> openings_;
+
+    public:
+        OpeningEngine();
+        ~OpeningEngine();
+    };
+
     struct PGNGame
     {
         int lbl;
