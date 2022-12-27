@@ -13,6 +13,11 @@ char CHESS_BOARD_START_STATE[CHESS_BOARD_LEN] =
         CHESS_BP, CHESS_BP, CHESS_BP, CHESS_BP, CHESS_BP, CHESS_BP, CHESS_BP, CHESS_BP,
         CHESS_BR, CHESS_BN, CHESS_BB, CHESS_BQ, CHESS_BK, CHESS_BB, CHESS_BN, CHESS_BR};
 
+bool Move::is_valid(Move *move)
+{
+    return move->src_square != CHESS_INVALID_SQUARE && move->dst_square != CHESS_INVALID_SQUARE;
+}
+
 bool Piece::is_white(char piece)
 {
     switch (piece)
@@ -1893,9 +1898,9 @@ bool Board::is_checkmate(bool by_white)
     return this->is_checkmate(by_white, true);
 }
 
-void Board::change(Move move)
+bool Board::change(Move move)
 {
-    if (move.src_square == CHESS_INVALID_SQUARE || move.dst_square == CHESS_INVALID_SQUARE)
+    if (!Move::is_valid(&move))
     {
         CHESS_THROW_ERROR("CHESS ERROR: invalid move");
     }
@@ -2175,6 +2180,8 @@ void Board::change(Move move)
 
     // New pin is possible as a result of moving piece.
     this->update_pins(white);
+
+    return true;
 }
 
 Move Board::change(std::string move_str, bool white)
@@ -2490,8 +2497,8 @@ Move Board::change(std::string move_str, bool white)
         if (!valid_move)
         {
             this->print();
-            printf("MOVE: %s\n", move_str.c_str());
-            CHESS_THROW_ERROR("CHESS ERROR: move is not valid");
+            printf("INVALID MOVE: %s\n", move_str.c_str());
+            return Move{CHESS_INVALID_SQUARE, CHESS_INVALID_SQUARE, CHESS_MT};
         }
     }
 

@@ -40,6 +40,8 @@ namespace chess
         int src_square;
         int dst_square;
         char promo_piece = CHESS_MT;
+
+        static bool is_valid(Move *move);
     };
 
     class Piece
@@ -140,7 +142,7 @@ namespace chess
         bool is_check(bool by_white);
         bool is_checkmate(bool by_white);
 
-        void change(Move move);
+        bool change(Move move);
         Move change(std::string move_str, bool white);
 
         Simulation simulate(Move move);
