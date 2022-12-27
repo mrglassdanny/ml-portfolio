@@ -2909,6 +2909,48 @@ OpeningEngine::OpeningEngine()
 
         this->openings_.push_back(Opening{"QueensIndianDefense", boards});
     }
+
+    // ColleSystem
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("d4", true);
+        boards.push_back(board);
+        board.change("d5", false);
+        boards.push_back(board);
+        board.change("Nf3", true);
+        boards.push_back(board);
+        board.change("Nf6", false);
+        boards.push_back(board);
+        board.change("e3", true);
+        boards.push_back(board);
+
+        this->openings_.push_back(Opening{"ColleSystem", boards});
+    }
+
+    // StonewallAttack
+    {
+        std::vector<Board> boards;
+        Board board;
+
+        board.change("d4", true);
+        boards.push_back(board);
+        board.change("d5", false);
+        boards.push_back(board);
+        board.change("f4", true);
+        boards.push_back(board);
+        board.change("Nf6", false);
+        boards.push_back(board);
+        board.change("e3", true);
+        boards.push_back(board);
+        board.change("e6", false);
+        boards.push_back(board);
+        board.change("Nf3", false);
+        boards.push_back(board);
+
+        this->openings_.push_back(Opening{"ColleSystem", boards});
+    }
 }
 
 OpeningEngine::~OpeningEngine() {}

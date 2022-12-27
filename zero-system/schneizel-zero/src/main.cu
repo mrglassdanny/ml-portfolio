@@ -245,7 +245,8 @@ void play(bool white, int depth)
         {
             if (move_cnt == 0)
             {
-                prev_move = board.change("e4", true);
+                // Queens pawn is our default opening.
+                prev_move = board.change("d4", true);
             }
             else
             {
