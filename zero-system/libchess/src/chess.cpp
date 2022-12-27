@@ -2946,7 +2946,7 @@ OpeningEngine::OpeningEngine()
         boards.push_back(board);
         board.change("e6", false);
         boards.push_back(board);
-        board.change("Nf3", false);
+        board.change("Nf3", true);
         boards.push_back(board);
 
         this->openings_.push_back(Opening{"ColleSystem", boards});
