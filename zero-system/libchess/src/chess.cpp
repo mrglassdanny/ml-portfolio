@@ -323,7 +323,7 @@ void Board::copy(Board *src)
     this->check_state_ = src->check_state_;
 }
 
-int Board::compare(Board *other)
+int Board::compare_data(Board *other)
 {
     return memcmp(this->data_, other->data_, sizeof(this->data_));
 }
@@ -1898,7 +1898,7 @@ bool Board::is_checkmate(bool by_white)
     return this->is_checkmate(by_white, true);
 }
 
-bool Board::change(Move move)
+void Board::change(Move move)
 {
     if (!Move::is_valid(&move))
     {
@@ -2180,8 +2180,6 @@ bool Board::change(Move move)
 
     // New pin is possible as a result of moving piece.
     this->update_pins(white);
-
-    return true;
 }
 
 Move Board::change(std::string move_str, bool white)
@@ -2518,6 +2516,16 @@ Simulation Board::simulate(Move move)
     return sim;
 }
 
+Simulation Board::simulate(std::string move_str, bool white)
+{
+    Simulation sim;
+
+    sim.board.copy(this);
+    sim.move = sim.board.change(move_str, white);
+
+    return sim;
+}
+
 std::vector<Simulation> Board::simulate_all(bool white)
 {
     std::vector<Simulation> sims;
@@ -2792,185 +2800,252 @@ std::vector<Evaluation> Board::minimax_alphabeta_dyn(bool white, int depth)
 
 OpeningEngine::OpeningEngine()
 {
-    // KINGS PAWN:
+    Board board;
 
-    // RuyLopezOpening
+    // d4
     {
-        std::vector<Board> boards;
-        Board board;
+        auto sim_1 = board.simulate("d4", true);
+        this->nodes_.push_back(OpeningNode{sim_1});
 
-        board.change("e4", true);
-        boards.push_back(board);
-        board.change("e5", false);
-        boards.push_back(board);
-        board.change("Nf3", true);
-        boards.push_back(board);
-        board.change("Nc6", false);
-        boards.push_back(board);
-        board.change("Bb5", true);
-        boards.push_back(board);
+        auto nodes_1 = &this->nodes_[this->nodes_.size() - 1];
 
-        this->openings_.push_back(Opening{"RuyLopezOpening", boards});
-    }
+        {
+            // Nf6
+            {
+                auto sim_2 = sim_1.board.simulate("Nf6", false);
+                nodes_1->nodes.push_back(OpeningNode{sim_2});
 
-    // ItalianGame
-    {
-        std::vector<Board> boards;
-        Board board;
+                auto nodes_2 = &nodes_1->nodes[nodes_1->nodes.size() - 1];
 
-        board.change("e4", true);
-        boards.push_back(board);
-        board.change("e5", false);
-        boards.push_back(board);
-        board.change("Nf3", true);
-        boards.push_back(board);
-        board.change("Nc6", false);
-        boards.push_back(board);
-        board.change("Bc4", true);
-        boards.push_back(board);
+                // c4
+                {
+                    auto sim_3 = sim_2.board.simulate("c4", true);
+                    nodes_2->nodes.push_back(OpeningNode{sim_3});
 
-        this->openings_.push_back(Opening{"ItalianGame", boards});
-    }
+                    auto nodes_3 = &nodes_2->nodes[nodes_2->nodes.size() - 1];
 
-    // ScotchGame
-    {
-        std::vector<Board> boards;
-        Board board;
+                    // e6
+                    {
+                        auto sim_4 = sim_3.board.simulate("e6", false);
+                        nodes_3->nodes.push_back(OpeningNode{sim_4});
 
-        board.change("e4", true);
-        boards.push_back(board);
-        board.change("e5", false);
-        boards.push_back(board);
-        board.change("Nf3", true);
-        boards.push_back(board);
-        board.change("Nc6", false);
-        boards.push_back(board);
-        board.change("d4", true);
-        boards.push_back(board);
+                        auto nodes_4 = &nodes_3->nodes[nodes_3->nodes.size() - 1];
 
-        this->openings_.push_back(Opening{"ScotchGame", boards});
-    }
+                        // Nc3
+                        {
+                            auto sim_5 = sim_4.board.simulate("Nc3", true);
+                            nodes_4->nodes.push_back(OpeningNode{sim_5});
 
-    // ViennaGame
-    {
-        std::vector<Board> boards;
-        Board board;
+                            auto nodes_5 = &nodes_4->nodes[nodes_4->nodes.size() - 1];
 
-        board.change("e4", true);
-        boards.push_back(board);
-        board.change("e5", false);
-        boards.push_back(board);
-        board.change("Nc3", true);
-        boards.push_back(board);
+                            // Bb4
+                            {
+                                auto sim_6 = sim_5.board.simulate("Bb4", false);
+                                nodes_5->nodes.push_back(OpeningNode{sim_6});
+                            }
+                        }
 
-        this->openings_.push_back(Opening{"ViennaGame", boards});
-    }
+                        // Nf3
+                        {
+                            auto sim_5 = sim_4.board.simulate("Nc3", true);
+                            nodes_4->nodes.push_back(OpeningNode{sim_5});
 
-    // QUEENS PAWN
+                            auto nodes_5 = &nodes_4->nodes[nodes_4->nodes.size() - 1];
 
-    // NimzoIndianDefense
-    {
-        std::vector<Board> boards;
-        Board board;
+                            // b6
+                            {
+                                auto sim_6 = sim_5.board.simulate("b6", false);
+                                nodes_5->nodes.push_back(OpeningNode{sim_6});
+                            }
 
-        board.change("d4", true);
-        boards.push_back(board);
-        board.change("Nf6", false);
-        boards.push_back(board);
-        board.change("c4", true);
-        boards.push_back(board);
-        board.change("e6", false);
-        boards.push_back(board);
-        board.change("Nc3", true);
-        boards.push_back(board);
-        board.change("Bb4", false);
-        boards.push_back(board);
+                            // Bb4
+                            {
+                                auto sim_6 = sim_5.board.simulate("Bb4", false);
+                                nodes_5->nodes.push_back(OpeningNode{sim_6});
+                            }
+                        }
 
-        this->openings_.push_back(Opening{"NimzoIndianDefense", boards});
-    }
+                        // g3
+                        {
+                            auto sim_5 = sim_4.board.simulate("g3", true);
+                            nodes_4->nodes.push_back(OpeningNode{sim_5});
+                        }
+                    }
 
-    // QueensIndianDefense
-    {
-        std::vector<Board> boards;
-        Board board;
+                    // g6
+                    {
 
-        board.change("d4", true);
-        boards.push_back(board);
-        board.change("Nf6", false);
-        boards.push_back(board);
-        board.change("c4", true);
-        boards.push_back(board);
-        board.change("e6", false);
-        boards.push_back(board);
-        board.change("Nf3", true);
-        boards.push_back(board);
-        board.change("b6", false);
-        boards.push_back(board);
+                        auto sim_4 = sim_3.board.simulate("g6", false);
+                        nodes_3->nodes.push_back(OpeningNode{sim_4});
 
-        this->openings_.push_back(Opening{"QueensIndianDefense", boards});
-    }
+                        auto nodes_4 = &nodes_3->nodes[nodes_3->nodes.size() - 1];
 
-    // ColleSystem
-    {
-        std::vector<Board> boards;
-        Board board;
+                        // Nc3
+                        {
+                            auto sim_5 = sim_4.board.simulate("Nc3", true);
+                            nodes_4->nodes.push_back(OpeningNode{sim_5});
 
-        board.change("d4", true);
-        boards.push_back(board);
-        board.change("d5", false);
-        boards.push_back(board);
-        board.change("Nf3", true);
-        boards.push_back(board);
-        board.change("Nf6", false);
-        boards.push_back(board);
-        board.change("e3", true);
-        boards.push_back(board);
+                            auto nodes_5 = &nodes_4->nodes[nodes_4->nodes.size() - 1];
 
-        this->openings_.push_back(Opening{"ColleSystem", boards});
-    }
+                            // d5
+                            {
+                                auto sim_6 = sim_5.board.simulate("d5", false);
+                                nodes_5->nodes.push_back(OpeningNode{sim_6});
+                            }
+                        }
+                    }
 
-    // StonewallAttack
-    {
-        std::vector<Board> boards;
-        Board board;
+                    // c5
+                    {
 
-        board.change("d4", true);
-        boards.push_back(board);
-        board.change("d5", false);
-        boards.push_back(board);
-        board.change("f4", true);
-        boards.push_back(board);
-        board.change("Nf6", false);
-        boards.push_back(board);
-        board.change("e3", true);
-        boards.push_back(board);
-        board.change("e6", false);
-        boards.push_back(board);
-        board.change("Nf3", true);
-        boards.push_back(board);
+                        auto sim_4 = sim_3.board.simulate("c5", false);
+                        nodes_3->nodes.push_back(OpeningNode{sim_4});
 
-        this->openings_.push_back(Opening{"ColleSystem", boards});
+                        auto nodes_4 = &nodes_3->nodes[nodes_3->nodes.size() - 1];
+
+                        // d5
+                        {
+                            auto sim_5 = sim_4.board.simulate("d5", true);
+                            nodes_4->nodes.push_back(OpeningNode{sim_5});
+
+                            auto nodes_5 = &nodes_4->nodes[nodes_4->nodes.size() - 1];
+
+                            // b5
+                            {
+                                auto sim_6 = sim_5.board.simulate("b5", false);
+                                nodes_5->nodes.push_back(OpeningNode{sim_6});
+                            }
+
+                            // e6
+                            {
+                                auto sim_6 = sim_5.board.simulate("e6", false);
+                                nodes_5->nodes.push_back(OpeningNode{sim_6});
+
+                                auto nodes_6 = &nodes_5->nodes[nodes_5->nodes.size() - 1];
+
+                                // Nc3
+                                {
+                                    auto sim_7 = sim_6.board.simulate("Nc3", false);
+                                    nodes_6->nodes.push_back(OpeningNode{sim_7});
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Bg5
+                {
+                    auto sim_3 = sim_2.board.simulate("Bg5", true);
+                    nodes_2->nodes.push_back(OpeningNode{sim_3});
+
+                    auto nodes_3 = &nodes_2->nodes[nodes_2->nodes.size() - 1];
+                }
+            }
+
+            // d5
+            {
+                auto sim_2 = sim_1.board.simulate("d5", false);
+                nodes_1->nodes.push_back(OpeningNode{sim_2});
+
+                auto nodes_2 = &nodes_1->nodes[nodes_1->nodes.size() - 1];
+
+                // Nf3
+                {
+                    auto sim_3 = sim_2.board.simulate("Nf3", true);
+                    nodes_2->nodes.push_back(OpeningNode{sim_3});
+
+                    auto nodes_3 = &nodes_2->nodes[nodes_2->nodes.size() - 1];
+
+                    // Nf6
+                    {
+                        auto sim_4 = sim_3.board.simulate("Nf6", false);
+                        nodes_3->nodes.push_back(OpeningNode{sim_4});
+
+                        auto nodes_4 = &nodes_3->nodes[nodes_3->nodes.size() - 1];
+
+                        // e3
+                        {
+                            auto sim_5 = sim_4.board.simulate("e3", true);
+                            nodes_4->nodes.push_back(OpeningNode{sim_5});
+                        }
+
+                        // Bf4
+                        {
+                            auto sim_5 = sim_4.board.simulate("Bf4", true);
+                            nodes_4->nodes.push_back(OpeningNode{sim_5});
+                        }
+                    }
+                }
+
+                // f4
+                {
+                    auto sim_3 = sim_2.board.simulate("f4", true);
+                    nodes_2->nodes.push_back(OpeningNode{sim_3});
+
+                    auto nodes_3 = &nodes_2->nodes[nodes_2->nodes.size() - 1];
+
+                    // Nf6
+                    {
+                        auto sim_4 = sim_3.board.simulate("Nf6", false);
+                        nodes_3->nodes.push_back(OpeningNode{sim_4});
+
+                        auto nodes_4 = &nodes_3->nodes[nodes_3->nodes.size() - 1];
+
+                        // e3
+                        {
+                            auto sim_5 = sim_4.board.simulate("e3", true);
+                            nodes_4->nodes.push_back(OpeningNode{sim_5});
+
+                            auto nodes_5 = &nodes_4->nodes[nodes_4->nodes.size() - 1];
+
+                            // e6
+                            {
+                                auto sim_6 = sim_5.board.simulate("e6", false);
+                                nodes_5->nodes.push_back(OpeningNode{sim_6});
+
+                                auto nodes_6 = &nodes_5->nodes[nodes_5->nodes.size() - 1];
+
+                                // Nf3
+                                {
+                                    auto sim_7 = sim_6.board.simulate("Nf3", true);
+                                    nodes_6->nodes.push_back(OpeningNode{sim_7});
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // c4
+                {
+                    auto sim_3 = sim_2.board.simulate("c4", true);
+                    nodes_2->nodes.push_back(OpeningNode{sim_3});
+
+                    auto nodes_3 = &nodes_2->nodes[nodes_2->nodes.size() - 1];
+
+                    // c6
+                    {
+                        auto sim_4 = sim_3.board.simulate("c6", false);
+                        nodes_3->nodes.push_back(OpeningNode{sim_4});
+                    }
+                }
+            }
+
+            // f5
+            {
+                auto sim_2 = sim_1.board.simulate("f5", false);
+                nodes_1->nodes.push_back(OpeningNode{sim_2});
+
+                auto nodes_2 = &nodes_1->nodes[nodes_1->nodes.size() - 1];
+            }
+        }
     }
 }
 
 OpeningEngine::~OpeningEngine() {}
 
-bool OpeningEngine::matches(Board *board, int move_cnt)
+Move OpeningEngine::next_move(Board *board)
 {
-    for (auto opening : this->openings_)
-    {
-        if (opening.boards.size() > move_cnt)
-        {
-            if (opening.boards[move_cnt - 1].compare(board) == 0)
-            {
-                board->copy(&opening.boards[move_cnt]);
-                printf("%s\n", opening.name.c_str());
-                return true;
-            }
-        }
-    }
-
-    return false;
+    return Move{CHESS_INVALID_SQUARE, CHESS_INVALID_SQUARE, CHESS_MT};
 }
 
 std::vector<PGNGame *> PGN::import(const char *path, long long file_size)

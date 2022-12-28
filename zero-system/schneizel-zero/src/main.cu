@@ -490,7 +490,9 @@ int main()
 
     // self_play(3, 3, true);
 
-    play(false, 3);
+    // play(false, 3);
+
+    OpeningEngine a;
 
     return 0;
 }

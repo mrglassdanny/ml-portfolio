@@ -127,7 +127,7 @@ namespace chess
 
         void copy(Board *src);
 
-        int compare(Board *other);
+        int compare_data(Board *other);
 
         void print();
         void print(Move move);
@@ -142,10 +142,11 @@ namespace chess
         bool is_check(bool by_white);
         bool is_checkmate(bool by_white);
 
-        bool change(Move move);
+        void change(Move move);
         Move change(std::string move_str, bool white);
 
         Simulation simulate(Move move);
+        Simulation simulate(std::string move_str, bool white);
         std::vector<Simulation> simulate_all(bool white);
 
         int evaluate_material();
@@ -168,22 +169,22 @@ namespace chess
         Board board;
     };
 
-    struct Opening
+    struct OpeningNode
     {
-        std::string name;
-        std::vector<Board> boards;
+        Simulation sim;
+        std::vector<OpeningNode> nodes;
     };
 
     class OpeningEngine
     {
     private:
-        std::vector<Opening> openings_;
+        std::vector<OpeningNode> nodes_;
 
     public:
         OpeningEngine();
         ~OpeningEngine();
 
-        bool matches(Board *board, int move_cnt);
+        Move next_move(Board *board);
     };
 
     struct PGNGame
