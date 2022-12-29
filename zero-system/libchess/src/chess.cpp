@@ -2829,6 +2829,11 @@ std::string OpeningEngine::next_move(Board *board, int move_cnt)
 {
     std::string move_str = "";
 
+    if (move_cnt >= CHESS_OPENING_MOVE_CNT)
+    {
+        return move_str;
+    }
+
     for (auto opening : this->openings_)
     {
         if (board->compare_data(&opening.boards[(move_cnt - 1) * CHESS_BOARD_LEN]) == 0)
