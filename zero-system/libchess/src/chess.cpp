@@ -2941,8 +2941,14 @@ std::vector<PGNGame *> PGN::import(const char *path, long long file_size)
                     }
                     game->move_strs.push_back(black_move_str);
 
+                    while (i < file_size && (buf[i] == '\n' || buf[i] == '\r'))
+                    {
+                        i++;
+                    }
+
                     // Go to next turn.
-                    if ((i + 1) < file_size && buf[i + 1] != ' ' && ((i + 2) < file_size && buf[i + 2] != '/' && buf[i + 2] != '-'))
+                    if ((i + 1) < file_size && buf[i + 1] != ' ' && buf[i + 1] != '/' && buf[i + 1] != '-' &&
+                        ((i + 2) < file_size && buf[i + 2] != '/' && buf[i + 2] != '-'))
                     {
                         while (i < file_size && buf[i] != '.')
                         {
