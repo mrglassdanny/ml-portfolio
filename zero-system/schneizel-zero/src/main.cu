@@ -247,7 +247,7 @@ void play(bool white, int depth)
         {
             if (move_cnt == 0)
             {
-                // d4 is our default opening.
+                // Default opening if white.
                 prev_move = board.change("d4", true);
             }
             else
