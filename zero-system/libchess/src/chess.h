@@ -205,5 +205,6 @@ namespace chess
     {
     public:
         static std::vector<PGNGame *> import(const char *path, long long file_size);
+        static void export_openings(const char *pgn_path, long long pgn_file_size, const char *export_path);
     };
 }

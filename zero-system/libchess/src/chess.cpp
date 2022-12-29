@@ -3010,3 +3010,76 @@ std::vector<PGNGame *> PGN::import(const char *path, long long file_size)
 
     return games;
 }
+
+void PGN::export_openings(const char *pgn_path, long long pgn_file_size, const char *export_path)
+{
+    auto pgn_games = PGN::import(pgn_path, pgn_file_size);
+
+    std::vector<Opening> openings;
+
+    char board_data_buf[CHESS_BOARD_LEN * CHESS_OPENING_MOVE_CNT];
+    std::string move_str_buf;
+
+    for (auto pgn_game : pgn_games)
+    {
+        Board board;
+        bool white = true;
+
+        int game_move_cnt = 0;
+
+        move_str_buf = "";
+
+        for (auto move_str : pgn_game->move_strs)
+        {
+            auto move = board.change(move_str, white);
+            white = !white;
+
+            memcpy(&board_data_buf[game_move_cnt * CHESS_BOARD_LEN], board.get_data(), sizeof(char) * CHESS_BOARD_LEN);
+            game_move_cnt++;
+
+            move_str_buf += move_str;
+            move_str_buf += " ";
+
+            if (game_move_cnt >= CHESS_OPENING_MOVE_CNT)
+            {
+                bool match = false;
+                for (int i = 0; i < openings.size(); i++)
+                {
+                    auto opening = &openings[i];
+
+                    if (memcmp(opening->boards, board_data_buf, sizeof(board_data_buf)) == 0)
+                    {
+                        opening->game_cnt++;
+
+                        match = true;
+                        break;
+                    }
+                }
+
+                if (!match)
+                {
+                    Opening opening;
+                    memcpy(opening.boards, board_data_buf, sizeof(board_data_buf));
+                    memset(opening.move_strs, 0, sizeof(move_str_buf));
+                    memcpy(opening.move_strs, move_str_buf.c_str(), sizeof(opening.move_strs));
+
+                    opening.game_cnt++;
+
+                    openings.push_back(opening);
+                }
+
+                break;
+            }
+        }
+
+        delete pgn_game;
+    }
+
+    FILE *openings_file = fopen(export_path, "wb");
+    for (int i = 0; i < openings.size(); i++)
+    {
+        auto t = &openings[i];
+        fwrite(t, sizeof(Opening), 1, openings_file);
+    }
+    fclose(openings_file);
+}

@@ -396,89 +396,6 @@ void export_pgn(const char *path)
     fclose(train_lbl_file);
 }
 
-void export_pgn_openings(const char *path)
-{
-    auto pgn_games = PGN::import(path, FileUtils::get_file_size(path));
-
-    std::vector<Opening> openings;
-
-    char buf[CHESS_BOARD_LEN * CHESS_OPENING_MOVE_CNT];
-    std::string buf_move_strs;
-
-    int game_cnt = 0;
-
-    for (auto pgn_game : pgn_games)
-    {
-        Board board;
-        bool white = true;
-
-        int game_move_cnt = 0;
-
-        buf_move_strs = "";
-
-        for (auto move_str : pgn_game->move_strs)
-        {
-            auto move = board.change(move_str, white);
-            white = !white;
-
-            memcpy(&buf[game_move_cnt * CHESS_BOARD_LEN], board.get_data(), sizeof(char) * CHESS_BOARD_LEN);
-            game_move_cnt++;
-
-            buf_move_strs += move_str;
-            buf_move_strs += " ";
-
-            if (game_move_cnt >= CHESS_OPENING_MOVE_CNT)
-            {
-                bool match = false;
-                for (int i = 0; i < openings.size(); i++)
-                {
-                    auto t = &openings[i];
-
-                    if (memcmp(t->boards, buf, sizeof(buf)) == 0)
-                    {
-                        t->game_cnt++;
-
-                        match = true;
-                        break;
-                    }
-                }
-
-                if (!match)
-                {
-                    Opening t;
-                    memcpy(t.boards, buf, sizeof(buf));
-                    memset(t.move_strs, 0, sizeof(buf_move_strs));
-                    memcpy(t.move_strs, buf_move_strs.c_str(), sizeof(t.move_strs));
-
-                    t.game_cnt++;
-
-                    openings.push_back(t);
-                }
-
-                break;
-            }
-        }
-
-        game_cnt++;
-
-        if (game_cnt % 1000 == 0)
-        {
-            printf("Game: %d\n", game_cnt);
-        }
-
-        delete pgn_game;
-    }
-
-    FILE *openings_file = fopen("data/openings.data", "wb");
-    for (int i = 0; i < openings.size(); i++)
-    {
-        auto t = &openings[i];
-        fwrite(t, sizeof(Opening), 1, openings_file);
-    }
-
-    printf("Total games: %d\n", game_cnt);
-}
-
 void train(Model *model, int epochs, int batch_size)
 {
     const char *data_path = "temp/train.data";
@@ -597,13 +514,15 @@ int main()
 {
     srand(time(NULL));
 
-    export_pgn("data/test.pgn");
+    // export_pgn("data/all.pgn");
 
     // compare_models(10, 128);
 
     // self_play(3, 3, true);
 
-    // play(false, 4);
+    play(false, 4);
+
+    // PGN::export_openings("data/all.pgn", FileUtils::get_file_size("data/all.pgn"), "data/openings.data");
 
     return 0;
 }
