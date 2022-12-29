@@ -323,9 +323,19 @@ void Board::copy(Board *src)
     this->check_state_ = src->check_state_;
 }
 
+char *Board::get_data()
+{
+    return this->data_;
+}
+
 int Board::compare_data(Board *other)
 {
     return memcmp(this->data_, other->data_, sizeof(this->data_));
+}
+
+int Board::compare_data(const char *other_data)
+{
+    return memcmp(this->data_, other_data, sizeof(this->data_));
 }
 
 void Board::print()
@@ -497,11 +507,6 @@ void Board::print(Move move)
     }
 
     printf("\n\n");
-}
-
-char *Board::get_data()
-{
-    return this->data_;
 }
 
 char Board::get_piece(int square)
@@ -2798,15 +2803,50 @@ std::vector<Evaluation> Board::minimax_alphabeta_dyn(bool white, int depth)
     return best_moves;
 }
 
-OpeningEngine::OpeningEngine()
+OpeningEngine::OpeningEngine(const char *opening_path)
 {
+    FILE *opening_file = fopen(opening_path, "rb");
+
+    Opening opening;
+    while (fread(&opening, sizeof(opening), 1, opening_file) != 0)
+    {
+        this->openings_.push_back(opening);
+    }
+
+    std::sort(this->openings_.begin(), this->openings_.end(), &OpeningEngine::sort_fn);
+
+    fclose(opening_file);
 }
 
 OpeningEngine::~OpeningEngine() {}
 
-Move OpeningEngine::next_move(Board *board)
+bool OpeningEngine::sort_fn(Opening const &a, Opening const &b)
 {
-    return Move{CHESS_INVALID_SQUARE, CHESS_INVALID_SQUARE, CHESS_MT};
+    return a.game_cnt > b.game_cnt;
+}
+
+std::string OpeningEngine::next_move(Board *board, int move_cnt)
+{
+    std::string move_str = "";
+
+    for (auto opening : this->openings_)
+    {
+        if (board->compare_data(&opening.boards[(move_cnt - 1) * CHESS_BOARD_LEN]) == 0)
+        {
+            char *token = strtok(opening.move_strs, " ");
+            for (int i = 0; i < move_cnt; i++)
+            {
+                token = strtok(NULL, " ");
+            }
+
+            std::string temp(token);
+            move_str = temp;
+
+            break;
+        }
+    }
+
+    return move_str;
 }
 
 std::vector<PGNGame *> PGN::import(const char *path, long long file_size)

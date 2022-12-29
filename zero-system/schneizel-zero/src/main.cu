@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <conio.h>
 
+#include <map>
+
 #include <zero/mod.cuh>
 
 #include "chess.h"
@@ -203,7 +205,7 @@ void play(bool white, int depth)
     Board board;
     Move prev_move;
 
-    OpeningEngine opening_engine;
+    OpeningEngine opening_engine("data/openings.data");
     bool opening_stage = true;
 
     int move_cnt = 0;
@@ -245,15 +247,21 @@ void play(bool white, int depth)
         {
             if (move_cnt == 0)
             {
-                // Queens pawn is our default opening.
+                // d4 is our default opening.
                 prev_move = board.change("d4", true);
             }
             else
             {
-                if (opening_stage && !opening_engine.matches(&board, move_cnt))
+                std::string move_str = opening_engine.next_move(&board, move_cnt);
+
+                if (move_str.empty())
                 {
                     printf("End of book opening\n");
                     opening_stage = false;
+                }
+                else
+                {
+                    prev_move = board.change(move_str, true);
                 }
 
                 if (!opening_stage)
@@ -294,10 +302,16 @@ void play(bool white, int depth)
         }
         else
         {
-            if (opening_stage && !opening_engine.matches(&board, move_cnt))
+            std::string move_str = opening_engine.next_move(&board, move_cnt);
+
+            if (move_str.empty())
             {
                 printf("End of book opening\n");
                 opening_stage = false;
+            }
+            else
+            {
+                prev_move = board.change(move_str, false);
             }
 
             if (!opening_stage)
@@ -362,6 +376,89 @@ void export_pgn(const char *path)
 
     fclose(train_data_file);
     fclose(train_lbl_file);
+}
+
+void export_pgn_openings(const char *path)
+{
+    auto pgn_games = PGN::import(path, FileUtils::get_file_size(path));
+
+    std::vector<Opening> openings;
+
+    char buf[CHESS_BOARD_LEN * CHESS_OPENING_MOVE_CNT];
+    std::string buf_move_strs;
+
+    int game_cnt = 0;
+
+    for (auto pgn_game : pgn_games)
+    {
+        Board board;
+        bool white = true;
+
+        int game_move_cnt = 0;
+
+        buf_move_strs = "";
+
+        for (auto move_str : pgn_game->move_strs)
+        {
+            auto move = board.change(move_str, white);
+            white = !white;
+
+            memcpy(&buf[game_move_cnt * CHESS_BOARD_LEN], board.get_data(), sizeof(char) * CHESS_BOARD_LEN);
+            game_move_cnt++;
+
+            buf_move_strs += move_str;
+            buf_move_strs += " ";
+
+            if (game_move_cnt >= CHESS_OPENING_MOVE_CNT)
+            {
+                bool match = false;
+                for (int i = 0; i < openings.size(); i++)
+                {
+                    auto t = &openings[i];
+
+                    if (memcmp(t->boards, buf, sizeof(buf)) == 0)
+                    {
+                        t->game_cnt++;
+
+                        match = true;
+                        break;
+                    }
+                }
+
+                if (!match)
+                {
+                    Opening t;
+                    memcpy(t.boards, buf, sizeof(buf));
+                    memset(t.move_strs, 0, sizeof(buf_move_strs));
+                    memcpy(t.move_strs, buf_move_strs.c_str(), sizeof(t.move_strs));
+
+                    t.game_cnt++;
+
+                    openings.push_back(t);
+                }
+
+                break;
+            }
+        }
+
+        game_cnt++;
+
+        if (game_cnt % 1000 == 0)
+        {
+            printf("Game: %d\n", game_cnt);
+        }
+
+        delete pgn_game;
+    }
+
+    FILE *openings_file = fopen("data/openings.data", "wb");
+    for (int i = 0; i < openings.size(); i++)
+    {
+        auto t = &openings[i];
+        fwrite(t, sizeof(Opening), 1, openings_file);
+    }
+
+    printf("Total games: %d\n", game_cnt);
 }
 
 void train(Model *model, int epochs, int batch_size)
@@ -482,17 +579,13 @@ int main()
 {
     srand(time(NULL));
 
-    // const char *path = "C:\\dev\\ml-portfolio\\zero-system\\schneizel-zero\\data\\data.pgn";
-
     // export_pgn(path);
 
     // compare_models(10, 128);
 
     // self_play(3, 3, true);
 
-    // play(false, 3);
-
-    OpeningEngine a;
+    play(false, 1);
 
     return 0;
 }

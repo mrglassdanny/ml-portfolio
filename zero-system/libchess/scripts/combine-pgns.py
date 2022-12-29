@@ -2,7 +2,7 @@
 import os
 
 pgn_path = "C:/Users/d0g0825/Downloads"
-combined_pgn_path = "C:/dev/ml-portfolio/zero-system/schneizel-zero/data/ALL.pgn"
+combined_pgn_path = "C:/dev/ml-portfolio/zero-system/schneizel-zero/data/all.pgn"
 
 os.chdir(pgn_path)
 

@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <thread>
+#include <algorithm>
 
 #include <windows.h>
 
@@ -32,6 +33,8 @@
 
 #define CHESS_EVAL_MIN_VAL -1000
 #define CHESS_EVAL_MAX_VAL 1000
+
+#define CHESS_OPENING_MOVE_CNT 8
 
 namespace chess
 {
@@ -127,12 +130,14 @@ namespace chess
 
         void copy(Board *src);
 
+        char *get_data();
+
         int compare_data(Board *other);
+        int compare_data(const char *other_data);
 
         void print();
         void print(Move move);
 
-        char *get_data();
         char get_piece(int square);
 
         std::vector<Move> get_moves(int square, bool test_check);
@@ -169,22 +174,25 @@ namespace chess
         Board board;
     };
 
-    struct OpeningNode
+    struct Opening
     {
-        Simulation sim;
-        std::vector<OpeningNode> nodes;
+        char boards[CHESS_BOARD_LEN * CHESS_OPENING_MOVE_CNT];
+        char move_strs[64];
+        int game_cnt = 0;
     };
 
     class OpeningEngine
     {
     private:
-        std::vector<OpeningNode> nodes_;
+        std::vector<Opening> openings_;
+
+        static bool sort_fn(Opening const &a, Opening const &b);
 
     public:
-        OpeningEngine();
+        OpeningEngine(const char *opening_path);
         ~OpeningEngine();
 
-        Move next_move(Board *board);
+        std::string next_move(Board *board, int move_cnt);
     };
 
     struct PGNGame
