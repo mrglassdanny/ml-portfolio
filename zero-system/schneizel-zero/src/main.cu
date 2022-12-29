@@ -358,6 +358,17 @@ void export_pgn(const char *path)
             auto move = board.change(move_str, white);
             white = !white;
 
+            if (!Move::is_valid(&move))
+            {
+                printf("Quitting game %d on move %d\n", game_cnt, game_move_cnt);
+                for (auto move_str2 : pgn_game->move_strs)
+                {
+                    printf("%s ", move_str2.c_str());
+                }
+                printf("\n");
+                break;
+            }
+
             // Skip openings.
             if (game_move_cnt > CHESS_OPENING_MOVE_CNT)
             {
@@ -586,7 +597,7 @@ int main()
 {
     srand(time(NULL));
 
-    export_pgn("data/all.pgn");
+    export_pgn("data/test.pgn");
 
     // compare_models(10, 128);
 

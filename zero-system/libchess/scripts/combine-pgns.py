@@ -17,6 +17,6 @@ combined_pgn_file = open(combined_pgn_path, 'a+')
 for file in os.listdir():
     if file.endswith(".pgn"):
         file_path = f"{pgn_path}\{file}"
-        combined_pgn_file.write(read_pgn_file(file_path))
+        combined_pgn_file.write(read_pgn_file(file_path) + "\n")
 
 combined_pgn_file.close()

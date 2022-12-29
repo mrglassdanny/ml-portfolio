@@ -2875,9 +2875,15 @@ std::vector<PGNGame *> PGN::import(const char *path, long long file_size)
             i++;
             // At start of game (past "1.")).
 
+            // It is possible that "1." could be "1. " (space after '.').
+            while (i < file_size && (buf[i] == ' '))
+            {
+                i++;
+            }
+
             // Read moves.
 
-            while ((i + 1) < file_size && buf[i] != ' ' && buf[i + 1] != ' ')
+            while ((i + 1) < file_size && buf[i] != ' ' && buf[i + 1] != ' ' && (buf[i] != '1' && buf[i] != '0'))
             {
 
                 // Turn x.
@@ -2891,8 +2897,13 @@ std::vector<PGNGame *> PGN::import(const char *path, long long file_size)
                 game->move_strs.push_back(white_move_str);
                 i++;
 
+                while (i < file_size && (buf[i] == '\n' || buf[i] == '\r'))
+                {
+                    i++;
+                }
+
                 // It is possible that white made the last move.
-                if ((i + 1) < file_size && buf[i] != ' ' && buf[i + 1] != ' ')
+                if ((i + 1) < file_size && buf[i] != ' ' && buf[i + 1] != ' ' && (buf[i] != '1' && buf[i] != '0'))
                 {
                     // Black move.
                     std::string black_move_str;
@@ -2903,21 +2914,30 @@ std::vector<PGNGame *> PGN::import(const char *path, long long file_size)
                     game->move_strs.push_back(black_move_str);
 
                     // Go to next turn.
-                    if ((i + 1) < file_size && buf[i + 1] != ' ')
+                    if ((i + 1) < file_size && buf[i + 1] != ' ' && ((i + 2) < file_size && buf[i + 2] != '/' && buf[i + 2] != '-'))
                     {
                         while (i < file_size && buf[i] != '.')
                         {
                             i++;
                         }
                         i++;
+
+                        // buf[i] could be a space/newline.
+                        while (i < file_size && (buf[i] == ' ' || buf[i] == '\n' || buf[i] == '\r'))
+                        {
+                            i++;
+                        }
                     }
                 }
             }
 
-            // At end of game (right before 1-0 or 0-1 or 1/2-1/2).
-            // Should be spaces.
-            i++;
-            i++;
+            // At end of game (right at/before 1-0 or 0-1 or 1/2-1/2).
+            // buf[i] could be a space/newline.
+            while (i < file_size && (buf[i] == ' ' || buf[i] == '\n' || buf[i] == '\r'))
+            {
+                i++;
+            }
+
             if (buf[i] == '0')
             {
                 // White loss.
@@ -2925,7 +2945,6 @@ std::vector<PGNGame *> PGN::import(const char *path, long long file_size)
             }
             else
             {
-                // buf[i] == 1;
                 // This could mean tie; let's check next char for '/'.
                 if (buf[i + 1] == '/')
                 {
@@ -2934,8 +2953,16 @@ std::vector<PGNGame *> PGN::import(const char *path, long long file_size)
                 }
                 else
                 {
-                    // White win.
-                    game->lbl = 1;
+                    if (buf[i] == '*' || buf[i + 1] == '*')
+                    {
+                        // Tie? Not really sure what '*' means...
+                        game->lbl = 0;
+                    }
+                    else
+                    {
+                        // White win.
+                        game->lbl = 1;
+                    }
                 }
             }
 
