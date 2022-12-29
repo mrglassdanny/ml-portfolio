@@ -597,7 +597,7 @@ int main()
 {
     srand(time(NULL));
 
-    export_pgn("data/test.pgn");
+    export_pgn("data/all.pgn");
 
     // compare_models(10, 128);
 

@@ -2342,8 +2342,22 @@ Move Board::change(std::string move_str, bool white)
                 {
                     if (Board::get_row(i) == src_row && this->get_piece(i) == piece)
                     {
-                        src_square = i;
-                        break;
+                        bool legal_move = false;
+                        auto moves = this->get_moves(i, true);
+                        for (auto move : moves)
+                        {
+                            if (move.dst_square == dst_square)
+                            {
+                                legal_move = true;
+                                break;
+                            }
+                        }
+
+                        if (legal_move)
+                        {
+                            src_square = i;
+                            break;
+                        }
                     }
                 }
             }
@@ -2356,8 +2370,22 @@ Move Board::change(std::string move_str, bool white)
                 {
                     if (Board::get_col(i) == src_col && this->get_piece(i) == piece)
                     {
-                        src_square = i;
-                        break;
+                        bool legal_move = false;
+                        auto moves = this->get_moves(i, true);
+                        for (auto move : moves)
+                        {
+                            if (move.dst_square == dst_square)
+                            {
+                                legal_move = true;
+                                break;
+                            }
+                        }
+
+                        if (legal_move)
+                        {
+                            src_square = i;
+                            break;
+                        }
                     }
                 }
             }
