@@ -252,16 +252,19 @@ void play(bool white, int depth)
             }
             else
             {
-                std::string move_str = opening_engine.next_move(&board, move_cnt);
+                if (opening_stage)
+                {
+                    std::string move_str = opening_engine.next_move(&board, move_cnt);
 
-                if (move_str.empty())
-                {
-                    printf("End of book opening\n");
-                    opening_stage = false;
-                }
-                else
-                {
-                    prev_move = board.change(move_str, true);
+                    if (move_str.empty())
+                    {
+                        printf("End of opening stage\n");
+                        opening_stage = false;
+                    }
+                    else
+                    {
+                        prev_move = board.change(move_str, true);
+                    }
                 }
 
                 if (!opening_stage)
@@ -302,16 +305,20 @@ void play(bool white, int depth)
         }
         else
         {
-            std::string move_str = opening_engine.next_move(&board, move_cnt);
 
-            if (move_str.empty())
+            if (opening_stage)
             {
-                printf("End of book opening\n");
-                opening_stage = false;
-            }
-            else
-            {
-                prev_move = board.change(move_str, false);
+                std::string move_str = opening_engine.next_move(&board, move_cnt);
+
+                if (move_str.empty())
+                {
+                    printf("End of opening stage\n");
+                    opening_stage = false;
+                }
+                else
+                {
+                    prev_move = board.change(move_str, false);
+                }
             }
 
             if (!opening_stage)
@@ -585,7 +592,7 @@ int main()
 
     // self_play(3, 3, true);
 
-    play(false, 1);
+    play(false, 4);
 
     return 0;
 }
