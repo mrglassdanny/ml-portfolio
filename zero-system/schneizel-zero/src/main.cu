@@ -359,13 +359,13 @@ void export_pgn(const char *path)
             white = !white;
 
             // Skip openings.
-            if (game_move_cnt > 6)
+            if (game_move_cnt > CHESS_OPENING_MOVE_CNT)
             {
-                one_hot_encode_chess_board(&board, data_buf, white);
-                lbl_buf = (float)pgn_game->lbl;
+                // one_hot_encode_chess_board(&board, data_buf, white);
+                // lbl_buf = (float)pgn_game->lbl;
 
-                fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
-                fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
+                // fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
+                // fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
             }
 
             game_move_cnt++;
@@ -586,13 +586,13 @@ int main()
 {
     srand(time(NULL));
 
-    // export_pgn(path);
+    export_pgn("data/all.pgn");
 
     // compare_models(10, 128);
 
     // self_play(3, 3, true);
 
-    play(false, 4);
+    // play(false, 4);
 
     return 0;
 }
