@@ -14,101 +14,6 @@ using namespace chess;
 
 #define CHESS_BOARD_CHANNEL_CNT 12
 
-void one_hot_encode_chess_board_data(const char *board_data, float *out, bool white)
-{
-    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
-    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
-    {
-        for (int i = 0; i < CHESS_ROW_CNT; i++)
-        {
-            for (int j = 0; j < CHESS_COL_CNT; j++)
-            {
-                int channel_offset = (c * CHESS_BOARD_LEN);
-                int square = (i * CHESS_COL_CNT) + j;
-                int out_idx = channel_offset + square;
-
-                switch (c)
-                {
-                case 0:
-                    if (board_data[square] == CHESS_WP)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 1:
-                    if (board_data[square] == CHESS_WN)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 2:
-                    if (board_data[square] == CHESS_WB)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 3:
-                    if (board_data[square] == CHESS_WR)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 4:
-                    if (board_data[square] == CHESS_WQ)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 5:
-                    if (board_data[square] == CHESS_WK)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 6:
-                    if (board_data[square] == CHESS_BP)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 7:
-                    if (board_data[square] == CHESS_BN)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 8:
-                    if (board_data[square] == CHESS_BB)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 9:
-                    if (board_data[square] == CHESS_BR)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 10:
-                    if (board_data[square] == CHESS_BQ)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 11:
-                    if (board_data[square] == CHESS_BK)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-    }
-}
-
 void play(bool white, int depth)
 {
     Board board;
@@ -245,6 +150,101 @@ void play(bool white, int depth)
     }
 }
 
+void one_hot_encode_chess_board_data(const char *board_data, float *out, bool white)
+{
+    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
+    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
+    {
+        for (int i = 0; i < CHESS_ROW_CNT; i++)
+        {
+            for (int j = 0; j < CHESS_COL_CNT; j++)
+            {
+                int channel_offset = (c * CHESS_BOARD_LEN);
+                int square = (i * CHESS_COL_CNT) + j;
+                int out_idx = channel_offset + square;
+
+                switch (c)
+                {
+                case 0:
+                    if (board_data[square] == CHESS_WP)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 1:
+                    if (board_data[square] == CHESS_WN)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 2:
+                    if (board_data[square] == CHESS_WB)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 3:
+                    if (board_data[square] == CHESS_WR)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 4:
+                    if (board_data[square] == CHESS_WQ)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 5:
+                    if (board_data[square] == CHESS_WK)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 6:
+                    if (board_data[square] == CHESS_BP)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 7:
+                    if (board_data[square] == CHESS_BN)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 8:
+                    if (board_data[square] == CHESS_BB)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 9:
+                    if (board_data[square] == CHESS_BR)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 10:
+                    if (board_data[square] == CHESS_BQ)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 11:
+                    if (board_data[square] == CHESS_BK)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    }
+}
+
 void export_pgn(const char *path)
 {
     auto pgn_games = PGN::import(path, FileUtils::get_file_size(path));
@@ -268,6 +268,9 @@ void export_pgn(const char *path)
 
         for (auto move_str : pgn_game->move_strs)
         {
+            memset(data_buf, 0, sizeof(data_buf));
+            memcpy(data_buf, board.get_data(), sizeof(char) * CHESS_BOARD_LEN);
+
             auto move = board.change(move_str, white);
 
             if (!Move::is_valid(&move))
@@ -282,12 +285,8 @@ void export_pgn(const char *path)
             }
 
             // Skip openings.
-            if (game_move_cnt > CHESS_OPENING_MOVE_CNT)
+            if (game_move_cnt >= CHESS_OPENING_MOVE_CNT)
             {
-                move_cnt++;
-
-                memset(data_buf, 0, sizeof(data_buf));
-                memcpy(data_buf, board.get_data(), sizeof(char) * CHESS_BOARD_LEN);
                 if (white)
                 {
                     data_buf[CHESS_BOARD_LEN] = 'w';
@@ -301,6 +300,8 @@ void export_pgn(const char *path)
 
                 fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
                 fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
+
+                move_cnt++;
             }
 
             white = !white;
@@ -329,7 +330,8 @@ void train(Model *model, int epochs, int batch_size)
     const char *data_path = "temp/train.data";
     const char *lbl_path = "temp/train.lbl";
 
-    int input_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT) * sizeof(float);
+    int input_size = CHESS_BOARD_LEN + 1;
+    int x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
 
     long long data_file_size = FileUtils::get_file_size(data_path);
     size_t data_cnt = data_file_size / input_size;
@@ -346,8 +348,11 @@ void train(Model *model, int epochs, int batch_size)
 
         bool quit = false;
 
-        auto x = Tensor::zeros(false, Shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT));
+        auto x = Tensor::zeros(false, Shape(batch_size, x_size));
         auto y = Tensor::zeros(false, Shape(batch_size, 1));
+
+        char *data_buf = (char *)malloc(sizeof(char) * batch_size * input_size);
+        int *lbl_buf = (int *)malloc(sizeof(int) * batch_size);
 
         for (int epoch = 0; epoch < epochs; epoch++)
         {
@@ -356,33 +361,40 @@ void train(Model *model, int epochs, int batch_size)
                 x->to_cpu();
                 y->to_cpu();
 
-                fread(x->data(), 1, (input_size * batch_size), data_file);
-                fread(y->data(), 1, (sizeof(float) * batch_size), lbl_file);
+                fread(data_buf, 1, (input_size * batch_size), data_file);
+                fread(lbl_buf, 1, (sizeof(int) * batch_size), lbl_file);
+
+                for (int i = 0; i < batch_size; i++)
+                {
+                    one_hot_encode_chess_board_data(&data_buf[i * (CHESS_BOARD_LEN + 1)], &x->data()[i * x_size], true);
+                    if (data_buf[i * (CHESS_BOARD_LEN + 1) + CHESS_BOARD_LEN] == 'w')
+                    {
+                        x->set_val((i * x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT), 1.0f);
+                    }
+                    else
+                    {
+                        x->set_val((i * x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1), 1.0f);
+                    }
+
+                    y->set_val(i, (float)lbl_buf[i]);
+                }
+
+                auto oh_y = Tensor::one_hot(y, CHESS_BOARD_LEN - 1);
 
                 auto p = model->forward(x);
 
                 if (batch_idx % 100 == 0)
                 {
-                    float loss = model->loss(p, y);
-                    float acc = model->accuracy(p, y, Model::classification_accuracy_fn);
+                    float loss = model->loss(p, oh_y);
+                    float acc = model->accuracy(p, oh_y, Model::classification_accuracy_fn);
                     fprintf(train_csv, "%d,%d,%f,%f\n", epoch, batch_idx, loss, acc);
                 }
 
-                model->backward(p, y);
+                model->backward(p, oh_y);
                 model->step();
 
-                if (batch_idx == 0)
-                {
-                    p->print();
-                    y->print();
-                    for (int i = 0; i < batch_size; i++)
-                    {
-                        p->set_val(i, p->get_val(i) - y->get_val(i));
-                    }
-                    p->print();
-                }
-
                 delete p;
+                delete oh_y;
 
                 if (_kbhit())
                 {
@@ -406,6 +418,9 @@ void train(Model *model, int epochs, int batch_size)
         delete x;
         delete y;
 
+        free(data_buf);
+        free(lbl_buf);
+
         fclose(train_csv);
     }
 
@@ -415,19 +430,19 @@ void train(Model *model, int epochs, int batch_size)
 
 void compare_models(int epochs, int batch_size)
 {
-    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
-    Shape y_shape(batch_size, 1);
+    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+    Shape y_shape(batch_size, CHESS_BOARD_LEN);
 
     {
         auto model = new Model(new Xavier());
 
-        model->linear(x_shape, 1024, new Tanh());
-        model->linear(512, new Tanh());
-        model->linear(256, new Tanh());
-        model->linear(64, new Tanh());
-        model->linear(y_shape, new Tanh());
+        model->linear(x_shape, 512, new ReLU());
+        model->linear(512, new ReLU());
+        model->linear(256, new ReLU());
+        model->linear(128, new ReLU());
+        model->linear(y_shape, new Sigmoid());
 
-        model->set_loss(new MSE());
+        model->set_loss(new CrossEntropy());
         model->set_optimizer(new SGDMomentum(model->parameters(), 0.01f, ZERO_NN_BETA_1));
 
         model->summarize();
@@ -446,11 +461,9 @@ int main()
 
     // export_pgn("data/all.pgn");
 
-    // compare_models(10, 128);
+    compare_models(10, 128);
 
-    // self_play(3, 3, true);
-
-    play(true, 4);
+    // play(true, 4);
 
     return 0;
 }
