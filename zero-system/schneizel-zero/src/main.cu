@@ -369,14 +369,14 @@ void train(Model *model, int epochs, int batch_size)
                     one_hot_encode_chess_board_data(&data_buf[i * (CHESS_BOARD_LEN + 1)], &x->data()[i * x_size], true);
                     if (data_buf[i * (CHESS_BOARD_LEN + 1) + CHESS_BOARD_LEN] == 'w')
                     {
-                        x->set_val((i * x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT), 1.0f);
+                        x->data()[(i * x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
                     }
                     else
                     {
-                        x->set_val((i * x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1), 1.0f);
+                        x->data()[(i * x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 1.0f;
                     }
 
-                    y->set_val(i, (float)lbl_buf[i]);
+                    y->data()[i] = (float)lbl_buf[i];
                 }
 
                 auto oh_y = Tensor::one_hot(y, CHESS_BOARD_LEN - 1);
@@ -436,14 +436,15 @@ void compare_models(int epochs, int batch_size)
     {
         auto model = new Model(new Xavier());
 
-        model->linear(x_shape, 512, new ReLU());
-        model->linear(512, new ReLU());
+        model->linear(x_shape, 2048, new ReLU());
+        model->linear(2048, new ReLU());
+        model->linear(1024, new ReLU());
+        model->linear(1024, new ReLU());
         model->linear(256, new ReLU());
-        model->linear(128, new ReLU());
         model->linear(y_shape, new Sigmoid());
 
         model->set_loss(new CrossEntropy());
-        model->set_optimizer(new SGDMomentum(model->parameters(), 0.01f, ZERO_NN_BETA_1));
+        model->set_optimizer(new SGDMomentum(model->parameters(), 0.001f, ZERO_NN_BETA_1));
 
         model->summarize();
 
@@ -461,7 +462,7 @@ int main()
 
     // export_pgn("data/all.pgn");
 
-    compare_models(10, 128);
+    compare_models(10, 32);
 
     // play(true, 4);
 
