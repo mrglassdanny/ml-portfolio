@@ -14,7 +14,7 @@ using namespace chess;
 
 #define CHESS_BOARD_CHANNEL_CNT 12
 
-void one_hot_encode_chess_board(Board *board, float *out, bool white)
+void one_hot_encode_chess_board_data(const char *board_data, float *out, bool white)
 {
     memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
     for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
@@ -30,75 +30,75 @@ void one_hot_encode_chess_board(Board *board, float *out, bool white)
                 switch (c)
                 {
                 case 0:
-                    if (board->get_piece(square) == CHESS_WP)
+                    if (board_data[square] == CHESS_WP)
                     {
                         out[out_idx] = 1.0f;
                     }
                     break;
                 case 1:
-                    if (board->get_piece(square) == CHESS_WN)
+                    if (board_data[square] == CHESS_WN)
                     {
                         out[out_idx] = 1.0f;
                     }
                     break;
                 case 2:
-                    if (board->get_piece(square) == CHESS_WB)
+                    if (board_data[square] == CHESS_WB)
                     {
                         out[out_idx] = 1.0f;
                     }
                     break;
                 case 3:
-                    if (board->get_piece(square) == CHESS_WR)
+                    if (board_data[square] == CHESS_WR)
                     {
                         out[out_idx] = 1.0f;
                     }
                     break;
                 case 4:
-                    if (board->get_piece(square) == CHESS_WQ)
+                    if (board_data[square] == CHESS_WQ)
                     {
                         out[out_idx] = 1.0f;
                     }
                     break;
                 case 5:
-                    if (board->get_piece(square) == CHESS_WK)
+                    if (board_data[square] == CHESS_WK)
                     {
                         out[out_idx] = 1.0f;
                     }
                     break;
                 case 6:
-                    if (board->get_piece(square) == CHESS_BP)
+                    if (board_data[square] == CHESS_BP)
                     {
-                        out[out_idx] = -1.0f;
+                        out[out_idx] = 1.0f;
                     }
                     break;
                 case 7:
-                    if (board->get_piece(square) == CHESS_BN)
+                    if (board_data[square] == CHESS_BN)
                     {
-                        out[out_idx] = -1.0f;
+                        out[out_idx] = 1.0f;
                     }
                     break;
                 case 8:
-                    if (board->get_piece(square) == CHESS_BB)
+                    if (board_data[square] == CHESS_BB)
                     {
-                        out[out_idx] = -1.0f;
+                        out[out_idx] = 1.0f;
                     }
                     break;
                 case 9:
-                    if (board->get_piece(square) == CHESS_BR)
+                    if (board_data[square] == CHESS_BR)
                     {
-                        out[out_idx] = -1.0f;
+                        out[out_idx] = 1.0f;
                     }
                     break;
                 case 10:
-                    if (board->get_piece(square) == CHESS_BQ)
+                    if (board_data[square] == CHESS_BQ)
                     {
-                        out[out_idx] = -1.0f;
+                        out[out_idx] = 1.0f;
                     }
                     break;
                 case 11:
-                    if (board->get_piece(square) == CHESS_BK)
+                    if (board_data[square] == CHESS_BK)
                     {
-                        out[out_idx] = -1.0f;
+                        out[out_idx] = 1.0f;
                     }
                     break;
                 default:
@@ -341,10 +341,12 @@ void export_pgn(const char *path)
     FILE *train_data_file = fopen("temp/train.data", "wb");
     FILE *train_lbl_file = fopen("temp/train.lbl", "wb");
 
-    float data_buf[CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT];
-    float lbl_buf;
+    char data_buf[CHESS_BOARD_LEN + 1];
+    int lbl_buf;
 
     int game_cnt = 0;
+
+    long long move_cnt = 0;
 
     for (auto pgn_game : pgn_games)
     {
@@ -356,7 +358,6 @@ void export_pgn(const char *path)
         for (auto move_str : pgn_game->move_strs)
         {
             auto move = board.change(move_str, white);
-            white = !white;
 
             if (!Move::is_valid(&move))
             {
@@ -372,12 +373,26 @@ void export_pgn(const char *path)
             // Skip openings.
             if (game_move_cnt > CHESS_OPENING_MOVE_CNT)
             {
-                // one_hot_encode_chess_board(&board, data_buf, white);
-                // lbl_buf = (float)pgn_game->lbl;
+                move_cnt++;
 
-                // fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
-                // fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
+                memset(data_buf, 0, sizeof(data_buf));
+                memcpy(data_buf, board.get_data(), sizeof(char) * CHESS_BOARD_LEN);
+                if (white)
+                {
+                    data_buf[CHESS_BOARD_LEN] = 'w';
+                }
+                else
+                {
+                    data_buf[CHESS_BOARD_LEN] = 'b';
+                }
+
+                lbl_buf = move.src_square;
+
+                fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
+                fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
             }
+
+            white = !white;
 
             game_move_cnt++;
         }
@@ -386,11 +401,13 @@ void export_pgn(const char *path)
 
         if (game_cnt % 1000 == 0)
         {
-            printf("Game: %d\n", game_cnt);
+            printf("Game: %d\tMoves: %ld\n", game_cnt, move_cnt);
         }
 
         delete pgn_game;
     }
+
+    printf("Game: %d\tMoves: %ld\n", game_cnt, move_cnt);
 
     fclose(train_data_file);
     fclose(train_lbl_file);
@@ -514,13 +531,13 @@ int main()
 {
     srand(time(NULL));
 
-    // export_pgn("data/all.pgn");
+    export_pgn("data/all.pgn");
 
     // compare_models(10, 128);
 
     // self_play(3, 3, true);
 
-    play(false, 4);
+    // play(false, 4);
 
     // PGN::export_openings("data/all.pgn", FileUtils::get_file_size("data/all.pgn"), "data/openings.data");
 
