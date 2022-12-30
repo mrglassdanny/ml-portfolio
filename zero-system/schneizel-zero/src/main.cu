@@ -109,97 +109,6 @@ void one_hot_encode_chess_board_data(const char *board_data, float *out, bool wh
     }
 }
 
-struct Game
-{
-    std::vector<Board> boards;
-    float lbl;
-};
-
-Game self_play(int white_depth, int black_depth, bool print)
-{
-    Board board;
-    Move prev_move;
-
-    Game game;
-    game.lbl = 0.0f;
-
-    int move_cnt = 0;
-
-    while (move_cnt < 200)
-    {
-        if (print)
-        {
-            printf("\nWHITE TURN\n");
-            if (move_cnt == 0)
-            {
-                board.print();
-            }
-            else
-            {
-                board.print(prev_move);
-            }
-        }
-
-        if (board.is_checkmate(false))
-        {
-            if (print)
-                printf("WHITE CHECKMATED!\n");
-
-            game.lbl = -1.0f;
-            break;
-        }
-        else if (!board.has_moves(true))
-        {
-            if (print)
-                printf("WHITE STALEMATED!\n");
-
-            break;
-        }
-
-        auto evals = board.minimax_alphabeta_dyn(true, white_depth);
-        printf("Ties: %d\n", evals.size());
-        int r = rand() % evals.size();
-        board.change(evals[r].move);
-        prev_move = evals[r].move;
-        game.boards.push_back(board);
-
-        move_cnt++;
-
-        if (print)
-        {
-            printf("\nBLACK TURN\n");
-            board.print(prev_move);
-        }
-
-        if (board.is_checkmate(true))
-        {
-            if (print)
-                printf("BLACK CHECKMATED!\n");
-
-            game.lbl = 1.0f;
-            break;
-        }
-        else if (!board.has_moves(false))
-        {
-            if (print)
-                printf("BLACK STALEMATED!\n");
-
-            break;
-        }
-
-        evals = board.minimax_alphabeta(false, black_depth);
-        printf("Ties: %d\n", evals.size());
-        r = rand() % evals.size();
-        board.change(evals[r].move);
-        prev_move = evals[r].move;
-        game.boards.push_back(board);
-
-        move_cnt++;
-    }
-
-    return game;
-}
-
 void play(bool white, int depth)
 {
     Board board;
@@ -248,7 +157,7 @@ void play(bool white, int depth)
             if (move_cnt == 0)
             {
                 // Default opening if white.
-                prev_move = board.change("d4", true);
+                prev_move = board.change("e4", true);
             }
             else
             {
@@ -273,6 +182,7 @@ void play(bool white, int depth)
                     int r = rand() % evals.size();
                     board.change(evals[r].move);
                     prev_move = evals[r].move;
+                    printf("Ties: %d\n", evals.size());
                 }
             }
         }
@@ -327,6 +237,7 @@ void play(bool white, int depth)
                 int r = rand() % evals.size();
                 board.change(evals[r].move);
                 prev_move = evals[r].move;
+                printf("Ties: %d\n", evals.size());
             }
         }
 
@@ -531,15 +442,15 @@ int main()
 {
     srand(time(NULL));
 
-    export_pgn("data/all.pgn");
+    // PGN::export_openings("data/all.pgn", FileUtils::get_file_size("data/all.pgn"), "data/openings.data");
+
+    // export_pgn("data/all.pgn");
 
     // compare_models(10, 128);
 
     // self_play(3, 3, true);
 
-    // play(false, 4);
-
-    // PGN::export_openings("data/all.pgn", FileUtils::get_file_size("data/all.pgn"), "data/openings.data");
+    play(true, 4);
 
     return 0;
 }
