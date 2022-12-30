@@ -366,8 +366,8 @@ void train(Model *model, int epochs, int batch_size)
 
                 for (int i = 0; i < batch_size; i++)
                 {
-                    one_hot_encode_chess_board_data(&data_buf[i * (CHESS_BOARD_LEN + 1)], &x->data()[i * x_size], true);
-                    if (data_buf[i * (CHESS_BOARD_LEN + 1) + CHESS_BOARD_LEN] == 'w')
+                    one_hot_encode_chess_board_data(&data_buf[i * input_size], &x->data()[i * x_size], true);
+                    if (data_buf[i * input_size + CHESS_BOARD_LEN] == 'w')
                     {
                         x->data()[(i * x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
                     }
@@ -436,15 +436,14 @@ void compare_models(int epochs, int batch_size)
     {
         auto model = new Model(new Xavier());
 
-        model->linear(x_shape, 2048, new ReLU());
-        model->linear(2048, new ReLU());
-        model->linear(1024, new ReLU());
-        model->linear(1024, new ReLU());
+        model->linear(x_shape, 512, new ReLU());
+        model->linear(512, new ReLU());
         model->linear(256, new ReLU());
+        model->linear(128, new ReLU());
         model->linear(y_shape, new Sigmoid());
 
         model->set_loss(new CrossEntropy());
-        model->set_optimizer(new SGDMomentum(model->parameters(), 0.001f, ZERO_NN_BETA_1));
+        model->set_optimizer(new SGDMomentum(model->parameters(), 0.1f, ZERO_NN_BETA_1));
 
         model->summarize();
 
@@ -462,7 +461,7 @@ int main()
 
     // export_pgn("data/all.pgn");
 
-    compare_models(10, 32);
+    compare_models(10, 256);
 
     // play(true, 4);
 
