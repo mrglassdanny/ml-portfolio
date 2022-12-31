@@ -150,7 +150,7 @@ void play(bool white, int depth)
     }
 }
 
-void one_hot_encode_chess_board_data(const char *board_data, float *out, bool white)
+void one_hot_encode_chess_board_data(const char *board_data, float *out)
 {
     memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
     for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
@@ -358,6 +358,9 @@ void train(Model *model, int epochs, int batch_size)
         {
             for (int batch_idx = 0; batch_idx < batch_cnt; batch_idx++)
             {
+                x->zeros();
+                y->zeros();
+
                 x->to_cpu();
                 y->to_cpu();
 
@@ -366,7 +369,7 @@ void train(Model *model, int epochs, int batch_size)
 
                 for (int i = 0; i < batch_size; i++)
                 {
-                    one_hot_encode_chess_board_data(&data_buf[i * input_size], &x->data()[i * x_size], true);
+                    one_hot_encode_chess_board_data(&data_buf[i * input_size], &x->data()[i * x_size]);
                     if (data_buf[i * input_size + CHESS_BOARD_LEN] == 'w')
                     {
                         x->data()[(i * x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
@@ -392,6 +395,12 @@ void train(Model *model, int epochs, int batch_size)
 
                 model->backward(p, oh_y);
                 model->step();
+
+                if (batch_idx == 0)
+                {
+                    y->print();
+                    p->print();
+                }
 
                 delete p;
                 delete oh_y;
@@ -436,10 +445,10 @@ void compare_models(int epochs, int batch_size)
     {
         auto model = new Model(new Xavier());
 
-        model->linear(x_shape, 512, new ReLU());
+        model->linear(x_shape, 1024, new ReLU());
         model->linear(512, new ReLU());
-        model->linear(256, new ReLU());
-        model->linear(128, new ReLU());
+        model->linear(512, new ReLU());
+        model->linear(512, new ReLU());
         model->linear(y_shape, new Sigmoid());
 
         model->set_loss(new CrossEntropy());
@@ -448,6 +457,8 @@ void compare_models(int epochs, int batch_size)
         model->summarize();
 
         train(model, epochs, batch_size);
+
+        model->save_parameters("temp/model.nn");
 
         delete model;
     }
@@ -461,7 +472,7 @@ int main()
 
     // export_pgn("data/all.pgn");
 
-    compare_models(10, 256);
+    compare_models(10, 64);
 
     // play(true, 4);
 
