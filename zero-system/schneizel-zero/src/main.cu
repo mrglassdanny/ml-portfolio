@@ -445,14 +445,14 @@ void compare_models(int epochs, int batch_size)
     {
         auto model = new Model(new Xavier());
 
-        model->linear(x_shape, 1024, new ReLU());
+        model->linear(x_shape, 4096, new ReLU());
+        model->linear(2048, new ReLU());
+        model->linear(1024, new ReLU());
         model->linear(512, new ReLU());
-        model->linear(512, new ReLU());
-        model->linear(512, new ReLU());
-        model->linear(y_shape, new Sigmoid());
+        model->linear(y_shape, nullptr);
 
         model->set_loss(new CrossEntropy());
-        model->set_optimizer(new SGDMomentum(model->parameters(), 0.1f, ZERO_NN_BETA_1));
+        model->set_optimizer(new SGDMomentum(model->parameters(), 0.01f, ZERO_NN_BETA_1));
 
         model->summarize();
 
