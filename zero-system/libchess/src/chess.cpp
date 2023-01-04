@@ -2965,7 +2965,7 @@ std::vector<PGNGame *> PGN::import(const char *path, long long file_size)
                 }
             }
 
-            // At end of game (right at/before 1-0 or 0-1 or 1/2-1/2).
+            // At end of game (right at/before 1-0 or 0-1 or 1/2-1/2 or *).
             // buf[i] could be a space/newline.
             while (i < file_size && (buf[i] == ' ' || buf[i] == '\n' || buf[i] == '\r'))
             {
@@ -2974,30 +2974,22 @@ std::vector<PGNGame *> PGN::import(const char *path, long long file_size)
 
             if (buf[i] == '0')
             {
-                // White loss.
+                // Black win.
                 game->lbl = -1;
+            }
+            else if (buf[i + 1] == '/' || buf[i] == '*' || buf[i + 1] == '*')
+            {
+                // Tie.
+                game->lbl = 0;
+            }
+            else if (buf[i] == '1')
+            {
+                // White win.
+                game->lbl = 1;
             }
             else
             {
-                // This could mean tie; let's check next char for '/'.
-                if (buf[i + 1] == '/')
-                {
-                    // Tie.
-                    game->lbl = 0;
-                }
-                else
-                {
-                    if (buf[i] == '*' || buf[i + 1] == '*')
-                    {
-                        // Tie? Not really sure what '*' means...
-                        game->lbl = 0;
-                    }
-                    else
-                    {
-                        // White win.
-                        game->lbl = 1;
-                    }
-                }
+                CHESS_THROW_ERROR("CHESS ERROR: invalid PGN result");
             }
 
             games.push_back(game);

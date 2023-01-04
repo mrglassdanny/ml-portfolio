@@ -14,6 +14,101 @@ using namespace chess;
 
 #define CHESS_BOARD_CHANNEL_CNT 12
 
+void one_hot_encode_chess_board_data(const char *board_data, float *out)
+{
+    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
+    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
+    {
+        for (int i = 0; i < CHESS_ROW_CNT; i++)
+        {
+            for (int j = 0; j < CHESS_COL_CNT; j++)
+            {
+                int channel_offset = (c * CHESS_BOARD_LEN);
+                int square = (i * CHESS_COL_CNT) + j;
+                int out_idx = channel_offset + square;
+
+                switch (c)
+                {
+                case 0:
+                    if (board_data[square] == CHESS_WP)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 1:
+                    if (board_data[square] == CHESS_WN)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 2:
+                    if (board_data[square] == CHESS_WB)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 3:
+                    if (board_data[square] == CHESS_WR)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 4:
+                    if (board_data[square] == CHESS_WQ)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 5:
+                    if (board_data[square] == CHESS_WK)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 6:
+                    if (board_data[square] == CHESS_BP)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 7:
+                    if (board_data[square] == CHESS_BN)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 8:
+                    if (board_data[square] == CHESS_BB)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 9:
+                    if (board_data[square] == CHESS_BR)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 10:
+                    if (board_data[square] == CHESS_BQ)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 11:
+                    if (board_data[square] == CHESS_BK)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    }
+}
+
 void play(bool white, int depth)
 {
     Board board;
@@ -150,99 +245,131 @@ void play(bool white, int depth)
     }
 }
 
-void one_hot_encode_chess_board_data(const char *board_data, float *out)
+void selfplay_tiebreak(int depth, Model *model)
 {
-    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
-    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
-    {
-        for (int i = 0; i < CHESS_ROW_CNT; i++)
-        {
-            for (int j = 0; j < CHESS_COL_CNT; j++)
-            {
-                int channel_offset = (c * CHESS_BOARD_LEN);
-                int square = (i * CHESS_COL_CNT) + j;
-                int out_idx = channel_offset + square;
+    Board board;
+    Move prev_move;
 
-                switch (c)
+    OpeningEngine opening_engine("data/openings.data");
+    bool opening_stage = true;
+
+    int move_cnt = 0;
+
+    auto x = Tensor::zeros(false, Shape(1, (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2)));
+
+    while (true)
+    {
+        printf("\nWHITE TURN\n");
+        if (move_cnt == 0)
+        {
+            board.print();
+        }
+        else
+        {
+            board.print(prev_move);
+        }
+
+        if (board.is_checkmate(false))
+        {
+            printf("WHITE CHECKMATED!\n");
+            break;
+        }
+        else if (!board.has_moves(true))
+        {
+            printf("WHITE STALEMATED!\n");
+            break;
+        }
+
+        // White:
+        {
+            if (move_cnt == 0)
+            {
+                // Default opening if white.
+                prev_move = board.change("e4", true);
+            }
+            else
+            {
+                if (opening_stage)
                 {
-                case 0:
-                    if (board_data[square] == CHESS_WP)
+                    std::string move_str = opening_engine.next_move(&board, move_cnt);
+
+                    if (move_str.empty())
                     {
-                        out[out_idx] = 1.0f;
+                        printf("End of opening stage\n");
+                        opening_stage = false;
                     }
-                    break;
-                case 1:
-                    if (board_data[square] == CHESS_WN)
+                    else
                     {
-                        out[out_idx] = 1.0f;
+                        prev_move = board.change(move_str, true);
                     }
-                    break;
-                case 2:
-                    if (board_data[square] == CHESS_WB)
+                }
+
+                if (!opening_stage)
+                {
+                    auto evals = board.minimax_alphabeta_dyn(true, depth);
+
                     {
-                        out[out_idx] = 1.0f;
+                        x->to_cpu();
+                        one_hot_encode_chess_board_data(board.get_data(), x->data());
+                        auto p = model->forward(x);
+
+                        delete p;
                     }
-                    break;
-                case 3:
-                    if (board_data[square] == CHESS_WR)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 4:
-                    if (board_data[square] == CHESS_WQ)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 5:
-                    if (board_data[square] == CHESS_WK)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 6:
-                    if (board_data[square] == CHESS_BP)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 7:
-                    if (board_data[square] == CHESS_BN)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 8:
-                    if (board_data[square] == CHESS_BB)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 9:
-                    if (board_data[square] == CHESS_BR)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 10:
-                    if (board_data[square] == CHESS_BQ)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 11:
-                    if (board_data[square] == CHESS_BK)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                default:
-                    break;
+
+                    board.change(evals[r].move);
+                    prev_move = evals[r].move;
+                    printf("Ties: %d\n", evals.size());
                 }
             }
         }
+
+        move_cnt++;
+
+        printf("\nBLACK TURN\n");
+        board.print(prev_move);
+
+        if (board.is_checkmate(true))
+        {
+            printf("BLACK CHECKMATED!\n");
+            break;
+        }
+        else if (!board.has_moves(false))
+        {
+            printf("BLACK STALEMATED!\n");
+            break;
+        }
+
+        // Black:
+        {
+            if (opening_stage)
+            {
+                std::string move_str = opening_engine.next_move(&board, move_cnt);
+
+                if (move_str.empty())
+                {
+                    printf("End of opening stage\n");
+                    opening_stage = false;
+                }
+                else
+                {
+                    prev_move = board.change(move_str, false);
+                }
+            }
+
+            if (!opening_stage)
+            {
+                auto evals = board.minimax_alphabeta_dyn(false, depth);
+                int r = rand() % evals.size();
+                board.change(evals[r].move);
+                prev_move = evals[r].move;
+                printf("Ties: %d\n", evals.size());
+            }
+        }
+
+        move_cnt++;
     }
+
+    delete x;
 }
 
 void export_pgn(const char *path)
@@ -276,11 +403,6 @@ void export_pgn(const char *path)
             if (!Move::is_valid(&move))
             {
                 printf("Quitting game %d on move %d\n", game_cnt, game_move_cnt);
-                for (auto move_str2 : pgn_game->move_strs)
-                {
-                    printf("%s ", move_str2.c_str());
-                }
-                printf("\n");
                 break;
             }
 
@@ -323,6 +445,33 @@ void export_pgn(const char *path)
 
     fclose(train_data_file);
     fclose(train_lbl_file);
+}
+
+int chess_classification_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
+{
+    int correct_cnt = 0;
+
+    int output_cnt = p->dims_size() / batch_size;
+
+    for (int i = 0; i < batch_size; i++)
+    {
+        int y_idx = 0;
+        for (int j = 0; j < output_cnt; j++)
+        {
+            if (y->get_val(i * output_cnt + j) == 1.0f)
+            {
+                y_idx = j;
+                break;
+            }
+        }
+
+        if (p->get_val(i * output_cnt + y_idx) >= 0.95f)
+        {
+            correct_cnt++;
+        }
+    }
+
+    return correct_cnt;
 }
 
 void train(Model *model, int epochs, int batch_size)
@@ -389,14 +538,14 @@ void train(Model *model, int epochs, int batch_size)
                 if (batch_idx % 100 == 0)
                 {
                     float loss = model->loss(p, oh_y);
-                    float acc = model->accuracy(p, oh_y, Model::classification_accuracy_fn);
+                    float acc = model->accuracy(p, oh_y, chess_classification_accuracy_fn);
                     fprintf(train_csv, "%d,%d,%f,%f\n", epoch, batch_idx, loss, acc);
                 }
 
                 model->backward(p, oh_y);
                 model->step();
 
-                if (batch_idx == 0)
+                if (batch_idx == batch_cnt - 1)
                 {
                     y->print();
                     p->print();
@@ -445,10 +594,11 @@ void compare_models(int epochs, int batch_size)
     {
         auto model = new Model(new Xavier());
 
-        model->linear(x_shape, 4096, new ReLU());
-        model->linear(2048, new ReLU());
+        model->linear(x_shape, 1024, new ReLU());
         model->linear(1024, new ReLU());
         model->linear(512, new ReLU());
+        model->linear(512, new ReLU());
+        model->linear(128, new ReLU());
         model->linear(y_shape, new Sigmoid());
 
         model->set_loss(new CrossEntropy());
@@ -464,17 +614,45 @@ void compare_models(int epochs, int batch_size)
     }
 }
 
+void cont_training(int epochs, int batch_size)
+{
+    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+    Shape y_shape(batch_size, CHESS_BOARD_LEN);
+
+    {
+        auto model = new Model(new Xavier());
+
+        model->linear(x_shape, 1024, new ReLU());
+        model->linear(1024, new ReLU());
+        model->linear(512, new ReLU());
+        model->linear(512, new ReLU());
+        model->linear(128, new ReLU());
+        model->linear(y_shape, new Sigmoid());
+
+        model->set_loss(new CrossEntropy());
+        model->set_optimizer(new SGDMomentum(model->parameters(), 0.001f, ZERO_NN_BETA_1));
+
+        model->load_parameters("temp/model.nn");
+
+        model->summarize();
+
+        train(model, epochs, batch_size);
+
+        model->save_parameters("temp/model.nn");
+
+        delete model;
+    }
+}
+
 int main()
 {
     srand(time(NULL));
 
-    // PGN::export_openings("data/all.pgn", FileUtils::get_file_size("data/all.pgn"), "data/openings.data");
-
     // export_pgn("data/all.pgn");
 
-    compare_models(10, 64);
+    // compare_models(10, 64);
 
-    // play(true, 4);
+    cont_training(10, 64);
 
     return 0;
 }
