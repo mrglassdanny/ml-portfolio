@@ -310,6 +310,7 @@ void selfplay_tiebreak(int depth, Model *model)
                     auto evals = board.minimax_alphabeta_dyn(true, depth);
 
                     int eval_idx = 0;
+                    std::vector<int> a;
 
                     {
                         x->to_cpu();
@@ -317,19 +318,21 @@ void selfplay_tiebreak(int depth, Model *model)
                         x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
                         x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 0.0f;
                         auto p = model->forward(x);
-                        int p_idx = p->max_idx();
-                        p->reshape(Shape(1, CHESS_ROW_CNT, CHESS_COL_CNT));
-                        p->print();
-                        delete p;
 
                         for (int i = 0; i < evals.size(); i++)
                         {
-                            if (evals[i].move.src_square == p_idx)
+                            float p_val = p->get_val(evals[i].move.src_square);
+                            if (p_val >= 0.5f)
                             {
+                                printf("Square: %d\tPiece: %c\tVal: %f\n", evals[i].move.src_square, board.get_piece(evals[i].move.src_square), p_val);
                                 eval_idx = i;
-                                break;
+                                a.push_back(i);
                             }
                         }
+
+                        p->reshape(Shape(1, CHESS_ROW_CNT, CHESS_COL_CNT));
+                        p->print();
+                        delete p;
                     }
 
                     board.change(evals[eval_idx].move);
