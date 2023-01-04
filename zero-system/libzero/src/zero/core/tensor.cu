@@ -1050,6 +1050,27 @@ float Tensor::min()
     return min_val;
 }
 
+int Tensor::min_idx()
+{
+    float min_val = FLT_MAX;
+    int idx;
+
+    float val = 0;
+
+    for (int i = 0; i < this->count(); i++)
+    {
+        val = this->get_val(i);
+
+        if (val < min_val)
+        {
+            min_val = val;
+            idx = i;
+        }
+    }
+
+    return idx;
+}
+
 float Tensor::max()
 {
     float max_val = -FLT_MAX;
@@ -1067,6 +1088,27 @@ float Tensor::max()
     }
 
     return max_val;
+}
+
+int Tensor::max_idx()
+{
+    float max_val = -FLT_MAX;
+    int idx;
+
+    float val = 0;
+
+    for (int i = 0; i < this->count(); i++)
+    {
+        val = this->get_val(i);
+
+        if (val > max_val)
+        {
+            max_val = val;
+            idx = i;
+        }
+    }
+
+    return idx;
 }
 
 float Tensor::mean()

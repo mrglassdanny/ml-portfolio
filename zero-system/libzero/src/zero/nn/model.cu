@@ -723,17 +723,7 @@ int Model::classification_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
 
     for (int i = 0; i < batch_size; i++)
     {
-        float max_val = p->get_val(i * output_cnt + 0);
-        int max_idx = 0;
-        for (int j = 1; j < output_cnt; j++)
-        {
-            float val = p->get_val(i * output_cnt + j);
-            if (val > max_val)
-            {
-                max_val = val;
-                max_idx = j;
-            }
-        }
+        int max_idx = p->max_idx();
 
         if (y->get_val(i * output_cnt + max_idx) == 1.0f)
         {

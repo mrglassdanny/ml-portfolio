@@ -308,16 +308,20 @@ void selfplay_tiebreak(int depth, Model *model)
                 {
                     auto evals = board.minimax_alphabeta_dyn(true, depth);
 
+                    int idx = 0;
+
                     {
                         x->to_cpu();
                         one_hot_encode_chess_board_data(board.get_data(), x->data());
                         auto p = model->forward(x);
-
+                        idx = p->max_idx();
+                        p->reshape(Shape(1, CHESS_ROW_CNT, CHESS_COL_CNT));
+                        p->print();
                         delete p;
                     }
 
-                    board.change(evals[r].move);
-                    prev_move = evals[r].move;
+                    board.change(evals[idx].move);
+                    prev_move = evals[idx].move;
                     printf("Ties: %d\n", evals.size());
                 }
             }
@@ -455,15 +459,7 @@ int chess_classification_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
 
     for (int i = 0; i < batch_size; i++)
     {
-        int y_idx = 0;
-        for (int j = 0; j < output_cnt; j++)
-        {
-            if (y->get_val(i * output_cnt + j) == 1.0f)
-            {
-                y_idx = j;
-                break;
-            }
-        }
+        int y_idx = y->max_idx();
 
         if (p->get_val(i * output_cnt + y_idx) >= 0.95f)
         {
@@ -652,7 +648,29 @@ int main()
 
     // compare_models(10, 64);
 
-    cont_training(10, 64);
+    // cont_training(10, 64);
+
+    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+    Shape y_shape(batch_size, CHESS_BOARD_LEN);
+
+    auto model = new Model(new Xavier());
+    {
+        model->linear(x_shape, 1024, new ReLU());
+        model->linear(1024, new ReLU());
+        model->linear(512, new ReLU());
+        model->linear(512, new ReLU());
+        model->linear(128, new ReLU());
+        model->linear(y_shape, new Sigmoid());
+
+        model->set_loss(new CrossEntropy());
+        model->set_optimizer(new SGDMomentum(model->parameters(), 0.001f, ZERO_NN_BETA_1));
+
+        model->load_parameters("temp/model.nn");
+    }
+
+    selfplay_tiebreak(3, model);
+
+    delete model;
 
     return 0;
 }

@@ -94,7 +94,9 @@ namespace zero
 			int count();
 			float sum();
 			float min();
+			int min_idx();
 			float max();
+			int max_idx();
 			float mean();
 			float variance();
 			float stddev();
