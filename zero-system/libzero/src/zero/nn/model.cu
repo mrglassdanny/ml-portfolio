@@ -715,6 +715,7 @@ int Model::regression_tanh_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
     return correct_cnt;
 }
 
+// TODO
 int Model::classification_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
 {
     int correct_cnt = 0;

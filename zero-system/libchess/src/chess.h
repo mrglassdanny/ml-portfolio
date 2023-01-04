@@ -119,7 +119,7 @@ namespace chess
         static int sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int alpha, int beta);
         static void sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals);
 
-        static int sim_dyn_minimax_alphabeta_dyn_sync(Simulation sim, bool white, int depth, int alpha, int beta, int depth_inc_cnt);
+        static int sim_minimax_alphabeta_dyn_sync(Simulation sim, bool white, int depth, int alpha, int beta, int depth_inc_cnt);
         static void sim_minimax_alphabeta_dyn_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals);
 
     public:
@@ -142,6 +142,7 @@ namespace chess
 
         std::vector<Move> get_moves(int square, bool test_check);
         std::vector<Move> get_all_moves(bool white);
+        std::vector<Move> get_all_moves(bool white, std::vector<int> src_squares);
         bool has_moves(bool white);
 
         bool is_check(bool by_white);
@@ -153,6 +154,7 @@ namespace chess
         Simulation simulate(Move move);
         Simulation simulate(std::string move_str, bool white);
         std::vector<Simulation> simulate_all(bool white);
+        std::vector<Simulation> simulate_all(bool white, std::vector<int> src_squares);
 
         int evaluate_material();
 

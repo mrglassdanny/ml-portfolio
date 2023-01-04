@@ -255,7 +255,8 @@ void selfplay_tiebreak(int depth, Model *model)
 
     int move_cnt = 0;
 
-    auto x = Tensor::zeros(false, Shape(1, (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2)));
+    int x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+    auto x = Tensor::zeros(false, Shape(1, x_size));
 
     while (true)
     {
@@ -308,20 +309,31 @@ void selfplay_tiebreak(int depth, Model *model)
                 {
                     auto evals = board.minimax_alphabeta_dyn(true, depth);
 
-                    int idx = 0;
+                    int eval_idx = 0;
 
                     {
                         x->to_cpu();
                         one_hot_encode_chess_board_data(board.get_data(), x->data());
+                        x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
+                        x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 0.0f;
                         auto p = model->forward(x);
-                        idx = p->max_idx();
+                        int p_idx = p->max_idx();
                         p->reshape(Shape(1, CHESS_ROW_CNT, CHESS_COL_CNT));
                         p->print();
                         delete p;
+
+                        for (int i = 0; i < evals.size(); i++)
+                        {
+                            if (evals[i].move.src_square == p_idx)
+                            {
+                                eval_idx = i;
+                                break;
+                            }
+                        }
                     }
 
-                    board.change(evals[idx].move);
-                    prev_move = evals[idx].move;
+                    board.change(evals[eval_idx].move);
+                    prev_move = evals[eval_idx].move;
                     printf("Ties: %d\n", evals.size());
                 }
             }
@@ -451,6 +463,7 @@ void export_pgn(const char *path)
     fclose(train_lbl_file);
 }
 
+// TODO
 int chess_classification_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
 {
     int correct_cnt = 0;
@@ -634,7 +647,7 @@ void cont_training(int epochs, int batch_size)
 
         train(model, epochs, batch_size);
 
-        model->save_parameters("temp/model.nn");
+        // model->save_parameters("temp/model.nn");
 
         delete model;
     }
@@ -650,8 +663,8 @@ int main()
 
     // cont_training(10, 64);
 
-    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
-    Shape y_shape(batch_size, CHESS_BOARD_LEN);
+    Shape x_shape(1, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+    Shape y_shape(1, CHESS_BOARD_LEN);
 
     auto model = new Model(new Xavier());
     {

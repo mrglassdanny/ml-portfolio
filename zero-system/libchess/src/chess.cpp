@@ -1735,6 +1735,38 @@ std::vector<Move> Board::get_all_moves(bool white)
     return all_moves;
 }
 
+std::vector<Move> Board::get_all_moves(bool white, std::vector<int> src_squares)
+{
+    std::vector<Move> all_moves;
+
+    if (white)
+    {
+        for (int i = 0; i < src_squares.size(); i++)
+        {
+            int src_square = src_squares[i];
+            if (Piece::is_white(this->get_piece(src_square)))
+            {
+                auto moves = this->get_moves(src_square, true);
+                all_moves.insert(all_moves.end(), moves.begin(), moves.end());
+            }
+        }
+    }
+    else
+    {
+        for (int i = 0; i < i < src_squares.size(); i++)
+        {
+            int src_square = src_squares[i];
+            if (Piece::is_black(this->get_piece(src_square)))
+            {
+                auto moves = this->get_moves(src_square, true);
+                all_moves.insert(all_moves.end(), moves.begin(), moves.end());
+            }
+        }
+    }
+
+    return all_moves;
+}
+
 bool Board::has_moves(bool white)
 {
     if (white)
@@ -2579,6 +2611,26 @@ std::vector<Simulation> Board::simulate_all(bool white)
     return sims;
 }
 
+std::vector<Simulation> Board::simulate_all(bool white, std::vector<int> src_squares)
+{
+    std::vector<Simulation> sims;
+
+    auto all_moves = this->get_all_moves(white, src_squares);
+
+    int move_idx = 0;
+
+    for (auto move : all_moves)
+    {
+        auto sim = this->simulate(move);
+        sim.idx = move_idx;
+        sims.push_back(sim);
+
+        move_idx++;
+    }
+
+    return sims;
+}
+
 int Board::evaluate_material()
 {
     int mat_eval = 0;
@@ -2704,7 +2756,7 @@ std::vector<Evaluation> Board::minimax_alphabeta(bool white, int depth)
     return best_moves;
 }
 
-int Board::sim_dyn_minimax_alphabeta_dyn_sync(Simulation sim, bool white, int depth, int alpha, int beta, int depth_inc_cnt)
+int Board::sim_minimax_alphabeta_dyn_sync(Simulation sim, bool white, int depth, int alpha, int beta, int depth_inc_cnt)
 {
     if (sim.board.is_checkmate(!white, false))
     {
@@ -2738,7 +2790,7 @@ int Board::sim_dyn_minimax_alphabeta_dyn_sync(Simulation sim, bool white, int de
 
         for (auto sim_sim : sim_sims)
         {
-            int eval_val = Board::sim_dyn_minimax_alphabeta_dyn_sync(sim_sim, true, depth - 1, alpha, beta, depth_inc_cnt);
+            int eval_val = Board::sim_minimax_alphabeta_dyn_sync(sim_sim, true, depth - 1, alpha, beta, depth_inc_cnt);
 
             best_eval_val = eval_val > best_eval_val ? eval_val : best_eval_val;
 
@@ -2764,7 +2816,7 @@ int Board::sim_dyn_minimax_alphabeta_dyn_sync(Simulation sim, bool white, int de
 
         for (auto sim_sim : sim_sims)
         {
-            int eval_val = Board::sim_dyn_minimax_alphabeta_dyn_sync(sim_sim, false, depth - 1, alpha, beta, depth_inc_cnt);
+            int eval_val = Board::sim_minimax_alphabeta_dyn_sync(sim_sim, false, depth - 1, alpha, beta, depth_inc_cnt);
 
             best_eval_val = eval_val < best_eval_val ? eval_val : best_eval_val;
 
@@ -2781,7 +2833,7 @@ int Board::sim_dyn_minimax_alphabeta_dyn_sync(Simulation sim, bool white, int de
 
 void Board::sim_minimax_alphabeta_dyn_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals)
 {
-    int eval_val = Board::sim_dyn_minimax_alphabeta_dyn_sync(sim, white, depth, alpha, beta, 0);
+    int eval_val = Board::sim_minimax_alphabeta_dyn_sync(sim, white, depth, alpha, beta, 0);
     evals[sim.idx] = Evaluation{eval_val, sim.move, sim.board};
 }
 
