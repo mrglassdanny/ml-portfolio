@@ -109,17 +109,17 @@ int Piece::get_value(char piece)
     case CHESS_BN:
         return -3;
     case CHESS_WB:
-        return 3;
+        return 4;
     case CHESS_BB:
-        return -3;
+        return -4;
     case CHESS_WR:
-        return 5;
+        return 6;
     case CHESS_BR:
-        return -5;
+        return -6;
     case CHESS_WQ:
-        return 9;
+        return 10;
     case CHESS_BQ:
-        return -9;
+        return -10;
     case CHESS_WK:
         return 2;
     case CHESS_BK:
@@ -2647,13 +2647,14 @@ int Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int
 {
     if (sim.board.is_checkmate(!white, false))
     {
+        // We want to incentivize mate in fewest moves.
         if (white)
         {
-            return CHESS_EVAL_MAX_VAL;
+            return CHESS_EVAL_MAX_VAL / (depth + 1);
         }
         else
         {
-            return CHESS_EVAL_MIN_VAL;
+            return CHESS_EVAL_MIN_VAL / (depth + 1);
         }
     }
 
