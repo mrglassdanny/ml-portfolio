@@ -178,7 +178,7 @@ void play(bool white, int depth)
 
                 if (!opening_stage)
                 {
-                    auto evals = board.minimax_alphabeta_dyn(true, depth);
+                    auto evals = board.minimax_alphabeta(true, depth, 7, 10);
                     int r = rand() % evals.size();
                     board.change(evals[r].move);
                     prev_move = evals[r].move;
@@ -233,7 +233,7 @@ void play(bool white, int depth)
 
             if (!opening_stage)
             {
-                auto evals = board.minimax_alphabeta_dyn(false, depth);
+                auto evals = board.minimax_alphabeta(false, depth, 7, 10);
                 int r = rand() % evals.size();
                 board.change(evals[r].move);
                 prev_move = evals[r].move;
@@ -307,7 +307,7 @@ void selfplay_tiebreak(int depth, Model *model)
 
                 if (!opening_stage)
                 {
-                    auto evals = board.minimax_alphabeta_dyn(true, depth);
+                    auto evals = board.minimax_alphabeta(true, depth, 7, 10);
 
                     int eval_idx = 0;
                     std::vector<int> a;
@@ -377,7 +377,7 @@ void selfplay_tiebreak(int depth, Model *model)
 
             if (!opening_stage)
             {
-                auto evals = board.minimax_alphabeta_dyn(false, depth);
+                auto evals = board.minimax_alphabeta(false, depth, 7, 10);
                 int r = rand() % evals.size();
                 board.change(evals[r].move);
                 prev_move = evals[r].move;

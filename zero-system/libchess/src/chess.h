@@ -116,11 +116,8 @@ namespace chess
         bool is_check(bool by_white, bool hard_way);
         bool is_checkmate(bool by_white, bool hard_way);
 
-        static int sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int alpha, int beta);
-        static void sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals);
-
-        static int sim_minimax_alphabeta_dyn_sync(Simulation sim, bool white, int depth, int alpha, int beta, int depth_inc_cnt);
-        static void sim_minimax_alphabeta_dyn_async(Simulation sim, bool white, int depth, int alpha, int beta, Evaluation *evals);
+        static int sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, int alpha, int beta);
+        static void sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, int alpha, int beta, Evaluation *evals);
 
     public:
         Board();
@@ -158,8 +155,7 @@ namespace chess
 
         int evaluate_material();
 
-        std::vector<Evaluation> minimax_alphabeta(bool white, int depth);
-        std::vector<Evaluation> minimax_alphabeta_dyn(bool white, int depth);
+        std::vector<Evaluation> minimax_alphabeta(bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt);
     };
 
     struct Simulation
