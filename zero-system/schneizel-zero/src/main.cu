@@ -109,6 +109,131 @@ void one_hot_encode_chess_board_data(const char *board_data, float *out)
     }
 }
 
+int schneizel_sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, int alpha, int beta)
+{
+    if (sim.board.is_checkmate(!white, false))
+    {
+        if (white)
+        {
+            return CHESS_EVAL_MAX_VAL;
+        }
+        else
+        {
+            return CHESS_EVAL_MIN_VAL;
+        }
+    }
+
+    if (depth == 0)
+    {
+        return sim.board.evaluate_material();
+    }
+
+    if (!white)
+    {
+        int best_eval_val = CHESS_EVAL_MIN_VAL;
+        auto sim_sims = sim.board.simulate_all(true);
+
+        if (sim_sims.size() <= depth_inc_max_move_cnt && depth_inc_cnt > 0)
+        {
+            depth++;
+            depth_inc_cnt--;
+        }
+
+        for (auto sim_sim : sim_sims)
+        {
+            int eval_val = schneizel_sim_minimax_alphabeta_sync(sim_sim, true, depth - 1, depth_inc_cnt, depth_inc_max_move_cnt, alpha, beta);
+
+            best_eval_val = eval_val > best_eval_val ? eval_val : best_eval_val;
+
+            alpha = eval_val > alpha ? eval_val : alpha;
+            if (beta <= alpha)
+            {
+                break;
+            }
+        }
+
+        return best_eval_val;
+    }
+    else
+    {
+        int best_eval_val = CHESS_EVAL_MAX_VAL;
+        auto sim_sims = sim.board.simulate_all(false);
+
+        if (sim_sims.size() <= depth_inc_max_move_cnt && depth_inc_cnt > 0)
+        {
+            depth++;
+            depth_inc_cnt--;
+        }
+
+        for (auto sim_sim : sim_sims)
+        {
+            int eval_val = schneizel_sim_minimax_alphabeta_sync(sim_sim, false, depth - 1, depth_inc_cnt, depth_inc_max_move_cnt, alpha, beta);
+
+            best_eval_val = eval_val < best_eval_val ? eval_val : best_eval_val;
+
+            beta = eval_val < beta ? eval_val : beta;
+            if (beta <= alpha)
+            {
+                break;
+            }
+        }
+
+        return best_eval_val;
+    }
+}
+
+void schneizel_sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, int alpha, int beta, Evaluation *evals)
+{
+    int eval_val = schneizel_sim_minimax_alphabeta_sync(sim, white, depth, depth_inc_cnt, depth_inc_max_move_cnt, alpha, beta);
+    evals[sim.idx] = Evaluation{eval_val, sim.move, sim.board};
+}
+
+std::vector<Evaluation> schneizel_minimax_alphabeta(Board *board, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt)
+{
+    std::vector<Evaluation> best_moves;
+
+    Evaluation evals[CHESS_BOARD_LEN];
+
+    auto sims = board->simulate_all(white);
+
+    int min = CHESS_EVAL_MIN_VAL;
+    int max = CHESS_EVAL_MAX_VAL;
+
+    int best_eval_val = white ? min : max;
+
+    std::vector<std::thread> threads;
+
+    for (auto sim : sims)
+    {
+        threads.push_back(std::thread(schneizel_sim_minimax_alphabeta_async, sim, white, depth, depth_inc_cnt, depth_inc_max_move_cnt, min, max, evals));
+    }
+
+    for (auto &th : threads)
+    {
+        th.join();
+    }
+
+    for (int i = 0; i < sims.size(); i++)
+    {
+        auto eval = evals[i];
+
+        if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
+        {
+            best_moves.clear();
+
+            best_eval_val = eval.value;
+
+            best_moves.push_back(eval);
+        }
+        else if (eval.value == best_eval_val)
+        {
+            best_moves.push_back(eval);
+        }
+    }
+
+    return best_moves;
+}
+
 void play(bool white, int depth)
 {
     Board board;
@@ -307,7 +432,8 @@ void selfplay_tiebreak(int depth, Model *model)
 
                 if (!opening_stage)
                 {
-                    auto evals = board.minimax_alphabeta(true, depth, 7, 10);
+                    // auto evals = board.minimax_alphabeta(true, depth, 7, 10);
+                    auto evals = schneizel_minimax_alphabeta(&board, true, depth, 7, 10);
 
                     int eval_idx = 0;
                     std::vector<int> a;
@@ -466,7 +592,6 @@ void export_pgn(const char *path)
     fclose(train_lbl_file);
 }
 
-// TODO
 int chess_classification_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
 {
     int correct_cnt = 0;
@@ -475,9 +600,19 @@ int chess_classification_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
 
     for (int i = 0; i < batch_size; i++)
     {
-        int y_idx = y->max_idx();
+        float max_val = y->get_val(i * output_cnt + 0);
+        int max_idx = 0;
+        for (int j = 1; j < output_cnt; j++)
+        {
+            float val = y->get_val(i * output_cnt + j);
+            if (val > max_val)
+            {
+                max_val = val;
+                max_idx = j;
+            }
+        }
 
-        if (p->get_val(i * output_cnt + y_idx) >= 0.95f)
+        if (p->get_val(i * output_cnt + max_idx) >= 0.95f)
         {
             correct_cnt++;
         }

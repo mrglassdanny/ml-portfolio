@@ -113,9 +113,6 @@ namespace chess
         int get_king_square(bool white);
         bool is_piece_in_king_pin(int square, bool white_king_pin);
 
-        bool is_check(bool by_white, bool hard_way);
-        bool is_checkmate(bool by_white, bool hard_way);
-
         static int sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, int alpha, int beta);
         static void sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, int alpha, int beta, Evaluation *evals);
 
@@ -143,7 +140,9 @@ namespace chess
         bool has_moves(bool white);
 
         bool is_check(bool by_white);
+        bool is_check(bool by_white, bool hard_way);
         bool is_checkmate(bool by_white);
+        bool is_checkmate(bool by_white, bool hard_way);
 
         void change(Move move);
         Move change(std::string move_str, bool white);
