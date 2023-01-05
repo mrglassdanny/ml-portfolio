@@ -2799,20 +2799,32 @@ std::string OpeningEngine::next_move(Board *board, int move_cnt)
         return move_str;
     }
 
-    for (auto opening : this->openings_)
+    if (move_cnt == 0)
     {
-        if (board->compare_data(&opening.boards[(move_cnt - 1) * CHESS_BOARD_LEN]) == 0)
+        auto opening = this->openings_[rand() % 100];
+
+        char *token = strtok(opening.move_strs, " ");
+
+        std::string temp(token);
+        move_str = temp;
+    }
+    else
+    {
+        for (auto opening : this->openings_)
         {
-            char *token = strtok(opening.move_strs, " ");
-            for (int i = 0; i < move_cnt; i++)
+            if (board->compare_data(&opening.boards[(move_cnt - 1) * CHESS_BOARD_LEN]) == 0)
             {
-                token = strtok(NULL, " ");
+                char *token = strtok(opening.move_strs, " ");
+                for (int i = 0; i < move_cnt; i++)
+                {
+                    token = strtok(NULL, " ");
+                }
+
+                std::string temp(token);
+                move_str = temp;
+
+                break;
             }
-
-            std::string temp(token);
-            move_str = temp;
-
-            break;
         }
     }
 

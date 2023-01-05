@@ -109,131 +109,6 @@ void one_hot_encode_chess_board_data(const char *board_data, float *out)
     }
 }
 
-int schneizel_sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, int alpha, int beta)
-{
-    if (sim.board.is_checkmate(!white, false))
-    {
-        if (white)
-        {
-            return CHESS_EVAL_MAX_VAL;
-        }
-        else
-        {
-            return CHESS_EVAL_MIN_VAL;
-        }
-    }
-
-    if (depth == 0)
-    {
-        return sim.board.evaluate_material();
-    }
-
-    if (!white)
-    {
-        int best_eval_val = CHESS_EVAL_MIN_VAL;
-        auto sim_sims = sim.board.simulate_all(true);
-
-        if (sim_sims.size() <= depth_inc_max_move_cnt && depth_inc_cnt > 0)
-        {
-            depth++;
-            depth_inc_cnt--;
-        }
-
-        for (auto sim_sim : sim_sims)
-        {
-            int eval_val = schneizel_sim_minimax_alphabeta_sync(sim_sim, true, depth - 1, depth_inc_cnt, depth_inc_max_move_cnt, alpha, beta);
-
-            best_eval_val = eval_val > best_eval_val ? eval_val : best_eval_val;
-
-            alpha = eval_val > alpha ? eval_val : alpha;
-            if (beta <= alpha)
-            {
-                break;
-            }
-        }
-
-        return best_eval_val;
-    }
-    else
-    {
-        int best_eval_val = CHESS_EVAL_MAX_VAL;
-        auto sim_sims = sim.board.simulate_all(false);
-
-        if (sim_sims.size() <= depth_inc_max_move_cnt && depth_inc_cnt > 0)
-        {
-            depth++;
-            depth_inc_cnt--;
-        }
-
-        for (auto sim_sim : sim_sims)
-        {
-            int eval_val = schneizel_sim_minimax_alphabeta_sync(sim_sim, false, depth - 1, depth_inc_cnt, depth_inc_max_move_cnt, alpha, beta);
-
-            best_eval_val = eval_val < best_eval_val ? eval_val : best_eval_val;
-
-            beta = eval_val < beta ? eval_val : beta;
-            if (beta <= alpha)
-            {
-                break;
-            }
-        }
-
-        return best_eval_val;
-    }
-}
-
-void schneizel_sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, int alpha, int beta, Evaluation *evals)
-{
-    int eval_val = schneizel_sim_minimax_alphabeta_sync(sim, white, depth, depth_inc_cnt, depth_inc_max_move_cnt, alpha, beta);
-    evals[sim.idx] = Evaluation{eval_val, sim.move, sim.board};
-}
-
-std::vector<Evaluation> schneizel_minimax_alphabeta(Board *board, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt)
-{
-    std::vector<Evaluation> best_moves;
-
-    Evaluation evals[CHESS_BOARD_LEN];
-
-    auto sims = board->simulate_all(white);
-
-    int min = CHESS_EVAL_MIN_VAL;
-    int max = CHESS_EVAL_MAX_VAL;
-
-    int best_eval_val = white ? min : max;
-
-    std::vector<std::thread> threads;
-
-    for (auto sim : sims)
-    {
-        threads.push_back(std::thread(schneizel_sim_minimax_alphabeta_async, sim, white, depth, depth_inc_cnt, depth_inc_max_move_cnt, min, max, evals));
-    }
-
-    for (auto &th : threads)
-    {
-        th.join();
-    }
-
-    for (int i = 0; i < sims.size(); i++)
-    {
-        auto eval = evals[i];
-
-        if ((white && eval.value > best_eval_val) || (!white && eval.value < best_eval_val))
-        {
-            best_moves.clear();
-
-            best_eval_val = eval.value;
-
-            best_moves.push_back(eval);
-        }
-        else if (eval.value == best_eval_val)
-        {
-            best_moves.push_back(eval);
-        }
-    }
-
-    return best_moves;
-}
-
 void play(bool white, int depth)
 {
     Board board;
@@ -370,7 +245,7 @@ void play(bool white, int depth)
     }
 }
 
-void selfplay_tiebreak(int depth, Model *model)
+void selfplay(int depth, Model *model)
 {
     Board board;
     Move prev_move;
@@ -408,10 +283,15 @@ void selfplay_tiebreak(int depth, Model *model)
 
         // White:
         {
+            printf("MATERIAL EVALUATION: %d\n", board.evaluate_material());
+
             if (move_cnt == 0)
             {
                 // Default opening if white.
                 prev_move = board.change("e4", true);
+
+                // std::string move_str = opening_engine.next_move(&board, move_cnt);
+                // prev_move = board.change(move_str, true);
             }
             else
             {
@@ -432,11 +312,9 @@ void selfplay_tiebreak(int depth, Model *model)
 
                 if (!opening_stage)
                 {
-                    // auto evals = board.minimax_alphabeta(true, depth, 7, 10);
-                    auto evals = schneizel_minimax_alphabeta(&board, true, depth, 7, 10);
+                    auto evals = board.minimax_alphabeta(true, depth, 9, 6);
 
-                    int eval_idx = 0;
-                    std::vector<int> a;
+                    int max_eval_idx = 0;
 
                     {
                         x->to_cpu();
@@ -445,14 +323,37 @@ void selfplay_tiebreak(int depth, Model *model)
                         x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 0.0f;
                         auto p = model->forward(x);
 
-                        for (int i = 0; i < evals.size(); i++)
+                        float max_val = 0.0f;
+
+                        for (int eval_idx = 0; eval_idx < evals.size(); eval_idx++)
                         {
-                            float p_val = p->get_val(evals[i].move.src_square);
-                            if (p_val >= 0.5f)
+                            auto move = evals[eval_idx].move;
+
+                            float p_val = p->get_val(move.src_square);
+
+                            // Incentivize castling and disincentivize moving king.
+                            if (board.get_king_square(true) == move.src_square)
                             {
-                                printf("Square: %d\tPiece: %c\tVal: %f\n", evals[i].move.src_square, board.get_piece(evals[i].move.src_square), p_val);
-                                eval_idx = i;
-                                a.push_back(i);
+                                int src_dst_diff = abs(move.src_square - move.dst_square);
+                                if (src_dst_diff == 2 || src_dst_diff == 3)
+                                {
+                                    p_val = 1.0f;
+                                }
+                                else
+                                {
+                                    p_val = 0.01f;
+                                }
+                            }
+
+                            if (p_val >= 0.01f)
+                            {
+                                printf("Src: %d\tDst: %d\tPiece: %c\tVal: %f\n", move.src_square, move.dst_square, board.get_piece(move.src_square), p_val);
+                            }
+
+                            if (p_val > max_val)
+                            {
+                                max_eval_idx = eval_idx;
+                                max_val = p_val;
                             }
                         }
 
@@ -461,8 +362,8 @@ void selfplay_tiebreak(int depth, Model *model)
                         delete p;
                     }
 
-                    board.change(evals[eval_idx].move);
-                    prev_move = evals[eval_idx].move;
+                    board.change(evals[max_eval_idx].move);
+                    prev_move = evals[max_eval_idx].move;
                     printf("Ties: %d\n", evals.size());
                 }
             }
@@ -486,6 +387,8 @@ void selfplay_tiebreak(int depth, Model *model)
 
         // Black:
         {
+            printf("MATERIAL EVALUATION: %d\n", board.evaluate_material());
+
             if (opening_stage)
             {
                 std::string move_str = opening_engine.next_move(&board, move_cnt);
@@ -819,7 +722,7 @@ int main()
         model->load_parameters("temp/model.nn");
     }
 
-    selfplay_tiebreak(3, model);
+    selfplay(3, model);
 
     delete model;
 

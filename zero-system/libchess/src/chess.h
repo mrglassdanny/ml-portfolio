@@ -110,7 +110,6 @@ namespace chess
 
         bool is_square_under_attack(int square, bool by_white);
 
-        int get_king_square(bool white);
         bool is_piece_in_king_pin(int square, bool white_king_pin);
 
         static int sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, int alpha, int beta);
@@ -138,6 +137,8 @@ namespace chess
         std::vector<Move> get_all_moves(bool white);
         std::vector<Move> get_all_moves(bool white, std::vector<int> src_squares);
         bool has_moves(bool white);
+
+        int get_king_square(bool white);
 
         bool is_check(bool by_white);
         bool is_check(bool by_white, bool hard_way);
