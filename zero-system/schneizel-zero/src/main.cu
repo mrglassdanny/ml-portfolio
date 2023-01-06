@@ -112,10 +112,12 @@ void export_pgn(const char *path)
     auto pgn_games = PGN::import(path, FileUtils::get_file_size(path));
 
     FILE *train_data_file = fopen("temp/train.data", "wb");
-    FILE *train_lbl_file = fopen("temp/train.lbl", "wb");
+    FILE *train_head_lbl_file = fopen("temp/train-head.lbl", "wb");
+    FILE *train_hand_lbl_file = fopen("temp/train-hand.lbl", "wb");
 
     char data_buf[CHESS_BOARD_LEN + 1];
-    int lbl_buf;
+    int head_lbl_buf;
+    int hand_lbl_buf;
 
     int game_cnt = 0;
 
@@ -153,10 +155,12 @@ void export_pgn(const char *path)
                     data_buf[CHESS_BOARD_LEN] = 'b';
                 }
 
-                lbl_buf = move.src_square;
+                head_lbl_buf = move.src_square;
+                hand_lbl_buf = move.dst_square;
 
                 fwrite(data_buf, sizeof(data_buf), 1, train_data_file);
-                fwrite(&lbl_buf, sizeof(lbl_buf), 1, train_lbl_file);
+                fwrite(&head_lbl_buf, sizeof(head_lbl_buf), 1, train_head_lbl_file);
+                fwrite(&hand_lbl_buf, sizeof(hand_lbl_buf), 1, train_hand_lbl_file);
 
                 move_cnt++;
             }
@@ -179,7 +183,8 @@ void export_pgn(const char *path)
     printf("Game: %d\tMoves: %ld\n", game_cnt, move_cnt);
 
     fclose(train_data_file);
-    fclose(train_lbl_file);
+    fclose(train_head_lbl_file);
+    fclose(train_hand_lbl_file);
 }
 
 int chess_classification_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
@@ -211,31 +216,76 @@ int chess_classification_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
     return correct_cnt;
 }
 
-void train_head(int epochs, int batch_size)
+void train(int epochs, int batch_size)
 {
-    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+    Shape head_x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+    Shape hand_x_shape(batch_size, (CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
     Shape y_shape(batch_size, CHESS_BOARD_LEN);
 
+    // auto head = new Model(new Xavier());
+    // {
+    //     head->linear(head_x_shape, 1024, new ReLU());
+    //     head->linear(1024, new ReLU());
+    //     head->linear(512, new ReLU());
+    //     head->linear(512, new ReLU());
+    //     head->linear(128, new ReLU());
+    //     head->linear(y_shape, new Sigmoid());
+
+    //     head->set_loss(new CrossEntropy());
+    //     head->set_optimizer(new SGDMomentum(head->parameters(), 0.01f, ZERO_NN_BETA_1));
+
+    //     head->summarize();
+    // }
+
+    // auto hand = new Model(new Xavier());
+    // {
+    //     hand->linear(hand_x_shape, 1024, new ReLU());
+    //     hand->linear(1024, new ReLU());
+    //     hand->linear(512, new ReLU());
+    //     hand->linear(512, new ReLU());
+    //     hand->linear(128, new ReLU());
+    //     hand->linear(y_shape, new Sigmoid());
+
+    //     hand->set_loss(new CrossEntropy());
+    //     hand->set_optimizer(new SGDMomentum(hand->parameters(), 0.01f, ZERO_NN_BETA_1));
+
+    //     hand->summarize();
+    // }
+
     auto head = new Model(new Xavier());
+    {
+        head->linear(head_x_shape, 512, new ReLU());
+        head->linear(256, new ReLU());
+        head->linear(128, new ReLU());
+        head->linear(y_shape, new Sigmoid());
 
-    head->linear(x_shape, 1024, new ReLU());
-    head->linear(1024, new ReLU());
-    head->linear(512, new ReLU());
-    head->linear(512, new ReLU());
-    head->linear(128, new ReLU());
-    head->linear(y_shape, new Sigmoid());
+        head->set_loss(new CrossEntropy());
+        head->set_optimizer(new SGDMomentum(head->parameters(), 0.1f, ZERO_NN_BETA_1));
 
-    head->set_loss(new CrossEntropy());
-    head->set_optimizer(new SGDMomentum(head->parameters(), 0.01f, ZERO_NN_BETA_1));
+        head->summarize();
+    }
 
-    head->summarize();
+    auto hand = new Model(new Xavier());
+    {
+        hand->linear(hand_x_shape, 512, new ReLU());
+        hand->linear(256, new ReLU());
+        hand->linear(128, new ReLU());
+        hand->linear(y_shape, new Sigmoid());
+
+        hand->set_loss(new CrossEntropy());
+        hand->set_optimizer(new SGDMomentum(hand->parameters(), 0.1f, ZERO_NN_BETA_1));
+
+        hand->summarize();
+    }
 
     {
         const char *data_path = "temp/train.data";
-        const char *lbl_path = "temp/train.lbl";
+        const char *head_lbl_path = "temp/train-head.lbl";
+        const char *hand_lbl_path = "temp/train-hand.lbl";
 
         int input_size = CHESS_BOARD_LEN + 1;
-        int x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+        int head_x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+        int hand_x_size = ((CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
 
         long long data_file_size = FileUtils::get_file_size(data_path);
         size_t data_cnt = data_file_size / input_size;
@@ -243,71 +293,108 @@ void train_head(int epochs, int batch_size)
         int batch_cnt = data_cnt / batch_size;
 
         FILE *data_file = fopen(data_path, "rb");
-        FILE *lbl_file = fopen(lbl_path, "rb");
+        FILE *head_lbl_file = fopen(head_lbl_path, "rb");
+        FILE *hand_lbl_file = fopen(head_lbl_path, "rb");
 
-        // Train:
         {
-            FILE *train_csv = fopen("temp/train.csv", "w");
-            fprintf(train_csv, "epoch,batch,loss,accuracy\n");
+            FILE *train_head_csv = fopen("temp/train-head.csv", "w");
+            fprintf(train_head_csv, "epoch,batch,loss,accuracy\n");
+
+            FILE *train_hand_csv = fopen("temp/train-hand.csv", "w");
+            fprintf(train_hand_csv, "epoch,batch,loss,accuracy\n");
 
             bool quit = false;
 
-            auto x = Tensor::zeros(false, Shape(batch_size, x_size));
-            auto y = Tensor::zeros(false, Shape(batch_size, 1));
+            auto head_x = Tensor::zeros(false, head_x_shape);
+            auto hand_x = Tensor::zeros(false, hand_x_shape);
+            auto head_y = Tensor::zeros(false, y_shape);
+            auto hand_y = Tensor::zeros(false, y_shape);
 
             char *data_buf = (char *)malloc(sizeof(char) * batch_size * input_size);
-            int *lbl_buf = (int *)malloc(sizeof(int) * batch_size);
+            int *head_lbl_buf = (int *)malloc(sizeof(int) * batch_size);
+            int *hand_lbl_buf = (int *)malloc(sizeof(int) * batch_size);
 
             for (int epoch = 0; epoch < epochs; epoch++)
             {
                 for (int batch_idx = 0; batch_idx < batch_cnt; batch_idx++)
                 {
-                    x->zeros();
-                    y->zeros();
+                    head_x->zeros();
+                    head_y->zeros();
 
-                    x->to_cpu();
-                    y->to_cpu();
+                    hand_x->zeros();
+                    hand_y->zeros();
+
+                    head_x->to_cpu();
+                    head_y->to_cpu();
+
+                    hand_x->to_cpu();
+                    hand_y->to_cpu();
 
                     fread(data_buf, 1, (input_size * batch_size), data_file);
-                    fread(lbl_buf, 1, (sizeof(int) * batch_size), lbl_file);
+                    fread(head_lbl_buf, 1, (sizeof(int) * batch_size), head_lbl_file);
+                    fread(hand_lbl_buf, 1, (sizeof(int) * batch_size), hand_lbl_file);
 
                     for (int i = 0; i < batch_size; i++)
                     {
-                        one_hot_encode_chess_board_data(&data_buf[i * input_size], &x->data()[i * x_size]);
+                        one_hot_encode_chess_board_data(&data_buf[i * input_size], &head_x->data()[i * head_x_size]);
                         if (data_buf[i * input_size + CHESS_BOARD_LEN] == 'w')
                         {
-                            x->data()[(i * x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
+                            head_x->data()[(i * head_x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
+                            hand_x->data()[(i * hand_x_size) + ((CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
                         }
                         else
                         {
-                            x->data()[(i * x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 1.0f;
+                            head_x->data()[(i * head_x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 1.0f;
+                            hand_x->data()[(i * hand_x_size) + ((CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 1.0f;
                         }
 
-                        y->data()[i] = (float)lbl_buf[i];
+                        head_y->data()[i] = (float)head_lbl_buf[i];
+                        hand_y->data()[i] = (float)hand_lbl_buf[i];
                     }
 
-                    auto oh_y = Tensor::one_hot(y, CHESS_BOARD_LEN - 1);
+                    head_x->print();
+                    head_y->print();
+                    hand_x->print();
+                    hand_y->print();
 
-                    auto p = head->forward(x);
+                    auto head_oh_y = Tensor::one_hot(head_y, CHESS_BOARD_LEN - 1);
+                    auto hand_oh_y = Tensor::one_hot(hand_y, CHESS_BOARD_LEN - 1);
+
+                    head_oh_y->print();
+                    hand_oh_y->print();
+
+                    for (int i = 0; i < batch_size; i++)
+                    {
+                        memcpy(&hand_x->data()[(i * head_x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)],
+                               &head_oh_y->data()[i * CHESS_BOARD_LEN], sizeof(float) * CHESS_ROW_CNT * CHESS_COL_CNT);
+                    }
+
+                    hand_x->print();
+
+                    auto head_p = head->forward(head_x);
+                    auto hand_p = hand->forward(hand_x);
 
                     if (batch_idx % 100 == 0)
                     {
-                        float loss = head->loss(p, oh_y);
-                        float acc = head->accuracy(p, oh_y, chess_classification_accuracy_fn);
-                        fprintf(train_csv, "%d,%d,%f,%f\n", epoch, batch_idx, loss, acc);
+                        float head_loss = head->loss(head_p, head_oh_y);
+                        float head_acc = head->accuracy(head_p, head_oh_y, chess_classification_accuracy_fn);
+                        fprintf(train_head_csv, "%d,%d,%f,%f\n", epoch, batch_idx, head_loss, head_acc);
+
+                        float hand_loss = hand->loss(hand_p, hand_oh_y);
+                        float hand_acc = hand->accuracy(hand_p, hand_oh_y, chess_classification_accuracy_fn);
+                        fprintf(train_hand_csv, "%d,%d,%f,%f\n", epoch, batch_idx, hand_loss, hand_acc);
                     }
 
-                    head->backward(p, oh_y);
+                    head->backward(head_p, head_oh_y);
+                    hand->backward(hand_p, hand_oh_y);
+
                     head->step();
+                    hand->step();
 
-                    if (batch_idx == batch_cnt - 1)
-                    {
-                        y->print();
-                        p->print();
-                    }
-
-                    delete p;
-                    delete oh_y;
+                    delete head_p;
+                    delete head_oh_y;
+                    delete hand_p;
+                    delete hand_oh_y;
 
                     if (_kbhit())
                     {
@@ -320,7 +407,8 @@ void train_head(int epochs, int batch_size)
                 }
 
                 fseek(data_file, 0, SEEK_SET);
-                fseek(lbl_file, 0, SEEK_SET);
+                fseek(head_lbl_file, 0, SEEK_SET);
+                fseek(hand_lbl_file, 0, SEEK_SET);
 
                 if (quit)
                 {
@@ -328,22 +416,30 @@ void train_head(int epochs, int batch_size)
                 }
             }
 
-            delete x;
-            delete y;
+            delete head_x;
+            delete head_y;
+
+            delete hand_x;
+            delete hand_y;
 
             free(data_buf);
-            free(lbl_buf);
+            free(head_lbl_buf);
+            free(hand_lbl_buf);
 
-            fclose(train_csv);
+            fclose(train_head_csv);
+            fclose(train_hand_csv);
         }
 
         fclose(data_file);
-        fclose(lbl_file);
+        fclose(head_lbl_file);
+        fclose(hand_lbl_file);
     }
 
     head->save_parameters("temp/head.nn");
+    hand->save_parameters("temp/hand.nn");
 
     delete head;
+    delete hand;
 }
 
 void play(bool white, int depth, Model *head)
@@ -630,27 +726,29 @@ int main()
 {
     srand(time(NULL));
 
-    Shape x_shape(1, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
-    Shape y_shape(1, CHESS_BOARD_LEN);
+    // Shape x_shape(1, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+    // Shape y_shape(1, CHESS_BOARD_LEN);
 
-    auto head = new Model(new Xavier());
-    {
-        head->linear(x_shape, 1024, new ReLU());
-        head->linear(1024, new ReLU());
-        head->linear(512, new ReLU());
-        head->linear(512, new ReLU());
-        head->linear(128, new ReLU());
-        head->linear(y_shape, new ReLU());
+    // auto head = new Model(new Xavier());
+    // {
+    //     head->linear(x_shape, 1024, new ReLU());
+    //     head->linear(1024, new ReLU());
+    //     head->linear(512, new ReLU());
+    //     head->linear(512, new ReLU());
+    //     head->linear(128, new ReLU());
+    //     head->linear(y_shape, new ReLU());
 
-        head->set_loss(new CrossEntropy());
-        head->set_optimizer(new SGDMomentum(head->parameters(), 0.001f, ZERO_NN_BETA_1));
+    //     head->set_loss(new CrossEntropy());
+    //     head->set_optimizer(new SGDMomentum(head->parameters(), 0.001f, ZERO_NN_BETA_1));
 
-        head->load_parameters("data/head.nn");
-    }
+    //     head->load_parameters("data/head.nn");
+    // }
 
-    play(true, 4, head);
+    // play(true, 5, head);
 
-    delete head;
+    // delete head;
+
+    export_pgn("data/all.pgn");
 
     return 0;
 }

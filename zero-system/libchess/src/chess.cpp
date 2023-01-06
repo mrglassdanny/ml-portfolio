@@ -1528,7 +1528,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
         {
             if (piece == CHESS_WK)
             {
-                if (!this->is_check(false, false))
+                if (!this->is_check(false))
                 {
                     if (!this->castle_state_.white_king_moved)
                     {
@@ -1558,7 +1558,7 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
             }
             else
             {
-                if (!this->is_check(true, false))
+                if (!this->is_check(true))
                 {
                     if (!this->castle_state_.black_king_moved)
                     {
