@@ -609,10 +609,6 @@ int main()
 {
     srand(time(NULL));
 
-    // export_pgn("data/all.pgn");
-
-    // compare_models(10, 64);
-
     Shape x_shape(1, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
     Shape y_shape(1, CHESS_BOARD_LEN);
 
