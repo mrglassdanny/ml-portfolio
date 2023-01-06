@@ -211,24 +211,24 @@ int chess_classification_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
     return correct_cnt;
 }
 
-void train_head(Model *model, int epochs, int batch_size)
+void train_head(int epochs, int batch_size)
 {
     Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
     Shape y_shape(batch_size, CHESS_BOARD_LEN);
 
-    auto model = new Model(new Xavier());
+    auto head = new Model(new Xavier());
 
-    model->linear(x_shape, 1024, new ReLU());
-    model->linear(1024, new ReLU());
-    model->linear(512, new ReLU());
-    model->linear(512, new ReLU());
-    model->linear(128, new ReLU());
-    model->linear(y_shape, new Sigmoid());
+    head->linear(x_shape, 1024, new ReLU());
+    head->linear(1024, new ReLU());
+    head->linear(512, new ReLU());
+    head->linear(512, new ReLU());
+    head->linear(128, new ReLU());
+    head->linear(y_shape, new Sigmoid());
 
-    model->set_loss(new CrossEntropy());
-    model->set_optimizer(new SGDMomentum(model->parameters(), 0.01f, ZERO_NN_BETA_1));
+    head->set_loss(new CrossEntropy());
+    head->set_optimizer(new SGDMomentum(head->parameters(), 0.01f, ZERO_NN_BETA_1));
 
-    model->summarize();
+    head->summarize();
 
     {
         const char *data_path = "temp/train.data";
@@ -288,17 +288,17 @@ void train_head(Model *model, int epochs, int batch_size)
 
                     auto oh_y = Tensor::one_hot(y, CHESS_BOARD_LEN - 1);
 
-                    auto p = model->forward(x);
+                    auto p = head->forward(x);
 
                     if (batch_idx % 100 == 0)
                     {
-                        float loss = model->loss(p, oh_y);
-                        float acc = model->accuracy(p, oh_y, chess_classification_accuracy_fn);
+                        float loss = head->loss(p, oh_y);
+                        float acc = head->accuracy(p, oh_y, chess_classification_accuracy_fn);
                         fprintf(train_csv, "%d,%d,%f,%f\n", epoch, batch_idx, loss, acc);
                     }
 
-                    model->backward(p, oh_y);
-                    model->step();
+                    head->backward(p, oh_y);
+                    head->step();
 
                     if (batch_idx == batch_cnt - 1)
                     {
@@ -341,12 +341,12 @@ void train_head(Model *model, int epochs, int batch_size)
         fclose(lbl_file);
     }
 
-    model->save_parameters("temp/head.nn");
+    head->save_parameters("temp/head.nn");
 
-    delete model;
+    delete head;
 }
 
-void play(bool white, int depth, Model *model)
+void play(bool white, int depth, Model *head)
 {
     Board board;
     Move prev_move;
@@ -440,7 +440,7 @@ void play(bool white, int depth, Model *model)
                         one_hot_encode_chess_board_data(board.get_data(), x->data());
                         x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
                         x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 0.0f;
-                        auto p = model->forward(x);
+                        auto p = head->forward(x);
 
                         float max_val = 0.0f;
 
@@ -451,14 +451,25 @@ void play(bool white, int depth, Model *model)
                             float p_val = p->get_val(move.src_square);
 
                             // Incentivize castling and disincentivize moving king.
-                            if (board.get_king_square(true) == move.src_square)
+                            if (move.src_square == board.get_king_square(true))
                             {
                                 int src_dst_diff = abs(move.src_square - move.dst_square);
                                 if (src_dst_diff == 2 || src_dst_diff == 3)
                                 {
-                                    p_val = 50.0f;
+                                    p_val = 20.0f;
                                 }
                                 else
+                                {
+                                    p_val = 0.01f;
+                                }
+                            }
+
+                            // Disincentivize moving knight to rim.
+                            if (board.get_piece(move.src_square) == CHESS_WN)
+                            {
+                                int dst_col = Board::get_col(move.dst_square);
+
+                                if (dst_col == 0 || dst_col == 7)
                                 {
                                     p_val = 0.01f;
                                 }
@@ -544,7 +555,7 @@ void play(bool white, int depth, Model *model)
                     one_hot_encode_chess_board_data(board.get_data(), x->data());
                     x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 0.0f;
                     x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 1.0f;
-                    auto p = model->forward(x);
+                    auto p = head->forward(x);
 
                     float max_val = 0.0f;
 
@@ -561,14 +572,25 @@ void play(bool white, int depth, Model *model)
                         float p_val = p->get_val(move.src_square);
 
                         // Incentivize castling and disincentivize moving king.
-                        if (board.get_king_square(false) == move.src_square)
+                        if (move.src_square == board.get_king_square(false))
                         {
                             int src_dst_diff = abs(move.src_square - move.dst_square);
                             if (src_dst_diff == 2 || src_dst_diff == 3)
                             {
-                                p_val = 50.0f;
+                                p_val = 20.0f;
                             }
                             else
+                            {
+                                p_val = 0.01f;
+                            }
+                        }
+
+                        // Disincentivize moving knight to rim.
+                        if (board.get_piece(move.src_square) == CHESS_BN)
+                        {
+                            int dst_col = Board::get_col(move.dst_square);
+
+                            if (dst_col == 0 || dst_col == 7)
                             {
                                 p_val = 0.01f;
                             }
@@ -605,24 +627,24 @@ int main()
     Shape x_shape(1, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
     Shape y_shape(1, CHESS_BOARD_LEN);
 
-    auto model = new Model(new Xavier());
+    auto head = new Model(new Xavier());
     {
-        model->linear(x_shape, 1024, new ReLU());
-        model->linear(1024, new ReLU());
-        model->linear(512, new ReLU());
-        model->linear(512, new ReLU());
-        model->linear(128, new ReLU());
-        model->linear(y_shape, new ReLU());
+        head->linear(x_shape, 1024, new ReLU());
+        head->linear(1024, new ReLU());
+        head->linear(512, new ReLU());
+        head->linear(512, new ReLU());
+        head->linear(128, new ReLU());
+        head->linear(y_shape, new ReLU());
 
-        model->set_loss(new CrossEntropy());
-        model->set_optimizer(new SGDMomentum(model->parameters(), 0.001f, ZERO_NN_BETA_1));
+        head->set_loss(new CrossEntropy());
+        head->set_optimizer(new SGDMomentum(head->parameters(), 0.001f, ZERO_NN_BETA_1));
 
-        model->load_parameters("data/head.nn");
+        head->load_parameters("data/head.nn");
     }
 
-    play(false, 4, model);
+    play(false, 4, head);
 
-    delete model;
+    delete head;
 
     return 0;
 }
