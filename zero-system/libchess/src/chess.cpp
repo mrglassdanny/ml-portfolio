@@ -2668,7 +2668,7 @@ Evaluation Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int dep
             }
         }
 
-        if (sim_sims.size() == 0)
+        if (best_eval.value == CHESS_WHITE_CHECKMATED_VAL)
         {
             // Incentivize checkmate (fewer moves moreso) and disincentivize stalemate.
             if (sim.board.is_checkmate(false, false))
@@ -2711,7 +2711,7 @@ Evaluation Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int dep
             }
         }
 
-        if (sim_sims.size() == 0)
+        if (best_eval.value == CHESS_BLACK_CHECKMATED_VAL)
         {
             // Incentivize checkmate (fewer moves moreso) and disincentivize stalemate.
             if (sim.board.is_checkmate(true, false))
