@@ -1,8 +1,6 @@
 #include <stdio.h>
 #include <conio.h>
 
-#include <map>
-
 #include <zero/mod.cuh>
 
 #include "chess.h"
@@ -213,144 +211,139 @@ int chess_classification_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
     return correct_cnt;
 }
 
-void train(Model *model, int epochs, int batch_size)
-{
-    const char *data_path = "temp/train.data";
-    const char *lbl_path = "temp/train.lbl";
-
-    int input_size = CHESS_BOARD_LEN + 1;
-    int x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
-
-    long long data_file_size = FileUtils::get_file_size(data_path);
-    size_t data_cnt = data_file_size / input_size;
-
-    int batch_cnt = data_cnt / batch_size;
-
-    FILE *data_file = fopen(data_path, "rb");
-    FILE *lbl_file = fopen(lbl_path, "rb");
-
-    // Train:
-    {
-        FILE *train_csv = fopen("temp/train.csv", "w");
-        fprintf(train_csv, "epoch,batch,loss,accuracy\n");
-
-        bool quit = false;
-
-        auto x = Tensor::zeros(false, Shape(batch_size, x_size));
-        auto y = Tensor::zeros(false, Shape(batch_size, 1));
-
-        char *data_buf = (char *)malloc(sizeof(char) * batch_size * input_size);
-        int *lbl_buf = (int *)malloc(sizeof(int) * batch_size);
-
-        for (int epoch = 0; epoch < epochs; epoch++)
-        {
-            for (int batch_idx = 0; batch_idx < batch_cnt; batch_idx++)
-            {
-                x->zeros();
-                y->zeros();
-
-                x->to_cpu();
-                y->to_cpu();
-
-                fread(data_buf, 1, (input_size * batch_size), data_file);
-                fread(lbl_buf, 1, (sizeof(int) * batch_size), lbl_file);
-
-                for (int i = 0; i < batch_size; i++)
-                {
-                    one_hot_encode_chess_board_data(&data_buf[i * input_size], &x->data()[i * x_size]);
-                    if (data_buf[i * input_size + CHESS_BOARD_LEN] == 'w')
-                    {
-                        x->data()[(i * x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
-                    }
-                    else
-                    {
-                        x->data()[(i * x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 1.0f;
-                    }
-
-                    y->data()[i] = (float)lbl_buf[i];
-                }
-
-                auto oh_y = Tensor::one_hot(y, CHESS_BOARD_LEN - 1);
-
-                auto p = model->forward(x);
-
-                if (batch_idx % 100 == 0)
-                {
-                    float loss = model->loss(p, oh_y);
-                    float acc = model->accuracy(p, oh_y, chess_classification_accuracy_fn);
-                    fprintf(train_csv, "%d,%d,%f,%f\n", epoch, batch_idx, loss, acc);
-                }
-
-                model->backward(p, oh_y);
-                model->step();
-
-                if (batch_idx == batch_cnt - 1)
-                {
-                    y->print();
-                    p->print();
-                }
-
-                delete p;
-                delete oh_y;
-
-                if (_kbhit())
-                {
-                    if (_getch() == 'q')
-                    {
-                        quit = true;
-                        break;
-                    }
-                }
-            }
-
-            fseek(data_file, 0, SEEK_SET);
-            fseek(lbl_file, 0, SEEK_SET);
-
-            if (quit)
-            {
-                break;
-            }
-        }
-
-        delete x;
-        delete y;
-
-        free(data_buf);
-        free(lbl_buf);
-
-        fclose(train_csv);
-    }
-
-    fclose(data_file);
-    fclose(lbl_file);
-}
-
-void compare_models(int epochs, int batch_size)
+void train_head(Model *model, int epochs, int batch_size)
 {
     Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
     Shape y_shape(batch_size, CHESS_BOARD_LEN);
 
+    auto model = new Model(new Xavier());
+
+    model->linear(x_shape, 1024, new ReLU());
+    model->linear(1024, new ReLU());
+    model->linear(512, new ReLU());
+    model->linear(512, new ReLU());
+    model->linear(128, new ReLU());
+    model->linear(y_shape, new Sigmoid());
+
+    model->set_loss(new CrossEntropy());
+    model->set_optimizer(new SGDMomentum(model->parameters(), 0.01f, ZERO_NN_BETA_1));
+
+    model->summarize();
+
     {
-        auto model = new Model(new Xavier());
+        const char *data_path = "temp/train.data";
+        const char *lbl_path = "temp/train.lbl";
 
-        model->linear(x_shape, 1024, new ReLU());
-        model->linear(1024, new ReLU());
-        model->linear(512, new ReLU());
-        model->linear(512, new ReLU());
-        model->linear(128, new ReLU());
-        model->linear(y_shape, new Sigmoid());
+        int input_size = CHESS_BOARD_LEN + 1;
+        int x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
 
-        model->set_loss(new CrossEntropy());
-        model->set_optimizer(new SGDMomentum(model->parameters(), 0.01f, ZERO_NN_BETA_1));
+        long long data_file_size = FileUtils::get_file_size(data_path);
+        size_t data_cnt = data_file_size / input_size;
 
-        model->summarize();
+        int batch_cnt = data_cnt / batch_size;
 
-        train(model, epochs, batch_size);
+        FILE *data_file = fopen(data_path, "rb");
+        FILE *lbl_file = fopen(lbl_path, "rb");
 
-        model->save_parameters("temp/model.nn");
+        // Train:
+        {
+            FILE *train_csv = fopen("temp/train.csv", "w");
+            fprintf(train_csv, "epoch,batch,loss,accuracy\n");
 
-        delete model;
+            bool quit = false;
+
+            auto x = Tensor::zeros(false, Shape(batch_size, x_size));
+            auto y = Tensor::zeros(false, Shape(batch_size, 1));
+
+            char *data_buf = (char *)malloc(sizeof(char) * batch_size * input_size);
+            int *lbl_buf = (int *)malloc(sizeof(int) * batch_size);
+
+            for (int epoch = 0; epoch < epochs; epoch++)
+            {
+                for (int batch_idx = 0; batch_idx < batch_cnt; batch_idx++)
+                {
+                    x->zeros();
+                    y->zeros();
+
+                    x->to_cpu();
+                    y->to_cpu();
+
+                    fread(data_buf, 1, (input_size * batch_size), data_file);
+                    fread(lbl_buf, 1, (sizeof(int) * batch_size), lbl_file);
+
+                    for (int i = 0; i < batch_size; i++)
+                    {
+                        one_hot_encode_chess_board_data(&data_buf[i * input_size], &x->data()[i * x_size]);
+                        if (data_buf[i * input_size + CHESS_BOARD_LEN] == 'w')
+                        {
+                            x->data()[(i * x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
+                        }
+                        else
+                        {
+                            x->data()[(i * x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 1.0f;
+                        }
+
+                        y->data()[i] = (float)lbl_buf[i];
+                    }
+
+                    auto oh_y = Tensor::one_hot(y, CHESS_BOARD_LEN - 1);
+
+                    auto p = model->forward(x);
+
+                    if (batch_idx % 100 == 0)
+                    {
+                        float loss = model->loss(p, oh_y);
+                        float acc = model->accuracy(p, oh_y, chess_classification_accuracy_fn);
+                        fprintf(train_csv, "%d,%d,%f,%f\n", epoch, batch_idx, loss, acc);
+                    }
+
+                    model->backward(p, oh_y);
+                    model->step();
+
+                    if (batch_idx == batch_cnt - 1)
+                    {
+                        y->print();
+                        p->print();
+                    }
+
+                    delete p;
+                    delete oh_y;
+
+                    if (_kbhit())
+                    {
+                        if (_getch() == 'q')
+                        {
+                            quit = true;
+                            break;
+                        }
+                    }
+                }
+
+                fseek(data_file, 0, SEEK_SET);
+                fseek(lbl_file, 0, SEEK_SET);
+
+                if (quit)
+                {
+                    break;
+                }
+            }
+
+            delete x;
+            delete y;
+
+            free(data_buf);
+            free(lbl_buf);
+
+            fclose(train_csv);
+        }
+
+        fclose(data_file);
+        fclose(lbl_file);
     }
+
+    model->save_parameters("temp/head.nn");
+
+    delete model;
 }
 
 void play(bool white, int depth, Model *model)
@@ -427,7 +420,7 @@ void play(bool white, int depth, Model *model)
 
                     if (move_str.empty())
                     {
-                        printf("\n==================================== END OF BOOK OPENINGS ====================================\n");
+                        printf("\n==================================== END OF BOOK OPENINGS ====================================\n\n");
                         opening_stage = false;
                     }
                     else
@@ -471,10 +464,7 @@ void play(bool white, int depth, Model *model)
                                 }
                             }
 
-                            if (p_val >= 0.01f)
-                            {
-                                printf("Src: %d\tDst: %d\tPiece: %c\tModel: %f\tMaterial: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), p_val, evals[eval_idx].value);
-                            }
+                            printf("Src: %d\tDst: %d\tPiece: %c\tModel: %f\tMaterial: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), p_val, evals[eval_idx].value);
 
                             if (p_val > max_val)
                             {
@@ -534,7 +524,7 @@ void play(bool white, int depth, Model *model)
 
                 if (move_str.empty())
                 {
-                    printf("\n==================================== END OF BOOK OPENINGS ====================================\n");
+                    printf("\n==================================== END OF BOOK OPENINGS ====================================\n\n");
                     opening_stage = false;
                 }
                 else
@@ -558,6 +548,12 @@ void play(bool white, int depth, Model *model)
 
                     float max_val = 0.0f;
 
+                    auto moves = board.get_all_moves(true);
+                    for (auto move : moves)
+                    {
+                        printf("Src: %d\tDst: %d\n", move.src_square, move.dst_square);
+                    }
+
                     for (int eval_idx = 0; eval_idx < evals.size(); eval_idx++)
                     {
                         auto move = evals[eval_idx].move;
@@ -578,10 +574,7 @@ void play(bool white, int depth, Model *model)
                             }
                         }
 
-                        if (p_val >= 0.01f)
-                        {
-                            printf("Src: %d\tDst: %d\tPiece: %c\tModel: %f\tMaterial: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), p_val, evals[eval_idx].value);
-                        }
+                        printf("Src: %d\tDst: %d\tPiece: %c\tModel: %f\tMaterial: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), p_val, evals[eval_idx].value);
 
                         if (p_val > max_val)
                         {
@@ -624,10 +617,10 @@ int main()
         model->set_loss(new CrossEntropy());
         model->set_optimizer(new SGDMomentum(model->parameters(), 0.001f, ZERO_NN_BETA_1));
 
-        model->load_parameters("data/model.nn");
+        model->load_parameters("data/head.nn");
     }
 
-    play(true, 4, model);
+    play(false, 4, model);
 
     delete model;
 

@@ -109,17 +109,17 @@ int Piece::get_value(char piece)
     case CHESS_BN:
         return -3;
     case CHESS_WB:
-        return 4;
+        return 3;
     case CHESS_BB:
-        return -4;
+        return -3;
     case CHESS_WR:
-        return 6;
+        return 5;
     case CHESS_BR:
-        return -6;
+        return -5;
     case CHESS_WQ:
-        return 10;
+        return 9;
     case CHESS_BQ:
-        return -10;
+        return -9;
     case CHESS_WK:
         return 2;
     case CHESS_BK:
