@@ -61,6 +61,7 @@ namespace chess
 
     struct Simulation;
     struct Evaluation;
+    struct EvaluationData;
 
     class Board
     {
@@ -104,8 +105,8 @@ namespace chess
 
         bool is_piece_in_king_pin(int square, bool white_king_pin);
 
-        static int sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, int alpha, int beta);
-        static void sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, int alpha, int beta, Evaluation *evals);
+        static Evaluation sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int max_depth, int depth_inc, int max_depth_inc, int depth_inc_max_move_cnt, int alpha, int beta);
+        static void sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int depth_inc, int depth_inc_max_move_cnt, int alpha, int beta, EvaluationData *evals);
 
     public:
         Board();
@@ -156,7 +157,7 @@ namespace chess
 
         int evaluate_material();
 
-        std::vector<Evaluation> minimax_alphabeta(bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt);
+        std::vector<EvaluationData> minimax_alphabeta(bool white, int depth, int depth_inc, int depth_inc_max_move_cnt);
     };
 
     struct Simulation
@@ -169,6 +170,12 @@ namespace chess
     struct Evaluation
     {
         int value;
+        int depth;
+    };
+
+    struct EvaluationData
+    {
+        Evaluation eval;
         Move move;
         Board board;
     };

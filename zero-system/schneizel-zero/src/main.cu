@@ -431,7 +431,7 @@ void play(bool white, int depth, Model *head)
 
                 if (!opening_stage)
                 {
-                    auto evals = board.minimax_alphabeta(true, depth, 9, 6);
+                    auto eval_datas = board.minimax_alphabeta(true, depth, 9, 6);
 
                     int max_eval_idx = 0;
 
@@ -450,9 +450,9 @@ void play(bool white, int depth, Model *head)
                             printf("Src: %d\tDst: %d\n", move.src_square, move.dst_square);
                         }
 
-                        for (int eval_idx = 0; eval_idx < evals.size(); eval_idx++)
+                        for (int eval_data_idx = 0; eval_data_idx < eval_datas.size(); eval_data_idx++)
                         {
-                            auto move = evals[eval_idx].move;
+                            auto move = eval_datas[eval_data_idx].move;
 
                             float p_val = p->get_val(move.src_square);
 
@@ -481,11 +481,11 @@ void play(bool white, int depth, Model *head)
                                 }
                             }
 
-                            printf("Src: %d\tDst: %d\tPiece: %c\tModel: %f\tMaterial: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), p_val, evals[eval_idx].value);
+                            printf("Src: %d\tDst: %d\tPiece: %c\tModel: %f\tMaterial: %d\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), p_val, eval_datas[eval_data_idx].eval.value, eval_datas[eval_data_idx].eval.depth);
 
                             if (p_val > max_val)
                             {
-                                max_eval_idx = eval_idx;
+                                max_eval_idx = eval_data_idx;
                                 max_val = p_val;
                             }
                         }
@@ -493,14 +493,9 @@ void play(bool white, int depth, Model *head)
                         delete p;
                     }
 
-                    if (evals.size() == 0)
-                    {
-                        printf("ISSUE!!!\n");
-                    }
-
-                    board.change(evals[max_eval_idx].move);
-                    prev_move = evals[max_eval_idx].move;
-                    printf("TIES: %d\n", evals.size());
+                    board.change(eval_datas[max_eval_idx].move);
+                    prev_move = eval_datas[max_eval_idx].move;
+                    printf("TIES: %d\n", eval_datas.size());
                 }
             }
         }
@@ -557,7 +552,7 @@ void play(bool white, int depth, Model *head)
 
             if (!opening_stage)
             {
-                auto evals = board.minimax_alphabeta(false, depth, 9, 6);
+                auto eval_datas = board.minimax_alphabeta(false, depth, 9, 6);
 
                 int max_eval_idx = 0;
 
@@ -576,9 +571,9 @@ void play(bool white, int depth, Model *head)
                         printf("Src: %d\tDst: %d\n", move.src_square, move.dst_square);
                     }
 
-                    for (int eval_idx = 0; eval_idx < evals.size(); eval_idx++)
+                    for (int eval_data_idx = 0; eval_data_idx < eval_datas.size(); eval_data_idx++)
                     {
-                        auto move = evals[eval_idx].move;
+                        auto move = eval_datas[eval_data_idx].move;
 
                         float p_val = p->get_val(move.src_square);
 
@@ -607,11 +602,11 @@ void play(bool white, int depth, Model *head)
                             }
                         }
 
-                        printf("Src: %d\tDst: %d\tPiece: %c\tModel: %f\tMaterial: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), p_val, evals[eval_idx].value);
+                        printf("Src: %d\tDst: %d\tPiece: %c\tModel: %f\tMaterial: %d\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), p_val, eval_datas[eval_data_idx].eval.value, eval_datas[eval_data_idx].eval.depth);
 
                         if (p_val > max_val)
                         {
-                            max_eval_idx = eval_idx;
+                            max_eval_idx = eval_data_idx;
                             max_val = p_val;
                         }
                     }
@@ -619,9 +614,9 @@ void play(bool white, int depth, Model *head)
                     delete p;
                 }
 
-                board.change(evals[max_eval_idx].move);
-                prev_move = evals[max_eval_idx].move;
-                printf("TIES: %d\n", evals.size());
+                board.change(eval_datas[max_eval_idx].move);
+                prev_move = eval_datas[max_eval_idx].move;
+                printf("TIES: %d\n", eval_datas.size());
             }
         }
 
@@ -653,7 +648,7 @@ int main()
         head->load_parameters("data/head.nn");
     }
 
-    play(false, 4, head);
+    play(true, 4, head);
 
     delete head;
 
