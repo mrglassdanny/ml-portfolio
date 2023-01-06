@@ -90,14 +90,6 @@ namespace chess
             int dst_col = CHESS_INVALID_SQUARE;
         } au_passant_state_;
 
-        static int get_row(int square);
-        static int get_row(char alpha_row);
-        static int get_col(int square);
-        static int get_col(char alpha_col);
-        static char get_alpha_col(int col);
-        static int get_square(int row, int col);
-        static int get_square(int row, char alpha_col);
-        static int get_square(char alpha_row, char alpha_col);
         static bool is_row_valid(int row);
         static bool is_col_valid(int col);
 
@@ -118,6 +110,15 @@ namespace chess
     public:
         Board();
         ~Board();
+
+        static int get_row(int square);
+        static int get_row(char alpha_row);
+        static int get_col(int square);
+        static int get_col(char alpha_col);
+        static char get_alpha_col(int col);
+        static int get_square(int row, int col);
+        static int get_square(int row, char alpha_col);
+        static int get_square(char alpha_row, char alpha_col);
 
         void reset();
 
