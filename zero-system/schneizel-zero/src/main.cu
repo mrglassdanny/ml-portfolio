@@ -294,7 +294,7 @@ void train(int epochs, int batch_size)
 
         FILE *data_file = fopen(data_path, "rb");
         FILE *head_lbl_file = fopen(head_lbl_path, "rb");
-        FILE *hand_lbl_file = fopen(head_lbl_path, "rb");
+        FILE *hand_lbl_file = fopen(hand_lbl_path, "rb");
 
         {
             FILE *train_head_csv = fopen("temp/train-head.csv", "w");
@@ -307,8 +307,8 @@ void train(int epochs, int batch_size)
 
             auto head_x = Tensor::zeros(false, head_x_shape);
             auto hand_x = Tensor::zeros(false, hand_x_shape);
-            auto head_y = Tensor::zeros(false, y_shape);
-            auto hand_y = Tensor::zeros(false, y_shape);
+            auto head_y = Tensor::zeros(false, Shape(batch_size, 1));
+            auto hand_y = Tensor::zeros(false, Shape(batch_size, 1));
 
             char *data_buf = (char *)malloc(sizeof(char) * batch_size * input_size);
             int *head_lbl_buf = (int *)malloc(sizeof(int) * batch_size);
@@ -337,6 +337,8 @@ void train(int epochs, int batch_size)
                     for (int i = 0; i < batch_size; i++)
                     {
                         one_hot_encode_chess_board_data(&data_buf[i * input_size], &head_x->data()[i * head_x_size]);
+                        memcpy(&hand_x->data()[(i * hand_x_size)], &head_x->data()[i * head_x_size], sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT);
+
                         if (data_buf[i * input_size + CHESS_BOARD_LEN] == 'w')
                         {
                             head_x->data()[(i * head_x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
@@ -352,24 +354,14 @@ void train(int epochs, int batch_size)
                         hand_y->data()[i] = (float)hand_lbl_buf[i];
                     }
 
-                    head_x->print();
-                    head_y->print();
-                    hand_x->print();
-                    hand_y->print();
-
                     auto head_oh_y = Tensor::one_hot(head_y, CHESS_BOARD_LEN - 1);
                     auto hand_oh_y = Tensor::one_hot(hand_y, CHESS_BOARD_LEN - 1);
 
-                    head_oh_y->print();
-                    hand_oh_y->print();
-
                     for (int i = 0; i < batch_size; i++)
                     {
-                        memcpy(&hand_x->data()[(i * head_x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)],
+                        memcpy(&hand_x->data()[(i * hand_x_size) + (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)],
                                &head_oh_y->data()[i * CHESS_BOARD_LEN], sizeof(float) * CHESS_ROW_CNT * CHESS_COL_CNT);
                     }
-
-                    hand_x->print();
 
                     auto head_p = head->forward(head_x);
                     auto hand_p = hand->forward(hand_x);
@@ -442,7 +434,7 @@ void train(int epochs, int batch_size)
     delete hand;
 }
 
-void play(bool white, int depth, Model *head)
+void play(bool white, int depth, Model *head, Model *hand)
 {
     Board board;
     Move prev_move;
@@ -452,8 +444,14 @@ void play(bool white, int depth, Model *head)
 
     int move_cnt = 0;
 
-    int x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
-    auto x = Tensor::zeros(false, Shape(1, x_size));
+    Shape head_x_shape(1, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+    Shape hand_x_shape(1, (CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+
+    int head_x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+    int hand_x_size = ((CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+
+    auto head_x = Tensor::zeros(false, head_x_shape);
+    auto hand_x = Tensor::zeros(false, hand_x_shape);
 
     while (true)
     {
@@ -532,25 +530,29 @@ void play(bool white, int depth, Model *head)
                     int max_eval_idx = 0;
 
                     {
-                        x->to_cpu();
-                        one_hot_encode_chess_board_data(board.get_data(), x->data());
-                        x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
-                        x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 0.0f;
-                        auto p = head->forward(x);
+                        head_x->to_cpu();
+                        hand_x->to_cpu();
+
+                        one_hot_encode_chess_board_data(board.get_data(), head_x->data());
+                        memcpy(hand_x->data(), head_x->data(), sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT);
+
+                        head_x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
+                        hand_x->data()[((CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
+
+                        head_x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 0.0f;
+                        hand_x->data()[((CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 0.0f;
+
+                        auto head_p = head->forward(head_x);
+                        auto hand_p = hand->forward(hand_x);
 
                         float max_val = 0.0f;
-
-                        auto moves = board.get_all_moves(true);
-                        for (auto move : moves)
-                        {
-                            printf("Src: %d\tDst: %d\n", move.src_square, move.dst_square);
-                        }
 
                         for (int eval_data_idx = 0; eval_data_idx < eval_datas.size(); eval_data_idx++)
                         {
                             auto move = eval_datas[eval_data_idx].move;
 
-                            float p_val = p->get_val(move.src_square);
+                            float head_p_val = head_p->get_val(move.src_square);
+                            float hand_p_val = hand_p->get_val(move.dst_square);
 
                             // Incentivize castling and disincentivize moving king.
                             if (move.src_square == board.get_king_square(true))
@@ -558,11 +560,11 @@ void play(bool white, int depth, Model *head)
                                 int src_dst_diff = abs(move.src_square - move.dst_square);
                                 if (src_dst_diff == 2 || src_dst_diff == 3)
                                 {
-                                    p_val = 20.0f;
+                                    head_p_val = 20.0f;
                                 }
                                 else
                                 {
-                                    p_val = 0.01f;
+                                    head_p_val = 0.01f;
                                 }
                             }
 
@@ -573,20 +575,21 @@ void play(bool white, int depth, Model *head)
 
                                 if (dst_col == 0 || dst_col == 7)
                                 {
-                                    p_val = 0.01f;
+                                    head_p_val = 0.01f;
                                 }
                             }
 
-                            printf("Src: %d\tDst: %d\tPiece: %c\tModel: %f\tMaterial: %d\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), p_val, eval_datas[eval_data_idx].eval.value, eval_datas[eval_data_idx].eval.depth);
+                            printf("Src: %d\tDst: %d\tPiece: %c\tHead: %f\tHand: %f\tMaterial: %d\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), head_p_val, hand_p_val, eval_datas[eval_data_idx].eval.value, eval_datas[eval_data_idx].eval.depth);
 
-                            if (p_val > max_val)
+                            if (head_p_val > max_val)
                             {
                                 max_eval_idx = eval_data_idx;
-                                max_val = p_val;
+                                max_val = head_p_val;
                             }
                         }
 
-                        delete p;
+                        delete head_p;
+                        delete hand_p;
                     }
 
                     board.change(eval_datas[max_eval_idx].move);
@@ -653,25 +656,29 @@ void play(bool white, int depth, Model *head)
                 int max_eval_idx = 0;
 
                 {
-                    x->to_cpu();
-                    one_hot_encode_chess_board_data(board.get_data(), x->data());
-                    x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 0.0f;
-                    x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 1.0f;
-                    auto p = head->forward(x);
+                    head_x->to_cpu();
+                    hand_x->to_cpu();
+
+                    one_hot_encode_chess_board_data(board.get_data(), head_x->data());
+                    memcpy(hand_x->data(), head_x->data(), sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT);
+
+                    head_x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 0.0f;
+                    hand_x->data()[((CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT)] = 0.0f;
+
+                    head_x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 1.0f;
+                    hand_x->data()[((CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 1.0f;
+
+                    auto head_p = head->forward(head_x);
+                    auto hand_p = hand->forward(hand_x);
 
                     float max_val = 0.0f;
-
-                    auto moves = board.get_all_moves(false);
-                    for (auto move : moves)
-                    {
-                        printf("Src: %d\tDst: %d\n", move.src_square, move.dst_square);
-                    }
 
                     for (int eval_data_idx = 0; eval_data_idx < eval_datas.size(); eval_data_idx++)
                     {
                         auto move = eval_datas[eval_data_idx].move;
 
-                        float p_val = p->get_val(move.src_square);
+                        float head_p_val = head_p->get_val(move.src_square);
+                        float hand_p_val = hand_p->get_val(move.dst_square);
 
                         // Incentivize castling and disincentivize moving king.
                         if (move.src_square == board.get_king_square(false))
@@ -679,11 +686,11 @@ void play(bool white, int depth, Model *head)
                             int src_dst_diff = abs(move.src_square - move.dst_square);
                             if (src_dst_diff == 2 || src_dst_diff == 3)
                             {
-                                p_val = 20.0f;
+                                head_p_val = 20.0f;
                             }
                             else
                             {
-                                p_val = 0.01f;
+                                head_p_val = 0.01f;
                             }
                         }
 
@@ -694,20 +701,21 @@ void play(bool white, int depth, Model *head)
 
                             if (dst_col == 0 || dst_col == 7)
                             {
-                                p_val = 0.01f;
+                                head_p_val = 0.01f;
                             }
                         }
 
-                        printf("Src: %d\tDst: %d\tPiece: %c\tModel: %f\tMaterial: %d\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), p_val, eval_datas[eval_data_idx].eval.value, eval_datas[eval_data_idx].eval.depth);
+                        printf("Src: %d\tDst: %d\tPiece: %c\tHead: %f\tHand: %f\tMaterial: %d\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), head_p_val, hand_p_val, eval_datas[eval_data_idx].eval.value, eval_datas[eval_data_idx].eval.depth);
 
-                        if (p_val > max_val)
+                        if (head_p_val > max_val)
                         {
                             max_eval_idx = eval_data_idx;
-                            max_val = p_val;
+                            max_val = head_p_val;
                         }
                     }
 
-                    delete p;
+                    delete head_p;
+                    delete hand_p;
                 }
 
                 board.change(eval_datas[max_eval_idx].move);
@@ -719,7 +727,8 @@ void play(bool white, int depth, Model *head)
         move_cnt++;
     }
 
-    delete x;
+    delete head_x;
+    delete hand_x;
 }
 
 int main()
@@ -748,7 +757,9 @@ int main()
 
     // delete head;
 
-    export_pgn("data/all.pgn");
+    // export_pgn("data/all.pgn");
+
+    train(10, 128);
 
     return 0;
 }
