@@ -2642,7 +2642,7 @@ int Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int
 
     if (!white)
     {
-        int best_eval_val = CHESS_EVAL_MIN_VAL;
+        int best_eval_val = CHESS_WHITE_CHECKMATED_VAL;
         auto sim_sims = sim.board.simulate_all(true);
 
         if (sim_sims.size() <= depth_inc_max_move_cnt && depth_inc_cnt > 0)
@@ -2664,8 +2664,9 @@ int Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int
             }
         }
 
-        if (best_eval_val == CHESS_EVAL_MIN_VAL)
+        if (sim_sims.size() == 0)
         {
+            // Incentivize checkmate (fewer moves moreso) and disincentivize stalemate.
             if (sim.board.is_checkmate(false, false))
             {
                 best_eval_val *= (depth + 1);
@@ -2680,7 +2681,7 @@ int Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int
     }
     else
     {
-        int best_eval_val = CHESS_EVAL_MAX_VAL;
+        int best_eval_val = CHESS_BLACK_CHECKMATED_VAL;
         auto sim_sims = sim.board.simulate_all(false);
 
         if (sim_sims.size() <= depth_inc_max_move_cnt && depth_inc_cnt > 0)
@@ -2702,8 +2703,9 @@ int Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int
             }
         }
 
-        if (best_eval_val == CHESS_EVAL_MAX_VAL)
+        if (sim_sims.size() == 0)
         {
+            // Incentivize checkmate (fewer moves moreso) and disincentivize stalemate.
             if (sim.board.is_checkmate(true, false))
             {
                 best_eval_val *= (depth + 1);
@@ -2732,8 +2734,8 @@ std::vector<Evaluation> Board::minimax_alphabeta(bool white, int depth, int dept
 
     auto sims = this->simulate_all(white);
 
-    int min = CHESS_EVAL_MIN_VAL;
-    int max = CHESS_EVAL_MAX_VAL;
+    int min = INT_MIN;
+    int max = INT_MAX;
 
     int best_eval_val = white ? min : max;
 

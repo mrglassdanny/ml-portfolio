@@ -444,6 +444,12 @@ void play(bool white, int depth, Model *head)
 
                         float max_val = 0.0f;
 
+                        auto moves = board.get_all_moves(true);
+                        for (auto move : moves)
+                        {
+                            printf("Src: %d\tDst: %d\n", move.src_square, move.dst_square);
+                        }
+
                         for (int eval_idx = 0; eval_idx < evals.size(); eval_idx++)
                         {
                             auto move = evals[eval_idx].move;
@@ -485,6 +491,11 @@ void play(bool white, int depth, Model *head)
                         }
 
                         delete p;
+                    }
+
+                    if (evals.size() == 0)
+                    {
+                        printf("ISSUE!!!\n");
                     }
 
                     board.change(evals[max_eval_idx].move);
@@ -559,7 +570,7 @@ void play(bool white, int depth, Model *head)
 
                     float max_val = 0.0f;
 
-                    auto moves = board.get_all_moves(true);
+                    auto moves = board.get_all_moves(false);
                     for (auto move : moves)
                     {
                         printf("Src: %d\tDst: %d\n", move.src_square, move.dst_square);
