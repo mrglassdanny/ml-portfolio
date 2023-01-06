@@ -624,7 +624,7 @@ int main()
         model->set_loss(new CrossEntropy());
         model->set_optimizer(new SGDMomentum(model->parameters(), 0.001f, ZERO_NN_BETA_1));
 
-        model->load_parameters("temp/model.nn");
+        model->load_parameters("data/model.nn");
     }
 
     play(true, 4, model);
