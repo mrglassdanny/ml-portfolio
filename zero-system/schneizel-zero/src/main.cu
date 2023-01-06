@@ -383,7 +383,7 @@ void cont_training(int epochs, int batch_size)
     }
 }
 
-void play(bool white, int depth)
+void play(bool white, int depth, Model *model)
 {
     Board board;
     Move prev_move;
@@ -392,6 +392,9 @@ void play(bool white, int depth)
     bool opening_stage = true;
 
     int move_cnt = 0;
+
+    int x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+    auto x = Tensor::zeros(false, Shape(1, x_size));
 
     while (true)
     {
@@ -416,12 +419,17 @@ void play(bool white, int depth)
             break;
         }
 
+        if (board.is_check(false))
+        {
+            printf("WHITE CHECKED!\n");
+        }
+
         if (white)
         {
             do
             {
                 std::string move_str;
-                printf("Enter Move: ");
+                printf("ENTER MOVE: ");
                 std::cin >> move_str;
                 prev_move = board.change(move_str, true);
             } while (!Move::is_valid(&prev_move));
@@ -430,8 +438,14 @@ void play(bool white, int depth)
         {
             if (move_cnt == 0)
             {
-                // Default opening if white.
-                prev_move = board.change("e4", true);
+                if (rand() % 2 == 1)
+                {
+                    prev_move = board.change("e4", true);
+                }
+                else
+                {
+                    prev_move = board.change("d4", true);
+                }
             }
             else
             {
@@ -452,11 +466,57 @@ void play(bool white, int depth)
 
                 if (!opening_stage)
                 {
-                    auto evals = board.minimax_alphabeta(true, depth, 7, 10);
-                    int r = rand() % evals.size();
-                    board.change(evals[r].move);
-                    prev_move = evals[r].move;
-                    printf("Ties: %d\n", evals.size());
+                    auto evals = board.minimax_alphabeta(true, depth, 9, 6);
+
+                    int max_eval_idx = 0;
+
+                    {
+                        x->to_cpu();
+                        one_hot_encode_chess_board_data(board.get_data(), x->data());
+                        x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 1.0f;
+                        x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 0.0f;
+                        auto p = model->forward(x);
+
+                        float max_val = 0.0f;
+
+                        for (int eval_idx = 0; eval_idx < evals.size(); eval_idx++)
+                        {
+                            auto move = evals[eval_idx].move;
+
+                            float p_val = p->get_val(move.src_square);
+
+                            // Incentivize castling and disincentivize moving king.
+                            if (board.get_king_square(true) == move.src_square)
+                            {
+                                int src_dst_diff = abs(move.src_square - move.dst_square);
+                                if (src_dst_diff == 2 || src_dst_diff == 3)
+                                {
+                                    p_val = 50.0f;
+                                }
+                                else
+                                {
+                                    p_val = 0.01f;
+                                }
+                            }
+
+                            if (p_val >= 0.01f)
+                            {
+                                printf("Src: %d\tDst: %d\tPiece: %c\tModel: %f\tMaterial: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), p_val, evals[eval_idx].value);
+                            }
+
+                            if (p_val > max_val)
+                            {
+                                max_eval_idx = eval_idx;
+                                max_val = p_val;
+                            }
+                        }
+
+                        delete p;
+                    }
+
+                    board.change(evals[max_eval_idx].move);
+                    prev_move = evals[max_eval_idx].move;
+                    printf("TIES: %d\n", evals.size());
                 }
             }
         }
@@ -477,19 +537,23 @@ void play(bool white, int depth)
             break;
         }
 
+        if (board.is_check(true))
+        {
+            printf("BLACK CHECKED!\n");
+        }
+
         if (!white)
         {
             do
             {
                 std::string move_str;
-                printf("Enter Move: ");
+                printf("ENTER MOVE: ");
                 std::cin >> move_str;
                 prev_move = board.change(move_str, false);
             } while (!Move::is_valid(&prev_move));
         }
         else
         {
-
             if (opening_stage)
             {
                 std::string move_str = opening_engine.next_move(&board, move_cnt);
@@ -507,16 +571,64 @@ void play(bool white, int depth)
 
             if (!opening_stage)
             {
-                auto evals = board.minimax_alphabeta(false, depth, 7, 10);
-                int r = rand() % evals.size();
-                board.change(evals[r].move);
-                prev_move = evals[r].move;
-                printf("Ties: %d\n", evals.size());
+                auto evals = board.minimax_alphabeta(false, depth, 9, 6);
+
+                int max_eval_idx = 0;
+
+                {
+                    x->to_cpu();
+                    one_hot_encode_chess_board_data(board.get_data(), x->data());
+                    x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT)] = 0.0f;
+                    x->data()[(CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 1.0f;
+                    auto p = model->forward(x);
+
+                    float max_val = 0.0f;
+
+                    for (int eval_idx = 0; eval_idx < evals.size(); eval_idx++)
+                    {
+                        auto move = evals[eval_idx].move;
+
+                        float p_val = p->get_val(move.src_square);
+
+                        // Incentivize castling and disincentivize moving king.
+                        if (board.get_king_square(false) == move.src_square)
+                        {
+                            int src_dst_diff = abs(move.src_square - move.dst_square);
+                            if (src_dst_diff == 2 || src_dst_diff == 3)
+                            {
+                                p_val = 50.0f;
+                            }
+                            else
+                            {
+                                p_val = 0.01f;
+                            }
+                        }
+
+                        if (p_val >= 0.01f)
+                        {
+                            printf("Src: %d\tDst: %d\tPiece: %c\tModel: %f\tMaterial: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), p_val, evals[eval_idx].value);
+                        }
+
+                        if (p_val > max_val)
+                        {
+                            max_eval_idx = eval_idx;
+                            max_val = p_val;
+                        }
+                    }
+
+                    delete p;
+                }
+
+                board.change(evals[max_eval_idx].move);
+                prev_move = evals[max_eval_idx].move;
+                printf("TIES: %d\n", evals.size());
             }
         }
 
         move_cnt++;
     }
+
+    delete x;
 }
 
 void selfplay(int depth, Model *model)
@@ -728,7 +840,7 @@ int main()
         model->linear(512, new ReLU());
         model->linear(512, new ReLU());
         model->linear(128, new ReLU());
-        model->linear(y_shape, new Sigmoid());
+        model->linear(y_shape, new ReLU());
 
         model->set_loss(new CrossEntropy());
         model->set_optimizer(new SGDMomentum(model->parameters(), 0.001f, ZERO_NN_BETA_1));
@@ -736,11 +848,8 @@ int main()
         model->load_parameters("temp/model.nn");
     }
 
-    while (true)
-    {
-        // system("cls");
-        selfplay(4, model);
-    }
+    // selfplay(4, model);
+    play(true, 3, model);
 
     delete model;
 
