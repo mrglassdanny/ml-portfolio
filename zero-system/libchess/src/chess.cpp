@@ -918,52 +918,30 @@ void Board::update_straight_pins(int square)
     }
 }
 
-void Board::update_pins(bool white)
+void Board::update_pins()
 {
-    if (white)
-    {
-        memset(this->check_state_.black_king_pins, 0, sizeof(this->check_state_.black_king_pins));
+    memset(this->check_state_.white_king_pins, 0, sizeof(this->check_state_.white_king_pins));
+    memset(this->check_state_.black_king_pins, 0, sizeof(this->check_state_.black_king_pins));
 
-        for (int i = 0; i < CHESS_BOARD_LEN; i++)
-        {
-            switch (this->get_piece(i))
-            {
-            case CHESS_WB:
-                this->update_diagonal_pins(i);
-                break;
-            case CHESS_WR:
-                this->update_straight_pins(i);
-                break;
-            case CHESS_WQ:
-                this->update_diagonal_pins(i);
-                this->update_straight_pins(i);
-                break;
-            default:
-                break;
-            }
-        }
-    }
-    else
+    for (int i = 0; i < CHESS_BOARD_LEN; i++)
     {
-        memset(this->check_state_.white_king_pins, 0, sizeof(this->check_state_.white_king_pins));
-
-        for (int i = 0; i < CHESS_BOARD_LEN; i++)
+        switch (this->get_piece(i))
         {
-            switch (this->get_piece(i))
-            {
-            case CHESS_BB:
-                this->update_diagonal_pins(i);
-                break;
-            case CHESS_BR:
-                this->update_straight_pins(i);
-                break;
-            case CHESS_BQ:
-                this->update_diagonal_pins(i);
-                this->update_straight_pins(i);
-                break;
-            default:
-                break;
-            }
+        case CHESS_WB:
+        case CHESS_BB:
+            this->update_diagonal_pins(i);
+            break;
+        case CHESS_WR:
+        case CHESS_BR:
+            this->update_straight_pins(i);
+            break;
+        case CHESS_WQ:
+        case CHESS_BQ:
+            this->update_diagonal_pins(i);
+            this->update_straight_pins(i);
+            break;
+        default:
+            break;
         }
     }
 }
@@ -2216,12 +2194,12 @@ void Board::change(Move move)
     }
 
     // New pin is possible as a result of moving piece.
-    this->update_pins(white);
+    this->update_pins();
 }
 
 Move Board::change(std::string move_str, bool white)
 {
-    this->update_pins(white);
+    this->update_pins();
 
     char piece;
     char promo_piece = CHESS_MT;
@@ -2645,19 +2623,6 @@ int Board::evaluate_material()
 
 int Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, int alpha, int beta)
 {
-    if (sim.board.is_checkmate(!white, false))
-    {
-        // We want to incentivize mate in fewest moves.
-        if (white)
-        {
-            return CHESS_EVAL_MAX_VAL / (depth + 1);
-        }
-        else
-        {
-            return CHESS_EVAL_MIN_VAL / (depth + 1);
-        }
-    }
-
     if (depth == 0)
     {
         return sim.board.evaluate_material();
@@ -2687,6 +2652,18 @@ int Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int
             }
         }
 
+        if (best_eval_val == CHESS_EVAL_MIN_VAL)
+        {
+            if (sim.board.is_checkmate(false, false))
+            {
+                best_eval_val *= (depth + 1);
+            }
+            else
+            {
+                best_eval_val = 0.0f;
+            }
+        }
+
         return best_eval_val;
     }
     else
@@ -2710,6 +2687,18 @@ int Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int
             if (beta <= alpha)
             {
                 break;
+            }
+        }
+
+        if (best_eval_val == CHESS_EVAL_MAX_VAL)
+        {
+            if (sim.board.is_checkmate(true, false))
+            {
+                best_eval_val *= (depth + 1);
+            }
+            else
+            {
+                best_eval_val = 0.0f;
             }
         }
 

@@ -103,7 +103,7 @@ namespace chess
 
         void update_diagonal_pins(int square);
         void update_straight_pins(int square);
-        void update_pins(bool white);
+        void update_pins();
 
         std::vector<Move> get_diagonal_moves(int square, char piece, int row, int col);
         std::vector<Move> get_straight_moves(int square, char piece, int row, int col);

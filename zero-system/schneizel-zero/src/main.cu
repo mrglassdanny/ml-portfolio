@@ -441,7 +441,7 @@ void play(bool white, int depth)
 
                     if (move_str.empty())
                     {
-                        printf("End of opening stage\n");
+                        printf("\n==================================== END OF BOOK OPENINGS ====================================\n");
                         opening_stage = false;
                     }
                     else
@@ -496,7 +496,7 @@ void play(bool white, int depth)
 
                 if (move_str.empty())
                 {
-                    printf("End of opening stage\n");
+                    printf("\n==================================== END OF BOOK OPENINGS ====================================\n");
                     opening_stage = false;
                 }
                 else
@@ -534,6 +534,11 @@ void selfplay(int depth, Model *model)
 
     while (true)
     {
+        if (move_cnt > 200)
+        {
+            break;
+        }
+
         printf("\nWHITE TURN\n");
         if (move_cnt == 0)
         {
@@ -564,8 +569,17 @@ void selfplay(int depth, Model *model)
                 // Default opening if white.
                 // prev_move = board.change("e4", true);
 
-                std::string move_str = opening_engine.next_move(&board, move_cnt);
-                prev_move = board.change(move_str, true);
+                if (rand() % 2 == 1)
+                {
+                    prev_move = board.change("e4", true);
+                }
+                else
+                {
+                    prev_move = board.change("d4", true);
+                }
+
+                // std::string move_str = opening_engine.next_move(&board, move_cnt);
+                // prev_move = board.change(move_str, true);
             }
             else
             {
@@ -575,7 +589,7 @@ void selfplay(int depth, Model *model)
 
                     if (move_str.empty())
                     {
-                        printf("End of opening stage\n");
+                        printf("\n==================================== END OF BOOK OPENINGS ====================================\n");
                         opening_stage = false;
                     }
                     else
@@ -669,7 +683,7 @@ void selfplay(int depth, Model *model)
 
                 if (move_str.empty())
                 {
-                    printf("End of opening stage\n");
+                    printf("\n==================================== END OF BOOK OPENINGS ====================================\n");
                     opening_stage = false;
                 }
                 else
@@ -722,7 +736,11 @@ int main()
         model->load_parameters("temp/model.nn");
     }
 
-    selfplay(4, model);
+    while (true)
+    {
+        // system("cls");
+        selfplay(4, model);
+    }
 
     delete model;
 
