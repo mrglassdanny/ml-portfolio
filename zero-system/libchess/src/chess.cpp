@@ -1526,50 +1526,62 @@ std::vector<Move> Board::get_moves(int square, bool test_check)
 
         if (test_check)
         {
-            if (piece == CHESS_WK && !this->castle_state_.white_king_moved)
+            if (piece == CHESS_WK)
             {
-                if (this->get_piece(0) == CHESS_WR && !this->castle_state_.white_left_rook_moved)
+                if (!this->is_check(false, false))
                 {
-                    if (this->get_piece(1) == CHESS_MT && this->get_piece(2) == CHESS_MT && this->get_piece(3) == CHESS_MT)
+                    if (!this->castle_state_.white_king_moved)
                     {
-                        if (!this->is_square_under_attack(2, false) && !this->is_square_under_attack(3, false))
+                        if (this->get_piece(0) == CHESS_WR && !this->castle_state_.white_left_rook_moved)
                         {
-                            king_moves.push_back(Move{square, 2});
+                            if (this->get_piece(1) == CHESS_MT && this->get_piece(2) == CHESS_MT && this->get_piece(3) == CHESS_MT)
+                            {
+                                if (!this->is_square_under_attack(2, false) && !this->is_square_under_attack(3, false))
+                                {
+                                    king_moves.push_back(Move{square, 2});
+                                }
+                            }
                         }
-                    }
-                }
 
-                if (this->get_piece(7) == CHESS_WR && !this->castle_state_.white_right_rook_moved)
-                {
-                    if (this->get_piece(5) == CHESS_MT && this->get_piece(6) == CHESS_MT)
-                    {
-                        if (!this->is_square_under_attack(5, false) && !this->is_square_under_attack(6, false))
+                        if (this->get_piece(7) == CHESS_WR && !this->castle_state_.white_right_rook_moved)
                         {
-                            king_moves.push_back(Move{square, 6});
+                            if (this->get_piece(5) == CHESS_MT && this->get_piece(6) == CHESS_MT)
+                            {
+                                if (!this->is_square_under_attack(5, false) && !this->is_square_under_attack(6, false))
+                                {
+                                    king_moves.push_back(Move{square, 6});
+                                }
+                            }
                         }
                     }
                 }
             }
-            else if (piece == CHESS_BK && !this->castle_state_.black_king_moved)
+            else
             {
-                if (this->get_piece(56) == CHESS_BR && !this->castle_state_.black_left_rook_moved)
+                if (!this->is_check(true, false))
                 {
-                    if (this->get_piece(57) == CHESS_MT && this->get_piece(58) == CHESS_MT && this->get_piece(59) == CHESS_MT)
+                    if (!this->castle_state_.black_king_moved)
                     {
-                        if (!this->is_square_under_attack(58, true) && !this->is_square_under_attack(59, true))
+                        if (this->get_piece(56) == CHESS_BR && !this->castle_state_.black_left_rook_moved)
                         {
-                            king_moves.push_back(Move{square, 58});
+                            if (this->get_piece(57) == CHESS_MT && this->get_piece(58) == CHESS_MT && this->get_piece(59) == CHESS_MT)
+                            {
+                                if (!this->is_square_under_attack(58, true) && !this->is_square_under_attack(59, true))
+                                {
+                                    king_moves.push_back(Move{square, 58});
+                                }
+                            }
                         }
-                    }
-                }
 
-                if (this->get_piece(63) == CHESS_BR && !this->castle_state_.black_right_rook_moved)
-                {
-                    if (this->get_piece(61) == CHESS_MT && this->get_piece(62) == CHESS_MT)
-                    {
-                        if (!this->is_square_under_attack(61, true) && !this->is_square_under_attack(62, true))
+                        if (this->get_piece(63) == CHESS_BR && !this->castle_state_.black_right_rook_moved)
                         {
-                            king_moves.push_back(Move{square, 62});
+                            if (this->get_piece(61) == CHESS_MT && this->get_piece(62) == CHESS_MT)
+                            {
+                                if (!this->is_square_under_attack(61, true) && !this->is_square_under_attack(62, true))
+                                {
+                                    king_moves.push_back(Move{square, 62});
+                                }
+                            }
                         }
                     }
                 }
