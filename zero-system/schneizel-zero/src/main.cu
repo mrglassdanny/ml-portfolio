@@ -447,9 +447,6 @@ void play(bool white, int depth, Model *head, Model *hand)
     Shape head_x_shape(1, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
     Shape hand_x_shape(1, (CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
 
-    int head_x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
-    int hand_x_size = ((CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
-
     auto head_x = Tensor::zeros(false, head_x_shape);
     auto hand_x = Tensor::zeros(false, hand_x_shape);
 
@@ -590,7 +587,7 @@ void play(bool white, int depth, Model *head, Model *hand)
                                 }
                             }
 
-                            printf("Src: %d\tDst: %d\tPiece: %c\tHead: %f\tHand: %f\tMaterial: %d\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), head_p_val, hand_p_val, eval_dataset[eval_data_idx].eval.value, eval_dataset[eval_data_idx].eval.depth);
+                            printf("Src: %d\tDst: %d\tPiece: %c\tHead: %f\tHand: %f\tAvg: %f\tMaterial: %d\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), head_p_val, hand_p_val, (head_p_val + hand_p_val) / 2.0f, eval_dataset[eval_data_idx].eval.value, eval_dataset[eval_data_idx].eval.depth);
 
                             if (head_p_val > max_head_val)
                             {
@@ -734,7 +731,7 @@ void play(bool white, int depth, Model *head, Model *hand)
                             }
                         }
 
-                        printf("Src: %d\tDst: %d\tPiece: %c\tHead: %f\tHand: %f\tMaterial: %d\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), head_p_val, hand_p_val, eval_dataset[eval_data_idx].eval.value, eval_dataset[eval_data_idx].eval.depth);
+                        printf("Src: %d\tDst: %d\tPiece: %c\tHead: %f\tHand: %f\tAvg: %f\tMaterial: %d\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), head_p_val, hand_p_val, (head_p_val + hand_p_val) / 2.0f, eval_dataset[eval_data_idx].eval.value, eval_dataset[eval_data_idx].eval.depth);
 
                         if (head_p_val > max_head_val)
                         {
@@ -826,7 +823,7 @@ int main()
         hand->load_parameters("data/hand.nn");
     }
 
-    play(true, 3, head, hand);
+    play(true, 5, head, hand);
 
     return 0;
 }
