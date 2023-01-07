@@ -453,6 +453,8 @@ void play(bool white, int depth, Model *head, Model *hand)
     auto head_x = Tensor::zeros(false, head_x_shape);
     auto hand_x = Tensor::zeros(false, hand_x_shape);
 
+    float hand_move_buf[CHESS_BOARD_LEN];
+
     while (true)
     {
         printf("\nWHITE TURN\n");
@@ -525,7 +527,7 @@ void play(bool white, int depth, Model *head, Model *hand)
 
                 if (!opening_stage)
                 {
-                    auto eval_datas = board.minimax_alphabeta(true, depth, 9, 6);
+                    auto eval_dataset = board.minimax_alphabeta(true, depth, 9, 6);
 
                     int max_eval_idx = 0;
 
@@ -543,16 +545,25 @@ void play(bool white, int depth, Model *head, Model *hand)
                         hand_x->data()[((CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 0.0f;
 
                         auto head_p = head->forward(head_x);
-                        auto hand_p = hand->forward(hand_x);
 
-                        float max_val = 0.0f;
+                        float max_head_val = -FLT_MAX;
+                        float max_hand_val = -FLT_MAX;
 
-                        for (int eval_data_idx = 0; eval_data_idx < eval_datas.size(); eval_data_idx++)
+                        for (int eval_data_idx = 0; eval_data_idx < eval_dataset.size(); eval_data_idx++)
                         {
-                            auto move = eval_datas[eval_data_idx].move;
+                            auto move = eval_dataset[eval_data_idx].move;
+
+                            hand_x->to_cpu();
+                            memset(hand_move_buf, 0, sizeof(hand_move_buf));
+                            hand_move_buf[move.src_square] = 1.0f;
+                            memcpy(&hand_x->data()[CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT], hand_move_buf, sizeof(hand_move_buf));
+
+                            auto hand_p = hand->forward(hand_x);
 
                             float head_p_val = head_p->get_val(move.src_square);
                             float hand_p_val = hand_p->get_val(move.dst_square);
+
+                            delete hand_p;
 
                             // Incentivize castling and disincentivize moving king.
                             if (move.src_square == board.get_king_square(true))
@@ -579,22 +590,30 @@ void play(bool white, int depth, Model *head, Model *hand)
                                 }
                             }
 
-                            printf("Src: %d\tDst: %d\tPiece: %c\tHead: %f\tHand: %f\tMaterial: %d\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), head_p_val, hand_p_val, eval_datas[eval_data_idx].eval.value, eval_datas[eval_data_idx].eval.depth);
+                            printf("Src: %d\tDst: %d\tPiece: %c\tHead: %f\tHand: %f\tMaterial: %d\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), head_p_val, hand_p_val, eval_dataset[eval_data_idx].eval.value, eval_dataset[eval_data_idx].eval.depth);
 
-                            if (head_p_val > max_val)
+                            if (head_p_val > max_head_val)
                             {
                                 max_eval_idx = eval_data_idx;
-                                max_val = head_p_val;
+                                max_head_val = head_p_val;
+                                max_hand_val = hand_p_val;
+                            }
+                            else if (head_p_val == max_head_val)
+                            {
+                                if (hand_p_val > max_hand_val)
+                                {
+                                    max_eval_idx = eval_data_idx;
+                                    max_hand_val = hand_p_val;
+                                }
                             }
                         }
 
                         delete head_p;
-                        delete hand_p;
                     }
 
-                    board.change(eval_datas[max_eval_idx].move);
-                    prev_move = eval_datas[max_eval_idx].move;
-                    printf("TIES: %d\n", eval_datas.size());
+                    board.change(eval_dataset[max_eval_idx].move);
+                    prev_move = eval_dataset[max_eval_idx].move;
+                    printf("TIES: %d\n", eval_dataset.size());
                 }
             }
         }
@@ -651,7 +670,7 @@ void play(bool white, int depth, Model *head, Model *hand)
 
             if (!opening_stage)
             {
-                auto eval_datas = board.minimax_alphabeta(false, depth, 9, 6);
+                auto eval_dataset = board.minimax_alphabeta(false, depth, 9, 6);
 
                 int max_eval_idx = 0;
 
@@ -669,16 +688,26 @@ void play(bool white, int depth, Model *head, Model *hand)
                     hand_x->data()[((CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT + 1)] = 1.0f;
 
                     auto head_p = head->forward(head_x);
-                    auto hand_p = hand->forward(hand_x);
 
-                    float max_val = 0.0f;
+                    float max_head_val = -FLT_MAX;
+                    float max_hand_val = -FLT_MAX;
 
-                    for (int eval_data_idx = 0; eval_data_idx < eval_datas.size(); eval_data_idx++)
+                    for (int eval_data_idx = 0; eval_data_idx < eval_dataset.size(); eval_data_idx++)
                     {
-                        auto move = eval_datas[eval_data_idx].move;
+                        auto move = eval_dataset[eval_data_idx].move;
+
+                        hand_x->to_cpu();
+
+                        memset(hand_move_buf, 0, sizeof(hand_move_buf));
+                        hand_move_buf[move.src_square] = 1.0f;
+                        memcpy(&hand_x->data()[CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT], hand_move_buf, sizeof(hand_move_buf));
+
+                        auto hand_p = hand->forward(hand_x);
 
                         float head_p_val = head_p->get_val(move.src_square);
                         float hand_p_val = hand_p->get_val(move.dst_square);
+
+                        delete hand_p;
 
                         // Incentivize castling and disincentivize moving king.
                         if (move.src_square == board.get_king_square(false))
@@ -705,22 +734,30 @@ void play(bool white, int depth, Model *head, Model *hand)
                             }
                         }
 
-                        printf("Src: %d\tDst: %d\tPiece: %c\tHead: %f\tHand: %f\tMaterial: %d\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), head_p_val, hand_p_val, eval_datas[eval_data_idx].eval.value, eval_datas[eval_data_idx].eval.depth);
+                        printf("Src: %d\tDst: %d\tPiece: %c\tHead: %f\tHand: %f\tMaterial: %d\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), head_p_val, hand_p_val, eval_dataset[eval_data_idx].eval.value, eval_dataset[eval_data_idx].eval.depth);
 
-                        if (head_p_val > max_val)
+                        if (head_p_val > max_head_val)
                         {
                             max_eval_idx = eval_data_idx;
-                            max_val = head_p_val;
+                            max_head_val = head_p_val;
+                            max_hand_val = hand_p_val;
+                        }
+                        else if (head_p_val == max_head_val)
+                        {
+                            if (hand_p_val > max_hand_val)
+                            {
+                                max_eval_idx = eval_data_idx;
+                                max_hand_val = hand_p_val;
+                            }
                         }
                     }
 
                     delete head_p;
-                    delete hand_p;
                 }
 
-                board.change(eval_datas[max_eval_idx].move);
-                prev_move = eval_datas[max_eval_idx].move;
-                printf("TIES: %d\n", eval_datas.size());
+                board.change(eval_dataset[max_eval_idx].move);
+                prev_move = eval_dataset[max_eval_idx].move;
+                printf("TIES: %d\n", eval_dataset.size());
             }
         }
 
@@ -753,13 +790,43 @@ int main()
     //     head->load_parameters("data/head.nn");
     // }
 
-    // play(true, 5, head);
-
     // delete head;
 
     // export_pgn("data/all.pgn");
 
-    train(10, 128);
+    // train(10, 128);
+
+    Shape head_x_shape(1, CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+    Shape hand_x_shape(1, (CHESS_BOARD_CHANNEL_CNT + 1) * CHESS_ROW_CNT * CHESS_COL_CNT + 2);
+    Shape y_shape(1, CHESS_BOARD_LEN);
+
+    auto head = new Model(new Xavier());
+    {
+        head->linear(head_x_shape, 512, new ReLU());
+        head->linear(256, new ReLU());
+        head->linear(128, new ReLU());
+        head->linear(y_shape, new ReLU());
+
+        head->set_loss(new CrossEntropy());
+        head->set_optimizer(new SGDMomentum(head->parameters(), 0.1f, ZERO_NN_BETA_1));
+
+        head->load_parameters("data/head.nn");
+    }
+
+    auto hand = new Model(new Xavier());
+    {
+        hand->linear(hand_x_shape, 512, new ReLU());
+        hand->linear(256, new ReLU());
+        hand->linear(128, new ReLU());
+        hand->linear(y_shape, new ReLU());
+
+        hand->set_loss(new CrossEntropy());
+        hand->set_optimizer(new SGDMomentum(hand->parameters(), 0.1f, ZERO_NN_BETA_1));
+
+        hand->load_parameters("data/hand.nn");
+    }
+
+    play(true, 3, head, hand);
 
     return 0;
 }
