@@ -241,12 +241,43 @@ Model *get_model(int batch_size, const char *params_path)
     return model;
 }
 
+Model *get_model_2(int batch_size, const char *params_path)
+{
+    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
+    Shape y_shape(batch_size, 1);
+
+    auto model = new Model(new Xavier());
+
+    model->hadamard_product(x_shape, 64, new Tanh());
+    model->hadamard_product(64, new Tanh());
+    model->matrix_product(64, new Tanh());
+    model->matrix_product(64, new Tanh());
+    model->linear(2048, new Tanh());
+    model->linear(512, new Tanh());
+    model->linear(128, new Tanh());
+    model->linear(32, new Tanh());
+    model->linear(y_shape, new Tanh());
+
+    model->set_loss(new MSE());
+    model->set_optimizer(new SGDMomentum(model->parameters(), 0.001f, ZERO_NN_BETA_1));
+
+    model->summarize();
+
+    if (params_path != nullptr)
+    {
+        model->load_parameters(params_path);
+    }
+
+    return model;
+}
+
 void train(int epochs, int batch_size)
 {
     Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
     Shape y_shape(batch_size, 1);
 
-    auto model = get_model(batch_size, nullptr);
+    // auto model = get_model(batch_size, "temp/model.nn");
+    auto model = get_model_2(batch_size, nullptr);
 
     {
         const char *data_path = "temp/train.data";
