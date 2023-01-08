@@ -186,7 +186,7 @@ int chess_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
         if (y_val > 0.0f)
         {
             // White win.
-            if (p_val >= 0.25f)
+            if (p_val >= 0.33f)
             {
                 correct_cnt++;
             }
@@ -194,7 +194,7 @@ int chess_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
         else if (y_val < 0.0f)
         {
             // Black win.
-            if (p_val <= -0.25f)
+            if (p_val <= -0.33f)
             {
                 correct_cnt++;
             }
@@ -202,7 +202,7 @@ int chess_accuracy_fn(Tensor *p, Tensor *y, int batch_size)
         else
         {
             // Draw.
-            if (p_val < 0.25f && p_val > -0.25f)
+            if (p_val < 0.33f && p_val > -0.33f)
             {
                 correct_cnt++;
             }
@@ -219,17 +219,18 @@ Model *get_model(int batch_size, const char *params_path)
 
     auto model = new Model(new Xavier());
 
-    model->hadamard_product(x_shape, 16, new Tanh());
-    model->hadamard_product(16, new Tanh());
-    model->matrix_product(16, new Tanh());
-    model->matrix_product(16, new Tanh());
+    model->hadamard_product(x_shape, 32, new Tanh());
+    model->hadamard_product(32, new Tanh());
+    model->matrix_product(32, new Tanh());
+    model->matrix_product(32, new Tanh());
+    model->linear(1024, new Tanh());
     model->linear(512, new Tanh());
     model->linear(128, new Tanh());
     model->linear(32, new Tanh());
     model->linear(y_shape, new Tanh());
 
     model->set_loss(new MSE());
-    model->set_optimizer(new SGDMomentum(model->parameters(), 0.01f, ZERO_NN_BETA_1));
+    model->set_optimizer(new SGDMomentum(model->parameters(), 0.001f, ZERO_NN_BETA_1));
 
     model->summarize();
 
@@ -246,7 +247,7 @@ void train(int epochs, int batch_size)
     Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
     Shape y_shape(batch_size, 1);
 
-    auto model = get_model(batch_size, "temp/model.nn");
+    auto model = get_model(batch_size, nullptr);
 
     {
         const char *data_path = "temp/train.data";
@@ -264,8 +265,8 @@ void train(int epochs, int batch_size)
         FILE *lbl_file = fopen(lbl_path, "rb");
 
         std::random_device rd;
-        std::default_random_engine generator(rd());
-        std::uniform_int_distribution<long long unsigned> distribution(0, 0xFFFFFFFFFFFFFFFF);
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dist(0, data_cnt - 1);
 
         {
             FILE *train_csv = fopen("temp/train.csv", "w");
@@ -291,7 +292,7 @@ void train(int epochs, int batch_size)
 
                     for (int i = 0; i < batch_size; i++)
                     {
-                        long long offset = distribution(generator) % data_cnt;
+                        long long offset = dist(gen);
                         fseek(data_file, offset * data_size, SEEK_SET);
                         fseek(lbl_file, offset * sizeof(int), SEEK_SET);
 
@@ -324,9 +325,6 @@ void train(int epochs, int batch_size)
                             break;
                         }
                     }
-
-                    fseek(data_file, 0, SEEK_SET);
-                    fseek(lbl_file, 0, SEEK_SET);
                 }
 
                 if (quit)
