@@ -2633,11 +2633,11 @@ int Board::evaluate_material()
     return mat_eval;
 }
 
-Evaluation Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int max_depth, int depth_inc, int max_depth_inc, int depth_inc_max_move_cnt, int alpha, int beta)
+Evaluation Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int max_depth, int depth_inc, int max_depth_inc, int depth_inc_max_move_cnt, float alpha, float beta)
 {
     if (depth == 0)
     {
-        return Evaluation{sim.board.evaluate_material(), ((max_depth - depth) + (max_depth_inc - depth_inc))};
+        return Evaluation{(float)sim.board.evaluate_material(), ((max_depth - depth) + (max_depth_inc - depth_inc))};
     }
 
     if (!white)
@@ -2728,7 +2728,7 @@ Evaluation Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int dep
     }
 }
 
-void Board::sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int depth_inc, int depth_inc_max_move_cnt, int alpha, int beta, EvaluationData *evals)
+void Board::sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int depth_inc, int depth_inc_max_move_cnt, float alpha, float beta, EvaluationData *evals)
 {
     auto eval = Board::sim_minimax_alphabeta_sync(sim, white, depth, depth, depth_inc, depth_inc, depth_inc_max_move_cnt, alpha, beta);
     evals[sim.idx] = EvaluationData{eval, sim.move, sim.board};
@@ -2742,10 +2742,10 @@ std::vector<EvaluationData> Board::minimax_alphabeta(bool white, int depth, int 
 
     auto sims = this->simulate_all(white);
 
-    int min_val = INT_MIN;
-    int max_val = INT_MAX;
+    float min_val = -FLT_MAX;
+    float max_val = FLT_MAX;
 
-    int best_eval_val = white ? min_val : max_val;
+    float best_eval_val = white ? min_val : max_val;
 
     std::vector<std::thread> threads;
 
