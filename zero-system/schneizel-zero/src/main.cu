@@ -263,6 +263,10 @@ void train(int epochs, int batch_size)
         FILE *data_file = fopen(data_path, "rb");
         FILE *lbl_file = fopen(lbl_path, "rb");
 
+        std::random_device rd;
+        std::default_random_engine generator(rd());
+        std::uniform_int_distribution<long long unsigned> distribution(0, 0xFFFFFFFFFFFFFFFF);
+
         {
             FILE *train_csv = fopen("temp/train.csv", "w");
             fprintf(train_csv, "epoch,batch,loss,accuracy\n");
@@ -287,7 +291,7 @@ void train(int epochs, int batch_size)
 
                     for (int i = 0; i < batch_size; i++)
                     {
-                        long long offset = rand() % data_cnt;
+                        long long offset = distribution(generator) % data_cnt;
                         fseek(data_file, offset * data_size, SEEK_SET);
                         fseek(lbl_file, offset * sizeof(int), SEEK_SET);
 
@@ -346,11 +350,99 @@ void train(int epochs, int batch_size)
     delete model;
 }
 
+void test(int batch_size)
+{
+    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
+    Shape y_shape(batch_size, 1);
+
+    auto model = get_model(batch_size, "temp/model.nn");
+
+    {
+        const char *data_path = "temp/train.data";
+        const char *lbl_path = "temp/train.lbl";
+
+        int data_size = CHESS_BOARD_LEN;
+        int x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT);
+
+        long long data_file_size = FileUtils::get_file_size(data_path);
+        size_t data_cnt = data_file_size / data_size;
+
+        int batch_cnt = data_cnt / batch_size;
+
+        FILE *data_file = fopen(data_path, "rb");
+        FILE *lbl_file = fopen(lbl_path, "rb");
+
+        {
+            FILE *test_csv = fopen("temp/test.csv", "w");
+            fprintf(test_csv, "batch,acc\n");
+
+            auto x = Tensor::zeros(false, x_shape);
+            auto y = Tensor::zeros(false, y_shape);
+
+            char data_buf[CHESS_BOARD_LEN];
+            int lbl_buf;
+
+            for (int batch_idx = 0; batch_idx < batch_cnt; batch_idx++)
+            {
+                x->zeros();
+                y->zeros();
+
+                x->to_cpu();
+                y->to_cpu();
+
+                for (int i = 0; i < batch_size; i++)
+                {
+                    fread(data_buf, data_size, 1, data_file);
+                    fread(&lbl_buf, sizeof(int), 1, lbl_file);
+
+                    one_hot_encode_chess_board_data(data_buf, &x->data()[i * x_size]);
+                    y->data()[i] = (float)lbl_buf;
+                }
+
+                auto p = model->forward(x);
+
+                float acc = model->accuracy(p, y, chess_accuracy_fn);
+                fprintf(test_csv, "%d,%f\n", batch_idx, acc);
+
+                delete p;
+
+                if (_kbhit())
+                {
+                    if (_getch() == 'q')
+                    {
+                        break;
+                    }
+                }
+            }
+
+            delete x;
+            delete y;
+
+            fclose(test_csv);
+        }
+
+        fclose(data_file);
+        fclose(lbl_file);
+    }
+
+    delete model;
+}
+
 Evaluation schneizel_sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int max_depth, int depth_inc, int max_depth_inc, int depth_inc_max_move_cnt, float alpha, float beta, Model *model)
 {
     if (depth == 0)
     {
-        return Evaluation{(float)sim.board.evaluate_material(), ((max_depth - depth) + (max_depth_inc - depth_inc))};
+        auto x = Tensor::zeros(false, model->input_shape());
+        one_hot_encode_chess_board_data(sim.board.get_data(), x->data());
+        auto p = model->forward(x);
+
+        float model_eval = p->get_val(0);
+        float material_eval = (float)sim.board.evaluate_material();
+
+        delete x;
+        delete p;
+
+        return Evaluation{model_eval + material_eval, ((max_depth - depth) + (max_depth_inc - depth_inc))};
     }
 
     if (!white)
@@ -581,7 +673,8 @@ void play(bool white, int depth, Model *model)
 
                 if (!opening_stage)
                 {
-                    auto eval_dataset = board.minimax_alphabeta(true, depth, 9, 6);
+                    // auto eval_dataset = board.minimax_alphabeta(true, depth, 9, 6);
+                    auto eval_dataset = schneizel_minimax_alphabeta(&board, true, depth, 9, 6, models);
 
                     int max_eval_idx = 0;
 
@@ -650,7 +743,8 @@ void play(bool white, int depth, Model *model)
 
             if (!opening_stage)
             {
-                auto eval_dataset = board.minimax_alphabeta(false, depth, 9, 6);
+                // auto eval_dataset = board.minimax_alphabeta(false, depth, 9, 6);
+                auto eval_dataset = schneizel_minimax_alphabeta(&board, false, depth, 9, 6, models);
 
                 int max_eval_idx = 0;
 
@@ -683,11 +777,13 @@ int main()
 {
     srand(time(NULL));
 
-    // train(10, 64);
+    train(10, 64);
 
-    auto model = get_model(1, "temp/model.nn");
-    play(false, 3, model);
-    delete model;
+    // test(512);
+
+    // auto model = get_model(1, "temp/model.nn");
+    // play(false, 2, model);
+    // delete model;
 
     return 0;
 }
