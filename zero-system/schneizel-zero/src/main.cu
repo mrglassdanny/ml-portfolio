@@ -230,7 +230,7 @@ Model *get_model(int batch_size, const char *params_path)
     model->linear(y_shape, new Tanh());
 
     model->set_loss(new MSE());
-    model->set_optimizer(new SGDMomentum(model->parameters(), 0.001f, ZERO_NN_BETA_1));
+    model->set_optimizer(new SGDMomentum(model->parameters(), 0.1f, ZERO_NN_BETA_1));
 
     model->summarize();
 
@@ -249,6 +249,8 @@ void train(int epochs, int batch_size)
 
     auto model = get_model(batch_size, nullptr);
 
+    auto sw = new CudaStopWatch();
+
     {
         const char *data_path = "temp/train.data";
         const char *lbl_path = "temp/train.lbl";
@@ -257,7 +259,8 @@ void train(int epochs, int batch_size)
         int x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT);
 
         long long data_file_size = FileUtils::get_file_size(data_path);
-        size_t data_cnt = data_file_size / data_size;
+        // size_t data_cnt = data_file_size / data_size;
+        size_t data_cnt = 1000000;
 
         int batch_cnt = data_cnt / batch_size;
 
@@ -270,7 +273,7 @@ void train(int epochs, int batch_size)
 
         {
             FILE *train_csv = fopen("temp/train.csv", "w");
-            fprintf(train_csv, "epoch,batch,loss,accuracy\n");
+            fprintf(train_csv, "epoch,batch,loss,accuracy,elapsed_secs\n");
 
             bool quit = false;
 
@@ -279,6 +282,8 @@ void train(int epochs, int batch_size)
 
             char data_buf[CHESS_BOARD_LEN];
             int lbl_buf;
+
+            sw->start();
 
             for (int epoch = 0; epoch < epochs; epoch++)
             {
@@ -309,7 +314,10 @@ void train(int epochs, int batch_size)
                     {
                         float loss = model->loss(p, y);
                         float acc = model->accuracy(p, y, chess_accuracy_fn);
-                        fprintf(train_csv, "%d,%d,%f,%f\n", epoch, batch_idx, loss, acc);
+
+                        sw->stop();
+                        fprintf(train_csv, "%d,%d,%f,%f,%f\n", epoch, batch_idx, loss, acc, sw->get_elapsed_seconds());
+                        sw->start();
                     }
 
                     model->backward(p, y);
@@ -343,7 +351,10 @@ void train(int epochs, int batch_size)
         fclose(lbl_file);
     }
 
-    model->save_parameters("temp/model.nn");
+    // model->save_parameters("temp/model.nn");
+
+    sw->stop();
+    delete sw;
 
     delete model;
 }
@@ -775,7 +786,7 @@ int main()
 {
     srand(time(NULL));
 
-    train(10, 64);
+    train(25, 64);
 
     // test(512);
 
