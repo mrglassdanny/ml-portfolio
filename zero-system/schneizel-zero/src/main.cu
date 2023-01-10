@@ -219,10 +219,8 @@ Model *get_model(int batch_size, const char *params_path)
 
     auto model = new Model(new Xavier());
 
-    model->hadamard_product(x_shape, 32, new Tanh());
-    model->hadamard_product(32, new Tanh());
-    model->matrix_product(32, new Tanh());
-    model->matrix_product(32, new Tanh());
+    model->linear(x_shape, 2048, new Tanh());
+    model->linear(2048, new Tanh());
     model->linear(1024, new Tanh());
     model->linear(512, new Tanh());
     model->linear(128, new Tanh());
@@ -230,7 +228,7 @@ Model *get_model(int batch_size, const char *params_path)
     model->linear(y_shape, new Tanh());
 
     model->set_loss(new MSE());
-    model->set_optimizer(new SGDMomentum(model->parameters(), 0.1f, ZERO_NN_BETA_1));
+    model->set_optimizer(new SGDMomentum(model->parameters(), 0.01f, ZERO_NN_BETA_1));
 
     model->summarize();
 
@@ -310,7 +308,7 @@ void train(int epochs, int batch_size)
 
                     auto p = model->forward(x);
 
-                    if (batch_idx % 100 == 0)
+                    if (batch_idx % 1000 == 0)
                     {
                         float loss = model->loss(p, y);
                         float acc = model->accuracy(p, y, chess_accuracy_fn);
@@ -783,12 +781,6 @@ int main()
     srand(time(NULL));
 
     train(25, 64);
-
-    // test(512);
-
-    // auto model = get_model(1, "temp/model.nn");
-    // play(false, 2, model);
-    // delete model;
 
     return 0;
 }
