@@ -31,8 +31,8 @@
 
 #define CHESS_INVALID_SQUARE -1
 
-#define CHESS_WHITE_CHECKMATED_VAL -1000
-#define CHESS_BLACK_CHECKMATED_VAL 1000
+#define CHESS_WHITE_CHECKMATED_VAL -1000.0f
+#define CHESS_BLACK_CHECKMATED_VAL 1000.0f
 
 #define CHESS_OPENING_MOVE_CNT 8
 
@@ -105,8 +105,8 @@ namespace chess
 
         bool is_piece_in_king_pin(int square, bool white_king_pin);
 
-        static Evaluation sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int max_depth, int depth_inc, int max_depth_inc, int depth_inc_max_move_cnt, int alpha, int beta);
-        static void sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int depth_inc, int depth_inc_max_move_cnt, int alpha, int beta, EvaluationData *evals);
+        static Evaluation sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int max_depth, int depth_inc, int max_depth_inc, int depth_inc_max_move_cnt, float alpha, float beta);
+        static void sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int depth_inc, int depth_inc_max_move_cnt, float alpha, float beta, EvaluationData *evals);
 
     public:
         Board();
@@ -169,7 +169,7 @@ namespace chess
 
     struct Evaluation
     {
-        int value;
+        float value;
         int depth;
     };
 
