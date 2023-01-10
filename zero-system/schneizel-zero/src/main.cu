@@ -3,7 +3,7 @@
 
 #include <zero/mod.cuh>
 
-#include "chess.h"
+#include <chess.h>
 
 using namespace zero::core;
 using namespace zero::nn;
@@ -260,7 +260,7 @@ void train(int epochs, int batch_size)
 
         long long data_file_size = FileUtils::get_file_size(data_path);
         // size_t data_cnt = data_file_size / data_size;
-        size_t data_cnt = 1000000;
+        size_t data_cnt = 8000000;
 
         int batch_cnt = data_cnt / batch_size;
 
@@ -762,10 +762,6 @@ void play(bool white, int depth, Model *model)
                     auto move = eval_dataset[eval_data_idx].move;
                     printf("Src: %d\tDst: %d\tPiece: %c\tEvaluation: %f\tDepth: %d\n", move.src_square, move.dst_square, board.get_piece(move.src_square), eval_dataset[eval_data_idx].eval.value, eval_dataset[eval_data_idx].eval.depth);
                 }
-
-                board.change(eval_dataset[max_eval_idx].move);
-                prev_move = eval_dataset[max_eval_idx].move;
-                printf("TIES: %d\n", eval_dataset.size());
 
                 board.change(eval_dataset[max_eval_idx].move);
                 prev_move = eval_dataset[max_eval_idx].move;
