@@ -119,7 +119,7 @@ void export_pgn(const char *path)
 
     int game_cnt = 0;
 
-    long long move_cnt = 0;
+    long move_cnt = 0;
 
     for (auto pgn_game : pgn_games)
     {
@@ -219,16 +219,25 @@ Model *get_model(int batch_size, const char *params_path)
 
     auto model = new Model(new Xavier());
 
-    model->linear(x_shape, 2048, new Tanh());
-    model->linear(2048, new Tanh());
+    // Large:
+    model->linear(x_shape, 4096, new Tanh());
+    model->linear(4096, new Tanh());
     model->linear(1024, new Tanh());
-    model->linear(512, new Tanh());
-    model->linear(128, new Tanh());
+    model->linear(1024, new Tanh());
+    model->linear(256, new Tanh());
     model->linear(32, new Tanh());
     model->linear(y_shape, new Tanh());
 
+    // Small:
+    // model->linear(x_shape, 1024, new Tanh());
+    // model->linear(1024, new Tanh());
+    // model->linear(512, new Tanh());
+    // model->linear(128, new Tanh());
+    // model->linear(32, new Tanh());
+    // model->linear(y_shape, new Tanh());
+
     model->set_loss(new MSE());
-    model->set_optimizer(new SGDMomentum(model->parameters(), 0.01f, ZERO_NN_BETA_1));
+    model->set_optimizer(new SGDMomentum(model->parameters(), 0.1f, ZERO_NN_BETA_1));
 
     model->summarize();
 
@@ -257,8 +266,7 @@ void train(int epochs, int batch_size)
         int x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT);
 
         long long data_file_size = FileUtils::get_file_size(data_path);
-        // size_t data_cnt = data_file_size / data_size;
-        size_t data_cnt = 8000000;
+        size_t data_cnt = data_file_size / data_size;
 
         int batch_cnt = data_cnt / batch_size;
 
@@ -285,6 +293,23 @@ void train(int epochs, int batch_size)
 
             for (int epoch = 0; epoch < epochs; epoch++)
             {
+                if (epoch == 5)
+                {
+                    model->save_parameters("temp/model-5.nn");
+                }
+                else if (epoch == 8)
+                {
+                    model->save_parameters("temp/model-8.nn");
+                }
+                else if (epoch == 10)
+                {
+                    model->save_parameters("temp/model-10.nn");
+                }
+                else if (epoch == 15)
+                {
+                    model->save_parameters("temp/model-15.nn");
+                }
+
                 for (int batch_idx = 0; batch_idx < batch_cnt; batch_idx++)
                 {
                     x->zeros();
@@ -295,7 +320,7 @@ void train(int epochs, int batch_size)
 
                     for (int i = 0; i < batch_size; i++)
                     {
-                        long long offset = dist(gen);
+                        long offset = dist(gen);
                         fseek(data_file, offset * data_size, SEEK_SET);
                         fseek(lbl_file, offset * sizeof(int), SEEK_SET);
 
@@ -349,7 +374,7 @@ void train(int epochs, int batch_size)
         fclose(lbl_file);
     }
 
-    // model->save_parameters("temp/model.nn");
+    model->save_parameters("temp/model.nn");
 
     sw->stop();
     delete sw;
@@ -780,7 +805,7 @@ int main()
 {
     srand(time(NULL));
 
-    train(25, 64);
+    train(50, 32);
 
     return 0;
 }
