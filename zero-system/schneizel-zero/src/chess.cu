@@ -1,4 +1,4 @@
-#include "chess.h"
+#include "chess.cuh"
 
 using namespace chess;
 
@@ -306,6 +306,101 @@ bool Board::is_row_valid(int row)
 bool Board::is_col_valid(int col)
 {
     return col >= 0 && col < CHESS_COL_CNT;
+}
+
+void Board::one_hot_encode_chess_board_data(const char *board_data, float *out)
+{
+    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
+    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
+    {
+        for (int i = 0; i < CHESS_ROW_CNT; i++)
+        {
+            for (int j = 0; j < CHESS_COL_CNT; j++)
+            {
+                int channel_offset = (c * CHESS_BOARD_LEN);
+                int square = (i * CHESS_COL_CNT) + j;
+                int out_idx = channel_offset + square;
+
+                switch (c)
+                {
+                case 0:
+                    if (board_data[square] == CHESS_WP)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 1:
+                    if (board_data[square] == CHESS_WN)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 2:
+                    if (board_data[square] == CHESS_WB)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 3:
+                    if (board_data[square] == CHESS_WR)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 4:
+                    if (board_data[square] == CHESS_WQ)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 5:
+                    if (board_data[square] == CHESS_WK)
+                    {
+                        out[out_idx] = 1.0f;
+                    }
+                    break;
+                case 6:
+                    if (board_data[square] == CHESS_BP)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 7:
+                    if (board_data[square] == CHESS_BN)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 8:
+                    if (board_data[square] == CHESS_BB)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 9:
+                    if (board_data[square] == CHESS_BR)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 10:
+                    if (board_data[square] == CHESS_BQ)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                case 11:
+                    if (board_data[square] == CHESS_BK)
+                    {
+                        out[out_idx] = -1.0f;
+                    }
+                    break;
+                default:
+                    break;
+                }
+            }
+        }
+    }
 }
 
 void Board::reset()
@@ -2734,7 +2829,7 @@ void Board::sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, i
     evals[sim.idx] = EvaluationData{eval, sim.move, sim.board};
 }
 
-std::vector<EvaluationData> Board::minimax_alphabeta(bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt)
+std::vector<EvaluationData> Board::minimax_alphabeta(bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, Model *model)
 {
     std::vector<EvaluationData> best_moves;
 
@@ -2759,9 +2854,19 @@ std::vector<EvaluationData> Board::minimax_alphabeta(bool white, int depth, int 
         th.join();
     }
 
+    auto x = Tensor::zeros(false, Shape(1, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT));
+
     for (int i = 0; i < sims.size(); i++)
     {
         auto eval_data = evals[i];
+
+        x->to_cpu();
+        Board::one_hot_encode_chess_board_data(eval_data.board.get_data(), x->data());
+
+        auto p = model->forward(x);
+        eval_data.board.print();
+        p->print();
+        delete p;
 
         if ((white && eval_data.eval.value > best_eval_val) || (!white && eval_data.eval.value < best_eval_val))
         {
@@ -2776,6 +2881,8 @@ std::vector<EvaluationData> Board::minimax_alphabeta(bool white, int depth, int 
             best_moves.push_back(eval_data);
         }
     }
+
+    delete x;
 
     return best_moves;
 }

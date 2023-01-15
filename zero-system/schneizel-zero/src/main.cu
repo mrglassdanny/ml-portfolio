@@ -3,109 +3,12 @@
 
 #include <zero/mod.cuh>
 
-#include "chess.h"
+#include "chess.cuh"
 
 using namespace zero::core;
 using namespace zero::nn;
 
 using namespace chess;
-
-#define CHESS_BOARD_CHANNEL_CNT 12
-
-void one_hot_encode_chess_board_data(const char *board_data, float *out)
-{
-    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
-    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
-    {
-        for (int i = 0; i < CHESS_ROW_CNT; i++)
-        {
-            for (int j = 0; j < CHESS_COL_CNT; j++)
-            {
-                int channel_offset = (c * CHESS_BOARD_LEN);
-                int square = (i * CHESS_COL_CNT) + j;
-                int out_idx = channel_offset + square;
-
-                switch (c)
-                {
-                case 0:
-                    if (board_data[square] == CHESS_WP)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 1:
-                    if (board_data[square] == CHESS_WN)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 2:
-                    if (board_data[square] == CHESS_WB)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 3:
-                    if (board_data[square] == CHESS_WR)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 4:
-                    if (board_data[square] == CHESS_WQ)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 5:
-                    if (board_data[square] == CHESS_WK)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 6:
-                    if (board_data[square] == CHESS_BP)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 7:
-                    if (board_data[square] == CHESS_BN)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 8:
-                    if (board_data[square] == CHESS_BB)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 9:
-                    if (board_data[square] == CHESS_BR)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 10:
-                    if (board_data[square] == CHESS_BQ)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 11:
-                    if (board_data[square] == CHESS_BK)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-    }
-}
 
 void export_pgn(const char *path)
 {
@@ -347,7 +250,7 @@ void train(int epochs, int batch_size)
                         fread(data_buf, data_size, 1, data_file);
                         fread(&lbl_buf, sizeof(int), 1, lbl_file);
 
-                        one_hot_encode_chess_board_data(data_buf, &x->data()[i * x_size]);
+                        Board::one_hot_encode_chess_board_data(data_buf, &x->data()[i * x_size]);
                         y->data()[i] = (float)lbl_buf;
                     }
 
@@ -407,7 +310,7 @@ void test(int batch_size)
     Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
     Shape y_shape(batch_size, 1);
 
-    auto model = get_model(batch_size, "temp/model.nn");
+    auto model = get_model(batch_size, "data/small-model-10.nn");
 
     {
         const char *data_path = "temp/train.data";
@@ -447,7 +350,7 @@ void test(int batch_size)
                     fread(data_buf, data_size, 1, data_file);
                     fread(&lbl_buf, sizeof(int), 1, lbl_file);
 
-                    one_hot_encode_chess_board_data(data_buf, &x->data()[i * x_size]);
+                    Board::one_hot_encode_chess_board_data(data_buf, &x->data()[i * x_size]);
                     y->data()[i] = (float)lbl_buf;
                 }
 
@@ -568,8 +471,7 @@ void play(bool white, int depth, Model *model)
 
                 if (!opening_stage)
                 {
-                    // auto eval_dataset = board.minimax_alphabeta(true, depth, 9, 6);
-                    auto eval_dataset = schneizel_minimax_alphabeta(&board, true, depth, 9, 6, models);
+                    auto eval_dataset = board.minimax_alphabeta(true, depth, 9, 6, model);
 
                     int max_eval_idx = 0;
 
@@ -638,8 +540,7 @@ void play(bool white, int depth, Model *model)
 
             if (!opening_stage)
             {
-                // auto eval_dataset = board.minimax_alphabeta(false, depth, 9, 6);
-                auto eval_dataset = schneizel_minimax_alphabeta(&board, false, depth, 9, 6, models);
+                auto eval_dataset = board.minimax_alphabeta(false, depth, 9, 6, model);
 
                 int max_eval_idx = 0;
 
@@ -667,6 +568,14 @@ void play(bool white, int depth, Model *model)
 int main()
 {
     srand(time(NULL));
+
+    // export_pgn("data/all.pgn");
+
+    test(1024);
+
+    // auto model = get_model(1, "data/small-model-20.nn");
+    // play(false, 3, model);
+    // delete model;
 
     return 0;
 }
