@@ -310,7 +310,7 @@ void test(int batch_size)
     Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
     Shape y_shape(batch_size, 1);
 
-    auto model = get_model(batch_size, "data/small-model-10.nn");
+    auto model = get_model(batch_size, "data/small-model-20.nn");
 
     {
         const char *data_path = "temp/train.data";
@@ -569,13 +569,9 @@ int main()
 {
     srand(time(NULL));
 
-    // export_pgn("data/all.pgn");
-
-    test(1024);
-
-    // auto model = get_model(1, "data/small-model-20.nn");
-    // play(false, 3, model);
-    // delete model;
+    auto model = get_model(1, "data/small-model.nn");
+    play(false, 3, model);
+    delete model;
 
     return 0;
 }
