@@ -471,7 +471,7 @@ void play(bool white, int depth, Model *model)
 
                 if (!opening_stage)
                 {
-                    auto eval_dataset = board.minimax_alphabeta(true, depth, 9, 6, model);
+                    auto eval_dataset = board.minimax_alphabeta(true, depth, 5, 12, model);
 
                     int max_eval_idx = 0;
 
@@ -540,7 +540,7 @@ void play(bool white, int depth, Model *model)
 
             if (!opening_stage)
             {
-                auto eval_dataset = board.minimax_alphabeta(false, depth, 9, 6, model);
+                auto eval_dataset = board.minimax_alphabeta(false, depth, 5, 12, model);
 
                 int max_eval_idx = 0;
 
@@ -570,7 +570,7 @@ int main()
     srand(time(NULL));
 
     auto model = get_model(1, "data/small-model.nn");
-    play(false, 3, model);
+    play(true, 4, model);
     delete model;
 
     return 0;

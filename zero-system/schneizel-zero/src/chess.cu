@@ -2732,12 +2732,12 @@ Evaluation Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int dep
 {
     if (depth == 0)
     {
-        return Evaluation{(float)sim.board.evaluate_material(), ((max_depth - depth) + (max_depth_inc - depth_inc))};
+        return Evaluation{(float)sim.board.evaluate_material(), ((max_depth - depth) + (max_depth_inc - depth_inc)), sim.board};
     }
 
     if (!white)
     {
-        Evaluation best_eval{CHESS_WHITE_CHECKMATED_VAL, ((max_depth - depth) + (max_depth_inc - depth_inc))};
+        Evaluation best_eval{CHESS_WHITE_CHECKMATED_VAL, ((max_depth - depth) + (max_depth_inc - depth_inc)), sim.board};
         auto sim_sims = sim.board.simulate_all(true);
 
         if (sim_sims.size() <= depth_inc_max_move_cnt && depth_inc > 0)
@@ -2754,6 +2754,7 @@ Evaluation Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int dep
             {
                 best_eval.value = eval.value;
                 best_eval.depth = eval.depth;
+                best_eval.board = eval.board;
             }
 
             alpha = eval.value > alpha ? eval.value : alpha;
@@ -2780,7 +2781,7 @@ Evaluation Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int dep
     }
     else
     {
-        Evaluation best_eval{CHESS_BLACK_CHECKMATED_VAL, ((max_depth - depth) + (max_depth_inc - depth_inc))};
+        Evaluation best_eval{CHESS_BLACK_CHECKMATED_VAL, ((max_depth - depth) + (max_depth_inc - depth_inc)), sim.board};
         auto sim_sims = sim.board.simulate_all(false);
 
         if (sim_sims.size() <= depth_inc_max_move_cnt && depth_inc > 0)
@@ -2797,6 +2798,7 @@ Evaluation Board::sim_minimax_alphabeta_sync(Simulation sim, bool white, int dep
             {
                 best_eval.value = eval.value;
                 best_eval.depth = eval.depth;
+                best_eval.board = eval.board;
             }
 
             beta = eval.value < beta ? eval.value : beta;
@@ -2861,11 +2863,9 @@ std::vector<EvaluationData> Board::minimax_alphabeta(bool white, int depth, int 
         auto eval_data = evals[i];
 
         x->to_cpu();
-        Board::one_hot_encode_chess_board_data(eval_data.board.get_data(), x->data());
-
+        Board::one_hot_encode_chess_board_data(eval_data.eval.board.get_data(), x->data());
         auto p = model->forward(x);
-        eval_data.board.print();
-        p->print();
+        eval_data.eval.value += p->get_val(0);
         delete p;
 
         if ((white && eval_data.eval.value > best_eval_val) || (!white && eval_data.eval.value < best_eval_val))

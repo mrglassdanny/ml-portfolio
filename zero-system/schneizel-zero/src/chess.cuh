@@ -179,6 +179,7 @@ namespace chess
     {
         float value;
         int depth;
+        Board board;
     };
 
     struct EvaluationData
