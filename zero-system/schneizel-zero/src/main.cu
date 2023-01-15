@@ -3,7 +3,7 @@
 
 #include <zero/mod.cuh>
 
-#include <chess.h>
+#include "chess.h"
 
 using namespace zero::core;
 using namespace zero::nn;
@@ -480,163 +480,6 @@ void test(int batch_size)
     delete model;
 }
 
-Evaluation schneizel_sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int max_depth, int depth_inc, int max_depth_inc, int depth_inc_max_move_cnt, float alpha, float beta, Model *model)
-{
-    if (depth == 0)
-    {
-        auto x = Tensor::zeros(false, model->input_shape());
-        one_hot_encode_chess_board_data(sim.board.get_data(), x->data());
-        auto p = model->forward(x);
-
-        float model_eval = p->get_val(0);
-        float material_eval = (float)sim.board.evaluate_material();
-
-        delete x;
-        delete p;
-
-        return Evaluation{model_eval + material_eval, ((max_depth - depth) + (max_depth_inc - depth_inc))};
-    }
-
-    if (!white)
-    {
-        Evaluation best_eval{CHESS_WHITE_CHECKMATED_VAL, ((max_depth - depth) + (max_depth_inc - depth_inc))};
-        auto sim_sims = sim.board.simulate_all(true);
-
-        if (sim_sims.size() <= depth_inc_max_move_cnt && depth_inc > 0)
-        {
-            depth++;
-            depth_inc--;
-        }
-
-        for (auto sim_sim : sim_sims)
-        {
-            auto eval = schneizel_sim_minimax_alphabeta_sync(sim_sim, true, depth - 1, max_depth, depth_inc, max_depth_inc, depth_inc_max_move_cnt, alpha, beta, model);
-
-            if (eval.value > best_eval.value)
-            {
-                best_eval.value = eval.value;
-                best_eval.depth = eval.depth;
-            }
-
-            alpha = eval.value > alpha ? eval.value : alpha;
-            if (beta <= alpha)
-            {
-                break;
-            }
-        }
-
-        if (best_eval.value == CHESS_WHITE_CHECKMATED_VAL)
-        {
-            // Incentivize checkmate (fewer moves moreso) and disincentivize stalemate.
-            if (sim.board.is_checkmate(false, false))
-            {
-                best_eval.value *= (depth + 1);
-            }
-            else
-            {
-                best_eval.value = 0.0f;
-            }
-        }
-
-        return best_eval;
-    }
-    else
-    {
-        Evaluation best_eval{CHESS_BLACK_CHECKMATED_VAL, ((max_depth - depth) + (max_depth_inc - depth_inc))};
-        auto sim_sims = sim.board.simulate_all(false);
-
-        if (sim_sims.size() <= depth_inc_max_move_cnt && depth_inc > 0)
-        {
-            depth++;
-            depth_inc--;
-        }
-
-        for (auto sim_sim : sim_sims)
-        {
-            auto eval = schneizel_sim_minimax_alphabeta_sync(sim_sim, false, depth - 1, max_depth, depth_inc, max_depth_inc, depth_inc_max_move_cnt, alpha, beta, model);
-
-            if (eval.value < best_eval.value)
-            {
-                best_eval.value = eval.value;
-                best_eval.depth = eval.depth;
-            }
-
-            beta = eval.value < beta ? eval.value : beta;
-            if (beta <= alpha)
-            {
-                break;
-            }
-        }
-
-        if (best_eval.value == CHESS_BLACK_CHECKMATED_VAL)
-        {
-            // Incentivize checkmate (fewer moves moreso) and disincentivize stalemate.
-            if (sim.board.is_checkmate(true, false))
-            {
-                best_eval.value *= (depth + 1);
-            }
-            else
-            {
-                best_eval.value = 0.0f;
-            }
-        }
-
-        return best_eval;
-    }
-}
-
-void schneizel_sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int depth_inc, int depth_inc_max_move_cnt, float alpha, float beta, EvaluationData *evals, Model *model)
-{
-    auto eval = schneizel_sim_minimax_alphabeta_sync(sim, white, depth, depth, depth_inc, depth_inc, depth_inc_max_move_cnt, alpha, beta, model);
-    evals[sim.idx] = EvaluationData{eval, sim.move, sim.board};
-}
-
-std::vector<EvaluationData> schneizel_minimax_alphabeta(Board *board, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, std::vector<Model *> models)
-{
-    std::vector<EvaluationData> best_moves;
-
-    EvaluationData evals[CHESS_BOARD_LEN];
-
-    auto sims = board->simulate_all(white);
-
-    float min_val = -FLT_MAX;
-    float max_val = FLT_MAX;
-
-    float best_eval_val = white ? min_val : max_val;
-
-    std::vector<std::thread> threads;
-
-    for (auto sim : sims)
-    {
-        threads.push_back(std::thread(schneizel_sim_minimax_alphabeta_async, sim, white, depth, depth_inc_cnt, depth_inc_max_move_cnt, min_val, max_val, evals, models[sim.idx]));
-    }
-
-    for (auto &th : threads)
-    {
-        th.join();
-    }
-
-    for (int i = 0; i < sims.size(); i++)
-    {
-        auto eval_data = evals[i];
-
-        if ((white && eval_data.eval.value > best_eval_val) || (!white && eval_data.eval.value < best_eval_val))
-        {
-            best_moves.clear();
-
-            best_eval_val = eval_data.eval.value;
-
-            best_moves.push_back(eval_data);
-        }
-        else if (eval_data.eval.value == best_eval_val)
-        {
-            best_moves.push_back(eval_data);
-        }
-    }
-
-    return best_moves;
-}
-
 void play(bool white, int depth, Model *model)
 {
     Board board;
@@ -824,8 +667,6 @@ void play(bool white, int depth, Model *model)
 int main()
 {
     srand(time(NULL));
-
-    train(7, 32);
 
     return 0;
 }
