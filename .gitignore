@@ -4,6 +4,7 @@ bin-int/
 .vscode/
 temp/
 *.csv
+*.nn
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
