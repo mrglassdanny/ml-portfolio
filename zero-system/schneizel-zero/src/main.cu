@@ -219,22 +219,41 @@ Model *get_model(int batch_size, const char *params_path)
 
     auto model = new Model(new Xavier());
 
-    // Large:
-    model->linear(x_shape, 4096, new Tanh());
-    model->linear(4096, new Tanh());
+    // Small:
+    model->linear(x_shape, 1024, new Tanh());
     model->linear(1024, new Tanh());
-    model->linear(1024, new Tanh());
-    model->linear(256, new Tanh());
+    model->linear(512, new Tanh());
+    model->linear(128, new Tanh());
     model->linear(32, new Tanh());
     model->linear(y_shape, new Tanh());
 
+    model->set_loss(new MSE());
+    model->set_optimizer(new SGDMomentum(model->parameters(), 0.1f, ZERO_NN_BETA_1));
+
+    model->summarize();
+
+    if (params_path != nullptr)
+    {
+        model->load_parameters(params_path);
+    }
+
+    return model;
+}
+
+Model *get_model_test(int batch_size, const char *params_path)
+{
+    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
+    Shape y_shape(batch_size, 1);
+
+    auto model = new Model(new Xavier());
+
     // Small:
-    // model->linear(x_shape, 1024, new Tanh());
-    // model->linear(1024, new Tanh());
-    // model->linear(512, new Tanh());
-    // model->linear(128, new Tanh());
-    // model->linear(32, new Tanh());
-    // model->linear(y_shape, new Tanh());
+    model->hadamard_product(x_shape, 32, new Tanh());
+    model->matrix_product(32, new Tanh());
+    model->linear(512, new Tanh());
+    model->linear(128, new Tanh());
+    model->linear(32, new Tanh());
+    model->linear(y_shape, new Tanh());
 
     model->set_loss(new MSE());
     model->set_optimizer(new SGDMomentum(model->parameters(), 0.1f, ZERO_NN_BETA_1));
@@ -254,7 +273,7 @@ void train(int epochs, int batch_size)
     Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
     Shape y_shape(batch_size, 1);
 
-    auto model = get_model(batch_size, nullptr);
+    auto model = get_model_test(batch_size, nullptr);
 
     auto sw = new CudaStopWatch();
 
@@ -266,7 +285,8 @@ void train(int epochs, int batch_size)
         int x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT);
 
         long long data_file_size = FileUtils::get_file_size(data_path);
-        size_t data_cnt = data_file_size / data_size;
+        // size_t data_cnt = data_file_size / data_size;
+        size_t data_cnt = 1000000;
 
         int batch_cnt = data_cnt / batch_size;
 
@@ -293,22 +313,22 @@ void train(int epochs, int batch_size)
 
             for (int epoch = 0; epoch < epochs; epoch++)
             {
-                if (epoch == 5)
-                {
-                    model->save_parameters("temp/model-5.nn");
-                }
-                else if (epoch == 8)
-                {
-                    model->save_parameters("temp/model-8.nn");
-                }
-                else if (epoch == 10)
-                {
-                    model->save_parameters("temp/model-10.nn");
-                }
-                else if (epoch == 15)
-                {
-                    model->save_parameters("temp/model-15.nn");
-                }
+                // if (epoch == 5)
+                // {
+                //     model->save_parameters("temp/model-5.nn");
+                // }
+                // else if (epoch == 8)
+                // {
+                //     model->save_parameters("temp/model-8.nn");
+                // }
+                // else if (epoch == 10)
+                // {
+                //     model->save_parameters("temp/model-10.nn");
+                // }
+                // else if (epoch == 15)
+                // {
+                //     model->save_parameters("temp/model-15.nn");
+                // }
 
                 for (int batch_idx = 0; batch_idx < batch_cnt; batch_idx++)
                 {
@@ -333,7 +353,7 @@ void train(int epochs, int batch_size)
 
                     auto p = model->forward(x);
 
-                    if (batch_idx % 1000 == 0)
+                    if (batch_idx % 100 == 0)
                     {
                         float loss = model->loss(p, y);
                         float acc = model->accuracy(p, y, chess_accuracy_fn);
@@ -374,7 +394,7 @@ void train(int epochs, int batch_size)
         fclose(lbl_file);
     }
 
-    model->save_parameters("temp/model.nn");
+    // model->save_parameters("temp/model.nn");
 
     sw->stop();
     delete sw;
@@ -805,7 +825,7 @@ int main()
 {
     srand(time(NULL));
 
-    train(50, 32);
+    train(7, 32);
 
     return 0;
 }
