@@ -18,7 +18,7 @@ bool Move::is_valid(Move *move)
     return move->src_square != CHESS_INVALID_SQUARE && move->dst_square != CHESS_INVALID_SQUARE;
 }
 
-inline bool Piece::is_white(char piece)
+bool Piece::is_white(char piece)
 {
     switch (piece)
     {
@@ -34,7 +34,7 @@ inline bool Piece::is_white(char piece)
     }
 }
 
-inline bool Piece::is_black(char piece)
+bool Piece::is_black(char piece)
 {
     switch (piece)
     {
@@ -50,7 +50,7 @@ inline bool Piece::is_black(char piece)
     }
 }
 
-inline bool Piece::is_same_color(char piece_a, char piece_b)
+bool Piece::is_same_color(char piece_a, char piece_b)
 {
     if ((Piece::is_white(piece_a) && Piece::is_white(piece_b)) ||
         (Piece::is_black(piece_a) && Piece::is_black(piece_b)))
@@ -63,7 +63,7 @@ inline bool Piece::is_same_color(char piece_a, char piece_b)
     }
 }
 
-inline int Piece::get_value(char piece)
+int Piece::get_value(char piece)
 {
     switch (piece)
     {
@@ -237,7 +237,7 @@ inline int Board::get_col(int square)
     return square % CHESS_COL_CNT;
 }
 
-inline int Board::get_col(char alpha_col)
+int Board::get_col(char alpha_col)
 {
     switch (alpha_col)
     {
@@ -260,7 +260,7 @@ inline int Board::get_col(char alpha_col)
     }
 }
 
-inline char Board::get_alpha_col(int col)
+char Board::get_alpha_col(int col)
 {
     switch (col)
     {
@@ -411,7 +411,7 @@ void Board::reset()
     memset(&this->check_state_, 0, sizeof(this->check_state_));
 }
 
-inline void Board::copy(Board *src)
+void Board::copy(Board *src)
 {
     memcpy(this->data_, src->data_, sizeof(char) * CHESS_BOARD_LEN);
     this->castle_state_ = src->castle_state_;
@@ -2716,7 +2716,7 @@ std::vector<Simulation> Board::simulate_all(bool white, std::vector<int> src_squ
     return sims;
 }
 
-inline int Board::evaluate_material()
+int Board::evaluate_material()
 {
     int mat_eval = 0;
 

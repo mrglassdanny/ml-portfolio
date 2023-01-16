@@ -468,7 +468,7 @@ void play(bool white, int depth, Model *model)
                 if (!opening_stage)
                 {
                     sw->start();
-                    auto eval_dataset = board.minimax_alphabeta(true, depth, 5, 12, model);
+                    auto eval_dataset = board.minimax_alphabeta(true, depth, 9, 5, model);
                     sw->stop();
                     sw->print_elapsed_seconds();
 
@@ -540,7 +540,7 @@ void play(bool white, int depth, Model *model)
             if (!opening_stage)
             {
                 sw->start();
-                auto eval_dataset = board.minimax_alphabeta(false, depth, 5, 12, model);
+                auto eval_dataset = board.minimax_alphabeta(false, depth, 9, 5, model);
                 sw->stop();
                 sw->print_elapsed_seconds();
 
