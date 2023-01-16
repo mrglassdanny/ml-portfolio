@@ -391,13 +391,9 @@ void play(bool white, int depth, Model *model)
     OpeningEngine opening_engine("data/openings.data");
     bool opening_stage = true;
 
-    std::vector<Model *> models;
-    for (int i = 0; i < 64; i++)
-    {
-        models.push_back(model->copy());
-    }
-
     int move_cnt = 0;
+
+    auto sw = new CpuStopWatch();
 
     while (true)
     {
@@ -471,7 +467,10 @@ void play(bool white, int depth, Model *model)
 
                 if (!opening_stage)
                 {
+                    sw->start();
                     auto eval_dataset = board.minimax_alphabeta(true, depth, 5, 12, model);
+                    sw->stop();
+                    sw->print_elapsed_seconds();
 
                     int max_eval_idx = 0;
 
@@ -540,7 +539,10 @@ void play(bool white, int depth, Model *model)
 
             if (!opening_stage)
             {
+                sw->start();
                 auto eval_dataset = board.minimax_alphabeta(false, depth, 5, 12, model);
+                sw->stop();
+                sw->print_elapsed_seconds();
 
                 int max_eval_idx = 0;
 
@@ -559,10 +561,7 @@ void play(bool white, int depth, Model *model)
         move_cnt++;
     }
 
-    for (int i = 0; i < 64; i++)
-    {
-        delete models[i];
-    }
+    delete sw;
 }
 
 int main()
@@ -570,7 +569,7 @@ int main()
     srand(time(NULL));
 
     auto model = get_model(1, "data/small-model.nn");
-    play(true, 4, model);
+    play(true, 5, model);
     delete model;
 
     return 0;
