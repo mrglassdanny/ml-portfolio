@@ -569,7 +569,7 @@ int main()
     srand(time(NULL));
 
     auto model = get_model(1, "data/small-model.nn");
-    play(true, 5, model);
+    play(false, 4, model);
     delete model;
 
     return 0;
