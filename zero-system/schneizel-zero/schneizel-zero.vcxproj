@@ -63,7 +63,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CompileOut>$(SolutionDir)$(ProjectName)\bin\$(Platform)-$(Configuration)\%(Filename)%(Extension).obj</CompileOut>
-      <Include>$(SolutionDir)libzero\src\;$(SolutionDir)libchess\src;%(Include)</Include>
+      <Include>$(SolutionDir)libzero\src\;</Include>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -84,19 +84,20 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <CompileOut>$(SolutionDir)$(ProjectName)\bin\$(Platform)-$(Configuration)\%(Filename)%(Extension).obj</CompileOut>
-      <Include>$(SolutionDir)libzero\src\;$(SolutionDir)libchess\src;%(Include)</Include>
+      <Include>$(SolutionDir)libzero\src\;</Include>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\libchess\libchess.vcxproj">
-      <Project>{6aca51df-d6dc-46b4-b0ce-85a7c2bf3a66}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\libzero\libzero.vcxproj">
       <Project>{11c2cc46-0537-4e2b-8145-433c34dbc7ed}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <CudaCompile Include="src\chess.cu" />
     <CudaCompile Include="src\main.cu" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\chess.cuh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

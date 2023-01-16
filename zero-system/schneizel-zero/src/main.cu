@@ -3,109 +3,12 @@
 
 #include <zero/mod.cuh>
 
-#include <chess.h>
+#include "chess.cuh"
 
 using namespace zero::core;
 using namespace zero::nn;
 
 using namespace chess;
-
-#define CHESS_BOARD_CHANNEL_CNT 12
-
-void one_hot_encode_chess_board_data(const char *board_data, float *out)
-{
-    memset(out, 0, sizeof(float) * CHESS_BOARD_CHANNEL_CNT * CHESS_BOARD_LEN);
-    for (int c = 0; c < CHESS_BOARD_CHANNEL_CNT; c++)
-    {
-        for (int i = 0; i < CHESS_ROW_CNT; i++)
-        {
-            for (int j = 0; j < CHESS_COL_CNT; j++)
-            {
-                int channel_offset = (c * CHESS_BOARD_LEN);
-                int square = (i * CHESS_COL_CNT) + j;
-                int out_idx = channel_offset + square;
-
-                switch (c)
-                {
-                case 0:
-                    if (board_data[square] == CHESS_WP)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 1:
-                    if (board_data[square] == CHESS_WN)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 2:
-                    if (board_data[square] == CHESS_WB)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 3:
-                    if (board_data[square] == CHESS_WR)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 4:
-                    if (board_data[square] == CHESS_WQ)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 5:
-                    if (board_data[square] == CHESS_WK)
-                    {
-                        out[out_idx] = 1.0f;
-                    }
-                    break;
-                case 6:
-                    if (board_data[square] == CHESS_BP)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 7:
-                    if (board_data[square] == CHESS_BN)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 8:
-                    if (board_data[square] == CHESS_BB)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 9:
-                    if (board_data[square] == CHESS_BR)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 10:
-                    if (board_data[square] == CHESS_BQ)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                case 11:
-                    if (board_data[square] == CHESS_BK)
-                    {
-                        out[out_idx] = -1.0f;
-                    }
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-    }
-}
 
 void export_pgn(const char *path)
 {
@@ -347,7 +250,7 @@ void train(int epochs, int batch_size)
                         fread(data_buf, data_size, 1, data_file);
                         fread(&lbl_buf, sizeof(int), 1, lbl_file);
 
-                        one_hot_encode_chess_board_data(data_buf, &x->data()[i * x_size]);
+                        Board::one_hot_encode_chess_board_data(data_buf, &x->data()[i * x_size]);
                         y->data()[i] = (float)lbl_buf;
                     }
 
@@ -407,7 +310,7 @@ void test(int batch_size)
     Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
     Shape y_shape(batch_size, 1);
 
-    auto model = get_model(batch_size, "temp/model.nn");
+    auto model = get_model(batch_size, "data/small-model-20.nn");
 
     {
         const char *data_path = "temp/train.data";
@@ -447,7 +350,7 @@ void test(int batch_size)
                     fread(data_buf, data_size, 1, data_file);
                     fread(&lbl_buf, sizeof(int), 1, lbl_file);
 
-                    one_hot_encode_chess_board_data(data_buf, &x->data()[i * x_size]);
+                    Board::one_hot_encode_chess_board_data(data_buf, &x->data()[i * x_size]);
                     y->data()[i] = (float)lbl_buf;
                 }
 
@@ -478,163 +381,6 @@ void test(int batch_size)
     }
 
     delete model;
-}
-
-Evaluation schneizel_sim_minimax_alphabeta_sync(Simulation sim, bool white, int depth, int max_depth, int depth_inc, int max_depth_inc, int depth_inc_max_move_cnt, float alpha, float beta, Model *model)
-{
-    if (depth == 0)
-    {
-        auto x = Tensor::zeros(false, model->input_shape());
-        one_hot_encode_chess_board_data(sim.board.get_data(), x->data());
-        auto p = model->forward(x);
-
-        float model_eval = p->get_val(0);
-        float material_eval = (float)sim.board.evaluate_material();
-
-        delete x;
-        delete p;
-
-        return Evaluation{model_eval + material_eval, ((max_depth - depth) + (max_depth_inc - depth_inc))};
-    }
-
-    if (!white)
-    {
-        Evaluation best_eval{CHESS_WHITE_CHECKMATED_VAL, ((max_depth - depth) + (max_depth_inc - depth_inc))};
-        auto sim_sims = sim.board.simulate_all(true);
-
-        if (sim_sims.size() <= depth_inc_max_move_cnt && depth_inc > 0)
-        {
-            depth++;
-            depth_inc--;
-        }
-
-        for (auto sim_sim : sim_sims)
-        {
-            auto eval = schneizel_sim_minimax_alphabeta_sync(sim_sim, true, depth - 1, max_depth, depth_inc, max_depth_inc, depth_inc_max_move_cnt, alpha, beta, model);
-
-            if (eval.value > best_eval.value)
-            {
-                best_eval.value = eval.value;
-                best_eval.depth = eval.depth;
-            }
-
-            alpha = eval.value > alpha ? eval.value : alpha;
-            if (beta <= alpha)
-            {
-                break;
-            }
-        }
-
-        if (best_eval.value == CHESS_WHITE_CHECKMATED_VAL)
-        {
-            // Incentivize checkmate (fewer moves moreso) and disincentivize stalemate.
-            if (sim.board.is_checkmate(false, false))
-            {
-                best_eval.value *= (depth + 1);
-            }
-            else
-            {
-                best_eval.value = 0.0f;
-            }
-        }
-
-        return best_eval;
-    }
-    else
-    {
-        Evaluation best_eval{CHESS_BLACK_CHECKMATED_VAL, ((max_depth - depth) + (max_depth_inc - depth_inc))};
-        auto sim_sims = sim.board.simulate_all(false);
-
-        if (sim_sims.size() <= depth_inc_max_move_cnt && depth_inc > 0)
-        {
-            depth++;
-            depth_inc--;
-        }
-
-        for (auto sim_sim : sim_sims)
-        {
-            auto eval = schneizel_sim_minimax_alphabeta_sync(sim_sim, false, depth - 1, max_depth, depth_inc, max_depth_inc, depth_inc_max_move_cnt, alpha, beta, model);
-
-            if (eval.value < best_eval.value)
-            {
-                best_eval.value = eval.value;
-                best_eval.depth = eval.depth;
-            }
-
-            beta = eval.value < beta ? eval.value : beta;
-            if (beta <= alpha)
-            {
-                break;
-            }
-        }
-
-        if (best_eval.value == CHESS_BLACK_CHECKMATED_VAL)
-        {
-            // Incentivize checkmate (fewer moves moreso) and disincentivize stalemate.
-            if (sim.board.is_checkmate(true, false))
-            {
-                best_eval.value *= (depth + 1);
-            }
-            else
-            {
-                best_eval.value = 0.0f;
-            }
-        }
-
-        return best_eval;
-    }
-}
-
-void schneizel_sim_minimax_alphabeta_async(Simulation sim, bool white, int depth, int depth_inc, int depth_inc_max_move_cnt, float alpha, float beta, EvaluationData *evals, Model *model)
-{
-    auto eval = schneizel_sim_minimax_alphabeta_sync(sim, white, depth, depth, depth_inc, depth_inc, depth_inc_max_move_cnt, alpha, beta, model);
-    evals[sim.idx] = EvaluationData{eval, sim.move, sim.board};
-}
-
-std::vector<EvaluationData> schneizel_minimax_alphabeta(Board *board, bool white, int depth, int depth_inc_cnt, int depth_inc_max_move_cnt, std::vector<Model *> models)
-{
-    std::vector<EvaluationData> best_moves;
-
-    EvaluationData evals[CHESS_BOARD_LEN];
-
-    auto sims = board->simulate_all(white);
-
-    float min_val = -FLT_MAX;
-    float max_val = FLT_MAX;
-
-    float best_eval_val = white ? min_val : max_val;
-
-    std::vector<std::thread> threads;
-
-    for (auto sim : sims)
-    {
-        threads.push_back(std::thread(schneizel_sim_minimax_alphabeta_async, sim, white, depth, depth_inc_cnt, depth_inc_max_move_cnt, min_val, max_val, evals, models[sim.idx]));
-    }
-
-    for (auto &th : threads)
-    {
-        th.join();
-    }
-
-    for (int i = 0; i < sims.size(); i++)
-    {
-        auto eval_data = evals[i];
-
-        if ((white && eval_data.eval.value > best_eval_val) || (!white && eval_data.eval.value < best_eval_val))
-        {
-            best_moves.clear();
-
-            best_eval_val = eval_data.eval.value;
-
-            best_moves.push_back(eval_data);
-        }
-        else if (eval_data.eval.value == best_eval_val)
-        {
-            best_moves.push_back(eval_data);
-        }
-    }
-
-    return best_moves;
 }
 
 void play(bool white, int depth, Model *model)
@@ -725,8 +471,7 @@ void play(bool white, int depth, Model *model)
 
                 if (!opening_stage)
                 {
-                    // auto eval_dataset = board.minimax_alphabeta(true, depth, 9, 6);
-                    auto eval_dataset = schneizel_minimax_alphabeta(&board, true, depth, 9, 6, models);
+                    auto eval_dataset = board.minimax_alphabeta(true, depth, 5, 12, model);
 
                     int max_eval_idx = 0;
 
@@ -795,8 +540,7 @@ void play(bool white, int depth, Model *model)
 
             if (!opening_stage)
             {
-                // auto eval_dataset = board.minimax_alphabeta(false, depth, 9, 6);
-                auto eval_dataset = schneizel_minimax_alphabeta(&board, false, depth, 9, 6, models);
+                auto eval_dataset = board.minimax_alphabeta(false, depth, 5, 12, model);
 
                 int max_eval_idx = 0;
 
@@ -825,7 +569,9 @@ int main()
 {
     srand(time(NULL));
 
-    train(7, 32);
+    auto model = get_model(1, "data/small-model.nn");
+    play(true, 4, model);
+    delete model;
 
     return 0;
 }

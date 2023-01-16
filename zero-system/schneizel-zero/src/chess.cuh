@@ -7,6 +7,11 @@
 
 #include <windows.h>
 
+#include <zero/mod.cuh>
+
+using namespace zero::core;
+using namespace zero::nn;
+
 #define CHESS_THROW_ERROR(chess_err_msg) \
     printf("%s", chess_err_msg);         \
     exit(1)
@@ -33,6 +38,8 @@
 
 #define CHESS_WHITE_CHECKMATED_VAL -1000.0f
 #define CHESS_BLACK_CHECKMATED_VAL 1000.0f
+
+#define CHESS_BOARD_CHANNEL_CNT 12
 
 #define CHESS_OPENING_MOVE_CNT 8
 
@@ -120,6 +127,7 @@ namespace chess
         static int get_square(int row, int col);
         static int get_square(int row, char alpha_col);
         static int get_square(char alpha_row, char alpha_col);
+        static void one_hot_encode_chess_board_data(const char *board_data, float *out);
 
         void reset();
 
@@ -157,7 +165,7 @@ namespace chess
 
         int evaluate_material();
 
-        std::vector<EvaluationData> minimax_alphabeta(bool white, int depth, int depth_inc, int depth_inc_max_move_cnt);
+        std::vector<EvaluationData> minimax_alphabeta(bool white, int depth, int depth_inc, int depth_inc_max_move_cnt, Model *model);
     };
 
     struct Simulation
@@ -171,6 +179,7 @@ namespace chess
     {
         float value;
         int depth;
+        Board board;
     };
 
     struct EvaluationData
