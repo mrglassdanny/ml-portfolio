@@ -57,11 +57,11 @@ namespace chess
     class Piece
     {
     public:
-        static bool is_white(char piece);
-        static bool is_black(char piece);
-        static bool is_same_color(char piece_a, char piece_b);
+        inline static bool is_white(char piece);
+        inline static bool is_black(char piece);
+        inline static bool is_same_color(char piece_a, char piece_b);
+        inline static int get_value(char piece);
         static const char *to_str(char piece);
-        static int get_value(char piece);
         static char get_pgn_piece(char piece);
         static char get_piece_fr_pgn_piece(char pgn_piece, bool white);
     };
@@ -98,8 +98,8 @@ namespace chess
             int dst_col = CHESS_INVALID_SQUARE;
         } au_passant_state_;
 
-        static bool is_row_valid(int row);
-        static bool is_col_valid(int col);
+        inline static bool is_row_valid(int row);
+        inline static bool is_col_valid(int col);
 
         void update_diagonal_pins(int square);
         void update_straight_pins(int square);
@@ -119,19 +119,19 @@ namespace chess
         Board();
         ~Board();
 
-        static int get_row(int square);
-        static int get_row(char alpha_row);
-        static int get_col(int square);
-        static int get_col(char alpha_col);
-        static char get_alpha_col(int col);
-        static int get_square(int row, int col);
-        static int get_square(int row, char alpha_col);
-        static int get_square(char alpha_row, char alpha_col);
+        inline static int get_row(int square);
+        inline static int get_row(char alpha_row);
+        inline static int get_col(int square);
+        inline static int get_col(char alpha_col);
+        inline static char get_alpha_col(int col);
+        inline static int get_square(int row, int col);
+        inline static int get_square(int row, char alpha_col);
+        inline static int get_square(char alpha_row, char alpha_col);
         static void one_hot_encode_chess_board_data(const char *board_data, float *out);
 
         void reset();
 
-        void copy(Board *src);
+        inline void copy(Board *src);
 
         char *get_data();
 
@@ -141,7 +141,7 @@ namespace chess
         void print();
         void print(Move move);
 
-        char get_piece(int square);
+        inline char get_piece(int square);
 
         std::vector<Move> get_moves(int square, bool test_check);
         std::vector<Move> get_all_moves(bool white);
@@ -163,7 +163,7 @@ namespace chess
         std::vector<Simulation> simulate_all(bool white);
         std::vector<Simulation> simulate_all(bool white, std::vector<int> src_squares);
 
-        int evaluate_material();
+        inline int evaluate_material();
 
         std::vector<EvaluationData> minimax_alphabeta(bool white, int depth, int depth_inc, int depth_inc_max_move_cnt, Model *model);
     };

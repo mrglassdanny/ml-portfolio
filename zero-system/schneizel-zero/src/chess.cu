@@ -18,7 +18,7 @@ bool Move::is_valid(Move *move)
     return move->src_square != CHESS_INVALID_SQUARE && move->dst_square != CHESS_INVALID_SQUARE;
 }
 
-bool Piece::is_white(char piece)
+inline bool Piece::is_white(char piece)
 {
     switch (piece)
     {
@@ -34,7 +34,7 @@ bool Piece::is_white(char piece)
     }
 }
 
-bool Piece::is_black(char piece)
+inline bool Piece::is_black(char piece)
 {
     switch (piece)
     {
@@ -50,7 +50,7 @@ bool Piece::is_black(char piece)
     }
 }
 
-bool Piece::is_same_color(char piece_a, char piece_b)
+inline bool Piece::is_same_color(char piece_a, char piece_b)
 {
     if ((Piece::is_white(piece_a) && Piece::is_white(piece_b)) ||
         (Piece::is_black(piece_a) && Piece::is_black(piece_b)))
@@ -60,6 +60,39 @@ bool Piece::is_same_color(char piece_a, char piece_b)
     else
     {
         return false;
+    }
+}
+
+inline int Piece::get_value(char piece)
+{
+    switch (piece)
+    {
+    case CHESS_WP:
+        return 1;
+    case CHESS_BP:
+        return -1;
+    case CHESS_WN:
+        return 3;
+    case CHESS_BN:
+        return -3;
+    case CHESS_WB:
+        return 3;
+    case CHESS_BB:
+        return -3;
+    case CHESS_WR:
+        return 5;
+    case CHESS_BR:
+        return -5;
+    case CHESS_WQ:
+        return 9;
+    case CHESS_BQ:
+        return -9;
+    case CHESS_WK:
+        return 2;
+    case CHESS_BK:
+        return -2;
+    default:
+        return 0;
     }
 }
 
@@ -93,39 +126,6 @@ const char *Piece::to_str(char piece)
         return " k ";
     default:
         return "   ";
-    }
-}
-
-int Piece::get_value(char piece)
-{
-    switch (piece)
-    {
-    case CHESS_WP:
-        return 1;
-    case CHESS_BP:
-        return -1;
-    case CHESS_WN:
-        return 3;
-    case CHESS_BN:
-        return -3;
-    case CHESS_WB:
-        return 3;
-    case CHESS_BB:
-        return -3;
-    case CHESS_WR:
-        return 5;
-    case CHESS_BR:
-        return -5;
-    case CHESS_WQ:
-        return 9;
-    case CHESS_BQ:
-        return -9;
-    case CHESS_WK:
-        return 2;
-    case CHESS_BK:
-        return -2;
-    default:
-        return 0;
     }
 }
 
@@ -222,22 +222,22 @@ Board::Board()
 
 Board::~Board() {}
 
-int Board::get_row(int square)
+inline int Board::get_row(int square)
 {
     return square / CHESS_COL_CNT;
 }
 
-int Board::get_row(char alpha_row)
+inline int Board::get_row(char alpha_row)
 {
     return (alpha_row - '0') - 1;
 }
 
-int Board::get_col(int square)
+inline int Board::get_col(int square)
 {
     return square % CHESS_COL_CNT;
 }
 
-int Board::get_col(char alpha_col)
+inline int Board::get_col(char alpha_col)
 {
     switch (alpha_col)
     {
@@ -260,7 +260,7 @@ int Board::get_col(char alpha_col)
     }
 }
 
-char Board::get_alpha_col(int col)
+inline char Board::get_alpha_col(int col)
 {
     switch (col)
     {
@@ -283,27 +283,27 @@ char Board::get_alpha_col(int col)
     }
 }
 
-int Board::get_square(int row, int col)
+inline int Board::get_square(int row, int col)
 {
     return row * CHESS_COL_CNT + col;
 }
 
-int Board::get_square(int row, char alpha_col)
+inline int Board::get_square(int row, char alpha_col)
 {
     return row * CHESS_COL_CNT + Board::get_col(alpha_col);
 }
 
-int Board::get_square(char alpha_row, char alpha_col)
+inline int Board::get_square(char alpha_row, char alpha_col)
 {
     return Board::get_row(alpha_row) * CHESS_COL_CNT + Board::get_col(alpha_col);
 }
 
-bool Board::is_row_valid(int row)
+inline bool Board::is_row_valid(int row)
 {
     return row >= 0 && row < CHESS_ROW_CNT;
 }
 
-bool Board::is_col_valid(int col)
+inline bool Board::is_col_valid(int col)
 {
     return col >= 0 && col < CHESS_COL_CNT;
 }
@@ -411,7 +411,7 @@ void Board::reset()
     memset(&this->check_state_, 0, sizeof(this->check_state_));
 }
 
-void Board::copy(Board *src)
+inline void Board::copy(Board *src)
 {
     memcpy(this->data_, src->data_, sizeof(char) * CHESS_BOARD_LEN);
     this->castle_state_ = src->castle_state_;
@@ -604,7 +604,7 @@ void Board::print(Move move)
     printf("\n\n");
 }
 
-char Board::get_piece(int square)
+inline char Board::get_piece(int square)
 {
     return this->data_[square];
 }
@@ -2716,7 +2716,7 @@ std::vector<Simulation> Board::simulate_all(bool white, std::vector<int> src_squ
     return sims;
 }
 
-int Board::evaluate_material()
+inline int Board::evaluate_material()
 {
     int mat_eval = 0;
 
