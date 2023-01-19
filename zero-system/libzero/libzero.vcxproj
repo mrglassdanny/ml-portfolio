@@ -19,11 +19,9 @@
     <ClInclude Include="src\zero\core\util.cuh" />
     <ClInclude Include="src\zero\mod.cuh" />
     <ClInclude Include="src\zero\nn\layer\conv2d.cuh" />
-    <ClInclude Include="src\zero\nn\layer\hadamard_product.cuh" />
     <ClInclude Include="src\zero\nn\layer\layer.cuh" />
     <ClInclude Include="src\zero\nn\layer\learnable.cuh" />
     <ClInclude Include="src\zero\nn\layer\linear.cuh" />
-    <ClInclude Include="src\zero\nn\layer\matrix_product.cuh" />
     <ClInclude Include="src\zero\nn\layer\mod.cuh" />
     <ClInclude Include="src\zero\nn\loss\loss.cuh" />
     <ClInclude Include="src\zero\nn\loss\mod.cuh" />
@@ -38,11 +36,9 @@
     <CudaCompile Include="src\zero\core\util.cu" />
     <CudaCompile Include="src\zero\nn\constants.cuh" />
     <CudaCompile Include="src\zero\nn\layer\conv2d.cu" />
-    <CudaCompile Include="src\zero\nn\layer\hadamard_product.cu" />
     <CudaCompile Include="src\zero\nn\layer\layer.cu" />
     <CudaCompile Include="src\zero\nn\layer\learnable.cu" />
     <CudaCompile Include="src\zero\nn\layer\linear.cu" />
-    <CudaCompile Include="src\zero\nn\layer\matrix_product.cu" />
     <CudaCompile Include="src\zero\nn\loss\loss.cu" />
     <CudaCompile Include="src\zero\nn\model.cu" />
     <CudaCompile Include="src\zero\nn\optim\optim.cu" />
