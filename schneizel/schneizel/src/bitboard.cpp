@@ -1,5 +1,9 @@
 #include "bitboard.h"
 
+bitboard_t knight_attacks_[ChessBoardSquareCnt];
+Magic bishop_magics_[ChessBoardSquareCnt];
+Magic rook_magics_[ChessBoardSquareCnt];
+
 int popcount(bitboard_t bb)
 {
     int cnt = 0;
@@ -10,12 +14,17 @@ int popcount(bitboard_t bb)
     return cnt;
 }
 
-unsigned Magic::get_attack_index(bitboard_t occupied)
+Magic::~Magic()
 {
-    return (((occupied & this->mask) * this->key) >> this->shift);
+    free(this->attacks);
 }
 
-bitboard_t Bitboard::get_knight_attacks(int sqnum)
+unsigned Magic::get_attack_index(bitboard_t occupied)
+{
+    return unsigned(((occupied & this->mask) * this->key) >> this->shift);
+}
+
+bitboard_t get_knight_attacks(int sqnum)
 {
     bitboard_t bb = Empty;
 
@@ -29,56 +38,56 @@ bitboard_t Bitboard::get_knight_attacks(int sqnum)
     test_colnum = colnum + 1;
     if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
     {
-        set_sq(bb, get_sqnum(test_rownum, test_colnum));
+        bb = set_sq(bb, get_sqnum(test_rownum, test_colnum));
     }
 
     test_rownum = rownum + 2;
     test_colnum = colnum - 1;
     if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
     {
-        set_sq(bb, get_sqnum(test_rownum, test_colnum));
+        bb = set_sq(bb, get_sqnum(test_rownum, test_colnum));
     }
 
     test_rownum = rownum + 1;
     test_colnum = colnum + 2;
     if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
     {
-        set_sq(bb, get_sqnum(test_rownum, test_colnum));
+        bb = set_sq(bb, get_sqnum(test_rownum, test_colnum));
     }
 
     test_rownum = rownum + 1;
     test_colnum = colnum - 2;
     if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
     {
-        set_sq(bb, get_sqnum(test_rownum, test_colnum));
+        bb = set_sq(bb, get_sqnum(test_rownum, test_colnum));
     }
 
     test_rownum = rownum - 2;
     test_colnum = colnum + 1;
     if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
     {
-        set_sq(bb, get_sqnum(test_rownum, test_colnum));
+        bb = set_sq(bb, get_sqnum(test_rownum, test_colnum));
     }
 
     test_rownum = rownum - 2;
     test_colnum = colnum - 1;
     if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
     {
-        set_sq(bb, get_sqnum(test_rownum, test_colnum));
+        bb = set_sq(bb, get_sqnum(test_rownum, test_colnum));
     }
 
     test_rownum = rownum - 1;
     test_colnum = colnum + 2;
     if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
     {
-        set_sq(bb, get_sqnum(test_rownum, test_colnum));
+        bb = set_sq(bb, get_sqnum(test_rownum, test_colnum));
     }
 
     test_rownum = rownum - 1;
     test_colnum = colnum - 2;
     if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
     {
-        set_sq(bb, get_sqnum(test_rownum, test_colnum));
+        bb = set_sq(bb, get_sqnum(test_rownum, test_colnum));
     }
 
     return bb;
@@ -101,7 +110,7 @@ bitboard_t get_bishop_attacks(int sqnum, bitboard_t occupied)
     test_sqnum = get_sqnum(test_rownum, test_colnum);
     while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(occupied & get_sq(test_sqnum)))
     {
-        set_sq(bb, test_sqnum);
+        bb = set_sq(bb, test_sqnum);
         test_rownum++;
         test_colnum++;
         test_sqnum = get_sqnum(test_rownum, test_colnum);
@@ -113,7 +122,7 @@ bitboard_t get_bishop_attacks(int sqnum, bitboard_t occupied)
     test_sqnum = get_sqnum(test_rownum, test_colnum);
     while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(occupied & get_sq(test_sqnum)))
     {
-        set_sq(bb, test_sqnum);
+        bb = set_sq(bb, test_sqnum);
         test_rownum++;
         test_colnum--;
         test_sqnum = get_sqnum(test_rownum, test_colnum);
@@ -125,7 +134,7 @@ bitboard_t get_bishop_attacks(int sqnum, bitboard_t occupied)
     test_sqnum = get_sqnum(test_rownum, test_colnum);
     while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(occupied & get_sq(test_sqnum)))
     {
-        set_sq(bb, test_sqnum);
+        bb = set_sq(bb, test_sqnum);
         test_rownum--;
         test_colnum++;
         test_sqnum = get_sqnum(test_rownum, test_colnum);
@@ -137,7 +146,7 @@ bitboard_t get_bishop_attacks(int sqnum, bitboard_t occupied)
     test_sqnum = get_sqnum(test_rownum, test_colnum);
     while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(occupied & get_sq(test_sqnum)))
     {
-        set_sq(bb, test_sqnum);
+        bb = set_sq(bb, test_sqnum);
         test_rownum--;
         test_colnum--;
         test_sqnum = get_sqnum(test_rownum, test_colnum);
@@ -146,7 +155,7 @@ bitboard_t get_bishop_attacks(int sqnum, bitboard_t occupied)
     return bb;
 }
 
-bitboard_t Bitboard::get_rook_attacks(int sqnum, bitboard_t occupied)
+bitboard_t get_rook_attacks(int sqnum, bitboard_t occupied)
 {
     bitboard_t bb = Empty;
 
@@ -162,7 +171,7 @@ bitboard_t Bitboard::get_rook_attacks(int sqnum, bitboard_t occupied)
     test_sqnum = get_sqnum(test_rownum, colnum);
     while (is_rownum_valid(test_rownum) && !(occupied & get_sq(test_sqnum)))
     {
-        set_sq(bb, test_sqnum);
+        bb = set_sq(bb, test_sqnum);
         test_rownum++;
         test_sqnum = get_sqnum(test_rownum, colnum);
     }
@@ -172,7 +181,7 @@ bitboard_t Bitboard::get_rook_attacks(int sqnum, bitboard_t occupied)
     test_sqnum = get_sqnum(rownum, test_colnum);
     while (is_colnum_valid(test_colnum) && !(occupied & get_sq(test_sqnum)))
     {
-        set_sq(bb, test_sqnum);
+        bb = set_sq(bb, test_sqnum);
         test_colnum++;
         test_sqnum = get_sqnum(rownum, test_colnum);
     }
@@ -182,7 +191,7 @@ bitboard_t Bitboard::get_rook_attacks(int sqnum, bitboard_t occupied)
     test_sqnum = get_sqnum(rownum, test_colnum);
     while (is_colnum_valid(test_colnum) && !(occupied & get_sq(test_sqnum)))
     {
-        set_sq(bb, test_sqnum);
+        bb = set_sq(bb, test_sqnum);
         test_colnum--;
         test_sqnum = get_sqnum(rownum, test_colnum);
     }
@@ -192,7 +201,7 @@ bitboard_t Bitboard::get_rook_attacks(int sqnum, bitboard_t occupied)
     test_sqnum = get_sqnum(test_rownum, colnum);
     while (is_rownum_valid(test_rownum) && !(occupied & get_sq(test_sqnum)))
     {
-        set_sq(bb, test_sqnum);
+        bb = set_sq(bb, test_sqnum);
         test_rownum--;
         test_sqnum = get_sqnum(test_rownum, colnum);
     }
@@ -200,20 +209,20 @@ bitboard_t Bitboard::get_rook_attacks(int sqnum, bitboard_t occupied)
     return bb;
 }
 
-void Bitboard::init_magics(bool bishop)
+void init_magics(bool bishop)
 {
     Magic *magics;
     bitboard_t (*attacks_fn)(int sqnum, bitboard_t occupied);
 
     if (bishop)
     {
-        magics = Bitboard::bishop_magics_;
-        attacks_fn = Bitboard::get_bishop_attacks;
+        magics = bishop_magics_;
+        attacks_fn = get_bishop_attacks;
     }
     else
     {
-        magics = Bitboard::rook_magics_;
-        attacks_fn = Bitboard::get_rook_attacks;
+        magics = rook_magics_;
+        attacks_fn = get_rook_attacks;
     }
 
     int seeds[8] = {728, 10316, 55013, 32803, 12281, 15100, 16645, 255};
@@ -263,4 +272,39 @@ void Bitboard::init_magics(bool bishop)
             }
         }
     }
+}
+
+void init()
+{
+    // Knights:
+    for (int sqnum = 0; sqnum < ChessBoardSquareCnt; sqnum++)
+    {
+        knight_attacks_[sqnum] = get_knight_attacks(sqnum);
+    }
+
+    // Bishops:
+    init_magics(true);
+
+    // Rooks:
+    init_magics(false);
+}
+
+void print(bitboard_t *bb)
+{
+    byte_t *bb_bytes = (byte_t *)bb;
+    for (int i = 8 - 1; i >= 0; i--)
+    {
+        printf("%d | ", i + 1);
+
+        byte_t b = bb_bytes[i];
+        for (int j = 0, k = 8; j < 8; j++, k--)
+        {
+            byte_t b2 = (b >> j) & 1ULL;
+            printf("%u ", b2);
+        }
+        printf("\n");
+    }
+    printf("    ---------------\n");
+    printf("    a b c d e f g h");
+    printf("\n");
 }

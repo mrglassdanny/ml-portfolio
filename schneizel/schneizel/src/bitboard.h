@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <cctype>
 #include <cstdint>
 #include <cstdlib>
@@ -8,6 +9,7 @@
 
 #include "constants.h"
 
+typedef unsigned char byte_t;
 typedef uint64_t bitboard_t;
 
 constexpr bitboard_t Empty = 0ULL;
@@ -88,9 +90,9 @@ constexpr bitboard_t get_sq(int sqnum)
     return 1ULL << sqnum;
 }
 
-constexpr void set_sq(bitboard_t bb, int sqnum)
+constexpr bitboard_t set_sq(bitboard_t bb, int sqnum)
 {
-    bb |= 1ULL << sqnum;
+    return bb | (1ULL << sqnum);
 }
 
 struct Magic
@@ -99,6 +101,8 @@ struct Magic
     bitboard_t key;
     bitboard_t *attacks;
     int shift;
+
+    ~Magic();
 
     unsigned get_attack_index(bitboard_t occupied);
 };
@@ -123,19 +127,6 @@ public:
     }
 };
 
-class Bitboard
-{
-private:
-    static bitboard_t knight_attacks_[ChessBoardSquareCnt];
-    static Magic bishop_magics_[ChessBoardSquareCnt];
-    static Magic rook_magics_[ChessBoardSquareCnt];
-
-    static bitboard_t get_knight_attacks(int sq);
-    static bitboard_t get_bishop_attacks(int sq, bitboard_t occupied);
-    static bitboard_t get_rook_attacks(int sq, bitboard_t occupied);
-
-    static void init_magics(bool bishop);
-
-public:
-    static void init();
-};
+void init();
+void print(bitboard_t *bb);
+void pretty_print(bitboard_t *bb);
