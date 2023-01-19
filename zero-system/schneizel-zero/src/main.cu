@@ -143,40 +143,12 @@ Model *get_model(int batch_size, const char *params_path)
     return model;
 }
 
-Model *get_model_test(int batch_size, const char *params_path)
-{
-    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
-    Shape y_shape(batch_size, 1);
-
-    auto model = new Model(new Xavier());
-
-    // Small:
-    model->hadamard_product(x_shape, 32, new Tanh());
-    model->matrix_product(32, new Tanh());
-    model->linear(512, new Tanh());
-    model->linear(128, new Tanh());
-    model->linear(32, new Tanh());
-    model->linear(y_shape, new Tanh());
-
-    model->set_loss(new MSE());
-    model->set_optimizer(new SGDMomentum(model->parameters(), 0.1f, ZERO_NN_BETA_1));
-
-    model->summarize();
-
-    if (params_path != nullptr)
-    {
-        model->load_parameters(params_path);
-    }
-
-    return model;
-}
-
 void train(int epochs, int batch_size)
 {
     Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
     Shape y_shape(batch_size, 1);
 
-    auto model = get_model_test(batch_size, nullptr);
+    auto model = get_model(batch_size, nullptr);
 
     auto sw = new CudaStopWatch();
 
@@ -189,7 +161,7 @@ void train(int epochs, int batch_size)
 
         long long data_file_size = FileUtils::get_file_size(data_path);
         // size_t data_cnt = data_file_size / data_size;
-        size_t data_cnt = 1000000;
+        size_t data_cnt = 100000;
 
         int batch_cnt = data_cnt / batch_size;
 
@@ -383,6 +355,242 @@ void test(int batch_size)
     delete model;
 }
 
+void train(int epochs, int batch_size, Model *model, int examples, int id)
+{
+    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
+    Shape y_shape(batch_size, 1);
+
+    auto sw = new CudaStopWatch();
+
+    {
+        const char *data_path = "temp/train.data";
+        const char *lbl_path = "temp/train.lbl";
+
+        int data_size = CHESS_BOARD_LEN;
+        int x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT);
+
+        long long data_file_size = FileUtils::get_file_size(data_path);
+        // size_t data_cnt = data_file_size / data_size;
+        size_t data_cnt = examples;
+
+        int batch_cnt = data_cnt / batch_size;
+
+        FILE *data_file = fopen(data_path, "rb");
+        FILE *lbl_file = fopen(lbl_path, "rb");
+
+        std::random_device rd;
+        std::mt19937 gen(rd());
+        std::uniform_int_distribution<> dist(0, data_cnt - 1);
+
+        char train_csv_buf[64];
+        memset(train_csv_buf, 0, sizeof(train_csv_buf));
+        snprintf(train_csv_buf, sizeof(train_csv_buf), "temp/train-%d.csv", id);
+
+        {
+            FILE *train_csv = fopen(train_csv_buf, "w");
+            fprintf(train_csv, "epoch,batch,loss,accuracy,elapsed_secs\n");
+
+            bool quit = false;
+
+            auto x = Tensor::zeros(false, x_shape);
+            auto y = Tensor::zeros(false, y_shape);
+
+            char data_buf[CHESS_BOARD_LEN];
+            int lbl_buf;
+
+            sw->start();
+
+            for (int epoch = 0; epoch < epochs; epoch++)
+            {
+                for (int batch_idx = 0; batch_idx < batch_cnt; batch_idx++)
+                {
+                    x->zeros();
+                    y->zeros();
+
+                    x->to_cpu();
+                    y->to_cpu();
+
+                    for (int i = 0; i < batch_size; i++)
+                    {
+                        long offset = dist(gen);
+                        fseek(data_file, offset * data_size, SEEK_SET);
+                        fseek(lbl_file, offset * sizeof(int), SEEK_SET);
+
+                        fread(data_buf, data_size, 1, data_file);
+                        fread(&lbl_buf, sizeof(int), 1, lbl_file);
+
+                        Board::one_hot_encode_chess_board_data(data_buf, &x->data()[i * x_size]);
+                        y->data()[i] = (float)lbl_buf;
+                    }
+
+                    auto p = model->forward(x);
+
+                    if (batch_idx % 100 == 0)
+                    {
+                        float loss = model->loss(p, y);
+                        float acc = model->accuracy(p, y, chess_accuracy_fn);
+
+                        sw->stop();
+                        fprintf(train_csv, "%d,%d,%f,%f,%f\n", epoch, batch_idx, loss, acc, sw->get_elapsed_seconds());
+                        sw->start();
+                    }
+
+                    model->backward(p, y);
+                    model->step();
+
+                    delete p;
+
+                    if (_kbhit())
+                    {
+                        if (_getch() == 'q')
+                        {
+                            quit = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (quit)
+                {
+                    break;
+                }
+            }
+
+            delete x;
+            delete y;
+
+            fclose(train_csv);
+        }
+
+        fclose(data_file);
+        fclose(lbl_file);
+    }
+
+    sw->stop();
+    delete sw;
+}
+
+void test(int batch_size, Model *model, int examples, int id)
+{
+    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
+    Shape y_shape(batch_size, 1);
+
+    {
+        const char *data_path = "temp/train.data";
+        const char *lbl_path = "temp/train.lbl";
+
+        int data_size = CHESS_BOARD_LEN;
+        int x_size = (CHESS_BOARD_CHANNEL_CNT * CHESS_ROW_CNT * CHESS_COL_CNT);
+
+        long long data_file_size = FileUtils::get_file_size(data_path);
+        // size_t data_cnt = data_file_size / data_size;
+        size_t data_cnt = examples;
+
+        int batch_cnt = data_cnt / batch_size;
+
+        FILE *data_file = fopen(data_path, "rb");
+        FILE *lbl_file = fopen(lbl_path, "rb");
+
+        char test_csv_buf[64];
+        memset(test_csv_buf, 0, sizeof(test_csv_buf));
+        snprintf(test_csv_buf, sizeof(test_csv_buf), "temp/test-%d.csv", id);
+
+        float agg_acc = 0.0f;
+
+        {
+            FILE *test_csv = fopen(test_csv_buf, "w");
+            fprintf(test_csv, "batch,acc\n");
+
+            auto x = Tensor::zeros(false, x_shape);
+            auto y = Tensor::zeros(false, y_shape);
+
+            char data_buf[CHESS_BOARD_LEN];
+            int lbl_buf;
+
+            for (int batch_idx = 0; batch_idx < batch_cnt; batch_idx++)
+            {
+                x->zeros();
+                y->zeros();
+
+                x->to_cpu();
+                y->to_cpu();
+
+                for (int i = 0; i < batch_size; i++)
+                {
+                    fread(data_buf, data_size, 1, data_file);
+                    fread(&lbl_buf, sizeof(int), 1, lbl_file);
+
+                    Board::one_hot_encode_chess_board_data(data_buf, &x->data()[i * x_size]);
+                    y->data()[i] = (float)lbl_buf;
+                }
+
+                auto p = model->forward(x);
+
+                float acc = model->accuracy(p, y, chess_accuracy_fn);
+                fprintf(test_csv, "%d,%f\n", batch_idx, acc);
+
+                agg_acc += (acc / batch_cnt);
+
+                delete p;
+
+                if (_kbhit())
+                {
+                    if (_getch() == 'q')
+                    {
+                        break;
+                    }
+                }
+            }
+
+            delete x;
+            delete y;
+
+            fclose(test_csv);
+        }
+
+        printf("ID: %d\tACC: %f\n", id, agg_acc);
+
+        fclose(data_file);
+        fclose(lbl_file);
+    }
+}
+
+void compare_models(int epochs, int batch_size, int examples)
+{
+    Shape x_shape(batch_size, CHESS_BOARD_CHANNEL_CNT, CHESS_ROW_CNT, CHESS_COL_CNT);
+    Shape y_shape(batch_size, 1);
+
+    auto sw = new CudaStopWatch();
+
+    int id = 1;
+
+    {
+        auto model = new Model(new Xavier());
+        model->conv2d(x_shape, Shape(128, CHESS_BOARD_CHANNEL_CNT, 3, 3), Stride{1, 1}, new Tanh());
+        model->conv2d(Shape(128, 128, 3, 3), Stride{1, 1}, new Tanh());
+        model->linear(1024, new Tanh());
+        model->linear(512, new Tanh());
+        model->linear(32, new Tanh());
+        model->linear(y_shape, new Tanh());
+
+        model->set_loss(new MSE());
+        model->set_optimizer(new SGDMomentum(model->parameters(), 0.033f, ZERO_NN_BETA_1));
+
+        model->summarize();
+
+        sw->start();
+        train(epochs, batch_size, model, examples, id);
+        test(batch_size, model, examples, id);
+        id++;
+        sw->stop();
+        sw->print_elapsed_seconds();
+
+        delete model;
+    }
+
+    delete sw;
+}
+
 void play(bool white, int depth, Model *model)
 {
     Board board;
@@ -568,9 +776,7 @@ int main()
 {
     srand(time(NULL));
 
-    auto model = get_model(1, "data/small-model.nn");
-    play(false, 4, model);
-    delete model;
+    compare_models(15, 64, 30000000);
 
     return 0;
 }
