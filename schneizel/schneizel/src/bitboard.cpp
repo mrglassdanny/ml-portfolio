@@ -1,5 +1,20 @@
 #include "bitboard.h"
 
+int popcount(bitboard_t bb)
+{
+    int cnt = 0;
+    for (int i = 0; i < 64; i++)
+    {
+        cnt += get_sqval(bb, i);
+    }
+    return cnt;
+}
+
+unsigned Magic::get_attack_index(bitboard_t occupied)
+{
+    return (((occupied & this->mask) * this->key) >> this->shift);
+}
+
 bitboard_t Bitboard::get_knight_attacks(int sqnum)
 {
     bitboard_t bb = Empty;
@@ -183,4 +198,69 @@ bitboard_t Bitboard::get_rook_attacks(int sqnum, bitboard_t occupied)
     }
 
     return bb;
+}
+
+void Bitboard::init_magics(bool bishop)
+{
+    Magic *magics;
+    bitboard_t (*attacks_fn)(int sqnum, bitboard_t occupied);
+
+    if (bishop)
+    {
+        magics = Bitboard::bishop_magics_;
+        attacks_fn = Bitboard::get_bishop_attacks;
+    }
+    else
+    {
+        magics = Bitboard::rook_magics_;
+        attacks_fn = Bitboard::get_rook_attacks;
+    }
+
+    int seeds[8] = {728, 10316, 55013, 32803, 12281, 15100, 16645, 255};
+
+    bitboard_t occupancies[4096], attacks[4096], edges, occupied;
+    int epoch[4096], epoch_cur = 0, attack_cnt = 0;
+
+    memset(epoch, 0, sizeof(epoch));
+
+    for (int sqnum = 0; sqnum < ChessBoardSquareCnt; sqnum++)
+    {
+        edges = ((Row1 | Row8) & ~get_row_fr_sqnum(sqnum)) | ((ColA | ColH) & ~get_col_fr_sqnum(sqnum));
+
+        Magic *magic = &magics[sqnum];
+        magic->mask = attacks_fn(sqnum, 0) & ~edges;
+        magic->shift = 64 - popcount(magic->mask);
+        occupied = attack_cnt = 0;
+        do
+        {
+            occupancies[attack_cnt] = occupied;
+            attacks[attack_cnt] = attacks_fn(sqnum, occupied);
+            attack_cnt++;
+            occupied = (occupied - magic->mask) & magic->mask;
+        } while (occupied);
+
+        magic->attacks = (bitboard_t *)malloc(sizeof(bitboard_t) * attack_cnt);
+        memset(magic->attacks, 0, sizeof(bitboard_t) * attack_cnt);
+
+        MagicPRNG magic_prng(seeds[get_rownum_fr_sqnum(sqnum)]);
+
+        for (int i = 0; i < attack_cnt;)
+        {
+            for (magic->key = 0; popcount((magic->key * magic->mask) >> 56) < 6;)
+                magic->key = magic_prng.sparse_rand();
+
+            for (++epoch_cur, i = 0; i < attack_cnt; ++i)
+            {
+                unsigned idx = magic->get_attack_index(occupancies[i]);
+
+                if (epoch[idx] < epoch_cur)
+                {
+                    epoch[idx] = epoch_cur;
+                    magic->attacks[idx] = attacks[i];
+                }
+                else if (magic->attacks[idx] != attacks[i])
+                    break;
+            }
+        }
+    }
 }

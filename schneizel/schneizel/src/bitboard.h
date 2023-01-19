@@ -1,7 +1,10 @@
 #pragma once
 
-#include <stdint.h>
-#include <inttypes.h>
+#include <cctype>
+#include <cstdint>
+#include <cstdlib>
+#include <cassert>
+#include <string>
 
 #include "constants.h"
 
@@ -90,19 +93,34 @@ constexpr void set_sq(bitboard_t bb, int sqnum)
     bb |= 1ULL << sqnum;
 }
 
-class Magic
+struct Magic
 {
-private:
-    bitboard_t mask_;
-    bitboard_t key_;
-    bitboard_t *attacks_;
+    bitboard_t mask;
+    bitboard_t key;
+    bitboard_t *attacks;
     int shift;
 
-public:
-    Magic();
-    ~Magic();
-
     unsigned get_attack_index(bitboard_t occupied);
+};
+
+class MagicPRNG
+{
+    uint64_t s;
+    uint64_t rand64()
+    {
+        s ^= s >> 12, s ^= s << 25, s ^= s >> 27;
+        return s * 2685821657736338717LL;
+    }
+
+public:
+    MagicPRNG(uint64_t seed) : s(seed) { assert(seed); }
+
+    bitboard_t rand() { return (bitboard_t)rand64(); }
+
+    bitboard_t sparse_rand()
+    {
+        return (bitboard_t)(rand64() & rand64() & rand64());
+    }
 };
 
 class Bitboard
