@@ -63,8 +63,8 @@ namespace zero
 
 			static Tensor *from_data(Shape shape, float *data);
 			static Tensor *from_csv(const char *path);
-			static void to_csv(const char *path, Tensor *arr);
-			static void to_file(const char *path, Tensor *arr);
+			static void to_csv(const char *path, Tensor *tensor);
+			static void to_file(const char *path, Tensor *tensor);
 
 			static Tensor *zeros(bool cuda, Shape shape);
 			static Tensor *ones(bool cuda, Shape shape);

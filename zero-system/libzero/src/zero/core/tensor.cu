@@ -305,9 +305,9 @@ Tensor::~Tensor()
 
 Tensor *Tensor::from_data(Shape shape, float *data)
 {
-    Tensor *arr = new Tensor(false, shape);
-    cudaMemcpy(arr->data_, data, arr->size(), cudaMemcpyDefault);
-    return arr;
+    Tensor *tensor = new Tensor(false, shape);
+    cudaMemcpy(tensor->data_, data, tensor->size(), cudaMemcpyDefault);
+    return tensor;
 }
 
 Tensor *Tensor::from_csv(const char *path)
@@ -358,7 +358,7 @@ Tensor *Tensor::from_csv(const char *path)
         row_cnt++;
     }
 
-    Tensor *arr = new Tensor(false, Shape(row_cnt, col_cnt));
+    Tensor *tensor = new Tensor(false, Shape(row_cnt, col_cnt));
 
     char temp_buf[64];
     memset(temp_buf, 0, 64);
@@ -380,14 +380,14 @@ Tensor *Tensor::from_csv(const char *path)
 
         if (buf[buf_idx] == ',')
         {
-            arr->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
+            tensor->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
             memset(temp_buf, 0, 64);
             col_idx++;
             temp_buf_idx = 0;
         }
         else if (buf[buf_idx] == '\n')
         {
-            arr->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
+            tensor->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
             memset(temp_buf, 0, 64);
             row_idx++;
             col_idx = 0;
@@ -398,7 +398,7 @@ Tensor *Tensor::from_csv(const char *path)
     // Make sure to grab the last bit before we finish up!
     if (temp_buf_idx > 0)
     {
-        arr->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
+        tensor->set_val(row_idx * col_cnt + col_idx, (float)atof(temp_buf));
         memset(temp_buf, 0, 64);
         row_idx++;
         col_idx = 0;
@@ -407,16 +407,16 @@ Tensor *Tensor::from_csv(const char *path)
 
     free(buf);
 
-    return arr;
+    return tensor;
 }
 
-void Tensor::to_csv(const char *path, Tensor *arr)
+void Tensor::to_csv(const char *path, Tensor *tensor)
 {
-    int dim_cnt = arr->num_dims();
+    int dim_cnt = tensor->num_dims();
 
     if (dim_cnt == 1)
     {
-        int cnt = arr->shape_[0];
+        int cnt = tensor->shape_[0];
 
         FILE *file_ptr = fopen(path, "w");
 
@@ -424,7 +424,7 @@ void Tensor::to_csv(const char *path, Tensor *arr)
 
         for (int i = 0; i < cnt; i++)
         {
-            fprintf(file_ptr, "%f\n", arr->get_val(i));
+            fprintf(file_ptr, "%f\n", tensor->get_val(i));
         }
 
         fclose(file_ptr);
@@ -432,8 +432,8 @@ void Tensor::to_csv(const char *path, Tensor *arr)
     else if (dim_cnt == 2)
     {
 
-        int row_cnt = arr->shape_[0];
-        int col_cnt = arr->shape_[1];
+        int row_cnt = tensor->shape_[0];
+        int col_cnt = tensor->shape_[1];
 
         FILE *file_ptr = fopen(path, "w");
 
@@ -457,11 +457,11 @@ void Tensor::to_csv(const char *path, Tensor *arr)
             {
                 if (j < col_cnt - 1)
                 {
-                    fprintf(file_ptr, "%f,", arr->get_val(i * col_cnt + j));
+                    fprintf(file_ptr, "%f,", tensor->get_val(i * col_cnt + j));
                 }
                 else
                 {
-                    fprintf(file_ptr, "%f", arr->get_val(i * col_cnt + j));
+                    fprintf(file_ptr, "%f", tensor->get_val(i * col_cnt + j));
                 }
             }
             fprintf(file_ptr, "\n");
@@ -474,75 +474,75 @@ void Tensor::to_csv(const char *path, Tensor *arr)
     }
 }
 
-void Tensor::to_file(const char *path, Tensor *arr)
+void Tensor::to_file(const char *path, Tensor *tensor)
 {
-    bool orig_cuda = arr->cuda_;
+    bool orig_cuda = tensor->cuda_;
 
     FILE *file_ptr = fopen(path, "wb");
 
-    arr->to_cpu();
+    tensor->to_cpu();
 
-    fwrite(arr->data_, sizeof(float), arr->count(), file_ptr);
+    fwrite(tensor->data_, sizeof(float), tensor->count(), file_ptr);
 
     fclose(file_ptr);
 
     if (orig_cuda)
     {
-        arr->to_cuda();
+        tensor->to_cuda();
     }
 }
 
 Tensor *Tensor::zeros(bool cuda, Shape shape)
 {
-    Tensor *arr = new Tensor(cuda, shape);
+    Tensor *tensor = new Tensor(cuda, shape);
 
-    arr->zeros();
+    tensor->zeros();
 
-    return arr;
+    return tensor;
 }
 
 Tensor *Tensor::ones(bool cuda, Shape shape)
 {
-    Tensor *arr = new Tensor(cuda, shape);
+    Tensor *tensor = new Tensor(cuda, shape);
 
-    arr->ones();
+    tensor->ones();
 
-    return arr;
+    return tensor;
 }
 
 Tensor *Tensor::full(bool cuda, Shape shape, float val)
 {
-    Tensor *arr = new Tensor(cuda, shape);
+    Tensor *tensor = new Tensor(cuda, shape);
 
-    arr->full(val);
+    tensor->full(val);
 
-    return arr;
+    return tensor;
 }
 
 Tensor *Tensor::random(bool cuda, Shape shape, float mean, float stddev)
 {
-    Tensor *arr = new Tensor(false, shape);
-    arr->random(mean, stddev);
+    Tensor *tensor = new Tensor(false, shape);
+    tensor->random(mean, stddev);
 
     if (cuda)
     {
-        arr->to_cuda();
+        tensor->to_cuda();
     }
 
-    return arr;
+    return tensor;
 }
 
 Tensor *Tensor::random_ints(bool cuda, Shape shape, int upper_bound)
 {
-    Tensor *arr = new Tensor(false, shape);
-    arr->random_ints(upper_bound);
+    Tensor *tensor = new Tensor(false, shape);
+    tensor->random_ints(upper_bound);
 
     if (cuda)
     {
-        arr->to_cuda();
+        tensor->to_cuda();
     }
 
-    return arr;
+    return tensor;
 }
 
 Tensor *Tensor::one_hot(Tensor *src, int max_val)

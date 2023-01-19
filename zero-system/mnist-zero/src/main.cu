@@ -453,9 +453,9 @@ int main(int argc, char **argv)
 
 	// grad_tests();
 
-	mnist_conv(50, 30);
+	// mnist_conv(50, 30);
 
-	// mnist_conv_load_params(50, "temp/model.params");
+	mnist_conv_load_params(50, "temp/model.params");
 
 	return 0;
 }
