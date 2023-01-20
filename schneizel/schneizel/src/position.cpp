@@ -6,93 +6,73 @@ namespace schneizel
     {
         white_turn = true;
 
-        // White pieces:
+        // Pieces:
         {
-            int piece_cnt = 0;
+            for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
+            {
+                this->pieces[sqnum] = PieceType::None;
+            }
 
-            for (byte_t sqnum = 8; sqnum < 16; sqnum++)
-                this->white_pieces[piece_cnt++] = Piece{PieceType::Pawn, sqnum};
+            this->pieces[8] = PieceType::WhitePawn;
+            this->pieces[9] = PieceType::WhitePawn;
+            this->pieces[10] = PieceType::WhitePawn;
+            this->pieces[11] = PieceType::WhitePawn;
+            this->pieces[12] = PieceType::WhitePawn;
+            this->pieces[13] = PieceType::WhitePawn;
+            this->pieces[14] = PieceType::WhitePawn;
+            this->pieces[15] = PieceType::WhitePawn;
 
-            this->white_pieces[piece_cnt++] = Piece{PieceType::Knight, 1};
-            this->white_pieces[piece_cnt++] = Piece{PieceType::Knight, 6};
+            this->pieces[1] = PieceType::WhiteKnight;
+            this->pieces[6] = PieceType::WhiteKnight;
+            this->pieces[2] = PieceType::WhiteBishop;
+            this->pieces[5] = PieceType::WhiteBishop;
+            this->pieces[0] = PieceType::WhiteRook;
+            this->pieces[7] = PieceType::WhiteRook;
+            this->pieces[3] = PieceType::WhiteQueen;
+            this->pieces[4] = PieceType::WhiteKing;
 
-            this->white_pieces[piece_cnt++] = Piece{PieceType::Bishop, 2};
-            this->white_pieces[piece_cnt++] = Piece{PieceType::Bishop, 5};
+            this->pieces[48] = PieceType::BlackPawn;
+            this->pieces[49] = PieceType::BlackPawn;
+            this->pieces[50] = PieceType::BlackPawn;
+            this->pieces[51] = PieceType::BlackPawn;
+            this->pieces[52] = PieceType::BlackPawn;
+            this->pieces[53] = PieceType::BlackPawn;
+            this->pieces[54] = PieceType::BlackPawn;
+            this->pieces[55] = PieceType::BlackPawn;
 
-            this->white_pieces[piece_cnt++] = Piece{PieceType::Rook, 0};
-            this->white_pieces[piece_cnt++] = Piece{PieceType::Rook, 7};
-
-            this->white_pieces[piece_cnt++] = Piece{PieceType::Queen, 3};
-            this->white_pieces[piece_cnt++] = Piece{PieceType::King, 4};
-        }
-
-        // Black pieces:
-        {
-            int piece_cnt = 0;
-
-            for (byte_t sqnum = 48; sqnum < 56; sqnum++)
-                this->black_pieces[piece_cnt++] = (Piece{PieceType::Pawn, sqnum});
-
-            this->black_pieces[piece_cnt++] = Piece{PieceType::Knight, 57};
-            this->black_pieces[piece_cnt++] = Piece{PieceType::Knight, 62};
-
-            this->black_pieces[piece_cnt++] = Piece{PieceType::Bishop, 58};
-            this->black_pieces[piece_cnt++] = Piece{PieceType::Bishop, 61};
-
-            this->black_pieces[piece_cnt++] = Piece{PieceType::Rook, 56};
-            this->black_pieces[piece_cnt++] = Piece{PieceType::Rook, 63};
-
-            this->black_pieces[piece_cnt++] = Piece{PieceType::Queen, 59};
-            this->black_pieces[piece_cnt++] = Piece{PieceType::King, 60};
+            this->pieces[57] = PieceType::BlackKnight;
+            this->pieces[62] = PieceType::BlackKnight;
+            this->pieces[58] = PieceType::BlackBishop;
+            this->pieces[61] = PieceType::BlackBishop;
+            this->pieces[56] = PieceType::BlackRook;
+            this->pieces[63] = PieceType::BlackRook;
+            this->pieces[59] = PieceType::BlackQueen;
+            this->pieces[60] = PieceType::BlackKing;
         }
 
         // Bitboards:
-        memset(this->white_bbs, 0, sizeof(this->white_bbs));
-        memset(this->black_bbs, 0, sizeof(this->black_bbs));
-
-        for (int i = 0; i < PieceMaxCnt; i++)
         {
-            Piece *white_piece = &this->white_pieces[i];
-            if (white_piece->typ != PieceType::None)
+            memset(this->piece_bbs, 0, sizeof(this->piece_bbs));
+            this->white_bb = Empty;
+            this->black_bb = Empty;
+
+            for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
             {
-                this->white_bbs[white_piece->typ] = bitboards::set_sqval(this->white_bbs[white_piece->typ], white_piece->sqnum);
+                if (this->pieces[sqnum] != PieceType::None)
+                    this->piece_bbs[this->pieces[sqnum]] = bitboards::set_sqval(this->piece_bbs[this->pieces[sqnum]], sqnum);
             }
 
-            Piece *black_piece = &this->black_pieces[i];
-            if (black_piece->typ != PieceType::None)
+            for (int w = 0, b = PieceTypeCnt; w < PieceTypeCnt; w++, b++)
             {
-                this->black_bbs[black_piece->typ] = bitboards::set_sqval(this->black_bbs[black_piece->typ], black_piece->sqnum);
+                this->white_bb |= this->piece_bbs[w];
+                this->black_bb |= this->piece_bbs[b];
             }
         }
     }
 
-    bitboard_t Position::get_whitebb()
+    bitboard_t Position::get_all_bb()
     {
-        bitboard_t bb = Empty;
-
-        for (int i = 0; i < PieceTypeCnt; i++)
-        {
-            bb |= this->white_bbs[i];
-        }
-
-        return bb;
-    }
-
-    bitboard_t Position::get_blackbb()
-    {
-        bitboard_t bb = Empty;
-
-        for (int i = 0; i < PieceTypeCnt; i++)
-        {
-            bb |= this->black_bbs[i];
-        }
-
-        return bb;
-    }
-
-    bitboard_t Position::get_allbb()
-    {
-        return this->get_whitebb() | this->get_blackbb();
+        return this->white_bb | this->black_bb;
     }
 
     Move Position::get_moves()
@@ -104,47 +84,40 @@ namespace schneizel
         {
         }
 
-        return Move{PieceType::None, 0, 0};
+        return Move{0, 0};
     }
 
     void Position::make_move(Move move)
     {
+        // TODO: promotion, castle, au passant
+
+        PieceType srctyp = this->pieces[move.src_sqnum];
+        PieceType captyp = this->pieces[move.dst_sqnum];
+
+        bitboard_t move_bb = Empty;
+        move_bb = bitboards::set_sqval(move_bb, move.src_sqnum);
+        move_bb = bitboards::set_sqval(move_bb, move.dst_sqnum);
+
+        this->piece_bbs[srctyp] ^= move_bb;
+
+        if (captyp != PieceType::None)
+        {
+            this->piece_bbs[captyp] = bitboards::clear_sqval(this->piece_bbs[captyp], move.dst_sqnum);
+        }
+
         if (this->white_turn)
         {
-            for (int i = 0; i < PieceMaxCnt; i++)
-            {
-                if (move.piece_typ == this->white_pieces[i].typ && move.src_sqnum == this->white_pieces[i].sqnum)
-                {
-                    this->white_pieces[i].sqnum = move.dst_sqnum;
-                    this->white_bbs[this->white_pieces[i].typ] = set_sqval(this->white_bbs[this->white_pieces[i].typ], move.dst_sqnum);
-                    this->white_bbs[this->white_pieces[i].typ] = clear_sqval(this->white_bbs[this->white_pieces[i].typ], move.src_sqnum);
-                }
-
-                if (move.dst_sqnum == this->black_pieces[i].sqnum)
-                {
-                    this->black_bbs[this->black_pieces[i].typ] = clear_sqval(this->black_bbs[this->black_pieces[i].typ], move.dst_sqnum);
-                    this->black_pieces[i].typ = PieceType::None;
-                }
-            }
+            this->white_bb ^= move_bb;
+            this->black_bb &= ~move_bb;
         }
         else
         {
-            for (int i = 0; i < PieceMaxCnt; i++)
-            {
-                if (move.piece_typ == this->black_pieces[i].typ && move.src_sqnum == this->black_pieces[i].sqnum)
-                {
-                    this->black_pieces[i].sqnum = move.dst_sqnum;
-                    this->black_bbs[this->black_pieces[i].typ] = set_sqval(this->black_bbs[this->black_pieces[i].typ], move.dst_sqnum);
-                    this->black_bbs[this->black_pieces[i].typ] = clear_sqval(this->black_bbs[this->black_pieces[i].typ], move.src_sqnum);
-                }
-
-                if (move.dst_sqnum == this->white_pieces[i].sqnum)
-                {
-                    this->white_bbs[this->white_pieces[i].typ] = clear_sqval(this->white_bbs[this->white_pieces[i].typ], move.dst_sqnum);
-                    this->white_pieces[i].typ = PieceType::None;
-                }
-            }
+            this->black_bb ^= move_bb;
+            this->white_bb &= ~move_bb;
         }
+
+        this->pieces[move.dst_sqnum] = srctyp;
+        this->pieces[move.src_sqnum] = PieceType::None;
 
         this->white_turn = !this->white_turn;
     }

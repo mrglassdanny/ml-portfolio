@@ -9,18 +9,18 @@ namespace schneizel
 
     enum PieceType : byte_t
     {
-        Pawn,
-        Knight,
-        Bishop,
-        Rook,
-        Queen,
-        King,
+        WhitePawn,
+        WhiteKnight,
+        WhiteBishop,
+        WhiteRook,
+        WhiteQueen,
+        WhiteKing,
+        BlackPawn,
+        BlackKnight,
+        BlackBishop,
+        BlackRook,
+        BlackQueen,
+        BlackKing,
         None
-    };
-
-    struct Piece
-    {
-        PieceType typ;
-        byte_t sqnum;
     };
 }

@@ -13,16 +13,14 @@ namespace schneizel
     struct Position
     {
         bool white_turn;
-        Piece white_pieces[PieceMaxCnt];
-        Piece black_pieces[PieceMaxCnt];
-        bitboard_t white_bbs[PieceTypeCnt];
-        bitboard_t black_bbs[PieceTypeCnt];
+        PieceType pieces[SquareCnt];
+        bitboard_t piece_bbs[(PieceTypeCnt * 2)];
+        bitboard_t white_bb;
+        bitboard_t black_bb;
 
         void init();
 
-        bitboard_t get_whitebb();
-        bitboard_t get_blackbb();
-        bitboard_t get_allbb();
+        bitboard_t get_all_bb();
 
         Move get_moves();
         void make_move(Move move);
