@@ -75,16 +75,46 @@ namespace schneizel
         return this->white_bb | this->black_bb;
     }
 
-    Move Position::get_moves()
+    void Position::get_moves()
     {
+        MoveList move_list;
+
         if (this->white_turn)
         {
+            bitboard_t all_bb = this->get_all_bb();
+
+            bitboard_t orig_pawns = this->piece_bbs[PieceType::WhitePawn] & bitboards::Row2;
+            bitboard_t orig_pawn_moves_1 = orig_pawns << 8;
+            bitboard_t orig_pawn_moves_2 = orig_pawns << 16;
+
+            bitboard_t east_pawn_attacks = (this->piece_bbs[PieceType::WhitePawn] & ~bitboards::ColH) << 9;
+            bitboard_t west_pawn_attacks = (this->piece_bbs[PieceType::WhitePawn] & ~bitboards::ColA) << 7;
+
+            bitboards::print(&orig_pawns);
+            bitboards::print(&orig_pawn_moves_1);
+            bitboards::print(&orig_pawn_moves_2);
+            bitboards::print(&east_pawn_attacks);
+            bitboards::print(&west_pawn_attacks);
+
+            orig_pawn_moves_1 ^= all_bb & orig_pawn_moves_1;
+            orig_pawn_moves_2 ^= all_bb & orig_pawn_moves_1 & orig_pawn_moves_2;
+
+            east_pawn_attacks &= this->black_bb;
+            west_pawn_attacks &= this->black_bb;
+
+            bitboards::print(&orig_pawn_moves_1);
+            bitboards::print(&orig_pawn_moves_2);
+            bitboards::print(&east_pawn_attacks);
+            bitboards::print(&west_pawn_attacks);
+
+            for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
+            {
+                PieceType typ = this->pieces[sqnum];
+            }
         }
         else
         {
         }
-
-        return Move{0, 0};
     }
 
     void Position::make_move(Move move)
