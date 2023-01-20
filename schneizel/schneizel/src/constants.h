@@ -1,3 +1,6 @@
 #pragma once
 
-constexpr int ChessBoardSquareCnt = 64;
+namespace schneizel
+{
+    constexpr int ChessBoardSquareCnt = 64;
+}
