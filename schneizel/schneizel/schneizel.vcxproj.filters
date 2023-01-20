@@ -24,6 +24,12 @@
     <ClCompile Include="src\position.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\move.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\piece.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\bitboard.h">
@@ -35,7 +41,10 @@
     <ClInclude Include="src\position.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\types.h">
+    <ClInclude Include="src\piece.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\move.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

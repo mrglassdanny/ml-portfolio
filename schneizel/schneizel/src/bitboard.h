@@ -94,6 +94,11 @@ namespace schneizel
             return bb | (1ULL << sqnum);
         }
 
+        constexpr bitboard_t clear_sqval(bitboard_t bb, int sqnum)
+        {
+            return bb & ~(1ULL << sqnum);
+        }
+
         constexpr bitboard_t get_sq(int sqnum)
         {
             return 1ULL << sqnum;

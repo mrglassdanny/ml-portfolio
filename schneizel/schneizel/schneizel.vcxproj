@@ -82,13 +82,16 @@
   <ItemGroup>
     <ClCompile Include="src\bitboard.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\move.cpp" />
+    <ClCompile Include="src\piece.cpp" />
     <ClCompile Include="src\position.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\bitboard.h" />
     <ClInclude Include="src\constants.h" />
+    <ClInclude Include="src\move.h" />
+    <ClInclude Include="src\piece.h" />
     <ClInclude Include="src\position.h" />
-    <ClInclude Include="src\types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

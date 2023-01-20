@@ -4,6 +4,7 @@
 
 #include "bitboard.h"
 #include "piece.h"
+#include "move.h"
 
 namespace schneizel
 {
@@ -18,5 +19,12 @@ namespace schneizel
         bitboard_t black_bbs[PieceTypeCnt];
 
         void init();
+
+        bitboard_t get_whitebb();
+        bitboard_t get_blackbb();
+        bitboard_t get_allbb();
+
+        Move get_moves();
+        void make_move(Move move);
     };
 }

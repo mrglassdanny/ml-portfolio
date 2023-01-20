@@ -66,4 +66,85 @@ namespace schneizel
         }
     }
 
+    bitboard_t Position::get_whitebb()
+    {
+        bitboard_t bb = Empty;
+
+        for (int i = 0; i < PieceTypeCnt; i++)
+        {
+            bb |= this->white_bbs[i];
+        }
+
+        return bb;
+    }
+
+    bitboard_t Position::get_blackbb()
+    {
+        bitboard_t bb = Empty;
+
+        for (int i = 0; i < PieceTypeCnt; i++)
+        {
+            bb |= this->black_bbs[i];
+        }
+
+        return bb;
+    }
+
+    bitboard_t Position::get_allbb()
+    {
+        return this->get_whitebb() | this->get_blackbb();
+    }
+
+    Move Position::get_moves()
+    {
+        return Move{PieceType::None, 0, 0};
+    }
+
+    void Position::make_move(Move move)
+    {
+        if (this->white_turn)
+        {
+            for (int i = 0; i < PieceMaxCnt; i++)
+            {
+                if (move.piece_typ == this->white_pieces[i].typ)
+                {
+                    if (move.src_sqnum == this->white_pieces[i].sqnum)
+                    {
+                        this->white_pieces[i].sqnum = move.dst_sqnum;
+                        this->white_bbs[this->white_pieces[i].typ] = set_sqval(this->white_bbs[this->white_pieces[i].typ], move.dst_sqnum);
+                        this->white_bbs[this->white_pieces[i].typ] = clear_sqval(this->white_bbs[this->white_pieces[i].typ], move.src_sqnum);
+                    }
+                }
+
+                if (move.dst_sqnum == this->black_pieces[i].sqnum)
+                {
+                    this->black_bbs[this->black_pieces[i].typ] = clear_sqval(this->black_bbs[this->black_pieces[i].typ], move.dst_sqnum);
+                    this->black_pieces[i].typ = PieceType::None;
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0; i < PieceMaxCnt; i++)
+            {
+                if (move.piece_typ == this->black_pieces[i].typ)
+                {
+                    if (move.src_sqnum == this->black_pieces[i].sqnum)
+                    {
+                        this->black_pieces[i].sqnum = move.dst_sqnum;
+                        this->black_bbs[this->black_pieces[i].typ] = set_sqval(this->black_bbs[this->black_pieces[i].typ], move.dst_sqnum);
+                        this->black_bbs[this->black_pieces[i].typ] = clear_sqval(this->black_bbs[this->black_pieces[i].typ], move.src_sqnum);
+                    }
+                }
+
+                if (move.dst_sqnum == this->white_pieces[i].sqnum)
+                {
+                    this->white_bbs[this->white_pieces[i].typ] = clear_sqval(this->white_bbs[this->white_pieces[i].typ], move.dst_sqnum);
+                    this->white_pieces[i].typ = PieceType::None;
+                }
+            }
+        }
+
+        this->white_turn = !this->white_turn;
+    }
 }
