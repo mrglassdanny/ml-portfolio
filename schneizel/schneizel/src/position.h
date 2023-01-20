@@ -1,4 +1,4 @@
-#pragma onceset_sq(&bb
+#pragma once
 
 #include "bitboard.h"
 
