@@ -314,9 +314,9 @@ namespace schneizel
             init_magics(false);
         }
 
-        void print(bitboard_t *bb)
+        void print(bitboard_t bb)
         {
-            byte_t *bb_bytes = (byte_t *)bb;
+            byte_t *bb_bytes = (byte_t *)&bb;
             for (int i = 8 - 1; i >= 0; i--)
             {
                 printf("%d | ", i + 1);

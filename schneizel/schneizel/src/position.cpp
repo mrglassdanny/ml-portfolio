@@ -90,11 +90,11 @@ namespace schneizel
             bitboard_t east_pawn_attacks = (this->piece_bbs[PieceType::WhitePawn] & ~bitboards::ColH) << 9;
             bitboard_t west_pawn_attacks = (this->piece_bbs[PieceType::WhitePawn] & ~bitboards::ColA) << 7;
 
-            bitboards::print(&orig_pawns);
-            bitboards::print(&orig_pawn_moves_1);
-            bitboards::print(&orig_pawn_moves_2);
-            bitboards::print(&east_pawn_attacks);
-            bitboards::print(&west_pawn_attacks);
+            bitboards::print(orig_pawns);
+            bitboards::print(orig_pawn_moves_1);
+            bitboards::print(orig_pawn_moves_2);
+            bitboards::print(east_pawn_attacks);
+            bitboards::print(west_pawn_attacks);
 
             orig_pawn_moves_1 ^= all_bb & orig_pawn_moves_1;
             orig_pawn_moves_2 ^= all_bb & orig_pawn_moves_1 & orig_pawn_moves_2;
@@ -102,10 +102,10 @@ namespace schneizel
             east_pawn_attacks &= this->black_bb;
             west_pawn_attacks &= this->black_bb;
 
-            bitboards::print(&orig_pawn_moves_1);
-            bitboards::print(&orig_pawn_moves_2);
-            bitboards::print(&east_pawn_attacks);
-            bitboards::print(&west_pawn_attacks);
+            bitboards::print(orig_pawn_moves_1);
+            bitboards::print(orig_pawn_moves_2);
+            bitboards::print(east_pawn_attacks);
+            bitboards::print(west_pawn_attacks);
 
             for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
             {
@@ -118,25 +118,25 @@ namespace schneizel
                 case PieceType::WhiteKnight:
                 {
                     bitboard_t knight_moves = bitboards::get_knight_moves(sqnum) & ~this->white_bb;
-                    bitboards::print(&knight_moves);
+                    bitboards::print(knight_moves);
                 }
                 break;
                 case PieceType::WhiteBishop:
                 {
                     bitboard_t bishop_moves = bitboards::get_bishop_moves(sqnum, all_bb) & ~this->white_bb;
-                    bitboards::print(&bishop_moves);
+                    bitboards::print(bishop_moves);
                 }
                 break;
                 case PieceType::WhiteRook:
                 {
                     bitboard_t rook_moves = bitboards::get_rook_moves(sqnum, all_bb) & ~this->white_bb;
-                    bitboards::print(&rook_moves);
+                    bitboards::print(rook_moves);
                 }
                 break;
                 case PieceType::WhiteQueen:
                 {
                     bitboard_t queen_moves = bitboards::get_queen_moves(sqnum, all_bb) & ~this->white_bb;
-                    bitboards::print(&queen_moves);
+                    bitboards::print(queen_moves);
                 }
                 break;
                 case PieceType::WhiteKing:
