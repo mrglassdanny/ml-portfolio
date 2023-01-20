@@ -97,6 +97,13 @@ namespace schneizel
 
     Move Position::get_moves()
     {
+        if (this->white_turn)
+        {
+        }
+        else
+        {
+        }
+
         return Move{PieceType::None, 0, 0};
     }
 
@@ -106,14 +113,11 @@ namespace schneizel
         {
             for (int i = 0; i < PieceMaxCnt; i++)
             {
-                if (move.piece_typ == this->white_pieces[i].typ)
+                if (move.piece_typ == this->white_pieces[i].typ && move.src_sqnum == this->white_pieces[i].sqnum)
                 {
-                    if (move.src_sqnum == this->white_pieces[i].sqnum)
-                    {
-                        this->white_pieces[i].sqnum = move.dst_sqnum;
-                        this->white_bbs[this->white_pieces[i].typ] = set_sqval(this->white_bbs[this->white_pieces[i].typ], move.dst_sqnum);
-                        this->white_bbs[this->white_pieces[i].typ] = clear_sqval(this->white_bbs[this->white_pieces[i].typ], move.src_sqnum);
-                    }
+                    this->white_pieces[i].sqnum = move.dst_sqnum;
+                    this->white_bbs[this->white_pieces[i].typ] = set_sqval(this->white_bbs[this->white_pieces[i].typ], move.dst_sqnum);
+                    this->white_bbs[this->white_pieces[i].typ] = clear_sqval(this->white_bbs[this->white_pieces[i].typ], move.src_sqnum);
                 }
 
                 if (move.dst_sqnum == this->black_pieces[i].sqnum)
@@ -127,14 +131,11 @@ namespace schneizel
         {
             for (int i = 0; i < PieceMaxCnt; i++)
             {
-                if (move.piece_typ == this->black_pieces[i].typ)
+                if (move.piece_typ == this->black_pieces[i].typ && move.src_sqnum == this->black_pieces[i].sqnum)
                 {
-                    if (move.src_sqnum == this->black_pieces[i].sqnum)
-                    {
-                        this->black_pieces[i].sqnum = move.dst_sqnum;
-                        this->black_bbs[this->black_pieces[i].typ] = set_sqval(this->black_bbs[this->black_pieces[i].typ], move.dst_sqnum);
-                        this->black_bbs[this->black_pieces[i].typ] = clear_sqval(this->black_bbs[this->black_pieces[i].typ], move.src_sqnum);
-                    }
+                    this->black_pieces[i].sqnum = move.dst_sqnum;
+                    this->black_bbs[this->black_pieces[i].typ] = set_sqval(this->black_bbs[this->black_pieces[i].typ], move.dst_sqnum);
+                    this->black_bbs[this->black_pieces[i].typ] = clear_sqval(this->black_bbs[this->black_pieces[i].typ], move.src_sqnum);
                 }
 
                 if (move.dst_sqnum == this->white_pieces[i].sqnum)

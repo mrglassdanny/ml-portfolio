@@ -10,7 +10,7 @@ int main(int argc, char **argv)
 	Position pos;
 	pos.init();
 
-	pos.make_move(Move{PieceType::Pawn, 8, 16});
+	pos.make_move(Move{PieceType::Pawn, 9, 25});
 
 	bitboard_t all = pos.get_allbb();
 
