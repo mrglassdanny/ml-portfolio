@@ -4,9 +4,9 @@ namespace schneizel
 {
     namespace bitboards
     {
-        bitboard_t knight_attacks_[ChessBoardSquareCnt];
-        Magic bishop_magics_[ChessBoardSquareCnt];
-        Magic rook_magics_[ChessBoardSquareCnt];
+        bitboard_t knight_attacks_[SquareCnt];
+        Magic bishop_magics_[SquareCnt];
+        Magic rook_magics_[SquareCnt];
 
         class MagicPRNG
         {
@@ -257,12 +257,12 @@ namespace schneizel
 
             memset(epoch, 0, sizeof(epoch));
 
-            for (int sqnum = 0; sqnum < ChessBoardSquareCnt; sqnum++)
+            for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
             {
                 edges = ((Row1 | Row8) & ~get_row_fr_sqnum(sqnum)) | ((ColA | ColH) & ~get_col_fr_sqnum(sqnum));
 
                 Magic *magic = &magics[sqnum];
-                magic->mask = attacks_fn(sqnum, 0) & ~edges;
+                magic->mask = attacks_fn(sqnum, Empty) & ~edges;
                 magic->shift = 64 - popcount(magic->mask);
                 occupied = attack_cnt = 0;
                 do
@@ -302,7 +302,7 @@ namespace schneizel
         void init()
         {
             // Knights:
-            for (int sqnum = 0; sqnum < ChessBoardSquareCnt; sqnum++)
+            for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
             {
                 knight_attacks_[sqnum] = get_knight_attacks(sqnum);
             }

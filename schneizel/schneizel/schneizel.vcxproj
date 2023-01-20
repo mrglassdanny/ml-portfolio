@@ -88,6 +88,7 @@
     <ClInclude Include="src\bitboard.h" />
     <ClInclude Include="src\constants.h" />
     <ClInclude Include="src\position.h" />
+    <ClInclude Include="src\types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

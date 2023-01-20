@@ -1,6 +1,9 @@
 #pragma once
 
+#include <vector>
+
 #include "bitboard.h"
+#include "piece.h"
 
 namespace schneizel
 {
@@ -9,27 +12,11 @@ namespace schneizel
     struct Position
     {
         bool white_turn;
-
-        bitboard_t white_pawns;
-        bitboard_t white_knights;
-        bitboard_t white_bishops;
-        bitboard_t white_rooks;
-        bitboard_t white_queens;
-        bitboard_t white_king;
-
-        bitboard_t black_pawns;
-        bitboard_t black_knights;
-        bitboard_t black_bishops;
-        bitboard_t black_rooks;
-        bitboard_t black_queens;
-        bitboard_t black_king;
+        Piece white_pieces[PieceMaxCnt];
+        Piece black_pieces[PieceMaxCnt];
+        bitboard_t white_bbs[PieceTypeCnt];
+        bitboard_t black_bbs[PieceTypeCnt];
 
         void init();
-
-        bitboard_t get_white_pieces();
-        bitboard_t get_black_pieces();
-        bitboard_t get_all_pieces();
-
-        bitboard_t get_friendly_pieces(bool white);
     };
 }

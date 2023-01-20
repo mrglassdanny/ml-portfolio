@@ -114,5 +114,5 @@ namespace schneizel
         void init();
         void print(bitboard_t *bb);
 
-        }
+    }
 }

@@ -8,68 +8,62 @@ namespace schneizel
 
         // White pieces:
         {
-            white_pawns = Row2;
+            int piece_cnt = 0;
 
-            white_knights = Empty;
-            white_knights = set_sqval(white_knights, 1);
-            white_knights = set_sqval(white_knights, 6);
+            for (byte_t sqnum = 8; sqnum < 16; sqnum++)
+                this->white_pieces[piece_cnt++] = Piece{PieceType::Pawn, sqnum};
 
-            white_bishops = Empty;
-            white_bishops = set_sqval(white_bishops, 2);
-            white_bishops = set_sqval(white_bishops, 5);
+            this->white_pieces[piece_cnt++] = Piece{PieceType::Knight, 1};
+            this->white_pieces[piece_cnt++] = Piece{PieceType::Knight, 6};
 
-            white_rooks = Empty;
-            white_rooks = set_sqval(white_rooks, 0);
-            white_rooks = set_sqval(white_rooks, 7);
+            this->white_pieces[piece_cnt++] = Piece{PieceType::Bishop, 2};
+            this->white_pieces[piece_cnt++] = Piece{PieceType::Bishop, 5};
 
-            white_queens = Empty;
-            white_queens = set_sqval(white_queens, 3);
+            this->white_pieces[piece_cnt++] = Piece{PieceType::Rook, 0};
+            this->white_pieces[piece_cnt++] = Piece{PieceType::Rook, 7};
 
-            white_king = Empty;
-            white_king = set_sqval(white_king, 4);
+            this->white_pieces[piece_cnt++] = Piece{PieceType::Queen, 3};
+            this->white_pieces[piece_cnt++] = Piece{PieceType::King, 4};
         }
 
         // Black pieces:
         {
-            black_pawns = Row7;
+            int piece_cnt = 0;
 
-            black_knights = Empty;
-            black_knights = set_sqval(black_knights, 57);
-            black_knights = set_sqval(black_knights, 62);
+            for (byte_t sqnum = 48; sqnum < 56; sqnum++)
+                this->black_pieces[piece_cnt++] = (Piece{PieceType::Pawn, sqnum});
 
-            black_bishops = Empty;
-            black_bishops = set_sqval(black_bishops, 58);
-            black_bishops = set_sqval(black_bishops, 61);
+            this->black_pieces[piece_cnt++] = Piece{PieceType::Knight, 57};
+            this->black_pieces[piece_cnt++] = Piece{PieceType::Knight, 62};
 
-            black_rooks = Empty;
-            black_rooks = set_sqval(black_rooks, 56);
-            black_rooks = set_sqval(black_rooks, 63);
+            this->black_pieces[piece_cnt++] = Piece{PieceType::Bishop, 58};
+            this->black_pieces[piece_cnt++] = Piece{PieceType::Bishop, 61};
 
-            black_queens = Empty;
-            black_queens = set_sqval(black_queens, 59);
+            this->black_pieces[piece_cnt++] = Piece{PieceType::Rook, 56};
+            this->black_pieces[piece_cnt++] = Piece{PieceType::Rook, 63};
 
-            black_king = Empty;
-            black_king = set_sqval(black_king, 60);
+            this->black_pieces[piece_cnt++] = Piece{PieceType::Queen, 59};
+            this->black_pieces[piece_cnt++] = Piece{PieceType::King, 60};
+        }
+
+        // Bitboards:
+        memset(this->white_bbs, 0, sizeof(this->white_bbs));
+        memset(this->black_bbs, 0, sizeof(this->black_bbs));
+
+        for (int i = 0; i < PieceMaxCnt; i++)
+        {
+            Piece *white_piece = &this->white_pieces[i];
+            if (white_piece->typ != PieceType::None)
+            {
+                this->white_bbs[white_piece->typ] = bitboards::set_sqval(this->white_bbs[white_piece->typ], white_piece->sqnum);
+            }
+
+            Piece *black_piece = &this->black_pieces[i];
+            if (black_piece->typ != PieceType::None)
+            {
+                this->black_bbs[black_piece->typ] = bitboards::set_sqval(this->black_bbs[black_piece->typ], black_piece->sqnum);
+            }
         }
     }
 
-    bitboard_t Position::get_white_pieces()
-    {
-        return white_pawns | white_knights | white_bishops | white_rooks | white_queens | white_king;
-    }
-
-    bitboard_t Position::get_black_pieces()
-    {
-        return black_pawns | black_knights | black_bishops | black_rooks | black_queens | black_king;
-    }
-
-    bitboard_t Position::get_all_pieces()
-    {
-        return get_white_pieces() | get_black_pieces();
-    }
-
-    bitboard_t Position::get_friendly_pieces(bool white)
-    {
-        return white ? get_white_pieces() : get_black_pieces();
-    }
 }

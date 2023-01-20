@@ -2,5 +2,8 @@
 
 namespace schneizel
 {
-    constexpr int ChessBoardSquareCnt = 64;
+    constexpr int SquareCnt = 64;
+
+    constexpr int PieceTypeCnt = 6;
+    constexpr int PieceMaxCnt = 16;
 }

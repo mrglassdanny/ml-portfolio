@@ -10,8 +10,7 @@ int main(int argc, char **argv)
 	Position pos;
 	pos.init();
 
-	bitboard_t all = pos.get_all_pieces();
-	bitboards::print(&all);
+	bitboards::print(&pos.white_bbs[PieceType::Queen]);
 
 	return 0;
 }
