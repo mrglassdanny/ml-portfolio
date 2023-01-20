@@ -16,5 +16,6 @@ namespace schneizel
     struct MoveList
     {
         Move moves[MoveMaxCnt];
+        int move_cnt;
     };
 }

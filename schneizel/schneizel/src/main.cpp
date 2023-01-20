@@ -12,7 +12,7 @@ int main(int argc, char **argv)
 
 	// pos.make_move(Move{9, 25});
 
-	pos.get_moves();
+	pos.get_move_list();
 
 	return 0;
 }

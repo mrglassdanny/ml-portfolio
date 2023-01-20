@@ -75,13 +75,15 @@ namespace schneizel
         return this->whitebb | this->blackbb;
     }
 
-    void Position::get_moves()
+    MoveList Position::get_move_list()
     {
         MoveList move_list;
+        memset(&move_list, 0, sizeof(move_list));
 
         if (this->white_turn)
         {
             bitboard_t allbb = this->get_allbb();
+            bitboard_t attackbb = EmptyBB;
 
             bitboard_t pawn_movebb = this->piecebbs[PieceType::WhitePawn] << 8;
 
@@ -97,42 +99,54 @@ namespace schneizel
             east_pawn_attackbb &= this->blackbb;
             west_pawn_attackbb &= this->blackbb;
 
-            bitboards::print(pawn_movebb);
-            bitboards::print(row2_pawn_movebb_2);
-            bitboards::print(east_pawn_attackbb);
-            bitboards::print(west_pawn_attackbb);
+            attackbb |= east_pawn_attackbb;
+            attackbb |= west_pawn_attackbb;
 
             bitboard_t movebb;
 
             for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
             {
                 PieceType typ = this->pieces[sqnum];
+                bitboard_t piecebb = bitboards::get_sqbb(sqnum);
 
                 switch (typ)
                 {
                 case PieceType::WhitePawn:
-                    break;
+                {
+                    if (bitboards::get_sqval(pawn_movebb, sqnum + 8) == 1)
+                    {
+                        move_list.moves[move_list.move_cnt++] = Move{sqnum, sqnum + 8};
+                    }
+                    if (piecebb & row2_pawnbb != 0)
+                    {
+                    }
+                }
+                break;
                 case PieceType::WhiteKnight:
                 {
                     movebb = bitboards::get_knight_movebb(sqnum) & ~this->whitebb;
+                    attackbb |= movebb;
                     bitboards::print(movebb);
                 }
                 break;
                 case PieceType::WhiteBishop:
                 {
                     movebb = bitboards::get_bishop_movebb(sqnum, allbb) & ~this->whitebb;
+                    attackbb |= movebb;
                     bitboards::print(movebb);
                 }
                 break;
                 case PieceType::WhiteRook:
                 {
                     movebb = bitboards::get_rook_movebb(sqnum, allbb) & ~this->whitebb;
+                    attackbb |= movebb;
                     bitboards::print(movebb);
                 }
                 break;
                 case PieceType::WhiteQueen:
                 {
                     movebb = bitboards::get_queen_movebb(sqnum, allbb) & ~this->whitebb;
+                    attackbb |= movebb;
                     bitboards::print(movebb);
                 }
                 break;
@@ -146,6 +160,8 @@ namespace schneizel
         else
         {
         }
+
+        return move_list;
     }
 
     void Position::make_move(Move move)

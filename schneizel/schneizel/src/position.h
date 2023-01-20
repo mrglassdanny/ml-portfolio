@@ -22,7 +22,7 @@ namespace schneizel
 
         bitboard_t get_allbb();
 
-        void get_moves();
+        MoveList get_move_list();
         void make_move(Move move);
     };
 }
