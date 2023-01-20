@@ -4,9 +4,9 @@ namespace schneizel
 {
     namespace bitboards
     {
-        bitboard_t knight_attacks_[SquareCnt];
-        Magic bishop_magics_[SquareCnt];
-        Magic rook_magics_[SquareCnt];
+        bitboard_t knight_movebbs[SquareCnt];
+        Magic bishop_magics[SquareCnt];
+        Magic rook_magics[SquareCnt];
 
         class MagicPRNG
         {
@@ -41,17 +41,17 @@ namespace schneizel
 
         Magic::~Magic()
         {
-            free(this->attacks);
+            free(this->movebbs);
         }
 
-        unsigned Magic::get_attack_index(bitboard_t occupied)
+        unsigned Magic::get_movebb_index(bitboard_t blockerbb)
         {
-            return unsigned(((occupied & this->mask) * this->key) >> this->shift);
+            return unsigned(((blockerbb & this->maskbb) * this->keybb) >> this->shift);
         }
 
-        bitboard_t get_knight_attacks(int sqnum)
+        bitboard_t init_knight_movebb(int sqnum)
         {
-            bitboard_t bb = Empty;
+            bitboard_t bb = EmptyBB;
 
             int rownum = get_rownum_fr_sqnum(sqnum);
             int colnum = get_colnum_fr_sqnum(sqnum);
@@ -118,9 +118,9 @@ namespace schneizel
             return bb;
         }
 
-        bitboard_t get_bishop_attacks(int sqnum, bitboard_t occupied)
+        bitboard_t init_bishop_movebb(int sqnum, bitboard_t blockersbb)
         {
-            bitboard_t bb = Empty;
+            bitboard_t bb = EmptyBB;
 
             int rownum = get_rownum_fr_sqnum(sqnum);
             int colnum = get_colnum_fr_sqnum(sqnum);
@@ -133,7 +133,7 @@ namespace schneizel
             test_rownum = rownum + 1;
             test_colnum = colnum + 1;
             test_sqnum = get_sqnum(test_rownum, test_colnum);
-            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(occupied & get_sq(test_sqnum)))
+            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(blockersbb & get_sqbb(test_sqnum)))
             {
                 bb = set_sqval(bb, test_sqnum);
                 test_rownum++;
@@ -145,7 +145,7 @@ namespace schneizel
             test_rownum = rownum + 1;
             test_colnum = colnum - 1;
             test_sqnum = get_sqnum(test_rownum, test_colnum);
-            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(occupied & get_sq(test_sqnum)))
+            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(blockersbb & get_sqbb(test_sqnum)))
             {
                 bb = set_sqval(bb, test_sqnum);
                 test_rownum++;
@@ -157,7 +157,7 @@ namespace schneizel
             test_rownum = rownum - 1;
             test_colnum = colnum + 1;
             test_sqnum = get_sqnum(test_rownum, test_colnum);
-            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(occupied & get_sq(test_sqnum)))
+            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(blockersbb & get_sqbb(test_sqnum)))
             {
                 bb = set_sqval(bb, test_sqnum);
                 test_rownum--;
@@ -169,7 +169,7 @@ namespace schneizel
             test_rownum = rownum - 1;
             test_colnum = colnum - 1;
             test_sqnum = get_sqnum(test_rownum, test_colnum);
-            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(occupied & get_sq(test_sqnum)))
+            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(blockersbb & get_sqbb(test_sqnum)))
             {
                 bb = set_sqval(bb, test_sqnum);
                 test_rownum--;
@@ -180,9 +180,9 @@ namespace schneizel
             return bb;
         }
 
-        bitboard_t get_rook_attacks(int sqnum, bitboard_t occupied)
+        bitboard_t init_rook_movebb(int sqnum, bitboard_t blockersbb)
         {
-            bitboard_t bb = Empty;
+            bitboard_t bb = EmptyBB;
 
             int rownum = get_rownum_fr_sqnum(sqnum);
             int colnum = get_colnum_fr_sqnum(sqnum);
@@ -194,7 +194,7 @@ namespace schneizel
             // North:
             test_rownum = rownum + 1;
             test_sqnum = get_sqnum(test_rownum, colnum);
-            while (is_rownum_valid(test_rownum) && !(occupied & get_sq(test_sqnum)))
+            while (is_rownum_valid(test_rownum) && !(blockersbb & get_sqbb(test_sqnum)))
             {
                 bb = set_sqval(bb, test_sqnum);
                 test_rownum++;
@@ -204,7 +204,7 @@ namespace schneizel
             // East:
             test_colnum = colnum + 1;
             test_sqnum = get_sqnum(rownum, test_colnum);
-            while (is_colnum_valid(test_colnum) && !(occupied & get_sq(test_sqnum)))
+            while (is_colnum_valid(test_colnum) && !(blockersbb & get_sqbb(test_sqnum)))
             {
                 bb = set_sqval(bb, test_sqnum);
                 test_colnum++;
@@ -214,7 +214,7 @@ namespace schneizel
             // West:
             test_colnum = colnum - 1;
             test_sqnum = get_sqnum(rownum, test_colnum);
-            while (is_colnum_valid(test_colnum) && !(occupied & get_sq(test_sqnum)))
+            while (is_colnum_valid(test_colnum) && !(blockersbb & get_sqbb(test_sqnum)))
             {
                 bb = set_sqval(bb, test_sqnum);
                 test_colnum--;
@@ -224,7 +224,7 @@ namespace schneizel
             // South:
             test_rownum = rownum - 1;
             test_sqnum = get_sqnum(test_rownum, colnum);
-            while (is_rownum_valid(test_rownum) && !(occupied & get_sq(test_sqnum)))
+            while (is_rownum_valid(test_rownum) && !(blockersbb & get_sqbb(test_sqnum)))
             {
                 bb = set_sqval(bb, test_sqnum);
                 test_rownum--;
@@ -237,62 +237,63 @@ namespace schneizel
         void init_magics(bool bishop)
         {
             Magic *magics;
-            bitboard_t (*attacks_fn)(int sqnum, bitboard_t occupied);
+            bitboard_t (*movebb_fn)(int sqnum, bitboard_t blockersbb);
 
             if (bishop)
             {
-                magics = bishop_magics_;
-                attacks_fn = get_bishop_attacks;
+                magics = bishop_magics;
+                movebb_fn = init_bishop_movebb;
             }
             else
             {
-                magics = rook_magics_;
-                attacks_fn = get_rook_attacks;
+                magics = rook_magics;
+                movebb_fn = init_rook_movebb;
             }
 
             int seeds[8] = {728, 10316, 55013, 32803, 12281, 15100, 16645, 255};
 
-            bitboard_t occupancies[4096], attacks[4096], edges, occupied;
-            int epoch[4096], epoch_cur = 0, attack_cnt = 0;
+            bitboard_t blockerbbs[4096], movebbs[4096], edgebbs, blockerbb;
+            int epoch[4096], epoch_cur = 0, move_cnt = 0;
 
             memset(epoch, 0, sizeof(epoch));
 
             for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
             {
-                edges = ((Row1 | Row8) & ~get_row_fr_sqnum(sqnum)) | ((ColA | ColH) & ~get_col_fr_sqnum(sqnum));
+                edgebbs = ((Row1BB | Row8BB) & ~get_rowbb_fr_sqnum(sqnum)) | ((ColABB | ColHBB) & ~get_colbb_fr_sqnum(sqnum));
 
                 Magic *magic = &magics[sqnum];
-                magic->mask = attacks_fn(sqnum, Empty) & ~edges;
-                magic->shift = 64 - popcount(magic->mask);
-                occupied = attack_cnt = 0;
+                magic->maskbb = movebb_fn(sqnum, EmptyBB) & ~edgebbs;
+                magic->shift = 64 - popcount(magic->maskbb);
+                blockerbb = move_cnt = 0;
+
                 do
                 {
-                    occupancies[attack_cnt] = occupied;
-                    attacks[attack_cnt] = attacks_fn(sqnum, occupied);
-                    attack_cnt++;
-                    occupied = (occupied - magic->mask) & magic->mask;
-                } while (occupied);
+                    blockerbbs[move_cnt] = blockerbb;
+                    movebbs[move_cnt] = movebb_fn(sqnum, blockerbb);
+                    move_cnt++;
+                    blockerbb = (blockerbb - magic->maskbb) & magic->maskbb;
+                } while (blockerbb);
 
-                magic->attacks = (bitboard_t *)malloc(sizeof(bitboard_t) * attack_cnt);
-                memset(magic->attacks, 0, sizeof(bitboard_t) * attack_cnt);
+                magic->movebbs = (bitboard_t *)malloc(sizeof(bitboard_t) * move_cnt);
+                memset(magic->movebbs, 0, sizeof(bitboard_t) * move_cnt);
 
                 MagicPRNG magic_prng(seeds[get_rownum_fr_sqnum(sqnum)]);
 
-                for (int i = 0; i < attack_cnt;)
+                for (int i = 0; i < move_cnt;)
                 {
-                    for (magic->key = 0; popcount((magic->key * magic->mask) >> 56) < 6;)
-                        magic->key = magic_prng.sparse_rand();
+                    for (magic->keybb = 0; popcount((magic->keybb * magic->maskbb) >> 56) < 6;)
+                        magic->keybb = magic_prng.sparse_rand();
 
-                    for (++epoch_cur, i = 0; i < attack_cnt; ++i)
+                    for (++epoch_cur, i = 0; i < move_cnt; ++i)
                     {
-                        unsigned idx = magic->get_attack_index(occupancies[i]);
+                        unsigned idx = magic->get_movebb_index(blockerbbs[i]);
 
                         if (epoch[idx] < epoch_cur)
                         {
                             epoch[idx] = epoch_cur;
-                            magic->attacks[idx] = attacks[i];
+                            magic->movebbs[idx] = movebbs[i];
                         }
-                        else if (magic->attacks[idx] != attacks[i])
+                        else if (magic->movebbs[idx] != movebbs[i])
                             break;
                     }
                 }
@@ -304,7 +305,7 @@ namespace schneizel
             // Knights:
             for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
             {
-                knight_attacks_[sqnum] = get_knight_attacks(sqnum);
+                knight_movebbs[sqnum] = init_knight_movebb(sqnum);
             }
 
             // Bishops:
@@ -334,30 +335,30 @@ namespace schneizel
             printf("\n");
         }
 
-        bitboard_t get_knight_moves(int sqnum)
+        bitboard_t get_knight_movebb(int sqnum)
         {
-            return knight_attacks_[sqnum];
+            return knight_movebbs[sqnum];
         }
 
-        bitboard_t get_bishop_moves(int sqnum, bitboard_t occupied)
+        bitboard_t get_bishop_movebb(int sqnum, bitboard_t bodiesbb)
         {
-            Magic *magic = &bishop_magics_[sqnum];
-            bitboard_t blockers = magic->mask & occupied;
-            int idx = magic->get_attack_index(blockers);
-            return magic->attacks[idx];
+            Magic *magic = &bishop_magics[sqnum];
+            bitboard_t blockers = magic->maskbb & bodiesbb;
+            int idx = magic->get_movebb_index(blockers);
+            return magic->movebbs[idx];
         }
 
-        bitboard_t get_rook_moves(int sqnum, bitboard_t occupied)
+        bitboard_t get_rook_movebb(int sqnum, bitboard_t bodiesbb)
         {
-            Magic *magic = &rook_magics_[sqnum];
-            bitboard_t blockers = magic->mask & occupied;
-            int idx = magic->get_attack_index(blockers);
-            return magic->attacks[idx];
+            Magic *magic = &rook_magics[sqnum];
+            bitboard_t blockers = magic->maskbb & bodiesbb;
+            int idx = magic->get_movebb_index(blockers);
+            return magic->movebbs[idx];
         }
 
-        bitboard_t get_queen_moves(int sqnum, bitboard_t occupied)
+        bitboard_t get_queen_movebb(int sqnum, bitboard_t bodiesbb)
         {
-            return get_bishop_moves(sqnum, occupied) | get_rook_moves(sqnum, occupied);
+            return get_bishop_movebb(sqnum, bodiesbb) | get_rook_movebb(sqnum, bodiesbb);
         }
     }
 }

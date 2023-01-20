@@ -16,28 +16,28 @@ namespace schneizel
         typedef unsigned char byte_t;
         typedef uint64_t bitboard_t;
 
-        constexpr bitboard_t Empty = 0ULL;
-        constexpr bitboard_t Full = ~(Empty);
-        constexpr bitboard_t Dark = 0xAA55AA55AA55AA55ULL;
-        constexpr bitboard_t Light = ~(Dark);
+        constexpr bitboard_t EmptyBB = 0ULL;
+        constexpr bitboard_t FullBB = ~(EmptyBB);
+        constexpr bitboard_t DarkBB = 0xAA55AA55AA55AA55ULL;
+        constexpr bitboard_t LightBB = ~(DarkBB);
 
-        constexpr bitboard_t Row1 = 0xFF;
-        constexpr bitboard_t Row2 = Row1 << (8 * 1);
-        constexpr bitboard_t Row3 = Row1 << (8 * 2);
-        constexpr bitboard_t Row4 = Row1 << (8 * 3);
-        constexpr bitboard_t Row5 = Row1 << (8 * 4);
-        constexpr bitboard_t Row6 = Row1 << (8 * 5);
-        constexpr bitboard_t Row7 = Row1 << (8 * 6);
-        constexpr bitboard_t Row8 = Row1 << (8 * 7);
+        constexpr bitboard_t Row1BB = 0xFF;
+        constexpr bitboard_t Row2BB = Row1BB << (8 * 1);
+        constexpr bitboard_t Row3BB = Row1BB << (8 * 2);
+        constexpr bitboard_t Row4BB = Row1BB << (8 * 3);
+        constexpr bitboard_t Row5BB = Row1BB << (8 * 4);
+        constexpr bitboard_t Row6BB = Row1BB << (8 * 5);
+        constexpr bitboard_t Row7BB = Row1BB << (8 * 6);
+        constexpr bitboard_t Row8BB = Row1BB << (8 * 7);
 
-        constexpr bitboard_t ColA = 0x0101010101010101ULL;
-        constexpr bitboard_t ColB = ColA << 1;
-        constexpr bitboard_t ColC = ColA << 2;
-        constexpr bitboard_t ColD = ColA << 3;
-        constexpr bitboard_t ColE = ColA << 4;
-        constexpr bitboard_t ColF = ColA << 5;
-        constexpr bitboard_t ColG = ColA << 6;
-        constexpr bitboard_t ColH = ColA << 7;
+        constexpr bitboard_t ColABB = 0x0101010101010101ULL;
+        constexpr bitboard_t ColBBB = ColABB << 1;
+        constexpr bitboard_t ColCBB = ColABB << 2;
+        constexpr bitboard_t ColDBB = ColABB << 3;
+        constexpr bitboard_t ColEBB = ColABB << 4;
+        constexpr bitboard_t ColFBB = ColABB << 5;
+        constexpr bitboard_t ColGBB = ColABB << 6;
+        constexpr bitboard_t ColHBB = ColABB << 7;
 
         constexpr int get_rownum_fr_sqnum(int sqnum)
         {
@@ -49,14 +49,14 @@ namespace schneizel
             return rownum >= 0 && rownum <= 7;
         }
 
-        constexpr bitboard_t get_row_fr_rownum(int rownum)
+        constexpr bitboard_t get_rowbb_fr_rownum(int rownum)
         {
-            return Row1 << (8 * rownum);
+            return Row1BB << (8 * rownum);
         }
 
-        constexpr bitboard_t get_row_fr_sqnum(int sqnum)
+        constexpr bitboard_t get_rowbb_fr_sqnum(int sqnum)
         {
-            return get_row_fr_rownum(get_rownum_fr_sqnum(sqnum));
+            return get_rowbb_fr_rownum(get_rownum_fr_sqnum(sqnum));
         }
 
         constexpr int get_colnum_fr_sqnum(int sqnum)
@@ -69,14 +69,14 @@ namespace schneizel
             return colnum >= 0 && colnum <= 7;
         }
 
-        constexpr bitboard_t get_col_fr_colnum(int colnum)
+        constexpr bitboard_t get_colbb_fr_colnum(int colnum)
         {
-            return ColA << colnum;
+            return ColABB << colnum;
         }
 
-        constexpr bitboard_t get_col_fr_sqnum(int sqnum)
+        constexpr bitboard_t get_colbb_fr_sqnum(int sqnum)
         {
-            return get_col_fr_colnum(get_colnum_fr_sqnum(sqnum));
+            return get_colbb_fr_colnum(get_colnum_fr_sqnum(sqnum));
         }
 
         constexpr int get_sqnum(int rownum, int colnum)
@@ -99,30 +99,30 @@ namespace schneizel
             return bb & ~(1ULL << sqnum);
         }
 
-        constexpr bitboard_t get_sq(int sqnum)
+        constexpr bitboard_t get_sqbb(int sqnum)
         {
             return 1ULL << sqnum;
         }
 
         struct Magic
         {
-            bitboard_t mask;
-            bitboard_t key;
-            bitboard_t *attacks;
+            bitboard_t maskbb;
+            bitboard_t keybb;
+            bitboard_t *movebbs;
             int shift;
 
             ~Magic();
 
-            unsigned get_attack_index(bitboard_t occupied);
+            unsigned get_movebb_index(bitboard_t blockerbb);
         };
 
         void init();
         void print(bitboard_t bb);
 
-        bitboard_t get_knight_moves(int sqnum);
-        bitboard_t get_bishop_moves(int sqnum, bitboard_t occupied);
-        bitboard_t get_rook_moves(int sqnum, bitboard_t occupied);
-        bitboard_t get_queen_moves(int sqnum, bitboard_t occupied);
+        bitboard_t get_knight_movebb(int sqnum);
+        bitboard_t get_bishop_movebb(int sqnum, bitboard_t bodiesbb);
+        bitboard_t get_rook_movebb(int sqnum, bitboard_t bodiesbb);
+        bitboard_t get_queen_movebb(int sqnum, bitboard_t bodiesbb);
 
     }
 }
