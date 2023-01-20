@@ -110,6 +110,40 @@ namespace schneizel
             for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
             {
                 PieceType typ = this->pieces[sqnum];
+
+                switch (typ)
+                {
+                case PieceType::WhitePawn:
+                    break;
+                case PieceType::WhiteKnight:
+                {
+                    bitboard_t knight_moves = bitboards::get_knight_moves(sqnum) & ~this->white_bb;
+                    bitboards::print(&knight_moves);
+                }
+                break;
+                case PieceType::WhiteBishop:
+                {
+                    bitboard_t bishop_moves = bitboards::get_bishop_moves(sqnum, all_bb) & ~this->white_bb;
+                    bitboards::print(&bishop_moves);
+                }
+                break;
+                case PieceType::WhiteRook:
+                {
+                    bitboard_t rook_moves = bitboards::get_rook_moves(sqnum, all_bb) & ~this->white_bb;
+                    bitboards::print(&rook_moves);
+                }
+                break;
+                case PieceType::WhiteQueen:
+                {
+                    bitboard_t queen_moves = bitboards::get_queen_moves(sqnum, all_bb) & ~this->white_bb;
+                    bitboards::print(&queen_moves);
+                }
+                break;
+                case PieceType::WhiteKing:
+                    break;
+                default:
+                    break;
+                }
             }
         }
         else

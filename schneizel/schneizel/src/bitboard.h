@@ -119,5 +119,10 @@ namespace schneizel
         void init();
         void print(bitboard_t *bb);
 
+        bitboard_t get_knight_moves(int sqnum);
+        bitboard_t get_bishop_moves(int sqnum, bitboard_t occupied);
+        bitboard_t get_rook_moves(int sqnum, bitboard_t occupied);
+        bitboard_t get_queen_moves(int sqnum, bitboard_t occupied);
+
     }
 }

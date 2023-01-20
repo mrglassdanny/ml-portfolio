@@ -333,5 +333,31 @@ namespace schneizel
             printf("    a b c d e f g h");
             printf("\n");
         }
+
+        bitboard_t get_knight_moves(int sqnum)
+        {
+            return knight_attacks_[sqnum];
+        }
+
+        bitboard_t get_bishop_moves(int sqnum, bitboard_t occupied)
+        {
+            Magic *magic = &bishop_magics_[sqnum];
+            bitboard_t blockers = magic->mask & occupied;
+            int idx = magic->get_attack_index(blockers);
+            return magic->attacks[idx];
+        }
+
+        bitboard_t get_rook_moves(int sqnum, bitboard_t occupied)
+        {
+            Magic *magic = &rook_magics_[sqnum];
+            bitboard_t blockers = magic->mask & occupied;
+            int idx = magic->get_attack_index(blockers);
+            return magic->attacks[idx];
+        }
+
+        bitboard_t get_queen_moves(int sqnum, bitboard_t occupied)
+        {
+            return get_bishop_moves(sqnum, occupied) | get_rook_moves(sqnum, occupied);
+        }
     }
 }
