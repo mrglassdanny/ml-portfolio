@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <windows.h>
 
 #include "bitboard.h"
 #include "piece.h"
@@ -19,6 +20,7 @@ namespace schneizel
         bitboard_t blackbb;
 
         void init();
+        void print(Move *prev_move);
 
         bitboard_t get_allbb();
 

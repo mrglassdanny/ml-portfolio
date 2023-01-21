@@ -10,9 +10,15 @@ int main(int argc, char **argv)
 	Position pos;
 	pos.init();
 
-	// pos.make_move(Move{9, 25});
+	Move move;
 
-	pos.get_move_list();
+	for (int i = 0; i < 20; i++)
+	{
+		auto move_list = pos.get_move_list();
+		move = move_list.moves[rand() % move_list.move_cnt];
+		pos.make_move(move);
+		pos.print(&move);
+	}
 
 	return 0;
 }

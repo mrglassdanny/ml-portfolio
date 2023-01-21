@@ -335,6 +335,33 @@ namespace schneizel
             printf("\n");
         }
 
+        void print(bitboard_t bb, byte_t sqnum)
+        {
+            byte_t *bb_bytes = (byte_t *)&bb;
+            for (int i = 8 - 1; i >= 0; i--)
+            {
+                printf("%d | ", i + 1);
+
+                byte_t b = bb_bytes[i];
+                for (int j = 0, k = 8; j < 8; j++, k--)
+                {
+                    if (i * 8 + j == sqnum)
+                    {
+                        printf("X ");
+                    }
+                    else
+                    {
+                        byte_t b2 = (b >> j) & 1ULL;
+                        printf("%u ", b2);
+                    }
+                }
+                printf("\n");
+            }
+            printf("    ---------------\n");
+            printf("    a b c d e f g h");
+            printf("\n");
+        }
+
         bitboard_t get_knight_movebb(byte_t sqnum)
         {
             return knight_movebbs[sqnum];

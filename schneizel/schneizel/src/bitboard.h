@@ -118,6 +118,7 @@ namespace schneizel
 
         void init();
         void print(bitboard_t bb);
+        void print(bitboard_t bb, byte_t sqnum);
 
         bitboard_t get_knight_movebb(byte_t sqnum);
         bitboard_t get_bishop_movebb(byte_t sqnum, bitboard_t bodiesbb);

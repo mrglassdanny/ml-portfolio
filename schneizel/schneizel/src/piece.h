@@ -23,4 +23,7 @@ namespace schneizel
         BlackKing,
         None
     };
+
+    char get_piecetyp_char(PieceType piecetyp);
+    const char *get_piecetyp_str(PieceType piecetyp);
 }
