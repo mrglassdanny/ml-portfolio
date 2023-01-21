@@ -239,12 +239,6 @@ namespace schneizel
                     break;
                 }
 
-                if (piecetyp <= 5)
-                {
-                    printf("%s\n", get_piecetyp_str(piecetyp));
-                    bitboards::print(movebb, src_sqnum);
-                }
-
                 while (movebb != EmptyBB)
                 {
                     move_list.moves[move_list.move_cnt++] = Move{piecetyp, src_sqnum, pop_lsb(movebb)};
@@ -322,12 +316,6 @@ namespace schneizel
                 default:
                     movebb = bitboards::EmptyBB;
                     break;
-                }
-
-                if (piecetyp >= 6 && piecetyp != PieceType::None)
-                {
-                    printf("%s\n", get_piecetyp_str(piecetyp));
-                    bitboards::print(movebb, src_sqnum);
                 }
 
                 while (movebb != EmptyBB)
