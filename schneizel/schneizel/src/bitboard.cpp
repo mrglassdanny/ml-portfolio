@@ -49,15 +49,15 @@ namespace schneizel
             return unsigned(((blockerbb & this->maskbb) * this->keybb) >> this->shift);
         }
 
-        bitboard_t init_knight_movebb(int sqnum)
+        bitboard_t init_knight_movebb(byte_t sqnum)
         {
             bitboard_t bb = EmptyBB;
 
-            int rownum = get_rownum_fr_sqnum(sqnum);
-            int colnum = get_colnum_fr_sqnum(sqnum);
+            byte_t rownum = get_rownum_fr_sqnum(sqnum);
+            byte_t colnum = get_colnum_fr_sqnum(sqnum);
 
-            int test_rownum;
-            int test_colnum;
+            byte_t test_rownum;
+            byte_t test_colnum;
 
             test_rownum = rownum + 2;
             test_colnum = colnum + 1;
@@ -118,16 +118,16 @@ namespace schneizel
             return bb;
         }
 
-        bitboard_t init_bishop_movebb(int sqnum, bitboard_t blockersbb)
+        bitboard_t init_bishop_movebb(byte_t sqnum, bitboard_t blockersbb)
         {
             bitboard_t bb = EmptyBB;
 
-            int rownum = get_rownum_fr_sqnum(sqnum);
-            int colnum = get_colnum_fr_sqnum(sqnum);
+            byte_t rownum = get_rownum_fr_sqnum(sqnum);
+            byte_t colnum = get_colnum_fr_sqnum(sqnum);
 
-            int test_rownum;
-            int test_colnum;
-            int test_sqnum;
+            byte_t test_rownum;
+            byte_t test_colnum;
+            byte_t test_sqnum;
 
             // Northeast:
             test_rownum = rownum + 1;
@@ -180,16 +180,16 @@ namespace schneizel
             return bb;
         }
 
-        bitboard_t init_rook_movebb(int sqnum, bitboard_t blockersbb)
+        bitboard_t init_rook_movebb(byte_t sqnum, bitboard_t blockersbb)
         {
             bitboard_t bb = EmptyBB;
 
-            int rownum = get_rownum_fr_sqnum(sqnum);
-            int colnum = get_colnum_fr_sqnum(sqnum);
+            byte_t rownum = get_rownum_fr_sqnum(sqnum);
+            byte_t colnum = get_colnum_fr_sqnum(sqnum);
 
-            int test_rownum;
-            int test_colnum;
-            int test_sqnum;
+            byte_t test_rownum;
+            byte_t test_colnum;
+            byte_t test_sqnum;
 
             // North:
             test_rownum = rownum + 1;
@@ -237,7 +237,7 @@ namespace schneizel
         void init_magics(bool bishop)
         {
             Magic *magics;
-            bitboard_t (*movebb_fn)(int sqnum, bitboard_t blockersbb);
+            bitboard_t (*movebb_fn)(byte_t sqnum, bitboard_t blockersbb);
 
             if (bishop)
             {
@@ -257,7 +257,7 @@ namespace schneizel
 
             memset(epoch, 0, sizeof(epoch));
 
-            for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
+            for (byte_t sqnum = 0; sqnum < SquareCnt; sqnum++)
             {
                 edgebbs = ((Row1BB | Row8BB) & ~get_rowbb_fr_sqnum(sqnum)) | ((ColABB | ColHBB) & ~get_colbb_fr_sqnum(sqnum));
 
@@ -303,7 +303,7 @@ namespace schneizel
         void init()
         {
             // Knights:
-            for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
+            for (byte_t sqnum = 0; sqnum < SquareCnt; sqnum++)
             {
                 knight_movebbs[sqnum] = init_knight_movebb(sqnum);
             }
@@ -335,28 +335,28 @@ namespace schneizel
             printf("\n");
         }
 
-        bitboard_t get_knight_movebb(int sqnum)
+        bitboard_t get_knight_movebb(byte_t sqnum)
         {
             return knight_movebbs[sqnum];
         }
 
-        bitboard_t get_bishop_movebb(int sqnum, bitboard_t bodiesbb)
+        bitboard_t get_bishop_movebb(byte_t sqnum, bitboard_t bodiesbb)
         {
             Magic *magic = &bishop_magics[sqnum];
             bitboard_t blockers = magic->maskbb & bodiesbb;
-            int idx = magic->get_movebb_index(blockers);
+            unsigned idx = magic->get_movebb_index(blockers);
             return magic->movebbs[idx];
         }
 
-        bitboard_t get_rook_movebb(int sqnum, bitboard_t bodiesbb)
+        bitboard_t get_rook_movebb(byte_t sqnum, bitboard_t bodiesbb)
         {
             Magic *magic = &rook_magics[sqnum];
             bitboard_t blockers = magic->maskbb & bodiesbb;
-            int idx = magic->get_movebb_index(blockers);
+            unsigned idx = magic->get_movebb_index(blockers);
             return magic->movebbs[idx];
         }
 
-        bitboard_t get_queen_movebb(int sqnum, bitboard_t bodiesbb)
+        bitboard_t get_queen_movebb(byte_t sqnum, bitboard_t bodiesbb)
         {
             return get_bishop_movebb(sqnum, bodiesbb) | get_rook_movebb(sqnum, bodiesbb);
         }

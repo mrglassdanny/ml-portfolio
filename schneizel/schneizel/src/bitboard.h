@@ -39,67 +39,67 @@ namespace schneizel
         constexpr bitboard_t ColGBB = ColABB << 6;
         constexpr bitboard_t ColHBB = ColABB << 7;
 
-        constexpr int get_rownum_fr_sqnum(int sqnum)
+        constexpr byte_t get_rownum_fr_sqnum(byte_t sqnum)
         {
             return sqnum >> 3;
         }
 
-        constexpr bool is_rownum_valid(int rownum)
+        constexpr bool is_rownum_valid(byte_t rownum)
         {
             return rownum >= 0 && rownum <= 7;
         }
 
-        constexpr bitboard_t get_rowbb_fr_rownum(int rownum)
+        constexpr bitboard_t get_rowbb_fr_rownum(byte_t rownum)
         {
             return Row1BB << (8 * rownum);
         }
 
-        constexpr bitboard_t get_rowbb_fr_sqnum(int sqnum)
+        constexpr bitboard_t get_rowbb_fr_sqnum(byte_t sqnum)
         {
             return get_rowbb_fr_rownum(get_rownum_fr_sqnum(sqnum));
         }
 
-        constexpr int get_colnum_fr_sqnum(int sqnum)
+        constexpr byte_t get_colnum_fr_sqnum(byte_t sqnum)
         {
             return sqnum & 7;
         }
 
-        constexpr bool is_colnum_valid(int colnum)
+        constexpr bool is_colnum_valid(byte_t colnum)
         {
             return colnum >= 0 && colnum <= 7;
         }
 
-        constexpr bitboard_t get_colbb_fr_colnum(int colnum)
+        constexpr bitboard_t get_colbb_fr_colnum(byte_t colnum)
         {
             return ColABB << colnum;
         }
 
-        constexpr bitboard_t get_colbb_fr_sqnum(int sqnum)
+        constexpr bitboard_t get_colbb_fr_sqnum(byte_t sqnum)
         {
             return get_colbb_fr_colnum(get_colnum_fr_sqnum(sqnum));
         }
 
-        constexpr int get_sqnum(int rownum, int colnum)
+        constexpr byte_t get_sqnum(byte_t rownum, byte_t colnum)
         {
             return rownum * 8 + colnum;
         }
 
-        constexpr int get_sqval(bitboard_t bb, int sqnum)
+        constexpr byte_t get_sqval(bitboard_t bb, byte_t sqnum)
         {
             return ((bb & (1ULL << sqnum)) >> sqnum);
         }
 
-        constexpr bitboard_t set_sqval(bitboard_t bb, int sqnum)
+        constexpr bitboard_t set_sqval(bitboard_t bb, byte_t sqnum)
         {
             return bb | (1ULL << sqnum);
         }
 
-        constexpr bitboard_t clear_sqval(bitboard_t bb, int sqnum)
+        constexpr bitboard_t clear_sqval(bitboard_t bb, byte_t sqnum)
         {
             return bb & ~(1ULL << sqnum);
         }
 
-        constexpr bitboard_t get_sqbb(int sqnum)
+        constexpr bitboard_t get_sqbb(byte_t sqnum)
         {
             return 1ULL << sqnum;
         }
@@ -119,10 +119,9 @@ namespace schneizel
         void init();
         void print(bitboard_t bb);
 
-        bitboard_t get_knight_movebb(int sqnum);
-        bitboard_t get_bishop_movebb(int sqnum, bitboard_t bodiesbb);
-        bitboard_t get_rook_movebb(int sqnum, bitboard_t bodiesbb);
-        bitboard_t get_queen_movebb(int sqnum, bitboard_t bodiesbb);
-
+        bitboard_t get_knight_movebb(byte_t sqnum);
+        bitboard_t get_bishop_movebb(byte_t sqnum, bitboard_t bodiesbb);
+        bitboard_t get_rook_movebb(byte_t sqnum, bitboard_t bodiesbb);
+        bitboard_t get_queen_movebb(byte_t sqnum, bitboard_t bodiesbb);
     }
 }

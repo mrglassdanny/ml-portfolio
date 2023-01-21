@@ -8,7 +8,7 @@ namespace schneizel
 
         // Pieces:
         {
-            for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
+            for (byte_t sqnum = 0; sqnum < SquareCnt; sqnum++)
             {
                 this->pieces[sqnum] = PieceType::None;
             }
@@ -56,13 +56,13 @@ namespace schneizel
             this->whitebb = EmptyBB;
             this->blackbb = EmptyBB;
 
-            for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
+            for (byte_t sqnum = 0; sqnum < SquareCnt; sqnum++)
             {
                 if (this->pieces[sqnum] != PieceType::None)
                     this->piecebbs[this->pieces[sqnum]] = bitboards::set_sqval(this->piecebbs[this->pieces[sqnum]], sqnum);
             }
 
-            for (int w = 0, b = PieceTypeCnt; w < PieceTypeCnt; w++, b++)
+            for (byte_t w = 0, b = PieceTypeCnt; w < PieceTypeCnt; w++, b++)
             {
                 this->whitebb |= this->piecebbs[w];
                 this->blackbb |= this->piecebbs[b];
@@ -104,7 +104,7 @@ namespace schneizel
 
             bitboard_t movebb;
 
-            for (int sqnum = 0; sqnum < SquareCnt; sqnum++)
+            for (byte_t sqnum = 0; sqnum < SquareCnt; sqnum++)
             {
                 PieceType typ = this->pieces[sqnum];
                 bitboard_t piecebb = bitboards::get_sqbb(sqnum);
@@ -113,9 +113,10 @@ namespace schneizel
                 {
                 case PieceType::WhitePawn:
                 {
+                    byte_t dst_sqnum = sqnum + 8;
                     if (bitboards::get_sqval(pawn_movebb, sqnum + 8) == 1)
                     {
-                        move_list.moves[move_list.move_cnt++] = Move{sqnum, sqnum + 8};
+                        move_list.moves[move_list.move_cnt++] = Move{sqnum, dst_sqnum};
                     }
                     if (piecebb & row2_pawnbb != 0)
                     {
