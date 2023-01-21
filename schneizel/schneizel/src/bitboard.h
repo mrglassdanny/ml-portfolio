@@ -15,6 +15,7 @@ namespace schneizel
     {
         typedef unsigned char byte_t;
         typedef uint64_t bitboard_t;
+        typedef byte_t square_t;
 
         constexpr bitboard_t EmptyBB = 0ULL;
         constexpr bitboard_t FullBB = ~(EmptyBB);
@@ -102,6 +103,30 @@ namespace schneizel
         constexpr bitboard_t get_sqbb(byte_t sqnum)
         {
             return 1ULL << sqnum;
+        }
+
+        inline byte_t lsb(bitboard_t bb)
+        {
+            assert(bb);
+            unsigned long idx;
+            _BitScanForward64(&idx, bb);
+            return (byte_t)idx;
+        }
+
+        inline byte_t msb(bitboard_t bb)
+        {
+            assert(bb);
+            unsigned long idx;
+            _BitScanReverse64(&idx, bb);
+            return (byte_t)idx;
+        }
+
+        inline byte_t pop_lsb(bitboard_t &bb)
+        {
+            assert(bb);
+            const byte_t sqnum = lsb(bb);
+            bb &= bb - 1;
+            return sqnum;
         }
 
         struct Magic
