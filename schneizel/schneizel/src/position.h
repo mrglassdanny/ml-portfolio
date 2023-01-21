@@ -20,7 +20,7 @@ namespace schneizel
         bitboard_t blackbb;
 
         void init();
-        void print(Move *prev_move);
+        void pretty_print(Move *prev_move);
 
         bitboard_t get_allbb();
 

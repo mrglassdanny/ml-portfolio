@@ -85,13 +85,15 @@
     <ClCompile Include="src\move.cpp" />
     <ClCompile Include="src\piece.cpp" />
     <ClCompile Include="src\position.cpp" />
+    <ClCompile Include="src\util.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\bitboard.h" />
-    <ClInclude Include="src\constants.h" />
+    <ClInclude Include="src\constant.h" />
     <ClInclude Include="src\move.h" />
     <ClInclude Include="src\piece.h" />
     <ClInclude Include="src\position.h" />
+    <ClInclude Include="src\util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

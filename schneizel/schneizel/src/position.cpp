@@ -70,7 +70,7 @@ namespace schneizel
         }
     }
 
-    void Position::print(Move *prev_move)
+    void Position::pretty_print(Move *prev_move)
     {
         HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
 
@@ -239,19 +239,20 @@ namespace schneizel
                     break;
                 }
 
-                if (piecetyp <= 5)
-                {
-                    printf("%s\n", get_piecetyp_str(piecetyp));
-                    bitboards::print(movebb, src_sqnum);
-                }
+                // if (piecetyp <= 5)
+                // {
+                //     printf("%s\n", get_piecetyp_str(piecetyp));
+                //     bitboards::print(movebb, src_sqnum);
+                // }
 
-                for (byte_t dst_sqnum = 0; dst_sqnum < SquareCnt; dst_sqnum++)
-                {
-                    if (bitboards::get_sqval(movebb, dst_sqnum) == 1)
-                    {
-                        move_list.moves[move_list.move_cnt++] = Move{piecetyp, src_sqnum, dst_sqnum};
-                    }
-                }
+                // for (byte_t dst_sqnum = 0; dst_sqnum < SquareCnt; dst_sqnum++)
+                // {
+                //     if (bitboards::get_sqval(movebb, dst_sqnum) == 1)
+                //     {
+                //         move_list.moves[move_list.move_cnt++] = Move{piecetyp, src_sqnum, dst_sqnum};
+                //     }
+                // }
+                move_list.moves[move_list.move_cnt++] = Move{PieceType::WhitePawn, 8, 8};
             }
         }
         else
@@ -327,19 +328,20 @@ namespace schneizel
                     break;
                 }
 
-                if (piecetyp >= 6 && piecetyp != PieceType::None)
-                {
-                    printf("%s\n", get_piecetyp_str(piecetyp));
-                    bitboards::print(movebb, src_sqnum);
-                }
+                // if (piecetyp >= 6 && piecetyp != PieceType::None)
+                // {
+                //     printf("%s\n", get_piecetyp_str(piecetyp));
+                //     bitboards::print(movebb, src_sqnum);
+                // }
 
-                for (byte_t dst_sqnum = 0; dst_sqnum < SquareCnt; dst_sqnum++)
-                {
-                    if (bitboards::get_sqval(movebb, dst_sqnum) == 1)
-                    {
-                        move_list.moves[move_list.move_cnt++] = Move{piecetyp, src_sqnum, dst_sqnum};
-                    }
-                }
+                // for (byte_t dst_sqnum = 0; dst_sqnum < SquareCnt; dst_sqnum++)
+                // {
+                //     if (bitboards::get_sqval(movebb, dst_sqnum) == 1)
+                //     {
+                //         move_list.moves[move_list.move_cnt++] = Move{piecetyp, src_sqnum, dst_sqnum};
+                //     }
+                // }
+                move_list.moves[move_list.move_cnt++] = Move{PieceType::BlackPawn, 55, 55};
             }
         }
 

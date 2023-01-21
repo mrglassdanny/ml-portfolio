@@ -1,6 +1,6 @@
 #pragma once
 
-#include "constants.h"
+#include "constant.h"
 #include "bitboard.h"
 
 namespace schneizel

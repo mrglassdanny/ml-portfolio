@@ -7,7 +7,7 @@
 #include <cassert>
 #include <string>
 
-#include "constants.h"
+#include "constant.h"
 
 namespace schneizel
 {
