@@ -133,9 +133,12 @@ namespace schneizel
             test_rownum = rownum + 1;
             test_colnum = colnum + 1;
             test_sqnum = get_sqnum(test_rownum, test_colnum);
-            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(blockersbb & get_sqbb(test_sqnum)))
+            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
             {
                 bb = set_sqval(bb, test_sqnum);
+                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                    break;
+
                 test_rownum++;
                 test_colnum++;
                 test_sqnum = get_sqnum(test_rownum, test_colnum);
@@ -145,9 +148,12 @@ namespace schneizel
             test_rownum = rownum + 1;
             test_colnum = colnum - 1;
             test_sqnum = get_sqnum(test_rownum, test_colnum);
-            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(blockersbb & get_sqbb(test_sqnum)))
+            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
             {
                 bb = set_sqval(bb, test_sqnum);
+                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                    break;
+
                 test_rownum++;
                 test_colnum--;
                 test_sqnum = get_sqnum(test_rownum, test_colnum);
@@ -157,9 +163,12 @@ namespace schneizel
             test_rownum = rownum - 1;
             test_colnum = colnum + 1;
             test_sqnum = get_sqnum(test_rownum, test_colnum);
-            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(blockersbb & get_sqbb(test_sqnum)))
+            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
             {
                 bb = set_sqval(bb, test_sqnum);
+                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                    break;
+
                 test_rownum--;
                 test_colnum++;
                 test_sqnum = get_sqnum(test_rownum, test_colnum);
@@ -169,9 +178,12 @@ namespace schneizel
             test_rownum = rownum - 1;
             test_colnum = colnum - 1;
             test_sqnum = get_sqnum(test_rownum, test_colnum);
-            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum) && !(blockersbb & get_sqbb(test_sqnum)))
+            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
             {
                 bb = set_sqval(bb, test_sqnum);
+                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                    break;
+
                 test_rownum--;
                 test_colnum--;
                 test_sqnum = get_sqnum(test_rownum, test_colnum);
@@ -194,9 +206,12 @@ namespace schneizel
             // North:
             test_rownum = rownum + 1;
             test_sqnum = get_sqnum(test_rownum, colnum);
-            while (is_rownum_valid(test_rownum) && !(blockersbb & get_sqbb(test_sqnum)))
+            while (is_rownum_valid(test_rownum))
             {
                 bb = set_sqval(bb, test_sqnum);
+                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                    break;
+
                 test_rownum++;
                 test_sqnum = get_sqnum(test_rownum, colnum);
             }
@@ -204,9 +219,12 @@ namespace schneizel
             // East:
             test_colnum = colnum + 1;
             test_sqnum = get_sqnum(rownum, test_colnum);
-            while (is_colnum_valid(test_colnum) && !(blockersbb & get_sqbb(test_sqnum)))
+            while (is_colnum_valid(test_colnum))
             {
                 bb = set_sqval(bb, test_sqnum);
+                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                    break;
+
                 test_colnum++;
                 test_sqnum = get_sqnum(rownum, test_colnum);
             }
@@ -214,9 +232,12 @@ namespace schneizel
             // West:
             test_colnum = colnum - 1;
             test_sqnum = get_sqnum(rownum, test_colnum);
-            while (is_colnum_valid(test_colnum) && !(blockersbb & get_sqbb(test_sqnum)))
+            while (is_colnum_valid(test_colnum))
             {
                 bb = set_sqval(bb, test_sqnum);
+                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                    break;
+
                 test_colnum--;
                 test_sqnum = get_sqnum(rownum, test_colnum);
             }
@@ -224,9 +245,12 @@ namespace schneizel
             // South:
             test_rownum = rownum - 1;
             test_sqnum = get_sqnum(test_rownum, colnum);
-            while (is_rownum_valid(test_rownum) && !(blockersbb & get_sqbb(test_sqnum)))
+            while (is_rownum_valid(test_rownum))
             {
                 bb = set_sqval(bb, test_sqnum);
+                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                    break;
+
                 test_rownum--;
                 test_sqnum = get_sqnum(test_rownum, colnum);
             }
@@ -370,16 +394,16 @@ namespace schneizel
         bitboard_t get_bishop_movebb(byte_t sqnum, bitboard_t bodiesbb)
         {
             Magic *magic = &bishop_magics[sqnum];
-            bitboard_t blockers = magic->maskbb & bodiesbb;
-            unsigned idx = magic->get_movebb_index(blockers);
+            bitboard_t blockersbb = magic->maskbb & bodiesbb;
+            unsigned idx = magic->get_movebb_index(blockersbb);
             return magic->movebbs[idx];
         }
 
         bitboard_t get_rook_movebb(byte_t sqnum, bitboard_t bodiesbb)
         {
             Magic *magic = &rook_magics[sqnum];
-            bitboard_t blockers = magic->maskbb & bodiesbb;
-            unsigned idx = magic->get_movebb_index(blockers);
+            bitboard_t blockersbb = magic->maskbb & bodiesbb;
+            unsigned idx = magic->get_movebb_index(blockersbb);
             return magic->movebbs[idx];
         }
 
