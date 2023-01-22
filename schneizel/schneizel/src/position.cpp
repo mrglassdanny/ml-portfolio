@@ -171,14 +171,14 @@ namespace schneizel
             bitboard_t allbb = this->get_allbb();
             bitboard_t attackbb = bitboards::EmptyBB;
 
-            bool pawn_promo = false;
-
             for (byte_t src_sqnum = 0; src_sqnum < SquareCnt; src_sqnum++)
             {
                 bitboard_t movebb;
 
                 PieceType piecetyp = this->pieces[src_sqnum];
                 bitboard_t piecebb = bitboards::get_sqbb(src_sqnum);
+
+                bool pawn_promo = false;
 
                 switch (piecetyp)
                 {
@@ -208,7 +208,7 @@ namespace schneizel
 
                     movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
 
-                    if ((piecebb & bitboards::Row8BB) != bitboards::EmptyBB)
+                    if ((piecebb & bitboards::Row7BB) != bitboards::EmptyBB)
                     {
                         pawn_promo = true;
                     }
@@ -267,14 +267,14 @@ namespace schneizel
 
                 if (!pawn_promo)
                 {
-                    while (movebb != EmptyBB)
+                    while (movebb != bitboards::EmptyBB)
                     {
                         move_list.moves[move_list.move_cnt++] = Move{piecetyp, src_sqnum, pop_lsb(movebb)};
                     }
                 }
                 else
                 {
-                    while (movebb != EmptyBB)
+                    while (movebb != bitboards::EmptyBB)
                     {
                         byte_t dst_sqnum = pop_lsb(movebb);
                         move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sqnum, dst_sqnum, PieceType::WhiteKnight);
@@ -290,14 +290,14 @@ namespace schneizel
             bitboard_t allbb = this->get_allbb();
             bitboard_t attackbb = bitboards::EmptyBB;
 
-            bool pawn_promo = false;
-
             for (byte_t src_sqnum = 0; src_sqnum < SquareCnt; src_sqnum++)
             {
                 bitboard_t movebb;
 
                 PieceType piecetyp = this->pieces[src_sqnum];
                 bitboard_t piecebb = bitboards::get_sqbb(src_sqnum);
+
+                bool pawn_promo = false;
 
                 switch (piecetyp)
                 {
@@ -327,7 +327,7 @@ namespace schneizel
 
                     movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
 
-                    if ((piecebb & bitboards::Row1BB) != bitboards::EmptyBB)
+                    if ((piecebb & bitboards::Row2BB) != bitboards::EmptyBB)
                     {
                         pawn_promo = true;
                     }
@@ -386,14 +386,14 @@ namespace schneizel
 
                 if (!pawn_promo)
                 {
-                    while (movebb != EmptyBB)
+                    while (movebb != bitboards::EmptyBB)
                     {
                         move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sqnum, pop_lsb(movebb));
                     }
                 }
                 else
                 {
-                    while (movebb != EmptyBB)
+                    while (movebb != bitboards::EmptyBB)
                     {
                         byte_t dst_sqnum = pop_lsb(movebb);
                         move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sqnum, dst_sqnum, PieceType::BlackKnight);
