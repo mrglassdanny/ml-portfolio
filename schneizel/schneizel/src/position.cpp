@@ -368,7 +368,7 @@ namespace schneizel
 
                     if (this->castle_rights.black_left)
                     {
-                        if (bitboards::get_sqval(this->whitebb, 57) != 1 && bitboards::get_sqval(this->whitebb, 58) != 1 && bitboards::get_sqval(this->whitebb, 59) != 1)
+                        if (bitboards::get_sqval(this->blackbb, 57) != 1 && bitboards::get_sqval(this->blackbb, 58) != 1 && bitboards::get_sqval(this->blackbb, 59) != 1)
                         {
                             movebb |= bitboards::get_sqbb(58);
                         }
@@ -376,7 +376,7 @@ namespace schneizel
 
                     if (this->castle_rights.black_right)
                     {
-                        if (bitboards::get_sqval(this->whitebb, 61) != 1 && bitboards::get_sqval(this->whitebb, 62) != 1)
+                        if (bitboards::get_sqval(this->blackbb, 61) != 1 && bitboards::get_sqval(this->blackbb, 62) != 1)
                         {
                             movebb |= bitboards::get_sqbb(62);
                         }
@@ -417,7 +417,7 @@ namespace schneizel
         PieceType src_piecetyp = this->pieces[move.src_sqnum];
         PieceType capture_piecetyp = this->pieces[move.dst_sqnum];
 
-        // CastleRights:
+        // Castle rights:
         if (src_piecetyp == PieceType::WhiteRook)
         {
             if (move.src_sqnum == 0)
@@ -493,19 +493,20 @@ namespace schneizel
             this->castle_rights.black_right = false;
         }
 
-        // Au Passant:
+        // Au passant:
+        bool au_passant_opp = false;
+
         if (src_piecetyp == PieceType::WhitePawn)
         {
             if (move.dst_sqnum == this->au_passant_sqnum)
             {
                 this->pieces[move.dst_sqnum - 8] = PieceType::None;
                 this->piecebbs[PieceType::BlackPawn] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackPawn], move.dst_sqnum - 8);
-                this->au_passant_sqnum = 0;
             }
-
-            if (move.dst_sqnum - move.src_sqnum > 9)
+            else if (move.dst_sqnum - move.src_sqnum > 9)
             {
                 this->au_passant_sqnum = move.dst_sqnum - 8;
+                au_passant_opp = true;
             }
         }
         else if (src_piecetyp == PieceType::BlackPawn)
@@ -514,13 +515,17 @@ namespace schneizel
             {
                 this->pieces[move.dst_sqnum + 8] = PieceType::None;
                 this->piecebbs[PieceType::WhitePawn] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackPawn], move.dst_sqnum + 8);
-                this->au_passant_sqnum = 0;
             }
-
-            if (move.src_sqnum - move.dst_sqnum > 9)
+            else if (move.src_sqnum - move.dst_sqnum > 9)
             {
                 this->au_passant_sqnum = move.dst_sqnum + 8;
+                au_passant_opp = true;
             }
+        }
+
+        if (!au_passant_opp)
+        {
+            this->au_passant_sqnum = this->white_turn ? 63 : 0;
         }
 
         // Regular vs promotion:

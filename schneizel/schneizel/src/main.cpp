@@ -6,6 +6,8 @@ using namespace schneizel;
 
 int main(int argc, char **argv)
 {
+	srand(NULL);
+
 	bitboards::init();
 
 	auto sw = new StopWatch();
