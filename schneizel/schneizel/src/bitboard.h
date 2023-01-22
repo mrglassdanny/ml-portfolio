@@ -149,5 +149,6 @@ namespace schneizel
         bitboard_t get_bishop_movebb(byte_t sqnum, bitboard_t bodiesbb);
         bitboard_t get_rook_movebb(byte_t sqnum, bitboard_t bodiesbb);
         bitboard_t get_queen_movebb(byte_t sqnum, bitboard_t bodiesbb);
+        bitboard_t get_king_movebb(byte_t sqnum);
     }
 }

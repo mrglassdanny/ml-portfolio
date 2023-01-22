@@ -7,6 +7,7 @@ namespace schneizel
         bitboard_t knight_movebbs[SquareCnt];
         Magic bishop_magics[SquareCnt];
         Magic rook_magics[SquareCnt];
+        bitboard_t king_movebbs[SquareCnt];
 
         class MagicPRNG
         {
@@ -258,6 +259,79 @@ namespace schneizel
             return bb;
         }
 
+        bitboard_t init_king_movebb(byte_t sqnum)
+        {
+            bitboard_t bb = EmptyBB;
+
+            byte_t rownum = get_rownum_fr_sqnum(sqnum);
+            byte_t colnum = get_colnum_fr_sqnum(sqnum);
+
+            byte_t test_rownum;
+            byte_t test_colnum;
+
+            // North:
+            test_rownum = rownum + 1;
+            if (is_rownum_valid(test_rownum))
+            {
+                bb = set_sqval(bb, get_sqnum(test_rownum, colnum));
+            }
+
+            // East:
+            test_colnum = colnum + 1;
+            if (is_colnum_valid(test_colnum))
+            {
+                bb = set_sqval(bb, get_sqnum(rownum, test_colnum));
+            }
+
+            // West:
+            test_colnum = colnum - 1;
+            if (is_colnum_valid(test_colnum))
+            {
+                bb = set_sqval(bb, get_sqnum(rownum, test_colnum));
+            }
+
+            // South:
+            test_rownum = rownum - 1;
+            if (is_rownum_valid(test_rownum))
+            {
+                bb = set_sqval(bb, get_sqnum(test_rownum, colnum));
+            }
+
+            // Northeast:
+            test_rownum = rownum + 1;
+            test_colnum = colnum + 1;
+            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            {
+                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+            }
+
+            // Northwest:
+            test_rownum = rownum + 1;
+            test_colnum = colnum - 1;
+            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            {
+                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+            }
+
+            // Southeast:
+            test_rownum = rownum - 1;
+            test_colnum = colnum + 1;
+            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            {
+                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+            }
+
+            // Southwest:
+            test_rownum = rownum - 1;
+            test_colnum = colnum - 1;
+            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            {
+                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+            }
+
+            return bb;
+        }
+
         void init_magics(bool bishop)
         {
             Magic *magics;
@@ -337,6 +411,14 @@ namespace schneizel
 
             // Rooks:
             init_magics(false);
+
+            // Queens satisfied by bishops/rooks.
+
+            // Kings:
+            for (byte_t sqnum = 0; sqnum < SquareCnt; sqnum++)
+            {
+                king_movebbs[sqnum] = init_king_movebb(sqnum);
+            }
         }
 
         void print(bitboard_t bb)
@@ -410,6 +492,11 @@ namespace schneizel
         bitboard_t get_queen_movebb(byte_t sqnum, bitboard_t bodiesbb)
         {
             return get_bishop_movebb(sqnum, bodiesbb) | get_rook_movebb(sqnum, bodiesbb);
+        }
+
+        bitboard_t get_king_movebb(byte_t sqnum)
+        {
+            return king_movebbs[sqnum];
         }
     }
 }

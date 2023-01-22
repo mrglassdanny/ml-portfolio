@@ -18,6 +18,10 @@ namespace schneizel
         bitboard_t piecebbs[(PieceTypeCnt * 2)];
         bitboard_t whitebb;
         bitboard_t blackbb;
+        bool white_castle_left;
+        bool white_castle_right;
+        bool black_castle_left;
+        bool black_castle_right;
 
         void init();
         void pretty_print(Move *prev_move);

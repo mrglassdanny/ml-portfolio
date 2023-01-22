@@ -232,8 +232,11 @@ namespace schneizel
                 }
                 break;
                 case PieceType::WhiteKing:
-                    movebb = bitboards::EmptyBB;
-                    break;
+                {
+                    movebb = bitboards::get_king_movebb(src_sqnum) & ~this->whitebb;
+                    attackbb |= movebb;
+                }
+                break;
                 default:
                     movebb = bitboards::EmptyBB;
                     break;
@@ -311,8 +314,11 @@ namespace schneizel
                 }
                 break;
                 case PieceType::BlackKing:
-                    movebb = bitboards::EmptyBB;
-                    break;
+                {
+                    movebb = bitboards::get_king_movebb(src_sqnum) & ~this->blackbb;
+                    attackbb |= movebb;
+                }
+                break;
                 default:
                     movebb = bitboards::EmptyBB;
                     break;
