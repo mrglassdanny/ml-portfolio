@@ -200,8 +200,10 @@ namespace schneizel
                         pawn_movebb_2 = bitboards::EmptyBB;
                     }
 
-                    east_pawn_attackbb &= this->blackbb;
-                    west_pawn_attackbb &= this->blackbb;
+                    bitboard_t adj_blackbb = this->blackbb | bitboards::get_sqbb(this->au_passant_sqnum);
+
+                    east_pawn_attackbb &= adj_blackbb;
+                    west_pawn_attackbb &= adj_blackbb;
 
                     attackbb |= east_pawn_attackbb;
                     attackbb |= west_pawn_attackbb;
@@ -319,8 +321,10 @@ namespace schneizel
                         pawn_movebb_2 = bitboards::EmptyBB;
                     }
 
-                    east_pawn_attackbb &= this->whitebb;
-                    west_pawn_attackbb &= this->whitebb;
+                    bitboard_t adj_whitebb = this->whitebb | bitboards::get_sqbb(this->au_passant_sqnum);
+
+                    east_pawn_attackbb &= adj_whitebb;
+                    west_pawn_attackbb &= adj_whitebb;
 
                     attackbb |= east_pawn_attackbb;
                     attackbb |= west_pawn_attackbb;
@@ -410,8 +414,6 @@ namespace schneizel
 
     void Position::make_move(Move move)
     {
-        // TODO: au passant
-
         PieceType src_piecetyp = this->pieces[move.src_sqnum];
         PieceType capture_piecetyp = this->pieces[move.dst_sqnum];
 
@@ -450,11 +452,15 @@ namespace schneizel
             {
                 if (move.dst_sqnum == 2)
                 {
+                    this->pieces[3] = PieceType::WhiteRook;
+                    this->pieces[0] = PieceType::None;
                     this->piecebbs[PieceType::WhiteRook] = bitboards::set_sqval(this->piecebbs[PieceType::WhiteRook], 3);
                     this->piecebbs[PieceType::WhiteRook] = bitboards::clear_sqval(this->piecebbs[PieceType::WhiteRook], 0);
                 }
                 else if (move.dst_sqnum == 6)
                 {
+                    this->pieces[5] = PieceType::WhiteRook;
+                    this->pieces[7] = PieceType::None;
                     this->piecebbs[PieceType::WhiteRook] = bitboards::set_sqval(this->piecebbs[PieceType::WhiteRook], 5);
                     this->piecebbs[PieceType::WhiteRook] = bitboards::clear_sqval(this->piecebbs[PieceType::WhiteRook], 7);
                 }
@@ -469,13 +475,17 @@ namespace schneizel
             {
                 if (move.dst_sqnum == 58)
                 {
-                    this->piecebbs[PieceType::WhiteRook] = bitboards::set_sqval(this->piecebbs[PieceType::WhiteRook], 59);
-                    this->piecebbs[PieceType::WhiteRook] = bitboards::clear_sqval(this->piecebbs[PieceType::WhiteRook], 56);
+                    this->pieces[59] = PieceType::BlackRook;
+                    this->pieces[56] = PieceType::None;
+                    this->piecebbs[PieceType::BlackRook] = bitboards::set_sqval(this->piecebbs[PieceType::BlackRook], 59);
+                    this->piecebbs[PieceType::BlackRook] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackRook], 56);
                 }
                 else if (move.dst_sqnum == 62)
                 {
-                    this->piecebbs[PieceType::WhiteRook] = bitboards::set_sqval(this->piecebbs[PieceType::WhiteRook], 61);
-                    this->piecebbs[PieceType::WhiteRook] = bitboards::clear_sqval(this->piecebbs[PieceType::WhiteRook], 63);
+                    this->pieces[61] = PieceType::BlackRook;
+                    this->pieces[63] = PieceType::None;
+                    this->piecebbs[PieceType::BlackRook] = bitboards::set_sqval(this->piecebbs[PieceType::BlackRook], 61);
+                    this->piecebbs[PieceType::BlackRook] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackRook], 63);
                 }
             }
 
@@ -483,6 +493,37 @@ namespace schneizel
             this->castle_rights.black_right = false;
         }
 
+        // Au Passant:
+        if (src_piecetyp == PieceType::WhitePawn)
+        {
+            if (move.dst_sqnum == this->au_passant_sqnum)
+            {
+                this->pieces[move.dst_sqnum - 8] = PieceType::None;
+                this->piecebbs[PieceType::BlackPawn] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackPawn], move.dst_sqnum - 8);
+                this->au_passant_sqnum = 0;
+            }
+
+            if (move.dst_sqnum - move.src_sqnum > 9)
+            {
+                this->au_passant_sqnum = move.dst_sqnum - 8;
+            }
+        }
+        else if (src_piecetyp == PieceType::BlackPawn)
+        {
+            if (move.dst_sqnum == this->au_passant_sqnum)
+            {
+                this->pieces[move.dst_sqnum + 8] = PieceType::None;
+                this->piecebbs[PieceType::WhitePawn] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackPawn], move.dst_sqnum + 8);
+                this->au_passant_sqnum = 0;
+            }
+
+            if (move.src_sqnum - move.dst_sqnum > 9)
+            {
+                this->au_passant_sqnum = move.dst_sqnum + 8;
+            }
+        }
+
+        // Regular vs promotion:
         if (move.promo_piecetyp != PieceType::None)
         {
             this->piecebbs[src_piecetyp] &= ~movebb;
@@ -493,6 +534,7 @@ namespace schneizel
             this->piecebbs[src_piecetyp] ^= movebb;
         }
 
+        // Capture:
         if (capture_piecetyp != PieceType::None)
         {
             this->piecebbs[capture_piecetyp] = bitboards::clear_sqval(this->piecebbs[capture_piecetyp], move.dst_sqnum);
@@ -509,6 +551,7 @@ namespace schneizel
             this->whitebb &= ~movebb;
         }
 
+        // Regular vs promotion:
         if (move.promo_piecetyp != PieceType::None)
         {
             this->pieces[move.dst_sqnum] = move.promo_piecetyp;

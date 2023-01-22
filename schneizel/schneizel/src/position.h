@@ -27,6 +27,7 @@ namespace schneizel
         bitboard_t whitebb;
         bitboard_t blackbb;
         CastleRights castle_rights;
+        byte_t au_passant_sqnum = 0;
 
         void init();
         void pretty_print(Move *prev_move);
