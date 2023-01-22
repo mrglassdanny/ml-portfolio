@@ -410,7 +410,7 @@ namespace schneizel
 
     void Position::make_move(Move move)
     {
-        // TODO: promotion, au passant
+        // TODO: au passant
 
         PieceType src_piecetyp = this->pieces[move.src_sqnum];
         PieceType capture_piecetyp = this->pieces[move.dst_sqnum];
@@ -483,7 +483,15 @@ namespace schneizel
             this->castle_rights.black_right = false;
         }
 
-        this->piecebbs[src_piecetyp] ^= movebb;
+        if (move.promo_piecetyp != PieceType::None)
+        {
+            this->piecebbs[src_piecetyp] &= ~movebb;
+            this->piecebbs[move.promo_piecetyp] = bitboards::set_sqval(this->piecebbs[move.promo_piecetyp], move.dst_sqnum);
+        }
+        else
+        {
+            this->piecebbs[src_piecetyp] ^= movebb;
+        }
 
         if (capture_piecetyp != PieceType::None)
         {
@@ -501,7 +509,15 @@ namespace schneizel
             this->whitebb &= ~movebb;
         }
 
-        this->pieces[move.dst_sqnum] = src_piecetyp;
+        if (move.promo_piecetyp != PieceType::None)
+        {
+            this->pieces[move.dst_sqnum] = move.promo_piecetyp;
+        }
+        else
+        {
+            this->pieces[move.dst_sqnum] = src_piecetyp;
+        }
+
         this->pieces[move.src_sqnum] = PieceType::None;
 
         this->white_turn = !this->white_turn;
