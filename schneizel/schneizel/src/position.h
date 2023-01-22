@@ -11,6 +11,14 @@ namespace schneizel
 {
     using namespace bitboards;
 
+    struct CastleRights
+    {
+        bool white_left = true;
+        bool white_right = true;
+        bool black_left = true;
+        bool black_right = true;
+    };
+
     struct Position
     {
         bool white_turn;
@@ -18,10 +26,7 @@ namespace schneizel
         bitboard_t piecebbs[(PieceTypeCnt * 2)];
         bitboard_t whitebb;
         bitboard_t blackbb;
-        bool white_castle_left;
-        bool white_castle_right;
-        bool black_castle_left;
-        bool black_castle_right;
+        CastleRights castle_rights;
 
         void init();
         void pretty_print(Move *prev_move);

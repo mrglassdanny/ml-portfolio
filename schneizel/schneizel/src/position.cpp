@@ -235,6 +235,22 @@ namespace schneizel
                 {
                     movebb = bitboards::get_king_movebb(src_sqnum) & ~this->whitebb;
                     attackbb |= movebb;
+
+                    if (this->castle_rights.white_left)
+                    {
+                        if (bitboards::get_sqval(this->whitebb, 1) != 1 && bitboards::get_sqval(this->whitebb, 2) != 1 && bitboards::get_sqval(this->whitebb, 3) != 1)
+                        {
+                            movebb |= bitboards::get_sqbb(2);
+                        }
+                    }
+
+                    if (this->castle_rights.white_right)
+                    {
+                        if (bitboards::get_sqval(this->whitebb, 5) != 1 && bitboards::get_sqval(this->whitebb, 6) != 1)
+                        {
+                            movebb |= bitboards::get_sqbb(6);
+                        }
+                    }
                 }
                 break;
                 default:
@@ -317,6 +333,22 @@ namespace schneizel
                 {
                     movebb = bitboards::get_king_movebb(src_sqnum) & ~this->blackbb;
                     attackbb |= movebb;
+
+                    if (this->castle_rights.black_left)
+                    {
+                        if (bitboards::get_sqval(this->whitebb, 57) != 1 && bitboards::get_sqval(this->whitebb, 58) != 1 && bitboards::get_sqval(this->whitebb, 59) != 1)
+                        {
+                            movebb |= bitboards::get_sqbb(58);
+                        }
+                    }
+
+                    if (this->castle_rights.black_right)
+                    {
+                        if (bitboards::get_sqval(this->whitebb, 61) != 1 && bitboards::get_sqval(this->whitebb, 62) != 1)
+                        {
+                            movebb |= bitboards::get_sqbb(62);
+                        }
+                    }
                 }
                 break;
                 default:
@@ -336,14 +368,78 @@ namespace schneizel
 
     void Position::make_move(Move move)
     {
-        // TODO: promotion, castle, au passant
+        // TODO: promotion, au passant
 
         PieceType src_piecetyp = this->pieces[move.src_sqnum];
         PieceType capture_piecetyp = this->pieces[move.dst_sqnum];
 
+        // CastleRights:
+        if (src_piecetyp == PieceType::WhiteRook)
+        {
+            if (move.src_sqnum == 0)
+            {
+                this->castle_rights.white_left = false;
+            }
+            else if (move.src_sqnum == 7)
+            {
+                this->castle_rights.white_right = false;
+            }
+        }
+        else if (src_piecetyp == PieceType::BlackRook)
+        {
+            if (move.src_sqnum == 56)
+            {
+                this->castle_rights.black_left = false;
+            }
+            else if (move.src_sqnum == 63)
+            {
+                this->castle_rights.black_right = false;
+            }
+        }
+
         bitboard_t movebb = bitboards::EmptyBB;
         movebb = bitboards::set_sqval(movebb, move.src_sqnum);
         movebb = bitboards::set_sqval(movebb, move.dst_sqnum);
+
+        // Castle:
+        if (src_piecetyp == PieceType::WhiteKing)
+        {
+            if (move.src_sqnum == 4)
+            {
+                if (move.dst_sqnum == 2)
+                {
+                    this->piecebbs[PieceType::WhiteRook] = bitboards::set_sqval(this->piecebbs[PieceType::WhiteRook], 3);
+                    this->piecebbs[PieceType::WhiteRook] = bitboards::clear_sqval(this->piecebbs[PieceType::WhiteRook], 0);
+                }
+                else if (move.dst_sqnum == 6)
+                {
+                    this->piecebbs[PieceType::WhiteRook] = bitboards::set_sqval(this->piecebbs[PieceType::WhiteRook], 5);
+                    this->piecebbs[PieceType::WhiteRook] = bitboards::clear_sqval(this->piecebbs[PieceType::WhiteRook], 7);
+                }
+            }
+
+            this->castle_rights.white_left = false;
+            this->castle_rights.white_right = false;
+        }
+        else if (src_piecetyp == PieceType::BlackKing)
+        {
+            if (move.src_sqnum == 60)
+            {
+                if (move.dst_sqnum == 58)
+                {
+                    this->piecebbs[PieceType::WhiteRook] = bitboards::set_sqval(this->piecebbs[PieceType::WhiteRook], 59);
+                    this->piecebbs[PieceType::WhiteRook] = bitboards::clear_sqval(this->piecebbs[PieceType::WhiteRook], 56);
+                }
+                else if (move.dst_sqnum == 62)
+                {
+                    this->piecebbs[PieceType::WhiteRook] = bitboards::set_sqval(this->piecebbs[PieceType::WhiteRook], 61);
+                    this->piecebbs[PieceType::WhiteRook] = bitboards::clear_sqval(this->piecebbs[PieceType::WhiteRook], 63);
+                }
+            }
+
+            this->castle_rights.black_left = false;
+            this->castle_rights.black_right = false;
+        }
 
         this->piecebbs[src_piecetyp] ^= movebb;
 
