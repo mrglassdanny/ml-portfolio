@@ -164,12 +164,14 @@ namespace schneizel
     MoveList Position::get_move_list()
     {
         MoveList move_list;
-        memset(&move_list, 0, sizeof(move_list));
+        move_list.move_cnt = 0;
 
         if (this->white_turn)
         {
             bitboard_t allbb = this->get_allbb();
             bitboard_t attackbb = bitboards::EmptyBB;
+
+            bool pawn_promo = false;
 
             for (byte_t src_sqnum = 0; src_sqnum < SquareCnt; src_sqnum++)
             {
@@ -205,6 +207,11 @@ namespace schneizel
                     attackbb |= west_pawn_attackbb;
 
                     movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
+
+                    if ((piecebb & bitboards::Row8BB) != bitboards::EmptyBB)
+                    {
+                        pawn_promo = true;
+                    }
                 }
                 break;
                 case PieceType::WhiteKnight:
@@ -258,9 +265,23 @@ namespace schneizel
                     break;
                 }
 
-                while (movebb != EmptyBB)
+                if (!pawn_promo)
                 {
-                    move_list.moves[move_list.move_cnt++] = Move{piecetyp, src_sqnum, pop_lsb(movebb)};
+                    while (movebb != EmptyBB)
+                    {
+                        move_list.moves[move_list.move_cnt++] = Move{piecetyp, src_sqnum, pop_lsb(movebb)};
+                    }
+                }
+                else
+                {
+                    while (movebb != EmptyBB)
+                    {
+                        byte_t dst_sqnum = pop_lsb(movebb);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sqnum, dst_sqnum, PieceType::WhiteKnight);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sqnum, dst_sqnum, PieceType::WhiteBishop);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sqnum, dst_sqnum, PieceType::WhiteRook);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sqnum, dst_sqnum, PieceType::WhiteQueen);
+                    }
                 }
             }
         }
@@ -268,6 +289,8 @@ namespace schneizel
         {
             bitboard_t allbb = this->get_allbb();
             bitboard_t attackbb = bitboards::EmptyBB;
+
+            bool pawn_promo = false;
 
             for (byte_t src_sqnum = 0; src_sqnum < SquareCnt; src_sqnum++)
             {
@@ -303,6 +326,11 @@ namespace schneizel
                     attackbb |= west_pawn_attackbb;
 
                     movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
+
+                    if ((piecebb & bitboards::Row1BB) != bitboards::EmptyBB)
+                    {
+                        pawn_promo = true;
+                    }
                 }
                 break;
                 case PieceType::BlackKnight:
@@ -356,9 +384,23 @@ namespace schneizel
                     break;
                 }
 
-                while (movebb != EmptyBB)
+                if (!pawn_promo)
                 {
-                    move_list.moves[move_list.move_cnt++] = Move{piecetyp, src_sqnum, pop_lsb(movebb)};
+                    while (movebb != EmptyBB)
+                    {
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sqnum, pop_lsb(movebb));
+                    }
+                }
+                else
+                {
+                    while (movebb != EmptyBB)
+                    {
+                        byte_t dst_sqnum = pop_lsb(movebb);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sqnum, dst_sqnum, PieceType::BlackKnight);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sqnum, dst_sqnum, PieceType::BlackBishop);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sqnum, dst_sqnum, PieceType::BlackRook);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sqnum, dst_sqnum, PieceType::BlackQueen);
+                    }
                 }
             }
         }
