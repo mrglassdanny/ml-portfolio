@@ -93,6 +93,7 @@
     <ClInclude Include="src\move.h" />
     <ClInclude Include="src\piece.h" />
     <ClInclude Include="src\position.h" />
+    <ClInclude Include="src\type.h" />
     <ClInclude Include="src\util.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
