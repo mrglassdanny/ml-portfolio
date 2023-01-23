@@ -10,8 +10,8 @@ namespace schneizel
     struct Move
     {
         PieceType piecetyp;
-        byte_t src_sqnum;
-        byte_t dst_sqnum;
+        square_t src_sq;
+        square_t dst_sq;
         PieceType promo_piecetyp;
 
         Move();
