@@ -1,22 +1,16 @@
 #pragma once
 
 #include <iostream>
-#include <cctype>
-#include <cstdint>
 #include <cstdlib>
-#include <cassert>
 #include <string>
 
 #include "constant.h"
+#include "type.h"
 
 namespace schneizel
 {
     namespace bitboards
     {
-        typedef unsigned char byte_t;
-        typedef uint64_t bitboard_t;
-        typedef byte_t square_t;
-
         constexpr bitboard_t EmptyBB = 0ULL;
         constexpr bitboard_t FullBB = ~(EmptyBB);
         constexpr bitboard_t DarkBB = 0xAA55AA55AA55AA55ULL;
@@ -40,93 +34,90 @@ namespace schneizel
         constexpr bitboard_t ColGBB = ColABB << 6;
         constexpr bitboard_t ColHBB = ColABB << 7;
 
-        constexpr byte_t get_rownum_fr_sqnum(byte_t sqnum)
+        constexpr row_t get_row_fr_sq(square_t sq)
         {
-            return sqnum >> 3;
+            return sq >> 3;
         }
 
-        constexpr bool is_rownum_valid(byte_t rownum)
+        constexpr bool is_row_valid(row_t row)
         {
-            return rownum >= 0 && rownum <= 7;
+            return row >= 0 && row <= 7;
         }
 
-        constexpr bitboard_t get_rowbb_fr_rownum(byte_t rownum)
+        constexpr bitboard_t get_rowbb_fr_row(row_t row)
         {
-            return Row1BB << (8 * rownum);
+            return Row1BB << (8 * row);
         }
 
-        constexpr bitboard_t get_rowbb_fr_sqnum(byte_t sqnum)
+        constexpr bitboard_t get_rowbb_fr_sq(square_t sq)
         {
-            return get_rowbb_fr_rownum(get_rownum_fr_sqnum(sqnum));
+            return get_rowbb_fr_row(get_row_fr_sq(sq));
         }
 
-        constexpr byte_t get_colnum_fr_sqnum(byte_t sqnum)
+        constexpr col_t get_col_fr_sq(square_t sq)
         {
-            return sqnum & 7;
+            return sq & 7;
         }
 
-        constexpr bool is_colnum_valid(byte_t colnum)
+        constexpr bool is_col_valid(col_t col)
         {
-            return colnum >= 0 && colnum <= 7;
+            return col >= 0 && col <= 7;
         }
 
-        constexpr bitboard_t get_colbb_fr_colnum(byte_t colnum)
+        constexpr bitboard_t get_colbb_fr_col(col_t col)
         {
-            return ColABB << colnum;
+            return ColABB << col;
         }
 
-        constexpr bitboard_t get_colbb_fr_sqnum(byte_t sqnum)
+        constexpr bitboard_t get_colbb_fr_sq(square_t sq)
         {
-            return get_colbb_fr_colnum(get_colnum_fr_sqnum(sqnum));
+            return get_colbb_fr_col(get_col_fr_sq(sq));
         }
 
-        constexpr byte_t get_sqnum(byte_t rownum, byte_t colnum)
+        constexpr square_t get_sq(row_t row, col_t col)
         {
-            return rownum * 8 + colnum;
+            return row * 8 + col;
         }
 
-        constexpr byte_t get_sqval(bitboard_t bb, byte_t sqnum)
+        constexpr byte_t get_sqval(bitboard_t bb, square_t sq)
         {
-            return ((bb & (1ULL << sqnum)) >> sqnum);
+            return ((bb & (1ULL << sq)) >> sq);
         }
 
-        constexpr bitboard_t set_sqval(bitboard_t bb, byte_t sqnum)
+        constexpr bitboard_t set_sqval(bitboard_t bb, square_t sq)
         {
-            return bb | (1ULL << sqnum);
+            return bb | (1ULL << sq);
         }
 
-        constexpr bitboard_t clear_sqval(bitboard_t bb, byte_t sqnum)
+        constexpr bitboard_t clear_sqval(bitboard_t bb, square_t sq)
         {
-            return bb & ~(1ULL << sqnum);
+            return bb & ~(1ULL << sq);
         }
 
-        constexpr bitboard_t get_sqbb(byte_t sqnum)
+        constexpr bitboard_t get_sqbb(square_t sq)
         {
-            return 1ULL << sqnum;
+            return 1ULL << sq;
         }
 
-        inline byte_t lsb(bitboard_t bb)
+        inline square_t lsb(bitboard_t bb)
         {
-            assert(bb);
             unsigned long idx;
             _BitScanForward64(&idx, bb);
-            return (byte_t)idx;
+            return (square_t)idx;
         }
 
-        inline byte_t msb(bitboard_t bb)
+        inline square_t msb(bitboard_t bb)
         {
-            assert(bb);
             unsigned long idx;
             _BitScanReverse64(&idx, bb);
-            return (byte_t)idx;
+            return (square_t)idx;
         }
 
-        inline byte_t pop_lsb(bitboard_t &bb)
+        inline square_t pop_lsb(bitboard_t &bb)
         {
-            assert(bb);
-            const byte_t sqnum = lsb(bb);
+            const square_t sq = lsb(bb);
             bb &= bb - 1;
-            return sqnum;
+            return sq;
         }
 
         struct Magic
@@ -143,12 +134,12 @@ namespace schneizel
 
         void init();
         void print(bitboard_t bb);
-        void print(bitboard_t bb, byte_t sqnum);
+        void print(bitboard_t bb, square_t sq);
 
-        bitboard_t get_knight_movebb(byte_t sqnum);
-        bitboard_t get_bishop_movebb(byte_t sqnum, bitboard_t bodiesbb);
-        bitboard_t get_rook_movebb(byte_t sqnum, bitboard_t bodiesbb);
-        bitboard_t get_queen_movebb(byte_t sqnum, bitboard_t bodiesbb);
-        bitboard_t get_king_movebb(byte_t sqnum);
+        bitboard_t get_knight_movebb(square_t sq);
+        bitboard_t get_bishop_movebb(square_t sq, bitboard_t bodiesbb);
+        bitboard_t get_rook_movebb(square_t sq, bitboard_t bodiesbb);
+        bitboard_t get_queen_movebb(square_t sq, bitboard_t bodiesbb);
+        bitboard_t get_king_movebb(square_t sq);
     }
 }

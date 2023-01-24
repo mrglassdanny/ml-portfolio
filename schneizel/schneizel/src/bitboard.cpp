@@ -20,7 +20,7 @@ namespace schneizel
             }
 
         public:
-            MagicPRNG(uint64_t seed) : s(seed) { assert(seed); }
+            MagicPRNG(uint64_t seed) : s(seed) {}
 
             bitboard_t rand() { return (bitboard_t)rand64(); }
 
@@ -50,283 +50,283 @@ namespace schneizel
             return unsigned(((blockerbb & this->maskbb) * this->keybb) >> this->shift);
         }
 
-        bitboard_t init_knight_movebb(byte_t sqnum)
+        bitboard_t init_knight_movebb(square_t sq)
         {
             bitboard_t bb = EmptyBB;
 
-            byte_t rownum = get_rownum_fr_sqnum(sqnum);
-            byte_t colnum = get_colnum_fr_sqnum(sqnum);
+            row_t row = get_row_fr_sq(sq);
+            col_t col = get_col_fr_sq(sq);
 
-            byte_t test_rownum;
-            byte_t test_colnum;
+            row_t test_row;
+            col_t test_col;
 
-            test_rownum = rownum + 2;
-            test_colnum = colnum + 1;
-            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row + 2;
+            test_col = col + 1;
+            if (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+                bb = set_sqval(bb, get_sq(test_row, test_col));
             }
 
-            test_rownum = rownum + 2;
-            test_colnum = colnum - 1;
-            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row + 2;
+            test_col = col - 1;
+            if (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+                bb = set_sqval(bb, get_sq(test_row, test_col));
             }
 
-            test_rownum = rownum + 1;
-            test_colnum = colnum + 2;
-            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row + 1;
+            test_col = col + 2;
+            if (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+                bb = set_sqval(bb, get_sq(test_row, test_col));
             }
 
-            test_rownum = rownum + 1;
-            test_colnum = colnum - 2;
-            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row + 1;
+            test_col = col - 2;
+            if (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+                bb = set_sqval(bb, get_sq(test_row, test_col));
             }
 
-            test_rownum = rownum - 2;
-            test_colnum = colnum + 1;
-            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row - 2;
+            test_col = col + 1;
+            if (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+                bb = set_sqval(bb, get_sq(test_row, test_col));
             }
 
-            test_rownum = rownum - 2;
-            test_colnum = colnum - 1;
-            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row - 2;
+            test_col = col - 1;
+            if (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+                bb = set_sqval(bb, get_sq(test_row, test_col));
             }
 
-            test_rownum = rownum - 1;
-            test_colnum = colnum + 2;
-            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row - 1;
+            test_col = col + 2;
+            if (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+                bb = set_sqval(bb, get_sq(test_row, test_col));
             }
 
-            test_rownum = rownum - 1;
-            test_colnum = colnum - 2;
-            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row - 1;
+            test_col = col - 2;
+            if (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+                bb = set_sqval(bb, get_sq(test_row, test_col));
             }
 
             return bb;
         }
 
-        bitboard_t init_bishop_movebb(byte_t sqnum, bitboard_t blockersbb)
+        bitboard_t init_bishop_movebb(square_t sq, bitboard_t blockersbb)
         {
             bitboard_t bb = EmptyBB;
 
-            byte_t rownum = get_rownum_fr_sqnum(sqnum);
-            byte_t colnum = get_colnum_fr_sqnum(sqnum);
+            row_t row = get_row_fr_sq(sq);
+            col_t col = get_col_fr_sq(sq);
 
-            byte_t test_rownum;
-            byte_t test_colnum;
-            byte_t test_sqnum;
+            row_t test_row;
+            col_t test_col;
+            square_t test_sq;
 
             // Northeast:
-            test_rownum = rownum + 1;
-            test_colnum = colnum + 1;
-            test_sqnum = get_sqnum(test_rownum, test_colnum);
-            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row + 1;
+            test_col = col + 1;
+            test_sq = get_sq(test_row, test_col);
+            while (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, test_sqnum);
-                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                bb = set_sqval(bb, test_sq);
+                if ((blockersbb & get_sqbb(test_sq)) != EmptyBB)
                     break;
 
-                test_rownum++;
-                test_colnum++;
-                test_sqnum = get_sqnum(test_rownum, test_colnum);
+                test_row++;
+                test_col++;
+                test_sq = get_sq(test_row, test_col);
             }
 
             // Northwest:
-            test_rownum = rownum + 1;
-            test_colnum = colnum - 1;
-            test_sqnum = get_sqnum(test_rownum, test_colnum);
-            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row + 1;
+            test_col = col - 1;
+            test_sq = get_sq(test_row, test_col);
+            while (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, test_sqnum);
-                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                bb = set_sqval(bb, test_sq);
+                if ((blockersbb & get_sqbb(test_sq)) != EmptyBB)
                     break;
 
-                test_rownum++;
-                test_colnum--;
-                test_sqnum = get_sqnum(test_rownum, test_colnum);
+                test_row++;
+                test_col--;
+                test_sq = get_sq(test_row, test_col);
             }
 
             // Southeast:
-            test_rownum = rownum - 1;
-            test_colnum = colnum + 1;
-            test_sqnum = get_sqnum(test_rownum, test_colnum);
-            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row - 1;
+            test_col = col + 1;
+            test_sq = get_sq(test_row, test_col);
+            while (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, test_sqnum);
-                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                bb = set_sqval(bb, test_sq);
+                if ((blockersbb & get_sqbb(test_sq)) != EmptyBB)
                     break;
 
-                test_rownum--;
-                test_colnum++;
-                test_sqnum = get_sqnum(test_rownum, test_colnum);
+                test_row--;
+                test_col++;
+                test_sq = get_sq(test_row, test_col);
             }
 
             // Southwest:
-            test_rownum = rownum - 1;
-            test_colnum = colnum - 1;
-            test_sqnum = get_sqnum(test_rownum, test_colnum);
-            while (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row - 1;
+            test_col = col - 1;
+            test_sq = get_sq(test_row, test_col);
+            while (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, test_sqnum);
-                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                bb = set_sqval(bb, test_sq);
+                if ((blockersbb & get_sqbb(test_sq)) != EmptyBB)
                     break;
 
-                test_rownum--;
-                test_colnum--;
-                test_sqnum = get_sqnum(test_rownum, test_colnum);
+                test_row--;
+                test_col--;
+                test_sq = get_sq(test_row, test_col);
             }
 
             return bb;
         }
 
-        bitboard_t init_rook_movebb(byte_t sqnum, bitboard_t blockersbb)
+        bitboard_t init_rook_movebb(square_t sq, bitboard_t blockersbb)
         {
             bitboard_t bb = EmptyBB;
 
-            byte_t rownum = get_rownum_fr_sqnum(sqnum);
-            byte_t colnum = get_colnum_fr_sqnum(sqnum);
+            row_t row = get_row_fr_sq(sq);
+            col_t col = get_col_fr_sq(sq);
 
-            byte_t test_rownum;
-            byte_t test_colnum;
-            byte_t test_sqnum;
+            row_t test_row;
+            col_t test_col;
+            square_t test_sq;
 
             // North:
-            test_rownum = rownum + 1;
-            test_sqnum = get_sqnum(test_rownum, colnum);
-            while (is_rownum_valid(test_rownum))
+            test_row = row + 1;
+            test_sq = get_sq(test_row, col);
+            while (is_row_valid(test_row))
             {
-                bb = set_sqval(bb, test_sqnum);
-                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                bb = set_sqval(bb, test_sq);
+                if ((blockersbb & get_sqbb(test_sq)) != EmptyBB)
                     break;
 
-                test_rownum++;
-                test_sqnum = get_sqnum(test_rownum, colnum);
+                test_row++;
+                test_sq = get_sq(test_row, col);
             }
 
             // East:
-            test_colnum = colnum + 1;
-            test_sqnum = get_sqnum(rownum, test_colnum);
-            while (is_colnum_valid(test_colnum))
+            test_col = col + 1;
+            test_sq = get_sq(row, test_col);
+            while (is_col_valid(test_col))
             {
-                bb = set_sqval(bb, test_sqnum);
-                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                bb = set_sqval(bb, test_sq);
+                if ((blockersbb & get_sqbb(test_sq)) != EmptyBB)
                     break;
 
-                test_colnum++;
-                test_sqnum = get_sqnum(rownum, test_colnum);
+                test_col++;
+                test_sq = get_sq(row, test_col);
             }
 
             // West:
-            test_colnum = colnum - 1;
-            test_sqnum = get_sqnum(rownum, test_colnum);
-            while (is_colnum_valid(test_colnum))
+            test_col = col - 1;
+            test_sq = get_sq(row, test_col);
+            while (is_col_valid(test_col))
             {
-                bb = set_sqval(bb, test_sqnum);
-                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                bb = set_sqval(bb, test_sq);
+                if ((blockersbb & get_sqbb(test_sq)) != EmptyBB)
                     break;
 
-                test_colnum--;
-                test_sqnum = get_sqnum(rownum, test_colnum);
+                test_col--;
+                test_sq = get_sq(row, test_col);
             }
 
             // South:
-            test_rownum = rownum - 1;
-            test_sqnum = get_sqnum(test_rownum, colnum);
-            while (is_rownum_valid(test_rownum))
+            test_row = row - 1;
+            test_sq = get_sq(test_row, col);
+            while (is_row_valid(test_row))
             {
-                bb = set_sqval(bb, test_sqnum);
-                if ((blockersbb & get_sqbb(test_sqnum)) != EmptyBB)
+                bb = set_sqval(bb, test_sq);
+                if ((blockersbb & get_sqbb(test_sq)) != EmptyBB)
                     break;
 
-                test_rownum--;
-                test_sqnum = get_sqnum(test_rownum, colnum);
+                test_row--;
+                test_sq = get_sq(test_row, col);
             }
 
             return bb;
         }
 
-        bitboard_t init_king_movebb(byte_t sqnum)
+        bitboard_t init_king_movebb(square_t sq)
         {
             bitboard_t bb = EmptyBB;
 
-            byte_t rownum = get_rownum_fr_sqnum(sqnum);
-            byte_t colnum = get_colnum_fr_sqnum(sqnum);
+            row_t row = get_row_fr_sq(sq);
+            col_t col = get_col_fr_sq(sq);
 
-            byte_t test_rownum;
-            byte_t test_colnum;
+            row_t test_row;
+            col_t test_col;
 
             // North:
-            test_rownum = rownum + 1;
-            if (is_rownum_valid(test_rownum))
+            test_row = row + 1;
+            if (is_row_valid(test_row))
             {
-                bb = set_sqval(bb, get_sqnum(test_rownum, colnum));
+                bb = set_sqval(bb, get_sq(test_row, col));
             }
 
             // East:
-            test_colnum = colnum + 1;
-            if (is_colnum_valid(test_colnum))
+            test_col = col + 1;
+            if (is_col_valid(test_col))
             {
-                bb = set_sqval(bb, get_sqnum(rownum, test_colnum));
+                bb = set_sqval(bb, get_sq(row, test_col));
             }
 
             // West:
-            test_colnum = colnum - 1;
-            if (is_colnum_valid(test_colnum))
+            test_col = col - 1;
+            if (is_col_valid(test_col))
             {
-                bb = set_sqval(bb, get_sqnum(rownum, test_colnum));
+                bb = set_sqval(bb, get_sq(row, test_col));
             }
 
             // South:
-            test_rownum = rownum - 1;
-            if (is_rownum_valid(test_rownum))
+            test_row = row - 1;
+            if (is_row_valid(test_row))
             {
-                bb = set_sqval(bb, get_sqnum(test_rownum, colnum));
+                bb = set_sqval(bb, get_sq(test_row, col));
             }
 
             // Northeast:
-            test_rownum = rownum + 1;
-            test_colnum = colnum + 1;
-            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row + 1;
+            test_col = col + 1;
+            if (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+                bb = set_sqval(bb, get_sq(test_row, test_col));
             }
 
             // Northwest:
-            test_rownum = rownum + 1;
-            test_colnum = colnum - 1;
-            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row + 1;
+            test_col = col - 1;
+            if (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+                bb = set_sqval(bb, get_sq(test_row, test_col));
             }
 
             // Southeast:
-            test_rownum = rownum - 1;
-            test_colnum = colnum + 1;
-            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row - 1;
+            test_col = col + 1;
+            if (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+                bb = set_sqval(bb, get_sq(test_row, test_col));
             }
 
             // Southwest:
-            test_rownum = rownum - 1;
-            test_colnum = colnum - 1;
-            if (is_rownum_valid(test_rownum) && is_colnum_valid(test_colnum))
+            test_row = row - 1;
+            test_col = col - 1;
+            if (is_row_valid(test_row) && is_col_valid(test_col))
             {
-                bb = set_sqval(bb, get_sqnum(test_rownum, test_colnum));
+                bb = set_sqval(bb, get_sq(test_row, test_col));
             }
 
             return bb;
@@ -335,7 +335,7 @@ namespace schneizel
         void init_magics(bool bishop)
         {
             Magic *magics;
-            bitboard_t (*movebb_fn)(byte_t sqnum, bitboard_t blockersbb);
+            bitboard_t (*movebb_fn)(square_t sq, bitboard_t blockersbb);
 
             if (bishop)
             {
@@ -355,19 +355,19 @@ namespace schneizel
 
             memset(epoch, 0, sizeof(epoch));
 
-            for (byte_t sqnum = 0; sqnum < SquareCnt; sqnum++)
+            for (square_t sq = 0; sq < SquareCnt; sq++)
             {
-                edgebbs = ((Row1BB | Row8BB) & ~get_rowbb_fr_sqnum(sqnum)) | ((ColABB | ColHBB) & ~get_colbb_fr_sqnum(sqnum));
+                edgebbs = ((Row1BB | Row8BB) & ~get_rowbb_fr_sq(sq)) | ((ColABB | ColHBB) & ~get_colbb_fr_sq(sq));
 
-                Magic *magic = &magics[sqnum];
-                magic->maskbb = movebb_fn(sqnum, EmptyBB) & ~edgebbs;
+                Magic *magic = &magics[sq];
+                magic->maskbb = movebb_fn(sq, EmptyBB) & ~edgebbs;
                 magic->shift = 64 - popcount(magic->maskbb);
                 blockerbb = move_cnt = 0;
 
                 do
                 {
                     blockerbbs[move_cnt] = blockerbb;
-                    movebbs[move_cnt] = movebb_fn(sqnum, blockerbb);
+                    movebbs[move_cnt] = movebb_fn(sq, blockerbb);
                     move_cnt++;
                     blockerbb = (blockerbb - magic->maskbb) & magic->maskbb;
                 } while (blockerbb);
@@ -375,7 +375,7 @@ namespace schneizel
                 magic->movebbs = (bitboard_t *)malloc(sizeof(bitboard_t) * move_cnt);
                 memset(magic->movebbs, 0, sizeof(bitboard_t) * move_cnt);
 
-                MagicPRNG magic_prng(seeds[get_rownum_fr_sqnum(sqnum)]);
+                MagicPRNG magic_prng(seeds[get_row_fr_sq(sq)]);
 
                 for (int i = 0; i < move_cnt;)
                 {
@@ -401,9 +401,9 @@ namespace schneizel
         void init()
         {
             // Knights:
-            for (byte_t sqnum = 0; sqnum < SquareCnt; sqnum++)
+            for (square_t sq = 0; sq < SquareCnt; sq++)
             {
-                knight_movebbs[sqnum] = init_knight_movebb(sqnum);
+                knight_movebbs[sq] = init_knight_movebb(sq);
             }
 
             // Bishops:
@@ -415,9 +415,9 @@ namespace schneizel
             // Queens satisfied by bishops/rooks.
 
             // Kings:
-            for (byte_t sqnum = 0; sqnum < SquareCnt; sqnum++)
+            for (square_t sq = 0; sq < SquareCnt; sq++)
             {
-                king_movebbs[sqnum] = init_king_movebb(sqnum);
+                king_movebbs[sq] = init_king_movebb(sq);
             }
         }
 
@@ -441,7 +441,7 @@ namespace schneizel
             printf("\n");
         }
 
-        void print(bitboard_t bb, byte_t sqnum)
+        void print(bitboard_t bb, square_t sq)
         {
             byte_t *bb_bytes = (byte_t *)&bb;
             for (int i = 8 - 1; i >= 0; i--)
@@ -451,7 +451,7 @@ namespace schneizel
                 byte_t b = bb_bytes[i];
                 for (int j = 0, k = 8; j < 8; j++, k--)
                 {
-                    if (i * 8 + j == sqnum)
+                    if (i * 8 + j == sq)
                     {
                         printf("X ");
                     }
@@ -468,35 +468,35 @@ namespace schneizel
             printf("\n");
         }
 
-        bitboard_t get_knight_movebb(byte_t sqnum)
+        bitboard_t get_knight_movebb(square_t sq)
         {
-            return knight_movebbs[sqnum];
+            return knight_movebbs[sq];
         }
 
-        bitboard_t get_bishop_movebb(byte_t sqnum, bitboard_t bodiesbb)
+        bitboard_t get_bishop_movebb(square_t sq, bitboard_t bodiesbb)
         {
-            Magic *magic = &bishop_magics[sqnum];
+            Magic *magic = &bishop_magics[sq];
             bitboard_t blockersbb = magic->maskbb & bodiesbb;
             unsigned idx = magic->get_movebb_index(blockersbb);
             return magic->movebbs[idx];
         }
 
-        bitboard_t get_rook_movebb(byte_t sqnum, bitboard_t bodiesbb)
+        bitboard_t get_rook_movebb(square_t sq, bitboard_t bodiesbb)
         {
-            Magic *magic = &rook_magics[sqnum];
+            Magic *magic = &rook_magics[sq];
             bitboard_t blockersbb = magic->maskbb & bodiesbb;
             unsigned idx = magic->get_movebb_index(blockersbb);
             return magic->movebbs[idx];
         }
 
-        bitboard_t get_queen_movebb(byte_t sqnum, bitboard_t bodiesbb)
+        bitboard_t get_queen_movebb(square_t sq, bitboard_t bodiesbb)
         {
-            return get_bishop_movebb(sqnum, bodiesbb) | get_rook_movebb(sqnum, bodiesbb);
+            return get_bishop_movebb(sq, bodiesbb) | get_rook_movebb(sq, bodiesbb);
         }
 
-        bitboard_t get_king_movebb(byte_t sqnum)
+        bitboard_t get_king_movebb(square_t sq)
         {
-            return king_movebbs[sqnum];
+            return king_movebbs[sq];
         }
     }
 }

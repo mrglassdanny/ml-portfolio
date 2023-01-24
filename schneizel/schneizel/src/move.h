@@ -10,13 +10,13 @@ namespace schneizel
     struct Move
     {
         PieceType piecetyp;
-        byte_t src_sqnum;
-        byte_t dst_sqnum;
+        square_t src_sq;
+        square_t dst_sq;
         PieceType promo_piecetyp;
 
         Move();
-        Move(PieceType piecetyp, byte_t src_sqnum, byte_t dst_sqnum);
-        Move(PieceType piecetyp, byte_t src_sqnum, byte_t dst_sqnum, PieceType promo_piecetyp);
+        Move(PieceType piecetyp, square_t src_sq, square_t dst_sq);
+        Move(PieceType piecetyp, square_t src_sq, square_t dst_sq, PieceType promo_piecetyp);
     };
 
     struct MoveList
