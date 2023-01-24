@@ -19,6 +19,12 @@ namespace schneizel
         Move(PieceType piecetyp, square_t src_sq, square_t dst_sq, PieceType promo_piecetyp);
     };
 
+    struct PieceMoveList
+    {
+        bitboard_t movebb;
+        bitboard_t attackbb;
+    };
+
     struct MoveList
     {
         Move moves[MoveMaxCnt];

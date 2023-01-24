@@ -173,8 +173,10 @@ namespace schneizel
         return this->allbb;
     }
 
-    void Position::get_white_pawn_moves(square_t src_sq, MoveList *move_list)
+    PieceMoveList Position::get_white_pawn_moves(square_t src_sq)
     {
+        PieceMoveList piece_move_list;
+
         bitboard_t piecebb = bitboards::get_sqbb(src_sq);
 
         bitboard_t pawn_movebb = piecebb << 8;
@@ -198,86 +200,65 @@ namespace schneizel
         east_pawn_attackbb &= au_passant_blackbb;
         west_pawn_attackbb &= au_passant_blackbb;
 
-        this->white_attackbb |= east_pawn_attackbb;
-        this->white_attackbb |= west_pawn_attackbb;
+        piece_move_list.movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
+        piece_move_list.attackbb |= east_pawn_attackbb | west_pawn_attackbb;
 
-        bitboard_t movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
-
-        if ((piecebb & bitboards::Row7BB) != bitboards::EmptyBB)
-        {
-            while (movebb != bitboards::EmptyBB)
-            {
-                square_t dst_sq = pop_lsb(movebb);
-                move_list->moves[move_list->move_cnt++] = Move(PieceType::WhitePawn, src_sq, dst_sq, PieceType::WhiteKnight);
-                move_list->moves[move_list->move_cnt++] = Move(PieceType::WhitePawn, src_sq, dst_sq, PieceType::WhiteBishop);
-                move_list->moves[move_list->move_cnt++] = Move(PieceType::WhitePawn, src_sq, dst_sq, PieceType::WhiteRook);
-                move_list->moves[move_list->move_cnt++] = Move(PieceType::WhitePawn, src_sq, dst_sq, PieceType::WhiteQueen);
-            }
-        }
-        else
-        {
-            while (movebb != bitboards::EmptyBB)
-            {
-                move_list->moves[move_list->move_cnt++] = Move{PieceType::WhitePawn, src_sq, pop_lsb(movebb)};
-            }
-        }
+        return piece_move_list;
     }
 
-    void Position::get_white_knight_moves(square_t src_sq, MoveList *move_list)
+    PieceMoveList Position::get_white_knight_moves(square_t src_sq)
     {
-        bitboard_t movebb = bitboards::get_knight_movebb(src_sq) & ~this->whitebb;
-        this->white_attackbb |= movebb;
+        PieceMoveList piece_move_list;
 
-        while (movebb != bitboards::EmptyBB)
-        {
-            move_list->moves[move_list->move_cnt++] = Move{PieceType::WhiteKnight, src_sq, pop_lsb(movebb)};
-        }
+        piece_move_list.movebb = bitboards::get_knight_movebb(src_sq) & ~this->whitebb;
+        piece_move_list.attackbb = piece_move_list.movebb;
+
+        return piece_move_list;
     }
 
-    void Position::get_white_bishop_moves(square_t src_sq, MoveList *move_list)
+    PieceMoveList Position::get_white_bishop_moves(square_t src_sq)
     {
-        bitboard_t movebb = bitboards::get_bishop_movebb(src_sq, this->allbb) & ~this->whitebb;
-        this->white_attackbb |= movebb;
+        PieceMoveList piece_move_list;
 
-        while (movebb != bitboards::EmptyBB)
-        {
-            move_list->moves[move_list->move_cnt++] = Move{PieceType::WhiteBishop, src_sq, pop_lsb(movebb)};
-        }
+        piece_move_list.movebb = bitboards::get_bishop_movebb(src_sq, this->allbb) & ~this->whitebb;
+        piece_move_list.attackbb = piece_move_list.movebb;
+
+        return piece_move_list;
     }
 
-    void Position::get_white_rook_moves(square_t src_sq, MoveList *move_list)
+    PieceMoveList Position::get_white_rook_moves(square_t src_sq)
     {
-        bitboard_t movebb = bitboards::get_rook_movebb(src_sq, this->allbb) & ~this->whitebb;
-        this->white_attackbb |= movebb;
+        PieceMoveList piece_move_list;
 
-        while (movebb != bitboards::EmptyBB)
-        {
-            move_list->moves[move_list->move_cnt++] = Move{PieceType::WhiteRook, src_sq, pop_lsb(movebb)};
-        }
+        piece_move_list.movebb = bitboards::get_rook_movebb(src_sq, this->allbb) & ~this->whitebb;
+        piece_move_list.attackbb = piece_move_list.movebb;
+
+        return piece_move_list;
     }
 
-    void Position::get_white_queen_moves(square_t src_sq, MoveList *move_list)
+    PieceMoveList Position::get_white_queen_moves(square_t src_sq)
     {
-        bitboard_t movebb = bitboards::get_queen_movebb(src_sq, this->allbb) & ~this->whitebb;
-        this->white_attackbb |= movebb;
+        PieceMoveList piece_move_list;
 
-        while (movebb != bitboards::EmptyBB)
-        {
-            move_list->moves[move_list->move_cnt++] = Move{PieceType::WhiteQueen, src_sq, pop_lsb(movebb)};
-        }
+        piece_move_list.movebb = bitboards::get_queen_movebb(src_sq, this->allbb) & ~this->whitebb;
+        piece_move_list.attackbb = piece_move_list.movebb;
+
+        return piece_move_list;
     }
 
-    void Position::get_white_king_moves(square_t src_sq, MoveList *move_list)
+    PieceMoveList Position::get_white_king_moves(square_t src_sq)
     {
-        bitboard_t movebb = bitboards::get_king_movebb(src_sq) & ~this->whitebb;
-        this->white_attackbb |= movebb;
+        PieceMoveList piece_move_list;
+
+        piece_move_list.movebb = bitboards::get_king_movebb(src_sq) & ~this->whitebb;
+        piece_move_list.attackbb = piece_move_list.movebb;
 
         if (this->castle_rights.white_left)
         {
             // TODO
             if (bitboards::get_sqval(this->whitebb, 1) != 1 && bitboards::get_sqval(this->whitebb, 2) != 1 && bitboards::get_sqval(this->whitebb, 3) != 1)
             {
-                movebb |= bitboards::get_sqbb(2);
+                piece_move_list.movebb |= bitboards::get_sqbb(2);
             }
         }
 
@@ -286,18 +267,17 @@ namespace schneizel
             // TODO
             if (bitboards::get_sqval(this->whitebb, 5) != 1 && bitboards::get_sqval(this->whitebb, 6) != 1)
             {
-                movebb |= bitboards::get_sqbb(6);
+                piece_move_list.movebb |= bitboards::get_sqbb(6);
             }
         }
 
-        while (movebb != bitboards::EmptyBB)
-        {
-            move_list->moves[move_list->move_cnt++] = Move{PieceType::WhiteKing, src_sq, pop_lsb(movebb)};
-        }
+        return piece_move_list;
     }
 
-    void Position::get_black_pawn_moves(square_t src_sq, MoveList *move_list)
+    PieceMoveList Position::get_black_pawn_moves(square_t src_sq)
     {
+        PieceMoveList piece_move_list;
+
         bitboard_t piecebb = bitboards::get_sqbb(src_sq);
 
         bitboard_t pawn_movebb = piecebb >> 8;
@@ -321,86 +301,65 @@ namespace schneizel
         east_pawn_attackbb &= au_passant_whitebb;
         west_pawn_attackbb &= au_passant_whitebb;
 
-        this->black_attackbb |= east_pawn_attackbb;
-        this->black_attackbb |= west_pawn_attackbb;
+        piece_move_list.movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
+        piece_move_list.attackbb |= east_pawn_attackbb | west_pawn_attackbb;
 
-        bitboard_t movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
-
-        if ((piecebb & bitboards::Row2BB) != bitboards::EmptyBB)
-        {
-            while (movebb != bitboards::EmptyBB)
-            {
-                square_t dst_sq = pop_lsb(movebb);
-                move_list->moves[move_list->move_cnt++] = Move(PieceType::BlackPawn, src_sq, dst_sq, PieceType::BlackKnight);
-                move_list->moves[move_list->move_cnt++] = Move(PieceType::BlackPawn, src_sq, dst_sq, PieceType::BlackBishop);
-                move_list->moves[move_list->move_cnt++] = Move(PieceType::BlackPawn, src_sq, dst_sq, PieceType::BlackRook);
-                move_list->moves[move_list->move_cnt++] = Move(PieceType::BlackPawn, src_sq, dst_sq, PieceType::BlackQueen);
-            }
-        }
-        else
-        {
-            while (movebb != bitboards::EmptyBB)
-            {
-                move_list->moves[move_list->move_cnt++] = Move{PieceType::BlackPawn, src_sq, pop_lsb(movebb)};
-            }
-        }
+        return piece_move_list;
     }
 
-    void Position::get_black_knight_moves(square_t src_sq, MoveList *move_list)
+    PieceMoveList Position::get_black_knight_moves(square_t src_sq)
     {
-        bitboard_t movebb = bitboards::get_knight_movebb(src_sq) & ~this->blackbb;
-        this->black_attackbb |= movebb;
+        PieceMoveList piece_move_list;
 
-        while (movebb != bitboards::EmptyBB)
-        {
-            move_list->moves[move_list->move_cnt++] = Move{PieceType::WhiteKnight, src_sq, pop_lsb(movebb)};
-        }
+        piece_move_list.movebb = bitboards::get_knight_movebb(src_sq) & ~this->blackbb;
+        piece_move_list.attackbb = piece_move_list.movebb;
+
+        return piece_move_list;
     }
 
-    void Position::get_black_bishop_moves(square_t src_sq, MoveList *move_list)
+    PieceMoveList Position::get_black_bishop_moves(square_t src_sq)
     {
-        bitboard_t movebb = bitboards::get_bishop_movebb(src_sq, this->allbb) & ~this->blackbb;
-        this->black_attackbb |= movebb;
+        PieceMoveList piece_move_list;
 
-        while (movebb != bitboards::EmptyBB)
-        {
-            move_list->moves[move_list->move_cnt++] = Move{PieceType::WhiteBishop, src_sq, pop_lsb(movebb)};
-        }
+        piece_move_list.movebb = bitboards::get_bishop_movebb(src_sq, this->allbb) & ~this->blackbb;
+        piece_move_list.attackbb = piece_move_list.movebb;
+
+        return piece_move_list;
     }
 
-    void Position::get_black_rook_moves(square_t src_sq, MoveList *move_list)
+    PieceMoveList Position::get_black_rook_moves(square_t src_sq)
     {
-        bitboard_t movebb = bitboards::get_rook_movebb(src_sq, this->allbb) & ~this->blackbb;
-        this->black_attackbb |= movebb;
+        PieceMoveList piece_move_list;
 
-        while (movebb != bitboards::EmptyBB)
-        {
-            move_list->moves[move_list->move_cnt++] = Move{PieceType::WhiteRook, src_sq, pop_lsb(movebb)};
-        }
+        piece_move_list.movebb = bitboards::get_rook_movebb(src_sq, this->allbb) & ~this->blackbb;
+        piece_move_list.attackbb = piece_move_list.movebb;
+
+        return piece_move_list;
     }
 
-    void Position::get_black_queen_moves(square_t src_sq, MoveList *move_list)
+    PieceMoveList Position::get_black_queen_moves(square_t src_sq)
     {
-        bitboard_t movebb = bitboards::get_queen_movebb(src_sq, this->allbb) & ~this->blackbb;
-        this->black_attackbb |= movebb;
+        PieceMoveList piece_move_list;
 
-        while (movebb != bitboards::EmptyBB)
-        {
-            move_list->moves[move_list->move_cnt++] = Move{PieceType::WhiteQueen, src_sq, pop_lsb(movebb)};
-        }
+        piece_move_list.movebb = bitboards::get_queen_movebb(src_sq, this->allbb) & ~this->blackbb;
+        piece_move_list.attackbb = piece_move_list.movebb;
+
+        return piece_move_list;
     }
 
-    void Position::get_black_king_moves(square_t src_sq, MoveList *move_list)
+    PieceMoveList Position::get_black_king_moves(square_t src_sq)
     {
-        bitboard_t movebb = bitboards::get_king_movebb(src_sq) & ~this->blackbb;
-        this->black_attackbb |= movebb;
+        PieceMoveList piece_move_list;
+
+        piece_move_list.movebb = bitboards::get_king_movebb(src_sq) & ~this->blackbb;
+        piece_move_list.attackbb = piece_move_list.movebb;
 
         if (this->castle_rights.black_left)
         {
             // TODO
             if (bitboards::get_sqval(this->blackbb, 57) != 1 && bitboards::get_sqval(this->blackbb, 58) != 1 && bitboards::get_sqval(this->blackbb, 59) != 1)
             {
-                movebb |= bitboards::get_sqbb(58);
+                piece_move_list.movebb |= bitboards::get_sqbb(58);
             }
         }
 
@@ -409,14 +368,33 @@ namespace schneizel
             // TODO
             if (bitboards::get_sqval(this->blackbb, 61) != 1 && bitboards::get_sqval(this->blackbb, 62) != 1)
             {
-                movebb |= bitboards::get_sqbb(62);
+                piece_move_list.movebb |= bitboards::get_sqbb(62);
             }
         }
 
-        while (movebb != bitboards::EmptyBB)
+        return piece_move_list;
+    }
+
+    bool Position::is_in_check(bool white)
+    {
+        if (white)
         {
-            move_list->moves[move_list->move_cnt++] = Move{PieceType::WhiteKing, src_sq, pop_lsb(movebb)};
+            this->get_move_list();
+            if ((this->black_attackbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
+            {
+                return true;
+            }
         }
+        else
+        {
+            this->get_move_list();
+            if ((this->white_attackbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     MoveList Position::get_move_list()
@@ -433,7 +411,28 @@ namespace schneizel
                 bitboard_t piecebb = this->piecebbs[PieceType::WhitePawn];
                 while (piecebb != bitboards::EmptyBB)
                 {
-                    this->get_white_pawn_moves(pop_lsb(piecebb), &move_list);
+                    square_t src_sq = bitboards::pop_lsb(piecebb);
+
+                    PieceMoveList piece_move_list = this->get_white_pawn_moves(src_sq);
+
+                    if ((bitboards::get_sqbb(src_sq) & bitboards::Row7BB) != bitboards::EmptyBB)
+                    {
+                        while (piece_move_list.movebb != bitboards::EmptyBB)
+                        {
+                            square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
+                            move_list.moves[move_list.move_cnt++] = Move(PieceType::WhitePawn, src_sq, dst_sq, PieceType::WhiteKnight);
+                            move_list.moves[move_list.move_cnt++] = Move(PieceType::WhitePawn, src_sq, dst_sq, PieceType::WhiteBishop);
+                            move_list.moves[move_list.move_cnt++] = Move(PieceType::WhitePawn, src_sq, dst_sq, PieceType::WhiteRook);
+                            move_list.moves[move_list.move_cnt++] = Move(PieceType::WhitePawn, src_sq, dst_sq, PieceType::WhiteQueen);
+                        }
+                    }
+                    else
+                    {
+                        while (piece_move_list.movebb != bitboards::EmptyBB)
+                        {
+                            move_list.moves[move_list.move_cnt++] = Move{PieceType::WhitePawn, src_sq, bitboards::pop_lsb(piece_move_list.movebb)};
+                        }
+                    }
                 }
             }
 
@@ -442,7 +441,14 @@ namespace schneizel
                 bitboard_t piecebb = this->piecebbs[PieceType::WhiteKnight];
                 while (piecebb != bitboards::EmptyBB)
                 {
-                    this->get_white_knight_moves(pop_lsb(piecebb), &move_list);
+                    square_t src_sq = bitboards::pop_lsb(piecebb);
+
+                    PieceMoveList piece_move_list = this->get_white_knight_moves(src_sq);
+
+                    while (piece_move_list.movebb != bitboards::EmptyBB)
+                    {
+                        move_list.moves[move_list.move_cnt++] = Move{PieceType::WhiteKnight, src_sq, bitboards::pop_lsb(piece_move_list.movebb)};
+                    }
                 }
             }
 
@@ -451,7 +457,14 @@ namespace schneizel
                 bitboard_t piecebb = this->piecebbs[PieceType::WhiteBishop];
                 while (piecebb != bitboards::EmptyBB)
                 {
-                    this->get_white_bishop_moves(pop_lsb(piecebb), &move_list);
+                    square_t src_sq = bitboards::pop_lsb(piecebb);
+
+                    PieceMoveList piece_move_list = this->get_white_bishop_moves(src_sq);
+
+                    while (piece_move_list.movebb != bitboards::EmptyBB)
+                    {
+                        move_list.moves[move_list.move_cnt++] = Move{PieceType::WhiteBishop, src_sq, bitboards::pop_lsb(piece_move_list.movebb)};
+                    }
                 }
             }
 
@@ -460,7 +473,14 @@ namespace schneizel
                 bitboard_t piecebb = this->piecebbs[PieceType::WhiteRook];
                 while (piecebb != bitboards::EmptyBB)
                 {
-                    this->get_white_rook_moves(pop_lsb(piecebb), &move_list);
+                    square_t src_sq = bitboards::pop_lsb(piecebb);
+
+                    PieceMoveList piece_move_list = this->get_white_rook_moves(src_sq);
+
+                    while (piece_move_list.movebb != bitboards::EmptyBB)
+                    {
+                        move_list.moves[move_list.move_cnt++] = Move{PieceType::WhiteRook, src_sq, bitboards::pop_lsb(piece_move_list.movebb)};
+                    }
                 }
             }
 
@@ -469,7 +489,14 @@ namespace schneizel
                 bitboard_t piecebb = this->piecebbs[PieceType::WhiteQueen];
                 while (piecebb != bitboards::EmptyBB)
                 {
-                    this->get_white_queen_moves(pop_lsb(piecebb), &move_list);
+                    square_t src_sq = bitboards::pop_lsb(piecebb);
+
+                    PieceMoveList piece_move_list = this->get_white_queen_moves(src_sq);
+
+                    while (piece_move_list.movebb != bitboards::EmptyBB)
+                    {
+                        move_list.moves[move_list.move_cnt++] = Move{PieceType::WhiteQueen, src_sq, bitboards::pop_lsb(piece_move_list.movebb)};
+                    }
                 }
             }
 
@@ -478,7 +505,14 @@ namespace schneizel
                 bitboard_t piecebb = this->piecebbs[PieceType::WhiteKing];
                 while (piecebb != bitboards::EmptyBB)
                 {
-                    this->get_white_king_moves(pop_lsb(piecebb), &move_list);
+                    square_t src_sq = bitboards::pop_lsb(piecebb);
+
+                    PieceMoveList piece_move_list = this->get_white_king_moves(src_sq);
+
+                    while (piece_move_list.movebb != bitboards::EmptyBB)
+                    {
+                        move_list.moves[move_list.move_cnt++] = Move{PieceType::WhiteKing, src_sq, bitboards::pop_lsb(piece_move_list.movebb)};
+                    }
                 }
             }
         }
@@ -491,7 +525,28 @@ namespace schneizel
                 bitboard_t piecebb = this->piecebbs[PieceType::BlackPawn];
                 while (piecebb != bitboards::EmptyBB)
                 {
-                    this->get_black_pawn_moves(pop_lsb(piecebb), &move_list);
+                    square_t src_sq = bitboards::pop_lsb(piecebb);
+
+                    PieceMoveList piece_move_list = this->get_black_pawn_moves(src_sq);
+
+                    if ((bitboards::get_sqbb(src_sq) & bitboards::Row2BB) != bitboards::EmptyBB)
+                    {
+                        while (piece_move_list.movebb != bitboards::EmptyBB)
+                        {
+                            square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
+                            move_list.moves[move_list.move_cnt++] = Move(PieceType::BlackPawn, src_sq, dst_sq, PieceType::BlackKnight);
+                            move_list.moves[move_list.move_cnt++] = Move(PieceType::BlackPawn, src_sq, dst_sq, PieceType::BlackBishop);
+                            move_list.moves[move_list.move_cnt++] = Move(PieceType::BlackPawn, src_sq, dst_sq, PieceType::BlackRook);
+                            move_list.moves[move_list.move_cnt++] = Move(PieceType::BlackPawn, src_sq, dst_sq, PieceType::BlackQueen);
+                        }
+                    }
+                    else
+                    {
+                        while (piece_move_list.movebb != bitboards::EmptyBB)
+                        {
+                            move_list.moves[move_list.move_cnt++] = Move{PieceType::BlackPawn, src_sq, bitboards::pop_lsb(piece_move_list.movebb)};
+                        }
+                    }
                 }
             }
 
@@ -500,7 +555,14 @@ namespace schneizel
                 bitboard_t piecebb = this->piecebbs[PieceType::BlackKnight];
                 while (piecebb != bitboards::EmptyBB)
                 {
-                    this->get_black_knight_moves(pop_lsb(piecebb), &move_list);
+                    square_t src_sq = bitboards::pop_lsb(piecebb);
+
+                    PieceMoveList piece_move_list = this->get_black_knight_moves(src_sq);
+
+                    while (piece_move_list.movebb != bitboards::EmptyBB)
+                    {
+                        move_list.moves[move_list.move_cnt++] = Move{PieceType::BlackKnight, src_sq, bitboards::pop_lsb(piece_move_list.movebb)};
+                    }
                 }
             }
 
@@ -509,7 +571,14 @@ namespace schneizel
                 bitboard_t piecebb = this->piecebbs[PieceType::BlackBishop];
                 while (piecebb != bitboards::EmptyBB)
                 {
-                    this->get_black_bishop_moves(pop_lsb(piecebb), &move_list);
+                    square_t src_sq = bitboards::pop_lsb(piecebb);
+
+                    PieceMoveList piece_move_list = this->get_black_bishop_moves(src_sq);
+
+                    while (piece_move_list.movebb != bitboards::EmptyBB)
+                    {
+                        move_list.moves[move_list.move_cnt++] = Move{PieceType::BlackBishop, src_sq, bitboards::pop_lsb(piece_move_list.movebb)};
+                    }
                 }
             }
 
@@ -518,7 +587,14 @@ namespace schneizel
                 bitboard_t piecebb = this->piecebbs[PieceType::BlackRook];
                 while (piecebb != bitboards::EmptyBB)
                 {
-                    this->get_black_rook_moves(pop_lsb(piecebb), &move_list);
+                    square_t src_sq = bitboards::pop_lsb(piecebb);
+
+                    PieceMoveList piece_move_list = this->get_black_rook_moves(src_sq);
+
+                    while (piece_move_list.movebb != bitboards::EmptyBB)
+                    {
+                        move_list.moves[move_list.move_cnt++] = Move{PieceType::BlackRook, src_sq, bitboards::pop_lsb(piece_move_list.movebb)};
+                    }
                 }
             }
 
@@ -527,7 +603,14 @@ namespace schneizel
                 bitboard_t piecebb = this->piecebbs[PieceType::BlackQueen];
                 while (piecebb != bitboards::EmptyBB)
                 {
-                    this->get_black_queen_moves(pop_lsb(piecebb), &move_list);
+                    square_t src_sq = bitboards::pop_lsb(piecebb);
+
+                    PieceMoveList piece_move_list = this->get_black_queen_moves(src_sq);
+
+                    while (piece_move_list.movebb != bitboards::EmptyBB)
+                    {
+                        move_list.moves[move_list.move_cnt++] = Move{PieceType::BlackQueen, src_sq, bitboards::pop_lsb(piece_move_list.movebb)};
+                    }
                 }
             }
 
@@ -536,7 +619,14 @@ namespace schneizel
                 bitboard_t piecebb = this->piecebbs[PieceType::BlackKing];
                 while (piecebb != bitboards::EmptyBB)
                 {
-                    this->get_black_king_moves(pop_lsb(piecebb), &move_list);
+                    square_t src_sq = bitboards::pop_lsb(piecebb);
+
+                    PieceMoveList piece_move_list = this->get_black_king_moves(src_sq);
+
+                    while (piece_move_list.movebb != bitboards::EmptyBB)
+                    {
+                        move_list.moves[move_list.move_cnt++] = Move{PieceType::BlackKing, src_sq, bitboards::pop_lsb(piece_move_list.movebb)};
+                    }
                 }
             }
         }
@@ -701,6 +791,37 @@ namespace schneizel
         }
 
         this->pieces[move.src_sq] = PieceType::None;
+
+        // See if we are now checking opponent with move.
+        switch (this->pieces[move.dst_sq])
+        {
+        case PieceType::WhitePawn:
+            break;
+        case PieceType::WhiteKnight:
+            break;
+        case PieceType::WhiteBishop:
+            break;
+        case PieceType::WhiteRook:
+            break;
+        case PieceType::WhiteQueen:
+            break;
+        case PieceType::WhiteKing:
+            break;
+        case PieceType::BlackPawn:
+            break;
+        case PieceType::BlackKnight:
+            break;
+        case PieceType::BlackBishop:
+            break;
+        case PieceType::BlackRook:
+            break;
+        case PieceType::BlackQueen:
+            break;
+        case PieceType::BlackKing:
+            break;
+        default:
+            break;
+        }
 
         this->white_turn = !this->white_turn;
     }

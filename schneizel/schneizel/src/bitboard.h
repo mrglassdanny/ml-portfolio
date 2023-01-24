@@ -141,5 +141,8 @@ namespace schneizel
         bitboard_t get_rook_movebb(square_t sq, bitboard_t bodiesbb);
         bitboard_t get_queen_movebb(square_t sq, bitboard_t bodiesbb);
         bitboard_t get_king_movebb(square_t sq);
+
+        Magic *get_bishop_magic(square_t sq);
+        Magic *get_rook_magic(square_t sq);
     }
 }

@@ -498,5 +498,15 @@ namespace schneizel
         {
             return king_movebbs[sq];
         }
+
+        Magic *get_bishop_magic(square_t sq)
+        {
+            return &bishop_magics[sq];
+        }
+
+        Magic *get_rook_magic(square_t sq)
+        {
+            return &rook_magics[sq];
+        }
     }
 }
