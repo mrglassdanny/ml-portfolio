@@ -115,9 +115,9 @@ namespace schneizel
 
         inline square_t pop_lsb(bitboard_t &bb)
         {
-            const square_t sqnum = lsb(bb);
+            const square_t sq = lsb(bb);
             bb &= bb - 1;
-            return sqnum;
+            return sq;
         }
 
         struct Magic

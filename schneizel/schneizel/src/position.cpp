@@ -90,7 +90,7 @@ namespace schneizel
 
             for (int col = 0; col < 8; col++)
             {
-                byte_t sq = row * 8 + col;
+                square_t sq = row * 8 + col;
                 PieceType piecetyp = this->pieces[sq];
                 char piecetyp_char = get_piecetyp_char(piecetyp);
 
