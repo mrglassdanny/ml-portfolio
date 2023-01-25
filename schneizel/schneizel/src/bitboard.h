@@ -145,6 +145,8 @@ namespace schneizel
             bitboard_t maskbb;
             bitboard_t keybb;
             bitboard_t *movebbs;
+            bitboard_t directionbbs[DirectionCnt];
+
             int shift;
 
             ~Magic();

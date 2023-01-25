@@ -2,6 +2,11 @@
 
 namespace schneizel
 {
+    CardinalDirection white_cardinal_direction_search_path[] = {CardinalDirection::North, CardinalDirection::East, CardinalDirection::West, CardinalDirection::South};
+    DiagonalDirection white_diagonal_direction_search_path[] = {DiagonalDirection::Northeast, DiagonalDirection::Northwest, DiagonalDirection::Southeast, DiagonalDirection::Southwest};
+    CardinalDirection black_cardinal_direction_search_path[] = {CardinalDirection::South, CardinalDirection::East, CardinalDirection::West, CardinalDirection::North};
+    DiagonalDirection black_diagonal_direction_search_path[] = {DiagonalDirection::Southeast, DiagonalDirection::Southwest, DiagonalDirection::Northeast, DiagonalDirection::Northwest};
+
     void Position::init()
     {
         white_turn = true;
@@ -210,6 +215,28 @@ namespace schneizel
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
 
+        // Pins:
+        {
+            bitboard_t king_attackbb = bitboards::get_bishop_movebb(src_sq, this->piecebbs[PieceType::BlackKing]);
+            if ((king_attackbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
+            {
+                bitboard_t *directionbbs = bitboards::get_bishop_magic(src_sq)->directionbbs;
+                bitboard_t king_directionbb;
+                for (int i = 0; i <= DirectionCnt; i++)
+                {
+                    bitboard_t directionbb = directionbbs[white_diagonal_direction_search_path[i]];
+                    if ((directionbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
+                    {
+                        king_directionbb = directionbb;
+                        break;
+                    }
+                }
+
+                bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::BlackKing];
+                bitboard_t pinsbb = king_directionbb & all_but_kingbb;
+            }
+        }
+
         return piece_move_list;
     }
 
@@ -221,6 +248,28 @@ namespace schneizel
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
 
+        // Pins:
+        {
+            bitboard_t king_attackbb = bitboards::get_rook_movebb(src_sq, this->piecebbs[PieceType::BlackKing]);
+            if ((king_attackbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
+            {
+                bitboard_t *directionbbs = bitboards::get_rook_magic(src_sq)->directionbbs;
+                bitboard_t king_directionbb;
+                for (int i = 0; i <= DirectionCnt; i++)
+                {
+                    bitboard_t directionbb = directionbbs[white_cardinal_direction_search_path[i]];
+                    if ((directionbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
+                    {
+                        king_directionbb = directionbb;
+                        break;
+                    }
+                }
+
+                bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::BlackKing];
+                bitboard_t pinsbb = king_directionbb & all_but_kingbb;
+            }
+        }
+
         return piece_move_list;
     }
 
@@ -231,6 +280,55 @@ namespace schneizel
         piece_move_list.movebb = bitboards::get_queen_movebb(src_sq, this->allbb);
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
+
+        // Pins:
+        {
+            bool king_in_diagonal_direction = false;
+            // Diagonal:
+            {
+                bitboard_t king_attackbb = bitboards::get_bishop_movebb(src_sq, this->piecebbs[PieceType::BlackKing]);
+                if ((king_attackbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
+                {
+                    bitboard_t *directionbbs = bitboards::get_bishop_magic(src_sq)->directionbbs;
+                    bitboard_t king_directionbb;
+                    for (int i = 0; i <= DirectionCnt; i++)
+                    {
+                        bitboard_t directionbb = directionbbs[white_diagonal_direction_search_path[i]];
+                        if ((directionbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
+                        {
+                            king_directionbb = directionbb;
+                            break;
+                        }
+                    }
+
+                    bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::BlackKing];
+                    bitboard_t pinsbb = king_directionbb & all_but_kingbb;
+                }
+            }
+
+            // Cardinal:
+            if (!king_in_diagonal_direction)
+            {
+                bitboard_t king_attackbb = bitboards::get_rook_movebb(src_sq, this->piecebbs[PieceType::BlackKing]);
+                if ((king_attackbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
+                {
+                    bitboard_t *directionbbs = bitboards::get_rook_magic(src_sq)->directionbbs;
+                    bitboard_t king_directionbb;
+                    for (int i = 0; i <= DirectionCnt; i++)
+                    {
+                        bitboard_t directionbb = directionbbs[white_cardinal_direction_search_path[i]];
+                        if ((directionbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
+                        {
+                            king_directionbb = directionbb;
+                            break;
+                        }
+                    }
+
+                    bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::BlackKing];
+                    bitboard_t pinsbb = king_directionbb & all_but_kingbb;
+                }
+            }
+        }
 
         return piece_move_list;
     }
@@ -317,6 +415,28 @@ namespace schneizel
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
 
+        // Pins:
+        {
+            bitboard_t king_attackbb = bitboards::get_bishop_movebb(src_sq, this->piecebbs[PieceType::WhiteKing]);
+            if ((king_attackbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
+            {
+                bitboard_t *directionbbs = bitboards::get_bishop_magic(src_sq)->directionbbs;
+                bitboard_t king_directionbb;
+                for (int i = 0; i <= DirectionCnt; i++)
+                {
+                    bitboard_t directionbb = directionbbs[black_diagonal_direction_search_path[i]];
+                    if ((directionbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
+                    {
+                        king_directionbb = directionbb;
+                        break;
+                    }
+                }
+
+                bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::WhiteKing];
+                bitboard_t pinsbb = king_directionbb & all_but_kingbb;
+            }
+        }
+
         return piece_move_list;
     }
 
@@ -328,6 +448,28 @@ namespace schneizel
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
 
+        // Pins:
+        {
+            bitboard_t king_attackbb = bitboards::get_rook_movebb(src_sq, this->piecebbs[PieceType::WhiteKing]);
+            if ((king_attackbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
+            {
+                bitboard_t *directionbbs = bitboards::get_rook_magic(src_sq)->directionbbs;
+                bitboard_t king_directionbb;
+                for (int i = 0; i <= DirectionCnt; i++)
+                {
+                    bitboard_t directionbb = directionbbs[black_cardinal_direction_search_path[i]];
+                    if ((directionbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
+                    {
+                        king_directionbb = directionbb;
+                        break;
+                    }
+                }
+
+                bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::WhiteKing];
+                bitboard_t pinsbb = king_directionbb & all_but_kingbb;
+            }
+        }
+
         return piece_move_list;
     }
 
@@ -338,6 +480,55 @@ namespace schneizel
         piece_move_list.movebb = bitboards::get_queen_movebb(src_sq, this->allbb);
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
+
+        // Pins:
+        {
+            bool king_in_diagonal_direction = false;
+            // Diagonal:
+            {
+                bitboard_t king_attackbb = bitboards::get_bishop_movebb(src_sq, this->piecebbs[PieceType::WhiteKing]);
+                if ((king_attackbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
+                {
+                    bitboard_t *directionbbs = bitboards::get_bishop_magic(src_sq)->directionbbs;
+                    bitboard_t king_directionbb;
+                    for (int i = 0; i <= DirectionCnt; i++)
+                    {
+                        bitboard_t directionbb = directionbbs[black_diagonal_direction_search_path[i]];
+                        if ((directionbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
+                        {
+                            king_directionbb = directionbb;
+                            break;
+                        }
+                    }
+
+                    bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::WhiteKing];
+                    bitboard_t pinsbb = king_directionbb & all_but_kingbb;
+                }
+            }
+
+            // Cardinal:
+            if (!king_in_diagonal_direction)
+            {
+                bitboard_t king_attackbb = bitboards::get_rook_movebb(src_sq, this->piecebbs[PieceType::WhiteKing]);
+                if ((king_attackbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
+                {
+                    bitboard_t *directionbbs = bitboards::get_rook_magic(src_sq)->directionbbs;
+                    bitboard_t king_directionbb;
+                    for (int i = 0; i <= DirectionCnt; i++)
+                    {
+                        bitboard_t directionbb = directionbbs[black_cardinal_direction_search_path[i]];
+                        if ((directionbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
+                        {
+                            king_directionbb = directionbb;
+                            break;
+                        }
+                    }
+
+                    bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::WhiteKing];
+                    bitboard_t pinsbb = king_directionbb & all_but_kingbb;
+                }
+            }
+        }
 
         return piece_move_list;
     }
