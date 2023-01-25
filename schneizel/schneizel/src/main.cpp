@@ -12,7 +12,7 @@ int main(int argc, char **argv)
 
 	auto sw = new StopWatch();
 
-	int epochs = 5000000;
+	int epochs = 50000;
 	int moves = 50;
 
 	sw->start();

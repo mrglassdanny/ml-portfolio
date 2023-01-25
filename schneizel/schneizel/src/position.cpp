@@ -847,12 +847,14 @@ namespace schneizel
         {
             if ((piece_move_list.attackbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
             {
+                // TODO
             }
         }
         else
         {
             if ((piece_move_list.attackbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
             {
+                // TODO
             }
         }
 
