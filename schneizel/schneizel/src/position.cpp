@@ -201,7 +201,7 @@ namespace schneizel
         west_pawn_attackbb &= au_passant_blackbb;
 
         piece_move_list.movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
-        piece_move_list.attackbb |= east_pawn_attackbb | west_pawn_attackbb;
+        piece_move_list.attackbb = east_pawn_attackbb | west_pawn_attackbb;
 
         return piece_move_list;
     }
@@ -253,19 +253,17 @@ namespace schneizel
         piece_move_list.movebb = bitboards::get_king_movebb(src_sq) & ~this->whitebb;
         piece_move_list.attackbb = piece_move_list.movebb;
 
-        if (this->castle_rights.white_left)
+        if (this->castle_rights.white_left && bitboards::get_sqval(this->piecebbs[PieceType::WhiteRook], 0) == 1)
         {
-            // TODO
-            if (bitboards::get_sqval(this->whitebb, 1) != 1 && bitboards::get_sqval(this->whitebb, 2) != 1 && bitboards::get_sqval(this->whitebb, 3) != 1)
+            if (bitboards::get_sqval(this->allbb, 1) != 1 && bitboards::get_sqval(this->allbb, 2) != 1 && bitboards::get_sqval(this->allbb, 3) != 1)
             {
                 piece_move_list.movebb |= bitboards::get_sqbb(2);
             }
         }
 
-        if (this->castle_rights.white_right)
+        if (this->castle_rights.white_right && bitboards::get_sqval(this->piecebbs[PieceType::WhiteRook], 7) == 1)
         {
-            // TODO
-            if (bitboards::get_sqval(this->whitebb, 5) != 1 && bitboards::get_sqval(this->whitebb, 6) != 1)
+            if (bitboards::get_sqval(this->allbb, 5) != 1 && bitboards::get_sqval(this->allbb, 6) != 1)
             {
                 piece_move_list.movebb |= bitboards::get_sqbb(6);
             }
@@ -302,7 +300,7 @@ namespace schneizel
         west_pawn_attackbb &= au_passant_whitebb;
 
         piece_move_list.movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
-        piece_move_list.attackbb |= east_pawn_attackbb | west_pawn_attackbb;
+        piece_move_list.attackbb = east_pawn_attackbb | west_pawn_attackbb;
 
         return piece_move_list;
     }
@@ -354,19 +352,17 @@ namespace schneizel
         piece_move_list.movebb = bitboards::get_king_movebb(src_sq) & ~this->blackbb;
         piece_move_list.attackbb = piece_move_list.movebb;
 
-        if (this->castle_rights.black_left)
+        if (this->castle_rights.black_left && bitboards::get_sqval(this->piecebbs[PieceType::BlackRook], 56) == 1)
         {
-            // TODO
-            if (bitboards::get_sqval(this->blackbb, 57) != 1 && bitboards::get_sqval(this->blackbb, 58) != 1 && bitboards::get_sqval(this->blackbb, 59) != 1)
+            if (bitboards::get_sqval(this->allbb, 57) != 1 && bitboards::get_sqval(this->allbb, 58) != 1 && bitboards::get_sqval(this->allbb, 59) != 1)
             {
                 piece_move_list.movebb |= bitboards::get_sqbb(58);
             }
         }
 
-        if (this->castle_rights.black_right)
+        if (this->castle_rights.black_right && bitboards::get_sqval(this->piecebbs[PieceType::BlackRook], 63) == 1)
         {
-            // TODO
-            if (bitboards::get_sqval(this->blackbb, 61) != 1 && bitboards::get_sqval(this->blackbb, 62) != 1)
+            if (bitboards::get_sqval(this->allbb, 61) != 1 && bitboards::get_sqval(this->allbb, 62) != 1)
             {
                 piece_move_list.movebb |= bitboards::get_sqbb(62);
             }
@@ -634,131 +630,136 @@ namespace schneizel
         return move_list;
     }
 
-    void Position::make_move(Move move)
+    void Position::make_move(Move move, int j, int i)
     {
         PieceType src_piecetyp = this->pieces[move.src_sq];
         PieceType capture_piecetyp = this->pieces[move.dst_sq];
-
-        // Castle rights:
-        if (src_piecetyp == PieceType::WhiteRook)
-        {
-            if (move.src_sq == 0)
-            {
-                this->castle_rights.white_left = false;
-            }
-            else if (move.src_sq == 7)
-            {
-                this->castle_rights.white_right = false;
-            }
-        }
-        else if (src_piecetyp == PieceType::BlackRook)
-        {
-            if (move.src_sq == 56)
-            {
-                this->castle_rights.black_left = false;
-            }
-            else if (move.src_sq == 63)
-            {
-                this->castle_rights.black_right = false;
-            }
-        }
 
         bitboard_t movebb = bitboards::EmptyBB;
         movebb = bitboards::set_sqval(movebb, move.src_sq);
         movebb = bitboards::set_sqval(movebb, move.dst_sq);
 
         // Castle:
-        if (src_piecetyp == PieceType::WhiteKing)
         {
-            if (move.src_sq == 4)
+            if ((this->castle_rights.white_left || this->castle_rights.white_right) && src_piecetyp == PieceType::WhiteRook)
             {
-                if (move.dst_sq == 2)
+                if (move.src_sq == 0)
                 {
-                    this->pieces[3] = PieceType::WhiteRook;
-                    this->pieces[0] = PieceType::None;
-                    this->piecebbs[PieceType::WhiteRook] = bitboards::set_sqval(this->piecebbs[PieceType::WhiteRook], 3);
-                    this->piecebbs[PieceType::WhiteRook] = bitboards::clear_sqval(this->piecebbs[PieceType::WhiteRook], 0);
+                    this->castle_rights.white_left = false;
                 }
-                else if (move.dst_sq == 6)
+                else if (move.src_sq == 7)
                 {
-                    this->pieces[5] = PieceType::WhiteRook;
-                    this->pieces[7] = PieceType::None;
-                    this->piecebbs[PieceType::WhiteRook] = bitboards::set_sqval(this->piecebbs[PieceType::WhiteRook], 5);
-                    this->piecebbs[PieceType::WhiteRook] = bitboards::clear_sqval(this->piecebbs[PieceType::WhiteRook], 7);
+                    this->castle_rights.white_right = false;
+                }
+            }
+            else if ((this->castle_rights.black_left || this->castle_rights.black_right) && src_piecetyp == PieceType::BlackRook)
+            {
+                if (move.src_sq == 56)
+                {
+                    this->castle_rights.black_left = false;
+                }
+                else if (move.src_sq == 63)
+                {
+                    this->castle_rights.black_right = false;
                 }
             }
 
-            this->castle_rights.white_left = false;
-            this->castle_rights.white_right = false;
-        }
-        else if (src_piecetyp == PieceType::BlackKing)
-        {
-            if (move.src_sq == 60)
+            if (src_piecetyp == PieceType::WhiteKing)
             {
-                if (move.dst_sq == 58)
+                if (move.src_sq == 4)
                 {
-                    this->pieces[59] = PieceType::BlackRook;
-                    this->pieces[56] = PieceType::None;
-                    this->piecebbs[PieceType::BlackRook] = bitboards::set_sqval(this->piecebbs[PieceType::BlackRook], 59);
-                    this->piecebbs[PieceType::BlackRook] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackRook], 56);
+                    if (move.dst_sq == 2)
+                    {
+                        this->pieces[3] = PieceType::WhiteRook;
+                        this->pieces[0] = PieceType::None;
+                        this->piecebbs[PieceType::WhiteRook] = bitboards::set_sqval(this->piecebbs[PieceType::WhiteRook], 3);
+                        this->piecebbs[PieceType::WhiteRook] = bitboards::clear_sqval(this->piecebbs[PieceType::WhiteRook], 0);
+                        this->whitebb = bitboards::set_sqval(this->whitebb, 3);
+                        this->whitebb = bitboards::clear_sqval(this->whitebb, 0);
+                    }
+                    else if (move.dst_sq == 6)
+                    {
+                        this->pieces[5] = PieceType::WhiteRook;
+                        this->pieces[7] = PieceType::None;
+                        this->piecebbs[PieceType::WhiteRook] = bitboards::set_sqval(this->piecebbs[PieceType::WhiteRook], 5);
+                        this->piecebbs[PieceType::WhiteRook] = bitboards::clear_sqval(this->piecebbs[PieceType::WhiteRook], 7);
+                        this->whitebb = bitboards::set_sqval(this->whitebb, 5);
+                        this->whitebb = bitboards::clear_sqval(this->whitebb, 7);
+                    }
                 }
-                else if (move.dst_sq == 62)
-                {
-                    this->pieces[61] = PieceType::BlackRook;
-                    this->pieces[63] = PieceType::None;
-                    this->piecebbs[PieceType::BlackRook] = bitboards::set_sqval(this->piecebbs[PieceType::BlackRook], 61);
-                    this->piecebbs[PieceType::BlackRook] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackRook], 63);
-                }
-            }
 
-            this->castle_rights.black_left = false;
-            this->castle_rights.black_right = false;
+                this->castle_rights.white_left = false;
+                this->castle_rights.white_right = false;
+            }
+            else if (src_piecetyp == PieceType::BlackKing)
+            {
+                if (move.src_sq == 60)
+                {
+                    if (move.dst_sq == 58)
+                    {
+                        this->pieces[59] = PieceType::BlackRook;
+                        this->pieces[56] = PieceType::None;
+                        this->piecebbs[PieceType::BlackRook] = bitboards::set_sqval(this->piecebbs[PieceType::BlackRook], 59);
+                        this->piecebbs[PieceType::BlackRook] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackRook], 56);
+                        this->blackbb = bitboards::set_sqval(this->blackbb, 59);
+                        this->blackbb = bitboards::clear_sqval(this->blackbb, 56);
+                    }
+                    else if (move.dst_sq == 62)
+                    {
+                        this->pieces[61] = PieceType::BlackRook;
+                        this->pieces[63] = PieceType::None;
+                        this->piecebbs[PieceType::BlackRook] = bitboards::set_sqval(this->piecebbs[PieceType::BlackRook], 61);
+                        this->piecebbs[PieceType::BlackRook] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackRook], 63);
+                        this->blackbb = bitboards::set_sqval(this->blackbb, 61);
+                        this->blackbb = bitboards::clear_sqval(this->blackbb, 63);
+                    }
+                }
+
+                this->castle_rights.black_left = false;
+                this->castle_rights.black_right = false;
+            }
         }
 
         // Au passant:
-        bool au_passant_opp = false;
+        {
+            bool au_passant_opportunity = false;
 
-        if (src_piecetyp == PieceType::WhitePawn)
-        {
-            if (move.dst_sq == this->au_passant_sq)
+            if (src_piecetyp == PieceType::WhitePawn)
             {
-                this->pieces[move.dst_sq - 8] = PieceType::None;
-                this->piecebbs[PieceType::BlackPawn] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackPawn], move.dst_sq - 8);
+                square_t capture_au_passant_sq = move.dst_sq - 8;
+                if (move.dst_sq == this->au_passant_sq)
+                {
+                    square_t au_passant_sq = move.dst_sq - 8;
+                    this->pieces[au_passant_sq] = PieceType::None;
+                    this->piecebbs[PieceType::BlackPawn] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackPawn], au_passant_sq);
+                    this->blackbb = bitboards::clear_sqval(this->blackbb, au_passant_sq);
+                }
+                else if (move.dst_sq - move.src_sq > 9)
+                {
+                    this->au_passant_sq = capture_au_passant_sq;
+                    au_passant_opportunity = true;
+                }
             }
-            else if (move.dst_sq - move.src_sq > 9)
+            else if (src_piecetyp == PieceType::BlackPawn)
             {
-                this->au_passant_sq = move.dst_sq - 8;
-                au_passant_opp = true;
+                square_t capture_au_passant_sq = move.dst_sq + 8;
+                if (move.dst_sq == this->au_passant_sq)
+                {
+                    this->pieces[capture_au_passant_sq] = PieceType::None;
+                    this->piecebbs[PieceType::WhitePawn] = bitboards::clear_sqval(this->piecebbs[PieceType::WhitePawn], capture_au_passant_sq);
+                    this->whitebb = bitboards::clear_sqval(this->whitebb, capture_au_passant_sq);
+                }
+                else if (move.src_sq - move.dst_sq > 9)
+                {
+                    this->au_passant_sq = capture_au_passant_sq;
+                    au_passant_opportunity = true;
+                }
             }
-        }
-        else if (src_piecetyp == PieceType::BlackPawn)
-        {
-            if (move.dst_sq == this->au_passant_sq)
-            {
-                this->pieces[move.dst_sq + 8] = PieceType::None;
-                this->piecebbs[PieceType::WhitePawn] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackPawn], move.dst_sq + 8);
-            }
-            else if (move.src_sq - move.dst_sq > 9)
-            {
-                this->au_passant_sq = move.dst_sq + 8;
-                au_passant_opp = true;
-            }
-        }
 
-        if (!au_passant_opp)
-        {
-            this->au_passant_sq = this->white_turn ? 63 : 0;
-        }
-
-        // Regular vs promotion:
-        if (move.promo_piecetyp != PieceType::None)
-        {
-            this->piecebbs[src_piecetyp] &= ~movebb;
-            this->piecebbs[move.promo_piecetyp] = bitboards::set_sqval(this->piecebbs[move.promo_piecetyp], move.dst_sq);
-        }
-        else
-        {
-            this->piecebbs[src_piecetyp] ^= movebb;
+            if (!au_passant_opportunity)
+            {
+                this->au_passant_sq = this->white_turn ? 63 : 0;
+            }
         }
 
         // Capture:
@@ -766,6 +767,24 @@ namespace schneizel
         {
             this->piecebbs[capture_piecetyp] = bitboards::clear_sqval(this->piecebbs[capture_piecetyp], move.dst_sq);
         }
+
+        // Regular vs promotion:
+        if (move.promo_piecetyp != PieceType::None)
+        {
+            this->piecebbs[src_piecetyp] = bitboards::clear_sqval(this->piecebbs[src_piecetyp], move.src_sq);
+            this->piecebbs[move.promo_piecetyp] = bitboards::set_sqval(this->piecebbs[move.promo_piecetyp], move.dst_sq);
+
+            this->pieces[move.dst_sq] = move.promo_piecetyp;
+        }
+        else
+        {
+            this->piecebbs[src_piecetyp] = bitboards::clear_sqval(this->piecebbs[src_piecetyp], move.src_sq);
+            this->piecebbs[src_piecetyp] = bitboards::set_sqval(this->piecebbs[src_piecetyp], move.dst_sq);
+
+            this->pieces[move.dst_sq] = src_piecetyp;
+        }
+
+        this->pieces[move.src_sq] = PieceType::None;
 
         if (this->white_turn)
         {
@@ -780,48 +799,95 @@ namespace schneizel
 
         this->allbb = this->whitebb | this->blackbb;
 
-        // Regular vs promotion:
-        if (move.promo_piecetyp != PieceType::None)
-        {
-            this->pieces[move.dst_sq] = move.promo_piecetyp;
-        }
-        else
-        {
-            this->pieces[move.dst_sq] = src_piecetyp;
-        }
-
-        this->pieces[move.src_sq] = PieceType::None;
-
         // See if we are now checking opponent with move.
+        PieceMoveList piece_move_list;
         switch (this->pieces[move.dst_sq])
         {
         case PieceType::WhitePawn:
+            piece_move_list = this->get_white_pawn_moves(move.dst_sq);
             break;
         case PieceType::WhiteKnight:
+            piece_move_list = this->get_white_knight_moves(move.dst_sq);
             break;
         case PieceType::WhiteBishop:
+            piece_move_list = this->get_white_bishop_moves(move.dst_sq);
             break;
         case PieceType::WhiteRook:
+            piece_move_list = this->get_white_rook_moves(move.dst_sq);
             break;
         case PieceType::WhiteQueen:
+            piece_move_list = this->get_white_queen_moves(move.dst_sq);
             break;
         case PieceType::WhiteKing:
+            piece_move_list = this->get_white_king_moves(move.dst_sq);
             break;
         case PieceType::BlackPawn:
+            piece_move_list = this->get_black_pawn_moves(move.dst_sq);
             break;
         case PieceType::BlackKnight:
+            piece_move_list = this->get_black_knight_moves(move.dst_sq);
             break;
         case PieceType::BlackBishop:
+            piece_move_list = this->get_black_bishop_moves(move.dst_sq);
             break;
         case PieceType::BlackRook:
+            piece_move_list = this->get_black_rook_moves(move.dst_sq);
             break;
         case PieceType::BlackQueen:
+            piece_move_list = this->get_black_queen_moves(move.dst_sq);
             break;
         case PieceType::BlackKing:
+            piece_move_list = this->get_black_king_moves(move.dst_sq);
             break;
         default:
             break;
         }
+
+        if (this->white_turn)
+        {
+            if ((piece_move_list.attackbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
+            {
+            }
+        }
+        else
+        {
+            if ((piece_move_list.attackbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
+            {
+            }
+        }
+
+        // // Validations
+        // {
+        //     for (square_t sq = 0; sq < SquareCnt; sq++)
+        //     {
+        //         PieceType piecetyp = this->pieces[sq];
+        //         if (piecetyp != PieceType::None)
+        //         {
+        //             if (bitboards::get_sqval(this->piecebbs[piecetyp], sq) != 1)
+        //             {
+        //                 printf("PIECEBB VALIDATION FAILURE(1)!\n%d\n", j);
+        //                 bitboards::print(this->piecebbs[piecetyp], sq);
+        //                 exit(1);
+        //             }
+
+        //             if (bitboards::get_sqval(this->allbb, sq) != 1)
+        //             {
+        //                 printf("ALLBB VALIDATION FAILURE(1)!\n%d\n", j);
+        //                 bitboards::print(allbb);
+        //                 exit(1);
+        //             }
+        //         }
+        //         else
+        //         {
+        //             if (bitboards::get_sqval(this->allbb, sq) != 0)
+        //             {
+        //                 printf("ALLBB VALIDATION FAILURE(0)!\n%d\n", j);
+        //                 bitboards::print(allbb);
+        //                 exit(1);
+        //             }
+        //         }
+        //     }
+        // }
 
         this->white_turn = !this->white_turn;
     }

@@ -55,6 +55,6 @@ namespace schneizel
         bool is_in_check(bool white);
 
         MoveList get_move_list();
-        void make_move(Move move);
+        void make_move(Move move, int j, int i);
     };
 }
