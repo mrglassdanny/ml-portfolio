@@ -896,6 +896,7 @@ namespace schneizel
             break;
         }
 
+        // Update all attacks and see if checking king:
         if (this->white_turn)
         {
             for (square_t sq = 0; sq < SquareCnt; sq++)
@@ -903,7 +904,6 @@ namespace schneizel
                 this->white_attackbb |= this->white_attackbbs[sq];
             }
 
-            // See if we are now checking opponent king:
             if ((moved_piece_move_list.attackbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
             {
                 // TODO
@@ -916,7 +916,6 @@ namespace schneizel
                 this->black_attackbb |= this->black_attackbbs[sq];
             }
 
-            // See if we are now checking opponent king:
             if ((moved_piece_move_list.attackbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
             {
                 // TODO
