@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 		{
 			auto move_list = pos.get_move_list();
 			move = move_list.moves[rand() % move_list.move_cnt];
-			pos.make_move(move, j, i);
+			pos.make_move(move);
 		}
 	}
 	sw->stop();

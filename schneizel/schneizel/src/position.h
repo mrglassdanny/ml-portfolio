@@ -25,7 +25,9 @@ namespace schneizel
         PieceType pieces[SquareCnt];
         bitboard_t piecebbs[(PieceTypeCnt * 2)];
         bitboard_t whitebb;
+        bitboard_t white_attackbbs[SquareCnt];
         bitboard_t white_attackbb;
+        bitboard_t black_attackbbs[SquareCnt];
         bitboard_t blackbb;
         bitboard_t black_attackbb;
         bitboard_t allbb;
@@ -34,10 +36,6 @@ namespace schneizel
 
         void init();
         void pretty_print(Move *prev_move);
-
-        bitboard_t get_whitebb();
-        bitboard_t get_blackbb();
-        bitboard_t get_allbb();
 
         PieceMoveList get_white_pawn_moves(square_t src_sq);
         PieceMoveList get_white_knight_moves(square_t src_sq);
@@ -55,6 +53,6 @@ namespace schneizel
         bool is_in_check(bool white);
 
         MoveList get_move_list();
-        void make_move(Move move, int j, int i);
+        void make_move(Move move);
     };
 }
