@@ -904,7 +904,7 @@ namespace schneizel
                 this->white_attackbb |= this->white_attackbbs[sq];
             }
 
-            if ((moved_piece_move_list.attackbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
+            if ((this->white_attackbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
             {
                 // TODO
             }
@@ -916,7 +916,7 @@ namespace schneizel
                 this->black_attackbb |= this->black_attackbbs[sq];
             }
 
-            if ((moved_piece_move_list.attackbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
+            if ((this->black_attackbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
             {
                 // TODO
             }
