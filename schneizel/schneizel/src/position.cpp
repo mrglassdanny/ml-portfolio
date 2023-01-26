@@ -240,7 +240,7 @@ namespace schneizel
                     bitboard_t directionbb = directionbbs[white_diagonal_direction_search_path[i]];
                     if ((directionbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
                     {
-                        king_directionbb = directionbb;
+                        king_directionbb = directionbb & (king_attackbb | bitboards::get_sqbb(src_sq));
                         break;
                     }
                 }
@@ -285,7 +285,7 @@ namespace schneizel
                     bitboard_t directionbb = directionbbs[white_cardinal_direction_search_path[i]];
                     if ((directionbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
                     {
-                        king_directionbb = directionbb;
+                        king_directionbb = directionbb & (king_attackbb | bitboards::get_sqbb(src_sq));
                         break;
                     }
                 }
@@ -333,7 +333,7 @@ namespace schneizel
                         bitboard_t directionbb = directionbbs[white_diagonal_direction_search_path[i]];
                         if ((directionbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
                         {
-                            king_directionbb = directionbb;
+                            king_directionbb = directionbb & (king_attackbb | bitboards::get_sqbb(src_sq));
                             break;
                         }
                     }
@@ -364,7 +364,7 @@ namespace schneizel
                         bitboard_t directionbb = directionbbs[white_cardinal_direction_search_path[i]];
                         if ((directionbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
                         {
-                            king_directionbb = directionbb;
+                            king_directionbb = directionbb & (king_attackbb | bitboards::get_sqbb(src_sq));
                             break;
                         }
                     }
@@ -493,7 +493,7 @@ namespace schneizel
                     bitboard_t directionbb = directionbbs[black_diagonal_direction_search_path[i]];
                     if ((directionbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
                     {
-                        king_directionbb = directionbb;
+                        king_directionbb = directionbb & (king_attackbb | bitboards::get_sqbb(src_sq));
                         break;
                     }
                 }
@@ -538,7 +538,7 @@ namespace schneizel
                     bitboard_t directionbb = directionbbs[black_cardinal_direction_search_path[i]];
                     if ((directionbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
                     {
-                        king_directionbb = directionbb;
+                        king_directionbb = directionbb & (king_attackbb | bitboards::get_sqbb(src_sq));
                         break;
                     }
                 }
@@ -586,7 +586,7 @@ namespace schneizel
                         bitboard_t directionbb = directionbbs[black_diagonal_direction_search_path[i]];
                         if ((directionbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
                         {
-                            king_directionbb = directionbb;
+                            king_directionbb = directionbb & (king_attackbb | bitboards::get_sqbb(src_sq));
                             break;
                         }
                     }
@@ -617,7 +617,7 @@ namespace schneizel
                         bitboard_t directionbb = directionbbs[black_cardinal_direction_search_path[i]];
                         if ((directionbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
                         {
-                            king_directionbb = directionbb;
+                            king_directionbb = directionbb & (king_attackbb | bitboards::get_sqbb(src_sq));
                             break;
                         }
                     }
@@ -701,13 +701,12 @@ namespace schneizel
             {
                 if ((this->white_pins_trimmed[i]->king_directionbb & piecebb) != bitboards::EmptyBB)
                 {
-                    pin_filterbb = this->white_pins_trimmed[i]->king_directionbb;
-                    this->pretty_print(nullptr);
-                    bitboards::print(pin_filterbb);
-                    bitboards::print(this->whitebb);
-                    bitboards::print(this->white_pinbb);
-                    bitboards::print(piecebb);
-                    break;
+                    // Recent move could have invalidated pin. Need to make sure pin is still valid (pinner + pinned + king = 3).
+                    if (bitboards::popcount(this->white_pins_trimmed[i]->king_directionbb & this->allbb) == 3)
+                    {
+                        pin_filterbb = this->white_pins_trimmed[i]->king_directionbb;
+                        break;
+                    }
                 }
             }
         }
@@ -725,11 +724,12 @@ namespace schneizel
             {
                 if ((this->black_pins_trimmed[i]->king_directionbb & piecebb) != bitboards::EmptyBB)
                 {
-                    pin_filterbb = this->black_pins_trimmed[i]->king_directionbb;
-                    this->pretty_print(nullptr);
-                    bitboards::print(pin_filterbb);
-                    bitboards::print(this->blackbb);
-                    break;
+                    // Recent move could have invalidated pin. Need to make sure pin is still valid (pinner + pinned + king = 3).
+                    if (bitboards::popcount(this->black_pins_trimmed[i]->king_directionbb & this->allbb) == 3)
+                    {
+                        pin_filterbb = this->black_pins_trimmed[i]->king_directionbb;
+                        break;
+                    }
                 }
             }
         }
@@ -1183,6 +1183,9 @@ namespace schneizel
         }
 
         this->pieces[move.src_sq] = PieceType::None;
+        // Need to invalid any moved pinners.
+        memset(&this->white_pins[move.src_sq], 0, sizeof(Pin));
+        memset(&this->black_pins[move.src_sq], 0, sizeof(Pin));
 
         if (this->white_turn)
         {
