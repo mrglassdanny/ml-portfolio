@@ -13,17 +13,20 @@ namespace schneizel
         square_t src_sq;
         square_t dst_sq;
         PieceType promo_piecetyp;
-        bool discovered_check;
+        bool gives_check;
 
         Move();
         Move(PieceType piecetyp, square_t src_sq, square_t dst_sq);
         Move(PieceType piecetyp, square_t src_sq, square_t dst_sq, PieceType promo_piecetyp);
+        Move(PieceType piecetyp, square_t src_sq, square_t dst_sq, bool gives_check);
+        Move(PieceType piecetyp, square_t src_sq, square_t dst_sq, PieceType promo_piecetyp, bool gives_check);
     };
 
     struct PieceMoveList
     {
-        bitboard_t movebb;
-        bitboard_t attackbb;
+        bitboard_t movebb = bitboards::EmptyBB;
+        bitboard_t attackbb = bitboards::EmptyBB;
+        bitboard_t gives_checkbb = bitboards::EmptyBB; // Move results in discovered check
     };
 
     struct MoveList
