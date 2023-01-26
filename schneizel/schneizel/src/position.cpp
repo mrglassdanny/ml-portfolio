@@ -699,8 +699,7 @@ namespace schneizel
         {
             for (int i = 0; i < this->white_pins_trimmed_cnt; i++)
             {
-                if ((this->white_pins_trimmed[i]->king_directionbb & piecebb) != bitboards::EmptyBB &&
-                    (bitboards::get_sqbb(this->white_pins_trimmed[i]->pinner_sq) & this->whitebb) != bitboards::EmptyBB)
+                if ((this->white_pins_trimmed[i]->king_directionbb & piecebb) != bitboards::EmptyBB)
                 {
                     pin_filterbb = this->white_pins_trimmed[i]->king_directionbb;
                     this->pretty_print(nullptr);
@@ -724,8 +723,7 @@ namespace schneizel
         {
             for (int i = 0; i < this->black_pins_trimmed_cnt; i++)
             {
-                if ((this->black_pins_trimmed[i]->king_directionbb & piecebb) != bitboards::EmptyBB &&
-                    (bitboards::get_sqbb(this->black_pins_trimmed[i]->pinner_sq) & this->blackbb) != bitboards::EmptyBB)
+                if ((this->black_pins_trimmed[i]->king_directionbb & piecebb) != bitboards::EmptyBB)
                 {
                     pin_filterbb = this->black_pins_trimmed[i]->king_directionbb;
                     this->pretty_print(nullptr);
@@ -1162,6 +1160,10 @@ namespace schneizel
         if (capture_piecetyp != PieceType::None)
         {
             this->piecebbs[capture_piecetyp] = bitboards::clear_sqval(this->piecebbs[capture_piecetyp], move.dst_sq);
+
+            // Need to invalid any captured pinners.
+            memset(&this->white_pins[move.dst_sq], 0, sizeof(Pin));
+            memset(&this->black_pins[move.dst_sq], 0, sizeof(Pin));
         }
 
         // Regular vs promotion:
