@@ -26,6 +26,7 @@ namespace schneizel
     {
         bitboard_t movebb = bitboards::EmptyBB;
         bitboard_t attackbb = bitboards::EmptyBB;
+        bitboard_t king_attackbb = bitboards::EmptyBB;
         bitboard_t gives_checkbb = bitboards::EmptyBB; // Move results in discovered check
     };
 

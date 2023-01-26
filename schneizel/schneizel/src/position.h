@@ -49,7 +49,9 @@ namespace schneizel
         int black_pins_trimmed_cnt;
         bitboard_t black_pinbb;
         bitboard_t checker_attackbb;
+        bitboard_t checker_sqbb;
         bitboard_t discovered_checker_attackbb;
+        bitboard_t discovered_checker_sqbb;
 
         void init();
         void pretty_print(Move *prev_move);

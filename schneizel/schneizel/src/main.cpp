@@ -6,7 +6,7 @@ using namespace schneizel;
 
 int main(int argc, char **argv)
 {
-	srand(NULL);
+	// srand(NULL);
 
 	bitboards::init();
 
@@ -41,10 +41,18 @@ int main(int argc, char **argv)
 			if (!move_set)
 				move = move_list.moves[rand() % move_list.move_cnt];
 
+			bitboards::print(pos.black_attackbb);
 			pos.make_move(move);
+			
+			pos.pretty_print(&move);
 
-			if (move_set)
-				pos.pretty_print(&move);
+			if (pos.is_in_check(pos.white_turn))
+			{
+				printf("CHECK\n");
+				pos.pretty_print(nullptr);
+				bitboards::print(pos.checker_attackbb);
+				bitboards::print(pos.checker_sqbb);
+			}
 		}
 	}
 	sw->stop();

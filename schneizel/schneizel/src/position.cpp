@@ -185,20 +185,22 @@ namespace schneizel
             pawn_movebb_2 = bitboards::EmptyBB;
         }
 
-        bitboard_t au_passant_blackbb = this->blackbb | bitboards::get_sqbb(this->au_passant_sq);
+        bitboard_t pawn_attack_opportunitybb = this->blackbb | bitboards::get_sqbb(this->au_passant_sq);
 
-        east_pawn_attackbb &= au_passant_blackbb;
-        west_pawn_attackbb &= au_passant_blackbb;
+        east_pawn_attackbb &= pawn_attack_opportunitybb;
+        west_pawn_attackbb &= pawn_attack_opportunitybb;
 
         bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(piecebb);
 
         piece_move_list.movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
         piece_move_list.movebb &= black_pin_filterbb;
-        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+        piece_move_list.movebb &= (this->checker_attackbb | this->checker_sqbb);
+        piece_move_list.movebb &= (this->discovered_checker_attackbb | this->discovered_checker_sqbb);
 
         piece_move_list.attackbb = east_pawn_attackbb | west_pawn_attackbb;
         piece_move_list.attackbb &= black_pin_filterbb;
-        piece_move_list.attackbb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+        piece_move_list.attackbb &= (this->checker_attackbb | this->checker_sqbb);
+        piece_move_list.attackbb &= (this->discovered_checker_attackbb | this->discovered_checker_sqbb);
 
         bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & white_pin_filterbb);
@@ -214,7 +216,8 @@ namespace schneizel
 
         bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= black_pin_filterbb;
-        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+        piece_move_list.movebb &= (this->checker_attackbb | this->checker_sqbb);
+        piece_move_list.movebb &= (this->discovered_checker_attackbb | this->discovered_checker_sqbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
@@ -233,7 +236,8 @@ namespace schneizel
 
         bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= black_pin_filterbb;
-        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+        piece_move_list.movebb &= (this->checker_attackbb | this->checker_sqbb);
+        piece_move_list.movebb &= (this->discovered_checker_attackbb | this->discovered_checker_sqbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
@@ -257,6 +261,8 @@ namespace schneizel
                         break;
                     }
                 }
+
+                piece_move_list.king_attackbb = king_directionbb;
 
                 bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::BlackKing];
                 bitboard_t pinbb = king_directionbb & all_but_kingbb;
@@ -282,7 +288,8 @@ namespace schneizel
 
         bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= black_pin_filterbb;
-        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+        piece_move_list.movebb &= (this->checker_attackbb | this->checker_sqbb);
+        piece_move_list.movebb &= (this->discovered_checker_attackbb | this->discovered_checker_sqbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
@@ -306,6 +313,8 @@ namespace schneizel
                         break;
                     }
                 }
+
+                piece_move_list.king_attackbb = king_directionbb;
 
                 bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::BlackKing];
                 bitboard_t pinbb = king_directionbb & all_but_kingbb;
@@ -331,7 +340,8 @@ namespace schneizel
 
         bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= black_pin_filterbb;
-        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+        piece_move_list.movebb &= (this->checker_attackbb | this->checker_sqbb);
+        piece_move_list.movebb &= (this->discovered_checker_attackbb | this->discovered_checker_sqbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
@@ -358,6 +368,8 @@ namespace schneizel
                             break;
                         }
                     }
+
+                    piece_move_list.king_attackbb = king_directionbb;
 
                     bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::BlackKing];
                     bitboard_t pinbb = king_directionbb & all_but_kingbb;
@@ -390,6 +402,8 @@ namespace schneizel
                         }
                     }
 
+                    piece_move_list.king_attackbb = king_directionbb;
+
                     bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::BlackKing];
                     bitboard_t pinbb = king_directionbb & all_but_kingbb;
 
@@ -412,8 +426,17 @@ namespace schneizel
         PieceMoveList piece_move_list;
 
         piece_move_list.movebb = bitboards::get_king_movebb(src_sq);
-        piece_move_list.movebb &= this->black_attackbb;
-        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+        piece_move_list.movebb &= ~this->black_attackbb;
+
+        // Checker bitboards are both initialized to full.
+        if (this->checker_attackbb != bitboards::FullBB)
+        {
+            piece_move_list.movebb &= (~this->checker_attackbb | this->checker_sqbb);
+        }
+        if (this->discovered_checker_attackbb != bitboards::FullBB)
+        {
+            piece_move_list.movebb &= (~this->discovered_checker_attackbb | this->discovered_checker_sqbb);
+        }
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
@@ -421,7 +444,8 @@ namespace schneizel
         bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & white_pin_filterbb);
 
-        if (this->castle_rights.white_left && bitboards::get_sqval(this->piecebbs[PieceType::WhiteRook], 0) == 1)
+        if ((this->checker_sqbb == bitboards::EmptyBB && this->discovered_checker_sqbb == bitboards::EmptyBB) &&
+            this->castle_rights.white_left && bitboards::get_sqval(this->piecebbs[PieceType::WhiteRook], 0) == 1)
         {
             bitboard_t left_betweenbb = bitboards::get_white_castle_left_betweenbb();
             if ((left_betweenbb & this->allbb) == bitboards::EmptyBB && (left_betweenbb & this->black_attackbb) == bitboards::EmptyBB)
@@ -430,7 +454,8 @@ namespace schneizel
             }
         }
 
-        if (this->castle_rights.white_right && bitboards::get_sqval(this->piecebbs[PieceType::WhiteRook], 7) == 1)
+        if ((this->checker_sqbb == bitboards::EmptyBB && this->discovered_checker_sqbb == bitboards::EmptyBB) &&
+            this->castle_rights.white_right && bitboards::get_sqval(this->piecebbs[PieceType::WhiteRook], 7) == 1)
         {
             bitboard_t right_betweenbb = bitboards::get_white_castle_right_betweenbb();
             if ((right_betweenbb & this->allbb) == bitboards::EmptyBB && (right_betweenbb & this->black_attackbb) == bitboards::EmptyBB)
@@ -464,20 +489,22 @@ namespace schneizel
             pawn_movebb_2 = bitboards::EmptyBB;
         }
 
-        bitboard_t au_passant_whitebb = this->whitebb | bitboards::get_sqbb(this->au_passant_sq);
+        bitboard_t pawn_attack_opportunitybb = this->whitebb | bitboards::get_sqbb(this->au_passant_sq);
 
-        east_pawn_attackbb &= au_passant_whitebb;
-        west_pawn_attackbb &= au_passant_whitebb;
+        east_pawn_attackbb &= pawn_attack_opportunitybb;
+        west_pawn_attackbb &= pawn_attack_opportunitybb;
 
         bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(piecebb);
 
         piece_move_list.movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
         piece_move_list.movebb &= white_pin_filterbb;
-        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+        piece_move_list.movebb &= (this->checker_attackbb | this->checker_sqbb);
+        piece_move_list.movebb &= (this->discovered_checker_attackbb | this->discovered_checker_sqbb);
 
         piece_move_list.attackbb = east_pawn_attackbb | west_pawn_attackbb;
         piece_move_list.attackbb &= white_pin_filterbb;
-        piece_move_list.attackbb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+        piece_move_list.attackbb &= (this->checker_attackbb | this->checker_sqbb);
+        piece_move_list.attackbb &= (this->discovered_checker_attackbb | this->discovered_checker_sqbb);
 
         bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & black_pin_filterbb);
@@ -493,7 +520,8 @@ namespace schneizel
 
         bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= white_pin_filterbb;
-        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+        piece_move_list.movebb &= (this->checker_attackbb | this->checker_sqbb);
+        piece_move_list.movebb &= (this->discovered_checker_attackbb | this->discovered_checker_sqbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
@@ -512,7 +540,8 @@ namespace schneizel
 
         bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= white_pin_filterbb;
-        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+        piece_move_list.movebb &= (this->checker_attackbb | this->checker_sqbb);
+        piece_move_list.movebb &= (this->discovered_checker_attackbb | this->discovered_checker_sqbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
@@ -536,6 +565,8 @@ namespace schneizel
                         break;
                     }
                 }
+
+                piece_move_list.king_attackbb = king_directionbb;
 
                 bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::WhiteKing];
                 bitboard_t pinbb = king_directionbb & all_but_kingbb;
@@ -561,7 +592,8 @@ namespace schneizel
 
         bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= white_pin_filterbb;
-        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+        piece_move_list.movebb &= (this->checker_attackbb | this->checker_sqbb);
+        piece_move_list.movebb &= (this->discovered_checker_attackbb | this->discovered_checker_sqbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
@@ -585,6 +617,8 @@ namespace schneizel
                         break;
                     }
                 }
+
+                piece_move_list.king_attackbb = king_directionbb;
 
                 bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::WhiteKing];
                 bitboard_t pinbb = king_directionbb & all_but_kingbb;
@@ -610,7 +644,8 @@ namespace schneizel
 
         bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= white_pin_filterbb;
-        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+        piece_move_list.movebb &= (this->checker_attackbb | this->checker_sqbb);
+        piece_move_list.movebb &= (this->discovered_checker_attackbb | this->discovered_checker_sqbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
@@ -637,6 +672,8 @@ namespace schneizel
                             break;
                         }
                     }
+
+                    piece_move_list.king_attackbb = king_directionbb;
 
                     bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::WhiteKing];
                     bitboard_t pinbb = king_directionbb & all_but_kingbb;
@@ -669,6 +706,8 @@ namespace schneizel
                         }
                     }
 
+                    piece_move_list.king_attackbb = king_directionbb;
+
                     bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::WhiteKing];
                     bitboard_t pinbb = king_directionbb & all_but_kingbb;
 
@@ -691,8 +730,17 @@ namespace schneizel
         PieceMoveList piece_move_list;
 
         piece_move_list.movebb = bitboards::get_king_movebb(src_sq);
-        piece_move_list.movebb &= this->white_attackbb;
-        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+        piece_move_list.movebb &= ~this->white_attackbb;
+
+        // Checker bitboards are both initialized to full.
+        if (this->checker_attackbb != bitboards::FullBB)
+        {
+            piece_move_list.movebb &= (~this->checker_attackbb | this->checker_sqbb);
+        }
+        if (this->discovered_checker_attackbb != bitboards::FullBB)
+        {
+            piece_move_list.movebb &= (~this->discovered_checker_attackbb | this->discovered_checker_sqbb);
+        }
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
@@ -700,7 +748,8 @@ namespace schneizel
         bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & black_pin_filterbb);
 
-        if (this->castle_rights.black_left && bitboards::get_sqval(this->piecebbs[PieceType::BlackRook], 56) == 1)
+        if ((this->checker_sqbb == bitboards::EmptyBB && this->discovered_checker_sqbb == bitboards::EmptyBB) &&
+            this->castle_rights.black_left && bitboards::get_sqval(this->piecebbs[PieceType::BlackRook], 56) == 1)
         {
             bitboard_t left_betweenbb = bitboards::get_black_castle_left_betweenbb();
             if ((left_betweenbb & this->allbb) == bitboards::EmptyBB && (left_betweenbb & this->white_attackbb) == bitboards::EmptyBB)
@@ -709,7 +758,8 @@ namespace schneizel
             }
         }
 
-        if (this->castle_rights.black_right && bitboards::get_sqval(this->piecebbs[PieceType::BlackRook], 63) == 1)
+        if ((this->checker_sqbb == bitboards::EmptyBB && this->discovered_checker_sqbb == bitboards::EmptyBB) &&
+            this->castle_rights.black_right && bitboards::get_sqval(this->piecebbs[PieceType::BlackRook], 63) == 1)
         {
             bitboard_t right_betweenbb = bitboards::get_black_castle_right_betweenbb();
             if ((right_betweenbb & this->allbb) == bitboards::EmptyBB && (right_betweenbb & this->white_attackbb) == bitboards::EmptyBB)
@@ -1227,7 +1277,9 @@ namespace schneizel
         // Reset variables:
         {
             this->checker_attackbb = bitboards::FullBB;
+            this->checker_sqbb = bitboards::EmptyBB;
             this->discovered_checker_attackbb = bitboards::FullBB;
+            this->discovered_checker_sqbb = bitboards::EmptyBB;
         }
 
         PieceType src_piecetyp = this->pieces[move.src_sq];
@@ -1404,9 +1456,15 @@ namespace schneizel
         if (move.gives_check)
         {
             if (this->white_turn)
+            {
                 this->discovered_checker_attackbb = this->white_pins[move.src_sq].king_directionbb;
+                this->discovered_checker_sqbb = bitboards::get_sqbb(this->white_pins[move.src_sq].pinner_sq);
+            }
             else
+            {
                 this->discovered_checker_attackbb = this->black_pins[move.src_sq].king_directionbb;
+                this->discovered_checker_sqbb = bitboards::get_sqbb(this->black_pins[move.src_sq].pinner_sq);
+            }
         }
 
         // Need to invalid any moved pinners.
@@ -1494,10 +1552,22 @@ namespace schneizel
                 {
                     this->white_pins_trimmed[this->white_pins_trimmed_cnt++] = &this->white_pins[sq];
                 }
+            }
 
-                if ((this->white_attackbbs[sq] & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
+            if ((moved_piece_move_list.attackbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
+            {
+                // If pawn or knight, there is no blocking opportunity. The only way to resolve the check is to take the piece or move the king.
+                switch (this->pieces[move.dst_sq])
                 {
-                    this->checker_attackbb = this->white_attackbbs[sq] | bitboards::get_sqbb(sq);
+                case PieceType::WhitePawn:
+                case PieceType::WhiteKnight:
+                    this->checker_sqbb = bitboards::get_sqbb(move.dst_sq);
+                    this->checker_attackbb = bitboards::EmptyBB; // Only way to resolve attack is to move the king.
+                    break;
+                default:
+                    this->checker_sqbb = bitboards::get_sqbb(move.dst_sq);
+                    this->checker_attackbb = moved_piece_move_list.king_attackbb | this->checker_sqbb;
+                    break;
                 }
             }
         }
@@ -1512,10 +1582,22 @@ namespace schneizel
                 {
                     this->black_pins_trimmed[this->black_pins_trimmed_cnt++] = &this->black_pins[sq];
                 }
+            }
 
-                if ((this->black_attackbbs[sq] & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
+            if ((moved_piece_move_list.attackbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
+            {
+                // If pawn or knight, there is no blocking opportunity. The only way to resolve the check is to take the piece or move the king.
+                switch (this->pieces[move.dst_sq])
                 {
-                    this->checker_attackbb = this->black_attackbbs[sq] | bitboards::get_sqbb(sq);
+                case PieceType::BlackPawn:
+                case PieceType::BlackKnight:
+                    this->checker_sqbb = bitboards::get_sqbb(move.dst_sq);
+                    this->checker_attackbb = bitboards::EmptyBB; // Only way to resolve attack is to move the king.
+                    break;
+                default:
+                    this->checker_sqbb = bitboards::get_sqbb(move.dst_sq);
+                    this->checker_attackbb = moved_piece_move_list.king_attackbb | this->checker_sqbb;
+                    break;
                 }
             }
         }
