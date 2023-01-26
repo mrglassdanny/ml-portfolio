@@ -23,6 +23,7 @@ namespace schneizel
     {
         bitboard_t pinbb;
         bitboard_t king_directionbb;
+        square_t pinner_sq;
     };
 
     struct Position
@@ -41,12 +42,12 @@ namespace schneizel
         CastleRights castle_rights;
         square_t au_passant_sq = 0;
         Pin white_pins[SquareCnt];
-        bitboard_t white_pin_king_directionbbs[8];
-        int white_pin_king_direction_cnt;
+        Pin *white_pins_trimmed[8];
+        int white_pins_trimmed_cnt;
         bitboard_t white_pinbb;
         Pin black_pins[SquareCnt];
-        bitboard_t black_pin_king_directionbbs[8];
-        int black_pin_king_direction_cnt;
+        Pin *black_pins_trimmed[8];
+        int black_pins_trimmed_cnt;
         bitboard_t black_pinbb;
 
         void init();

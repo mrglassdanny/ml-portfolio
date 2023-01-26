@@ -247,8 +247,14 @@ namespace schneizel
 
                 bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::BlackKing];
                 bitboard_t pinbb = king_directionbb & all_but_kingbb;
-                this->white_pins[src_sq].pinbb = pinbb;
-                this->white_pins[src_sq].king_directionbb = king_directionbb;
+
+                // Only a true pin if just 1 piece is in attack path.
+                if (bitboards::popcount(pinbb ^ bitboards::get_sqbb(src_sq)) == 1)
+                {
+                    this->white_pins[src_sq].pinbb = pinbb;
+                    this->white_pins[src_sq].king_directionbb = king_directionbb;
+                    this->white_pins[src_sq].pinner_sq = src_sq;
+                }
             }
         }
 
@@ -286,8 +292,14 @@ namespace schneizel
 
                 bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::BlackKing];
                 bitboard_t pinbb = king_directionbb & all_but_kingbb;
-                this->white_pins[src_sq].pinbb = pinbb;
-                this->white_pins[src_sq].king_directionbb = king_directionbb;
+
+                // Only a true pin if just 1 piece is in attack path.
+                if (bitboards::popcount(pinbb ^ bitboards::get_sqbb(src_sq)) == 1)
+                {
+                    this->white_pins[src_sq].pinbb = pinbb;
+                    this->white_pins[src_sq].king_directionbb = king_directionbb;
+                    this->white_pins[src_sq].pinner_sq = src_sq;
+                }
             }
         }
 
@@ -328,8 +340,14 @@ namespace schneizel
 
                     bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::BlackKing];
                     bitboard_t pinbb = king_directionbb & all_but_kingbb;
-                    this->white_pins[src_sq].pinbb = pinbb;
-                    this->white_pins[src_sq].king_directionbb = king_directionbb;
+
+                    // Only a true pin if just 1 piece is in attack path.
+                    if (bitboards::popcount(pinbb ^ bitboards::get_sqbb(src_sq)) == 1)
+                    {
+                        this->white_pins[src_sq].pinbb = pinbb;
+                        this->white_pins[src_sq].king_directionbb = king_directionbb;
+                        this->white_pins[src_sq].pinner_sq = src_sq;
+                    }
                 }
             }
 
@@ -353,8 +371,14 @@ namespace schneizel
 
                     bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::BlackKing];
                     bitboard_t pinbb = king_directionbb & all_but_kingbb;
-                    this->white_pins[src_sq].pinbb = pinbb;
-                    this->white_pins[src_sq].king_directionbb = king_directionbb;
+
+                    // Only a true pin if just 1 piece is in attack path.
+                    if (bitboards::popcount(pinbb ^ bitboards::get_sqbb(src_sq)) == 1)
+                    {
+                        this->white_pins[src_sq].pinbb = pinbb;
+                        this->white_pins[src_sq].king_directionbb = king_directionbb;
+                        this->white_pins[src_sq].pinner_sq = src_sq;
+                    }
                 }
             }
         }
@@ -476,8 +500,14 @@ namespace schneizel
 
                 bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::WhiteKing];
                 bitboard_t pinbb = king_directionbb & all_but_kingbb;
-                this->black_pins[src_sq].pinbb = pinbb;
-                this->black_pins[src_sq].king_directionbb = king_directionbb;
+
+                // Only a true pin if just 1 piece is in attack path.
+                if (bitboards::popcount(pinbb ^ bitboards::get_sqbb(src_sq)) == 1)
+                {
+                    this->black_pins[src_sq].pinbb = pinbb;
+                    this->black_pins[src_sq].king_directionbb = king_directionbb;
+                    this->black_pins[src_sq].pinner_sq = src_sq;
+                }
             }
         }
 
@@ -515,8 +545,14 @@ namespace schneizel
 
                 bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::WhiteKing];
                 bitboard_t pinbb = king_directionbb & all_but_kingbb;
-                this->black_pins[src_sq].pinbb = pinbb;
-                this->black_pins[src_sq].king_directionbb = king_directionbb;
+
+                // Only a true pin if just 1 piece is in attack path.
+                if (bitboards::popcount(pinbb ^ bitboards::get_sqbb(src_sq)) == 1)
+                {
+                    this->black_pins[src_sq].pinbb = pinbb;
+                    this->black_pins[src_sq].king_directionbb = king_directionbb;
+                    this->black_pins[src_sq].pinner_sq = src_sq;
+                }
             }
         }
 
@@ -557,8 +593,14 @@ namespace schneizel
 
                     bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::WhiteKing];
                     bitboard_t pinbb = king_directionbb & all_but_kingbb;
-                    this->black_pins[src_sq].pinbb = pinbb;
-                    this->black_pins[src_sq].king_directionbb = king_directionbb;
+
+                    // Only a true pin if just 1 piece is in attack path.
+                    if (bitboards::popcount(pinbb ^ bitboards::get_sqbb(src_sq)) == 1)
+                    {
+                        this->black_pins[src_sq].pinbb = pinbb;
+                        this->black_pins[src_sq].king_directionbb = king_directionbb;
+                        this->black_pins[src_sq].pinner_sq = src_sq;
+                    }
                 }
             }
 
@@ -582,8 +624,14 @@ namespace schneizel
 
                     bitboard_t all_but_kingbb = this->allbb & ~this->piecebbs[PieceType::WhiteKing];
                     bitboard_t pinbb = king_directionbb & all_but_kingbb;
-                    this->black_pins[src_sq].pinbb = pinbb;
-                    this->black_pins[src_sq].king_directionbb = king_directionbb;
+
+                    // Only a true pin if just 1 piece is in attack path.
+                    if (bitboards::popcount(pinbb ^ bitboards::get_sqbb(src_sq)) == 1)
+                    {
+                        this->black_pins[src_sq].pinbb = pinbb;
+                        this->black_pins[src_sq].king_directionbb = king_directionbb;
+                        this->black_pins[src_sq].pinner_sq = src_sq;
+                    }
                 }
             }
         }
@@ -649,11 +697,17 @@ namespace schneizel
 
         if ((piecebb & this->white_pinbb) != bitboards::EmptyBB)
         {
-            for (int i = 0; i < this->white_pin_king_direction_cnt; i++)
+            for (int i = 0; i < this->white_pins_trimmed_cnt; i++)
             {
-                if ((this->white_pin_king_directionbbs[i] & piecebb) != bitboards::EmptyBB)
+                if ((this->white_pins_trimmed[i]->king_directionbb & piecebb) != bitboards::EmptyBB &&
+                    (bitboards::get_sqbb(this->white_pins_trimmed[i]->pinner_sq) & this->whitebb) != bitboards::EmptyBB)
                 {
-                    pin_filterbb = this->white_pin_king_directionbbs[i];
+                    pin_filterbb = this->white_pins_trimmed[i]->king_directionbb;
+                    this->pretty_print(nullptr);
+                    bitboards::print(pin_filterbb);
+                    bitboards::print(this->whitebb);
+                    bitboards::print(this->white_pinbb);
+                    bitboards::print(piecebb);
                     break;
                 }
             }
@@ -668,11 +722,15 @@ namespace schneizel
 
         if ((piecebb & this->black_pinbb) != bitboards::EmptyBB)
         {
-            for (int i = 0; i < this->black_pin_king_direction_cnt; i++)
+            for (int i = 0; i < this->black_pins_trimmed_cnt; i++)
             {
-                if ((this->black_pin_king_directionbbs[i] & piecebb) != bitboards::EmptyBB)
+                if ((this->black_pins_trimmed[i]->king_directionbb & piecebb) != bitboards::EmptyBB &&
+                    (bitboards::get_sqbb(this->black_pins_trimmed[i]->pinner_sq) & this->blackbb) != bitboards::EmptyBB)
                 {
-                    pin_filterbb = this->black_pin_king_directionbbs[i];
+                    pin_filterbb = this->black_pins_trimmed[i]->king_directionbb;
+                    this->pretty_print(nullptr);
+                    bitboards::print(pin_filterbb);
+                    bitboards::print(this->blackbb);
                     break;
                 }
             }
@@ -693,8 +751,8 @@ namespace schneizel
             memset(this->white_attackbbs, 0, sizeof(this->white_attackbbs));
             this->white_pinbb = bitboards::EmptyBB;
             memset(this->white_pins, 0, sizeof(this->white_pins));
-            memset(this->white_pin_king_directionbbs, 0, sizeof(this->white_pin_king_directionbbs));
-            this->white_pin_king_direction_cnt = 0;
+            memset(this->white_pins_trimmed, 0, sizeof(this->white_pins_trimmed));
+            this->white_pins_trimmed_cnt = 0;
 
             // WhitePawn:
             {
@@ -825,8 +883,8 @@ namespace schneizel
             memset(this->black_attackbbs, 0, sizeof(this->black_attackbbs));
             this->black_pinbb = bitboards::EmptyBB;
             memset(this->black_pins, 0, sizeof(this->black_pins));
-            memset(this->black_pin_king_directionbbs, 0, sizeof(this->black_pin_king_directionbbs));
-            this->black_pin_king_direction_cnt = 0;
+            memset(this->black_pins_trimmed, 0, sizeof(this->black_pins_trimmed));
+            this->black_pins_trimmed_cnt = 0;
 
             // BlackPawn:
             {
@@ -1199,10 +1257,11 @@ namespace schneizel
             for (square_t sq = 0; sq < SquareCnt; sq++)
             {
                 this->white_attackbb |= this->white_attackbbs[sq];
+
                 this->white_pinbb |= this->white_pins[sq].pinbb;
                 if (this->white_pins[sq].pinbb != bitboards::EmptyBB)
                 {
-                    this->white_pin_king_directionbbs[this->white_pin_king_direction_cnt++] = this->white_pins[sq].king_directionbb;
+                    this->white_pins_trimmed[this->white_pins_trimmed_cnt++] = &this->white_pins[sq];
                 }
             }
 
@@ -1216,10 +1275,11 @@ namespace schneizel
             for (square_t sq = 0; sq < SquareCnt; sq++)
             {
                 this->black_attackbb |= this->black_attackbbs[sq];
+
                 this->black_pinbb |= this->black_pins[sq].pinbb;
                 if (this->black_pins[sq].pinbb != bitboards::EmptyBB)
                 {
-                    this->black_pin_king_directionbbs[this->black_pin_king_direction_cnt++] = this->black_pins[sq].king_directionbb;
+                    this->black_pins_trimmed[this->black_pins_trimmed_cnt++] = &this->black_pins[sq];
                 }
             }
 
