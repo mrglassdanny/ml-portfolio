@@ -194,9 +194,11 @@ namespace schneizel
 
         piece_move_list.movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
         piece_move_list.movebb &= black_pin_filterbb;
+        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
 
         piece_move_list.attackbb = east_pawn_attackbb | west_pawn_attackbb;
         piece_move_list.attackbb &= black_pin_filterbb;
+        piece_move_list.attackbb &= (this->checker_attackbb | this->discovered_checker_attackbb);
 
         bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & white_pin_filterbb);
@@ -212,6 +214,7 @@ namespace schneizel
 
         bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= black_pin_filterbb;
+        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
@@ -230,6 +233,7 @@ namespace schneizel
 
         bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= black_pin_filterbb;
+        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
@@ -278,6 +282,7 @@ namespace schneizel
 
         bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= black_pin_filterbb;
+        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
@@ -326,6 +331,7 @@ namespace schneizel
 
         bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= black_pin_filterbb;
+        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
@@ -407,6 +413,8 @@ namespace schneizel
 
         piece_move_list.movebb = bitboards::get_king_movebb(src_sq);
         piece_move_list.movebb &= this->black_attackbb;
+        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
 
@@ -465,9 +473,11 @@ namespace schneizel
 
         piece_move_list.movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
         piece_move_list.movebb &= white_pin_filterbb;
+        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
 
         piece_move_list.attackbb = east_pawn_attackbb | west_pawn_attackbb;
         piece_move_list.attackbb &= white_pin_filterbb;
+        piece_move_list.attackbb &= (this->checker_attackbb | this->discovered_checker_attackbb);
 
         bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & black_pin_filterbb);
@@ -483,6 +493,7 @@ namespace schneizel
 
         bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= white_pin_filterbb;
+        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
@@ -501,6 +512,7 @@ namespace schneizel
 
         bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= white_pin_filterbb;
+        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
@@ -549,6 +561,7 @@ namespace schneizel
 
         bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= white_pin_filterbb;
+        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
@@ -597,6 +610,7 @@ namespace schneizel
 
         bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
         piece_move_list.movebb &= white_pin_filterbb;
+        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
@@ -678,6 +692,8 @@ namespace schneizel
 
         piece_move_list.movebb = bitboards::get_king_movebb(src_sq);
         piece_move_list.movebb &= this->white_attackbb;
+        piece_move_list.movebb &= (this->checker_attackbb | this->discovered_checker_attackbb);
+
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
 
@@ -1208,6 +1224,12 @@ namespace schneizel
 
     void Position::make_move(Move move)
     {
+        // Reset variables:
+        {
+            this->checker_attackbb = bitboards::FullBB;
+            this->discovered_checker_attackbb = bitboards::FullBB;
+        }
+
         PieceType src_piecetyp = this->pieces[move.src_sq];
         PieceType capture_piecetyp = this->pieces[move.dst_sq];
 
@@ -1377,6 +1399,16 @@ namespace schneizel
         }
 
         this->pieces[move.src_sq] = PieceType::None;
+
+        // Discovered check:
+        if (move.gives_check)
+        {
+            if (this->white_turn)
+                this->discovered_checker_attackbb = this->white_pins[move.src_sq].king_directionbb;
+            else
+                this->discovered_checker_attackbb = this->black_pins[move.src_sq].king_directionbb;
+        }
+
         // Need to invalid any moved pinners.
         memset(&this->white_pins[move.src_sq], 0, sizeof(Pin));
         memset(&this->black_pins[move.src_sq], 0, sizeof(Pin));
