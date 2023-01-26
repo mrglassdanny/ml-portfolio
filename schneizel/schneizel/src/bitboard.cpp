@@ -9,6 +9,11 @@ namespace schneizel
         Magic rook_magics[SquareCnt];
         bitboard_t king_movebbs[SquareCnt];
 
+        int popcount(bitboard_t bb)
+        {
+            return (int)_mm_popcnt_u64(bb);
+        }
+
         class MagicPRNG
         {
         private:
@@ -29,16 +34,6 @@ namespace schneizel
                 return (bitboard_t)(rand64() & rand64() & rand64());
             }
         };
-
-        int popcount(bitboard_t bb)
-        {
-            int cnt = 0;
-            for (int i = 0; i < 64; i++)
-            {
-                cnt += get_sqval(bb, i);
-            }
-            return cnt;
-        }
 
         Magic::~Magic()
         {

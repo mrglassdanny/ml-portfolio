@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <string>
+#include <nmmintrin.h>
 
 #include "constant.h"
 #include "type.h"
@@ -139,6 +140,8 @@ namespace schneizel
             bb &= bb - 1;
             return sq;
         }
+
+        int popcount(bitboard_t bb);
 
         struct Magic
         {
