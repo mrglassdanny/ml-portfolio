@@ -19,6 +19,12 @@ namespace schneizel
         bool black_right = true;
     };
 
+    struct Pin
+    {
+        bitboard_t pinbb;
+        bitboard_t king_directionbb;
+    };
+
     struct Position
     {
         bool white_turn;
@@ -33,6 +39,14 @@ namespace schneizel
         bitboard_t allbb;
         CastleRights castle_rights;
         square_t au_passant_sq = 0;
+        Pin white_pins[SquareCnt];
+        bitboard_t white_pin_king_directionbbs[8];
+        int white_pin_king_direction_cnt;
+        bitboard_t white_pinbb;
+        Pin black_pins[SquareCnt];
+        bitboard_t black_pin_king_directionbbs[8];
+        int black_pin_king_direction_cnt;
+        bitboard_t black_pinbb;
 
         void init();
         void pretty_print(Move *prev_move);
@@ -51,6 +65,9 @@ namespace schneizel
         PieceMoveList get_black_king_moves(square_t src_sq);
 
         bool is_in_check(bool white);
+
+        bitboard_t get_white_pin_filterbb(bitboard_t piecebb);
+        bitboard_t get_black_pin_filterbb(bitboard_t piecebb);
 
         MoveList get_move_list();
         void make_move(Move move);

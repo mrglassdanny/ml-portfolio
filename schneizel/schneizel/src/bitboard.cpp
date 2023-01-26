@@ -195,7 +195,8 @@ namespace schneizel
 
         void init_bishop_directionbbs(square_t sq, bitboard_t directionbbs[DirectionCnt])
         {
-            bitboard_t bb = EmptyBB;
+            // We want piece bit set for direction bitboards (unlike move bitboards).
+            bitboard_t bb = get_sqbb(sq);
 
             row_t row = get_row_fr_sq(sq);
             col_t col = get_col_fr_sq(sq);
@@ -336,7 +337,8 @@ namespace schneizel
 
         void init_rook_directionbbs(square_t sq, bitboard_t directionbbs[DirectionCnt])
         {
-            bitboard_t bb = EmptyBB;
+            // We want piece bit set for direction bitboards (unlike move bitboards).
+            bitboard_t bb = get_sqbb(sq);
 
             row_t row = get_row_fr_sq(sq);
             col_t col = get_col_fr_sq(sq);

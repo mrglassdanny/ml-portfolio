@@ -190,13 +190,8 @@ namespace schneizel
         east_pawn_attackbb &= au_passant_blackbb;
         west_pawn_attackbb &= au_passant_blackbb;
 
-        bitboard_t pin_filterbb = this->get_black_pin_filterbb(piecebb);
-
         piece_move_list.movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
-        piece_move_list.movebb &= pin_filterbb;
-
         piece_move_list.attackbb = east_pawn_attackbb | west_pawn_attackbb;
-        piece_move_list.attackbb &= pin_filterbb;
 
         return piece_move_list;
     }
@@ -206,10 +201,6 @@ namespace schneizel
         PieceMoveList piece_move_list;
 
         piece_move_list.movebb = bitboards::get_knight_movebb(src_sq);
-
-        bitboard_t pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.movebb &= pin_filterbb;
-
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
 
@@ -221,10 +212,6 @@ namespace schneizel
         PieceMoveList piece_move_list;
 
         piece_move_list.movebb = bitboards::get_bishop_movebb(src_sq, this->allbb);
-
-        bitboard_t pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.movebb &= pin_filterbb;
-
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
 
@@ -260,10 +247,6 @@ namespace schneizel
         PieceMoveList piece_move_list;
 
         piece_move_list.movebb = bitboards::get_rook_movebb(src_sq, this->allbb);
-
-        bitboard_t pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.movebb &= pin_filterbb;
-
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
 
@@ -299,10 +282,6 @@ namespace schneizel
         PieceMoveList piece_move_list;
 
         piece_move_list.movebb = bitboards::get_queen_movebb(src_sq, this->allbb);
-
-        bitboard_t pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.movebb &= pin_filterbb;
-
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
 
@@ -419,13 +398,25 @@ namespace schneizel
         east_pawn_attackbb &= au_passant_whitebb;
         west_pawn_attackbb &= au_passant_whitebb;
 
-        bitboard_t pin_filterbb = this->get_white_pin_filterbb(piecebb);
+        bitboard_t p = bitboards::FullBB;
+        if ((piecebb & this->white_pinbb) != bitboards::EmptyBB)
+        {
+            for (int i = 0; i < this->white_pin_king_direction_cnt; i++)
+            {
+                if ((this->white_pin_king_directionbbs[i] & piecebb) != bitboards::EmptyBB)
+                {
+                    bitboards::print(this->white_pin_king_directionbbs[i]);
+                    p = this->white_pin_king_directionbbs[i];
+                    break;
+                }
+            }
+        }
 
         piece_move_list.movebb = pawn_movebb | pawn_movebb_2 | east_pawn_attackbb | west_pawn_attackbb;
-        piece_move_list.movebb &= pin_filterbb;
+        piece_move_list.movebb &= p;
 
         piece_move_list.attackbb = east_pawn_attackbb | west_pawn_attackbb;
-        piece_move_list.attackbb &= pin_filterbb;
+        piece_move_list.attackbb &= p;
 
         return piece_move_list;
     }
@@ -435,10 +426,6 @@ namespace schneizel
         PieceMoveList piece_move_list;
 
         piece_move_list.movebb = bitboards::get_knight_movebb(src_sq);
-
-        bitboard_t pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.movebb &= pin_filterbb;
-
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
 
@@ -450,10 +437,6 @@ namespace schneizel
         PieceMoveList piece_move_list;
 
         piece_move_list.movebb = bitboards::get_bishop_movebb(src_sq, this->allbb);
-
-        bitboard_t pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.movebb &= pin_filterbb;
-
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
 
@@ -489,10 +472,6 @@ namespace schneizel
         PieceMoveList piece_move_list;
 
         piece_move_list.movebb = bitboards::get_rook_movebb(src_sq, this->allbb);
-
-        bitboard_t pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.movebb &= pin_filterbb;
-
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
 
@@ -528,10 +507,6 @@ namespace schneizel
         PieceMoveList piece_move_list;
 
         piece_move_list.movebb = bitboards::get_queen_movebb(src_sq, this->allbb);
-
-        bitboard_t pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.movebb &= pin_filterbb;
-
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
 
@@ -641,44 +616,6 @@ namespace schneizel
         }
 
         return false;
-    }
-
-    bitboard_t Position::get_white_pin_filterbb(bitboard_t piecebb)
-    {
-        bitboard_t pin_filterbb = bitboards::FullBB;
-
-        if ((piecebb & this->white_pinbb) != bitboards::EmptyBB)
-        {
-            for (int i = 0; i < this->white_pin_king_direction_cnt; i++)
-            {
-                if ((this->white_pin_king_directionbbs[i] & piecebb) != bitboards::EmptyBB)
-                {
-                    pin_filterbb = this->white_pin_king_directionbbs[i];
-                    break;
-                }
-            }
-        }
-
-        return pin_filterbb;
-    }
-
-    bitboard_t Position::get_black_pin_filterbb(bitboard_t piecebb)
-    {
-        bitboard_t pin_filterbb = bitboards::FullBB;
-
-        if ((piecebb & this->black_pinbb) != bitboards::EmptyBB)
-        {
-            for (int i = 0; i < this->black_pin_king_direction_cnt; i++)
-            {
-                if ((this->black_pin_king_directionbbs[i] & piecebb) != bitboards::EmptyBB)
-                {
-                    pin_filterbb = this->black_pin_king_directionbbs[i];
-                    break;
-                }
-            }
-        }
-
-        return pin_filterbb;
     }
 
     MoveList Position::get_move_list()
