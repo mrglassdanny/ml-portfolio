@@ -10,6 +10,7 @@ namespace schneizel
         this->src_sq = src_sq;
         this->dst_sq = dst_sq;
         this->promo_piecetyp = PieceType::None;
+        this->discovered_check = false;
     }
 
     Move::Move(PieceType piecetyp, square_t src_sq, square_t dst_sq, PieceType promo_piecetyp)
@@ -18,5 +19,6 @@ namespace schneizel
         this->src_sq = src_sq;
         this->dst_sq = dst_sq;
         this->promo_piecetyp = promo_piecetyp;
+        this->discovered_check = false;
     }
 }

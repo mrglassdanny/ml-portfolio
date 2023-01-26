@@ -28,6 +28,7 @@ namespace schneizel
     struct Position
     {
         bool white_turn;
+        bool in_check;
         PieceType pieces[SquareCnt];
         bitboard_t piecebbs[(PieceTypeCnt * 2)];
         bitboard_t whitebb;

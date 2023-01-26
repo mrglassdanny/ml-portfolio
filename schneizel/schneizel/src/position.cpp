@@ -956,6 +956,8 @@ namespace schneizel
 
     void Position::make_move(Move move)
     {
+        this->in_check = false;
+
         PieceType src_piecetyp = this->pieces[move.src_sq];
         PieceType capture_piecetyp = this->pieces[move.dst_sq];
 
@@ -1206,7 +1208,7 @@ namespace schneizel
 
             if ((this->white_attackbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
             {
-                // TODO
+                this->in_check = true;
             }
         }
         else
@@ -1223,7 +1225,7 @@ namespace schneizel
 
             if ((this->black_attackbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
             {
-                // TODO
+                this->in_check = true;
             }
         }
 

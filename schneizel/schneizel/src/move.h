@@ -13,6 +13,7 @@ namespace schneizel
         square_t src_sq;
         square_t dst_sq;
         PieceType promo_piecetyp;
+        bool discovered_check;
 
         Move();
         Move(PieceType piecetyp, square_t src_sq, square_t dst_sq);
