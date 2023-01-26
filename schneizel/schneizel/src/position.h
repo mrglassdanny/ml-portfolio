@@ -29,7 +29,6 @@ namespace schneizel
     struct Position
     {
         bool white_turn;
-        bool in_check;
         PieceType pieces[SquareCnt];
         bitboard_t piecebbs[(PieceTypeCnt * 2)];
         bitboard_t whitebb;
@@ -49,6 +48,8 @@ namespace schneizel
         Pin *black_pins_trimmed[8];
         int black_pins_trimmed_cnt;
         bitboard_t black_pinbb;
+        bitboard_t checker_attackbb;
+        bitboard_t discovered_checker_attackbb;
 
         void init();
         void pretty_print(Move *prev_move);

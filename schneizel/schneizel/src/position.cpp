@@ -1208,8 +1208,6 @@ namespace schneizel
 
     void Position::make_move(Move move)
     {
-        this->in_check = false;
-
         PieceType src_piecetyp = this->pieces[move.src_sq];
         PieceType capture_piecetyp = this->pieces[move.dst_sq];
 
@@ -1464,11 +1462,11 @@ namespace schneizel
                 {
                     this->white_pins_trimmed[this->white_pins_trimmed_cnt++] = &this->white_pins[sq];
                 }
-            }
 
-            if ((this->white_attackbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
-            {
-                this->in_check = true;
+                if ((this->white_attackbbs[sq] & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
+                {
+                    this->checker_attackbb = this->white_attackbbs[sq] | bitboards::get_sqbb(sq);
+                }
             }
         }
         else
@@ -1482,11 +1480,11 @@ namespace schneizel
                 {
                     this->black_pins_trimmed[this->black_pins_trimmed_cnt++] = &this->black_pins[sq];
                 }
-            }
 
-            if ((this->black_attackbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
-            {
-                this->in_check = true;
+                if ((this->black_attackbbs[sq] & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
+                {
+                    this->checker_attackbb = this->black_attackbbs[sq] | bitboards::get_sqbb(sq);
+                }
             }
         }
 
