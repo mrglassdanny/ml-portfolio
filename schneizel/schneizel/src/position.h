@@ -34,9 +34,11 @@ namespace schneizel
         bitboard_t whitebb;
         bitboard_t white_attackbbs[SquareCnt];
         bitboard_t white_attackbb;
+        bitboard_t white_king_attackbb;
         bitboard_t black_attackbbs[SquareCnt];
         bitboard_t blackbb;
         bitboard_t black_attackbb;
+        bitboard_t black_king_attackbb;
         bitboard_t allbb;
         CastleRights castle_rights;
         square_t au_passant_sq = 0;
