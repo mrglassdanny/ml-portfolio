@@ -9,6 +9,11 @@ namespace schneizel
         Magic rook_magics[SquareCnt];
         bitboard_t king_movebbs[SquareCnt];
 
+        int popcount(bitboard_t bb)
+        {
+            return (int)_mm_popcnt_u64(bb);
+        }
+
         class MagicPRNG
         {
         private:
@@ -29,16 +34,6 @@ namespace schneizel
                 return (bitboard_t)(rand64() & rand64() & rand64());
             }
         };
-
-        int popcount(bitboard_t bb)
-        {
-            int cnt = 0;
-            for (int i = 0; i < 64; i++)
-            {
-                cnt += get_sqval(bb, i);
-            }
-            return cnt;
-        }
 
         Magic::~Magic()
         {
@@ -145,21 +140,6 @@ namespace schneizel
                 test_sq = get_sq(test_row, test_col);
             }
 
-            // Northwest:
-            test_row = row + 1;
-            test_col = col - 1;
-            test_sq = get_sq(test_row, test_col);
-            while (is_row_valid(test_row) && is_col_valid(test_col))
-            {
-                bb = set_sqval(bb, test_sq);
-                if ((blockersbb & get_sqbb(test_sq)) != EmptyBB)
-                    break;
-
-                test_row++;
-                test_col--;
-                test_sq = get_sq(test_row, test_col);
-            }
-
             // Southeast:
             test_row = row - 1;
             test_col = col + 1;
@@ -190,7 +170,98 @@ namespace schneizel
                 test_sq = get_sq(test_row, test_col);
             }
 
+            // Northwest:
+            test_row = row + 1;
+            test_col = col - 1;
+            test_sq = get_sq(test_row, test_col);
+            while (is_row_valid(test_row) && is_col_valid(test_col))
+            {
+                bb = set_sqval(bb, test_sq);
+                if ((blockersbb & get_sqbb(test_sq)) != EmptyBB)
+                    break;
+
+                test_row++;
+                test_col--;
+                test_sq = get_sq(test_row, test_col);
+            }
+
             return bb;
+        }
+
+        void init_bishop_directionbbs(square_t sq, bitboard_t directionbbs[DirectionCnt])
+        {
+            // We want piece bit set for direction bitboards (unlike move bitboards).
+            bitboard_t bb = get_sqbb(sq);
+
+            row_t row = get_row_fr_sq(sq);
+            col_t col = get_col_fr_sq(sq);
+
+            row_t test_row;
+            col_t test_col;
+            square_t test_sq;
+
+            // Northeast:
+            test_row = row + 1;
+            test_col = col + 1;
+            test_sq = get_sq(test_row, test_col);
+            while (is_row_valid(test_row) && is_col_valid(test_col))
+            {
+                bb = set_sqval(bb, test_sq);
+
+                test_row++;
+                test_col++;
+                test_sq = get_sq(test_row, test_col);
+            }
+
+            directionbbs[DiagonalDirection::Northeast] = bb;
+            bb = EmptyBB;
+
+            // Southeast:
+            test_row = row - 1;
+            test_col = col + 1;
+            test_sq = get_sq(test_row, test_col);
+            while (is_row_valid(test_row) && is_col_valid(test_col))
+            {
+                bb = set_sqval(bb, test_sq);
+
+                test_row--;
+                test_col++;
+                test_sq = get_sq(test_row, test_col);
+            }
+
+            directionbbs[DiagonalDirection::Southeast] = bb;
+            bb = EmptyBB;
+
+            // Southwest:
+            test_row = row - 1;
+            test_col = col - 1;
+            test_sq = get_sq(test_row, test_col);
+            while (is_row_valid(test_row) && is_col_valid(test_col))
+            {
+                bb = set_sqval(bb, test_sq);
+
+                test_row--;
+                test_col--;
+                test_sq = get_sq(test_row, test_col);
+            }
+
+            directionbbs[DiagonalDirection::Southwest] = bb;
+            bb = EmptyBB;
+
+            // Northwest:
+            test_row = row + 1;
+            test_col = col - 1;
+            test_sq = get_sq(test_row, test_col);
+            while (is_row_valid(test_row) && is_col_valid(test_col))
+            {
+                bb = set_sqval(bb, test_sq);
+
+                test_row++;
+                test_col--;
+                test_sq = get_sq(test_row, test_col);
+            }
+
+            directionbbs[DiagonalDirection::Northwest] = bb;
         }
 
         bitboard_t init_rook_movebb(square_t sq, bitboard_t blockersbb)
@@ -230,19 +301,6 @@ namespace schneizel
                 test_sq = get_sq(row, test_col);
             }
 
-            // West:
-            test_col = col - 1;
-            test_sq = get_sq(row, test_col);
-            while (is_col_valid(test_col))
-            {
-                bb = set_sqval(bb, test_sq);
-                if ((blockersbb & get_sqbb(test_sq)) != EmptyBB)
-                    break;
-
-                test_col--;
-                test_sq = get_sq(row, test_col);
-            }
-
             // South:
             test_row = row - 1;
             test_sq = get_sq(test_row, col);
@@ -256,7 +314,88 @@ namespace schneizel
                 test_sq = get_sq(test_row, col);
             }
 
+            // West:
+            test_col = col - 1;
+            test_sq = get_sq(row, test_col);
+            while (is_col_valid(test_col))
+            {
+                bb = set_sqval(bb, test_sq);
+                if ((blockersbb & get_sqbb(test_sq)) != EmptyBB)
+                    break;
+
+                test_col--;
+                test_sq = get_sq(row, test_col);
+            }
+
             return bb;
+        }
+
+        void init_rook_directionbbs(square_t sq, bitboard_t directionbbs[DirectionCnt])
+        {
+            // We want piece bit set for direction bitboards (unlike move bitboards).
+            bitboard_t bb = get_sqbb(sq);
+
+            row_t row = get_row_fr_sq(sq);
+            col_t col = get_col_fr_sq(sq);
+
+            row_t test_row;
+            col_t test_col;
+            square_t test_sq;
+
+            // North:
+            test_row = row + 1;
+            test_sq = get_sq(test_row, col);
+            while (is_row_valid(test_row))
+            {
+                bb = set_sqval(bb, test_sq);
+
+                test_row++;
+                test_sq = get_sq(test_row, col);
+            }
+
+            directionbbs[CardinalDirection::North] = bb;
+            bb = EmptyBB;
+
+            // East:
+            test_col = col + 1;
+            test_sq = get_sq(row, test_col);
+            while (is_col_valid(test_col))
+            {
+                bb = set_sqval(bb, test_sq);
+
+                test_col++;
+                test_sq = get_sq(row, test_col);
+            }
+
+            directionbbs[CardinalDirection::East] = bb;
+            bb = EmptyBB;
+
+            // South:
+            test_row = row - 1;
+            test_sq = get_sq(test_row, col);
+            while (is_row_valid(test_row))
+            {
+                bb = set_sqval(bb, test_sq);
+
+                test_row--;
+                test_sq = get_sq(test_row, col);
+            }
+
+            directionbbs[CardinalDirection::South] = bb;
+            bb = EmptyBB;
+
+            // West:
+            test_col = col - 1;
+            test_sq = get_sq(row, test_col);
+            while (is_col_valid(test_col))
+            {
+                bb = set_sqval(bb, test_sq);
+
+                test_col--;
+                test_sq = get_sq(row, test_col);
+            }
+
+            directionbbs[CardinalDirection::West] = bb;
         }
 
         bitboard_t init_king_movebb(square_t sq)
@@ -283,13 +422,6 @@ namespace schneizel
                 bb = set_sqval(bb, get_sq(row, test_col));
             }
 
-            // West:
-            test_col = col - 1;
-            if (is_col_valid(test_col))
-            {
-                bb = set_sqval(bb, get_sq(row, test_col));
-            }
-
             // South:
             test_row = row - 1;
             if (is_row_valid(test_row))
@@ -297,17 +429,16 @@ namespace schneizel
                 bb = set_sqval(bb, get_sq(test_row, col));
             }
 
+            // West:
+            test_col = col - 1;
+            if (is_col_valid(test_col))
+            {
+                bb = set_sqval(bb, get_sq(row, test_col));
+            }
+
             // Northeast:
             test_row = row + 1;
             test_col = col + 1;
-            if (is_row_valid(test_row) && is_col_valid(test_col))
-            {
-                bb = set_sqval(bb, get_sq(test_row, test_col));
-            }
-
-            // Northwest:
-            test_row = row + 1;
-            test_col = col - 1;
             if (is_row_valid(test_row) && is_col_valid(test_col))
             {
                 bb = set_sqval(bb, get_sq(test_row, test_col));
@@ -329,6 +460,14 @@ namespace schneizel
                 bb = set_sqval(bb, get_sq(test_row, test_col));
             }
 
+            // Northwest:
+            test_row = row + 1;
+            test_col = col - 1;
+            if (is_row_valid(test_row) && is_col_valid(test_col))
+            {
+                bb = set_sqval(bb, get_sq(test_row, test_col));
+            }
+
             return bb;
         }
 
@@ -336,16 +475,19 @@ namespace schneizel
         {
             Magic *magics;
             bitboard_t (*movebb_fn)(square_t sq, bitboard_t blockersbb);
+            void (*directionbbs_fn)(square_t sq, bitboard_t directionbbs[DirectionCnt]);
 
             if (bishop)
             {
                 magics = bishop_magics;
                 movebb_fn = init_bishop_movebb;
+                directionbbs_fn = init_bishop_directionbbs;
             }
             else
             {
                 magics = rook_magics;
                 movebb_fn = init_rook_movebb;
+                directionbbs_fn = init_rook_directionbbs;
             }
 
             int seeds[8] = {728, 10316, 55013, 32803, 12281, 15100, 16645, 255};
@@ -361,6 +503,7 @@ namespace schneizel
 
                 Magic *magic = &magics[sq];
                 magic->maskbb = movebb_fn(sq, EmptyBB) & ~edgebbs;
+                directionbbs_fn(sq, magic->directionbbs);
                 magic->shift = 64 - popcount(magic->maskbb);
                 blockerbb = move_cnt = 0;
 
@@ -497,6 +640,16 @@ namespace schneizel
         bitboard_t get_king_movebb(square_t sq)
         {
             return king_movebbs[sq];
+        }
+
+        Magic *get_bishop_magic(square_t sq)
+        {
+            return &bishop_magics[sq];
+        }
+
+        Magic *get_rook_magic(square_t sq)
+        {
+            return &rook_magics[sq];
         }
     }
 }

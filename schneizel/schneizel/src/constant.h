@@ -7,4 +7,6 @@ namespace schneizel
     constexpr int PieceTypeCnt = 6;
 
     constexpr int MoveMaxCnt = 256;
+
+    constexpr int DirectionCnt = 4;
 }

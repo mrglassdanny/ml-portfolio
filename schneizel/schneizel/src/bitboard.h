@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <string>
+#include <nmmintrin.h>
 
 #include "constant.h"
 #include "type.h"
@@ -99,6 +100,26 @@ namespace schneizel
             return 1ULL << sq;
         }
 
+        constexpr bitboard_t get_white_castle_left_betweenbb()
+        {
+            return get_sqbb(1) | get_sqbb(2) | get_sqbb(3);
+        }
+
+        constexpr bitboard_t get_white_castle_right_betweenbb()
+        {
+            return get_sqbb(5) | get_sqbb(6);
+        }
+
+        constexpr bitboard_t get_black_castle_left_betweenbb()
+        {
+            return get_sqbb(57) | get_sqbb(58) | get_sqbb(59);
+        }
+
+        constexpr bitboard_t get_black_castle_right_betweenbb()
+        {
+            return get_sqbb(61) | get_sqbb(62);
+        }
+
         inline square_t lsb(bitboard_t bb)
         {
             unsigned long idx;
@@ -120,11 +141,15 @@ namespace schneizel
             return sq;
         }
 
+        int popcount(bitboard_t bb);
+
         struct Magic
         {
             bitboard_t maskbb;
             bitboard_t keybb;
             bitboard_t *movebbs;
+            bitboard_t directionbbs[DirectionCnt];
+
             int shift;
 
             ~Magic();
@@ -141,5 +166,8 @@ namespace schneizel
         bitboard_t get_rook_movebb(square_t sq, bitboard_t bodiesbb);
         bitboard_t get_queen_movebb(square_t sq, bitboard_t bodiesbb);
         bitboard_t get_king_movebb(square_t sq);
+
+        Magic *get_bishop_magic(square_t sq);
+        Magic *get_rook_magic(square_t sq);
     }
 }
