@@ -9,6 +9,8 @@ namespace schneizel
 
     void Position::init()
     {
+        memset(this, 0, sizeof(Position));
+
         white_turn = true;
 
         // Pieces:
@@ -74,6 +76,28 @@ namespace schneizel
             }
 
             this->allbb = this->whitebb | this->blackbb;
+        }
+
+        // Other:
+        {
+            this->white_attackbb = bitboards::EmptyBB;
+            memset(this->white_attackbbs, 0, sizeof(this->white_attackbbs));
+            this->white_pinbb = bitboards::EmptyBB;
+            memset(this->white_pins, 0, sizeof(this->white_pins));
+            memset(this->white_pins_trimmed, 0, sizeof(this->white_pins_trimmed));
+            this->white_pins_trimmed_cnt = 0;
+
+            this->black_attackbb = bitboards::EmptyBB;
+            memset(this->black_attackbbs, 0, sizeof(this->black_attackbbs));
+            this->black_pinbb = bitboards::EmptyBB;
+            memset(this->black_pins, 0, sizeof(this->black_pins));
+            memset(this->black_pins_trimmed, 0, sizeof(this->black_pins_trimmed));
+            this->black_pins_trimmed_cnt = 0;
+
+            this->checker_attackbb = bitboards::FullBB;
+            this->checker_sqbb = bitboards::EmptyBB;
+            this->discovered_checker_attackbb = bitboards::FullBB;
+            this->discovered_checker_sqbb = bitboards::EmptyBB;
         }
     }
 
@@ -1538,8 +1562,8 @@ namespace schneizel
                                 - bishop attack stops at king (blocker)
                                 - king thinks moving further Northwest is valid since bishop attack does not go past king
                     */
-                    this->white_attackbbs[move.src_sq] |= moved_piece_move_list.no_block_king_directionbb;
-                    this->white_attackbb |= moved_piece_move_list.no_block_king_directionbb;
+                    this->white_attackbbs[move.src_sq] |= (moved_piece_move_list.no_block_king_directionbb & ~bitboards::get_sqbb(move.dst_sq));
+                    this->white_attackbb |= this->white_attackbbs[move.src_sq];
                     break;
                 }
             }
@@ -1605,8 +1629,8 @@ namespace schneizel
                                 - bishop attack stops at king (blocker)
                                 - king thinks moving further Northwest is valid since bishop attack does not go past king
                     */
-                    this->black_attackbbs[move.src_sq] |= moved_piece_move_list.no_block_king_directionbb;
-                    this->black_attackbb |= moved_piece_move_list.no_block_king_directionbb;
+                    this->black_attackbbs[move.src_sq] |= (moved_piece_move_list.no_block_king_directionbb & ~bitboards::get_sqbb(move.dst_sq));
+                    this->black_attackbb |= this->black_attackbbs[move.src_sq];
                     break;
                 }
             }
