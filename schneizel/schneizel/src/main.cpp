@@ -28,6 +28,9 @@ int main(int argc, char **argv)
 			auto move_list = pos.get_move_list();
 			if (move_list.move_cnt == 0)
 			{
+				printf("CHECKMATE\n");
+				pos.pretty_print(nullptr);
+				printf("%d\n", j);
 				break;
 			}
 
