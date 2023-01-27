@@ -1589,6 +1589,7 @@ namespace schneizel
             }
 
             // Discovered check:
+            // TODO: au passant could lead to 2 discovered checks
             {
                 Pin *white_discovered_check_pin = this->get_white_discovered_check_pin(bitboards::get_sqbb(move.src_sq));
                 if (white_discovered_check_pin != nullptr &&
@@ -1688,6 +1689,7 @@ namespace schneizel
             }
 
             // Discovered check:
+            // TODO: au passant could lead to 2 discovered checks
             {
                 Pin *black_discovered_check_pin = this->get_black_discovered_check_pin(bitboards::get_sqbb(move.src_sq));
                 if (black_discovered_check_pin != nullptr &&
