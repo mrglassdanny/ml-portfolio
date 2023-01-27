@@ -25,6 +25,7 @@ int main(int argc, char **argv)
 
 		for (int i = 0; i < moves; i++)
 		{
+
 			auto move_list = pos.get_move_list();
 			if (move_list.move_cnt == 0)
 			{

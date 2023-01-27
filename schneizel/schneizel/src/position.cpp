@@ -1088,8 +1088,6 @@ namespace schneizel
                         square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
                         move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq);
                     }
-
-                    this->white_attackbbs[src_sq] = piece_move_list.attackbb;
                 }
             }
         }
@@ -1239,8 +1237,6 @@ namespace schneizel
                         square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
                         move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq);
                     }
-
-                    this->black_attackbbs[src_sq] = piece_move_list.attackbb;
                 }
             }
         }
@@ -1359,18 +1355,20 @@ namespace schneizel
         }
 
         // Au passant:
+        bool captured_au_passant = false;
+        square_t capture_au_passant_sq;
         {
             bool au_passant_opportunity = false;
 
             if (src_piecetyp == PieceType::WhitePawn)
             {
-                square_t capture_au_passant_sq = move.dst_sq - 8;
+                capture_au_passant_sq = move.dst_sq - 8;
                 if (move.dst_sq == this->au_passant_sq)
                 {
-                    square_t au_passant_sq = move.dst_sq - 8;
-                    this->pieces[au_passant_sq] = PieceType::None;
-                    this->piecebbs[PieceType::BlackPawn] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackPawn], au_passant_sq);
-                    this->blackbb = bitboards::clear_sqval(this->blackbb, au_passant_sq);
+                    this->pieces[capture_au_passant_sq] = PieceType::None;
+                    this->piecebbs[PieceType::BlackPawn] = bitboards::clear_sqval(this->piecebbs[PieceType::BlackPawn], capture_au_passant_sq);
+                    this->blackbb = bitboards::clear_sqval(this->blackbb, capture_au_passant_sq);
+                    captured_au_passant = true;
                 }
                 else if (move.dst_sq - move.src_sq > 9)
                 {
@@ -1380,12 +1378,13 @@ namespace schneizel
             }
             else if (src_piecetyp == PieceType::BlackPawn)
             {
-                square_t capture_au_passant_sq = move.dst_sq + 8;
+                capture_au_passant_sq = move.dst_sq + 8;
                 if (move.dst_sq == this->au_passant_sq)
                 {
                     this->pieces[capture_au_passant_sq] = PieceType::None;
                     this->piecebbs[PieceType::WhitePawn] = bitboards::clear_sqval(this->piecebbs[PieceType::WhitePawn], capture_au_passant_sq);
                     this->whitebb = bitboards::clear_sqval(this->whitebb, capture_au_passant_sq);
+                    captured_au_passant = true;
                 }
                 else if (move.src_sq - move.dst_sq > 9)
                 {
@@ -1473,7 +1472,6 @@ namespace schneizel
             break;
         case PieceType::WhiteKing:
             moved_piece_move_list = this->get_white_king_moves(move.dst_sq);
-            this->white_attackbbs[move.src_sq] = moved_piece_move_list.attackbb;
             break;
         case PieceType::BlackPawn:
             moved_piece_move_list = this->get_black_pawn_moves(move.dst_sq);
@@ -1497,7 +1495,6 @@ namespace schneizel
             break;
         case PieceType::BlackKing:
             moved_piece_move_list = this->get_black_king_moves(move.dst_sq);
-            this->black_attackbbs[move.src_sq] = moved_piece_move_list.attackbb;
             break;
         default:
             break;
@@ -1509,17 +1506,40 @@ namespace schneizel
             // Update attacks and pins:
             for (square_t sq = 0; sq < SquareCnt; sq++)
             {
-                // It is possible that recent move has invalidated an existing sliding attack:
+                // It is possible that recent move has invalidated an existing sliding attack(s):
                 switch (this->pieces[sq])
                 {
                 case PieceType::WhiteBishop:
-                case PieceType::WhiteRook:
-                case PieceType::WhiteQueen:
-                    if ((bitboards::get_sqbb(move.dst_sq) & this->white_attackbbs[sq]) != bitboards::EmptyBB)
+                {
+                    if ((bitboards::get_sqbb(move.src_sq) & this->white_attackbbs[sq]) != bitboards::EmptyBB ||
+                        (bitboards::get_sqbb(move.dst_sq) & this->white_attackbbs[sq]) != bitboards::EmptyBB ||
+                        (captured_au_passant && (bitboards::get_sqbb(capture_au_passant_sq) & this->white_attackbbs[sq]) != bitboards::EmptyBB))
                     {
-                        this->white_attackbbs[sq] = this->get_white_direction_attackbb(sq, bitboards::get_sqbb(move.dst_sq));
+                        this->white_attackbbs[sq] = bitboards::get_bishop_movebb(sq, this->allbb);
                     }
-                    break;
+                }
+                break;
+                case PieceType::WhiteRook:
+                {
+                    if ((bitboards::get_sqbb(move.src_sq) & this->white_attackbbs[sq]) != bitboards::EmptyBB ||
+                        (bitboards::get_sqbb(move.dst_sq) & this->white_attackbbs[sq]) != bitboards::EmptyBB ||
+                        (captured_au_passant && (bitboards::get_sqbb(capture_au_passant_sq) & this->white_attackbbs[sq]) != bitboards::EmptyBB))
+                    {
+                        this->white_attackbbs[sq] = bitboards::get_rook_movebb(sq, this->allbb);
+                    }
+                }
+                break;
+                case PieceType::WhiteQueen:
+                {
+                    if ((bitboards::get_sqbb(move.src_sq) & this->white_attackbbs[sq]) != bitboards::EmptyBB ||
+                        (bitboards::get_sqbb(move.dst_sq) & this->white_attackbbs[sq]) != bitboards::EmptyBB ||
+                        (captured_au_passant && (bitboards::get_sqbb(capture_au_passant_sq) & this->white_attackbbs[sq]) != bitboards::EmptyBB))
+                    {
+                        this->white_attackbbs[sq] = bitboards::get_bishop_movebb(sq, this->allbb);
+                        this->white_attackbbs[sq] |= bitboards::get_rook_movebb(sq, this->allbb);
+                    }
+                }
+                break;
                 default:
                     break;
                 }
@@ -1580,13 +1600,36 @@ namespace schneizel
                 switch (this->pieces[sq])
                 {
                 case PieceType::BlackBishop:
-                case PieceType::BlackRook:
-                case PieceType::BlackQueen:
-                    if ((bitboards::get_sqbb(move.dst_sq) & this->black_attackbbs[sq]) != bitboards::EmptyBB)
+                {
+                    if ((bitboards::get_sqbb(move.src_sq) & this->black_attackbbs[sq]) != bitboards::EmptyBB ||
+                        (bitboards::get_sqbb(move.dst_sq) & this->black_attackbbs[sq]) != bitboards::EmptyBB ||
+                        (captured_au_passant && (bitboards::get_sqbb(capture_au_passant_sq) & this->black_attackbbs[sq]) != bitboards::EmptyBB))
                     {
-                        this->black_attackbbs[sq] = this->get_black_direction_attackbb(sq, bitboards::get_sqbb(move.dst_sq));
+                        this->black_attackbbs[sq] = bitboards::get_bishop_movebb(sq, this->allbb);
                     }
-                    break;
+                }
+                break;
+                case PieceType::BlackRook:
+                {
+                    if ((bitboards::get_sqbb(move.src_sq) & this->black_attackbbs[sq]) != bitboards::EmptyBB ||
+                        (bitboards::get_sqbb(move.dst_sq) & this->black_attackbbs[sq]) != bitboards::EmptyBB ||
+                        (captured_au_passant && (bitboards::get_sqbb(capture_au_passant_sq) & this->black_attackbbs[sq]) != bitboards::EmptyBB))
+                    {
+                        this->black_attackbbs[sq] = bitboards::get_rook_movebb(sq, this->allbb);
+                    }
+                }
+                break;
+                case PieceType::BlackQueen:
+                {
+                    if ((bitboards::get_sqbb(move.src_sq) & this->black_attackbbs[sq]) != bitboards::EmptyBB ||
+                        (bitboards::get_sqbb(move.dst_sq) & this->black_attackbbs[sq]) != bitboards::EmptyBB ||
+                        (captured_au_passant && (bitboards::get_sqbb(capture_au_passant_sq) & this->black_attackbbs[sq]) != bitboards::EmptyBB))
+                    {
+                        this->black_attackbbs[sq] = bitboards::get_bishop_movebb(sq, this->allbb);
+                        this->black_attackbbs[sq] |= bitboards::get_rook_movebb(sq, this->allbb);
+                    }
+                }
+                break;
                 default:
                     break;
                 }
