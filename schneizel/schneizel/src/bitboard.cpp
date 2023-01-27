@@ -214,7 +214,7 @@ namespace schneizel
             }
 
             directionbbs[DiagonalDirection::Northeast] = bb;
-            bb = EmptyBB;
+            bb = get_sqbb(sq);
 
             // Southeast:
             test_row = row - 1;
@@ -230,7 +230,7 @@ namespace schneizel
             }
 
             directionbbs[DiagonalDirection::Southeast] = bb;
-            bb = EmptyBB;
+            bb = get_sqbb(sq);
 
             // Southwest:
             test_row = row - 1;
@@ -246,7 +246,7 @@ namespace schneizel
             }
 
             directionbbs[DiagonalDirection::Southwest] = bb;
-            bb = EmptyBB;
+            bb = get_sqbb(sq);
 
             // Northwest:
             test_row = row + 1;
@@ -354,7 +354,7 @@ namespace schneizel
             }
 
             directionbbs[CardinalDirection::North] = bb;
-            bb = EmptyBB;
+            bb = get_sqbb(sq);
 
             // East:
             test_col = col + 1;
@@ -368,7 +368,7 @@ namespace schneizel
             }
 
             directionbbs[CardinalDirection::East] = bb;
-            bb = EmptyBB;
+            bb = get_sqbb(sq);
 
             // South:
             test_row = row - 1;
@@ -382,7 +382,7 @@ namespace schneizel
             }
 
             directionbbs[CardinalDirection::South] = bb;
-            bb = EmptyBB;
+            bb = get_sqbb(sq);
 
             // West:
             test_col = col - 1;
