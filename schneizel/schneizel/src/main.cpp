@@ -13,7 +13,7 @@ int main(int argc, char **argv)
 	auto sw = new StopWatch();
 
 	int epochs = 50000;
-	int moves = 70;
+	int moves = 50;
 
 	sw->start();
 	for (int j = 0; j < epochs; j++)
@@ -26,6 +26,10 @@ int main(int argc, char **argv)
 		for (int i = 0; i < moves; i++)
 		{
 			auto move_list = pos.get_move_list();
+			if (move_list.move_cnt == 0)
+			{
+				break;
+			}
 
 			move = move_list.moves[rand() % move_list.move_cnt];
 
