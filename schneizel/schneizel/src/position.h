@@ -77,6 +77,9 @@ namespace schneizel
         Pin *get_white_discovered_check_pin(bitboard_t piecebb);
         Pin *get_black_discovered_check_pin(bitboard_t piecebb);
 
+        bitboard_t get_white_direction_attackbb(square_t src_sq, bitboard_t piecebb);
+        bitboard_t get_black_direction_attackbb(square_t src_sq, bitboard_t piecebb);
+
         MoveList get_move_list();
         void make_move(Move move);
     };

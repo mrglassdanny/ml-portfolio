@@ -849,6 +849,96 @@ namespace schneizel
         return pin;
     }
 
+    bitboard_t Position::get_white_direction_attackbb(square_t src_sq, bitboard_t piecebb)
+    {
+        bitboard_t attack_directionbb = bitboards::EmptyBB;
+
+        {
+            bool piece_in_diagonal_direction = false;
+
+            // Diagonal:
+            {
+                bitboard_t attackbb = bitboards::get_bishop_movebb(src_sq, piecebb);
+
+                bitboard_t *directionbbs = bitboards::get_bishop_magic(src_sq)->directionbbs;
+                for (int i = 0; i <= DirectionCnt; i++)
+                {
+                    bitboard_t directionbb = directionbbs[white_diagonal_direction_search_path[i]];
+                    if ((directionbb & piecebb) != bitboards::EmptyBB)
+                    {
+                        attack_directionbb = directionbb & attackbb;
+                        piece_in_diagonal_direction = true;
+                        break;
+                    }
+                }
+            }
+
+            // Cardinal:
+            if (!piece_in_diagonal_direction)
+            {
+                bitboard_t attackbb = bitboards::get_rook_movebb(src_sq, piecebb);
+
+                bitboard_t *directionbbs = bitboards::get_rook_magic(src_sq)->directionbbs;
+                for (int i = 0; i <= DirectionCnt; i++)
+                {
+                    bitboard_t directionbb = directionbbs[white_cardinal_direction_search_path[i]];
+                    if ((directionbb & piecebb) != bitboards::EmptyBB)
+                    {
+                        attack_directionbb = directionbb & attackbb;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return attack_directionbb;
+    }
+
+    bitboard_t Position::get_black_direction_attackbb(square_t src_sq, bitboard_t piecebb)
+    {
+        bitboard_t attack_directionbb = bitboards::EmptyBB;
+
+        {
+            bool piece_in_diagonal_direction = false;
+
+            // Diagonal:
+            {
+                bitboard_t attackbb = bitboards::get_bishop_movebb(src_sq, piecebb);
+
+                bitboard_t *directionbbs = bitboards::get_bishop_magic(src_sq)->directionbbs;
+                for (int i = 0; i <= DirectionCnt; i++)
+                {
+                    bitboard_t directionbb = directionbbs[black_diagonal_direction_search_path[i]];
+                    if ((directionbb & piecebb) != bitboards::EmptyBB)
+                    {
+                        attack_directionbb = directionbb & attackbb;
+                        piece_in_diagonal_direction = true;
+                        break;
+                    }
+                }
+            }
+
+            // Cardinal:
+            if (!piece_in_diagonal_direction)
+            {
+                bitboard_t attackbb = bitboards::get_rook_movebb(src_sq, piecebb);
+
+                bitboard_t *directionbbs = bitboards::get_rook_magic(src_sq)->directionbbs;
+                for (int i = 0; i <= DirectionCnt; i++)
+                {
+                    bitboard_t directionbb = directionbbs[black_cardinal_direction_search_path[i]];
+                    if ((directionbb & piecebb) != bitboards::EmptyBB)
+                    {
+                        attack_directionbb = directionbb & attackbb;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return attack_directionbb;
+    }
+
     MoveList Position::get_move_list()
     {
         MoveList move_list;
@@ -1419,6 +1509,21 @@ namespace schneizel
             // Update attacks and pins:
             for (square_t sq = 0; sq < SquareCnt; sq++)
             {
+                // It is possible that recent move has invalidated an existing sliding attack:
+                switch (this->pieces[sq])
+                {
+                case PieceType::WhiteBishop:
+                case PieceType::WhiteRook:
+                case PieceType::WhiteQueen:
+                    if ((bitboards::get_sqbb(move.dst_sq) & this->white_attackbbs[sq]) != bitboards::EmptyBB)
+                    {
+                        this->white_attackbbs[sq] = this->get_white_direction_attackbb(sq, bitboards::get_sqbb(move.dst_sq));
+                    }
+                    break;
+                default:
+                    break;
+                }
+
                 this->white_attackbb |= this->white_attackbbs[sq];
 
                 this->white_pinbb |= this->white_pins[sq].pinbb;
@@ -1462,6 +1567,21 @@ namespace schneizel
             // Update attacks and pins:
             for (square_t sq = 0; sq < SquareCnt; sq++)
             {
+                // It is possible that recent move has invalidated an existing sliding attack:
+                switch (this->pieces[sq])
+                {
+                case PieceType::BlackBishop:
+                case PieceType::BlackRook:
+                case PieceType::BlackQueen:
+                    if ((bitboards::get_sqbb(move.dst_sq) & this->black_attackbbs[sq]) != bitboards::EmptyBB)
+                    {
+                        this->black_attackbbs[sq] = this->get_black_direction_attackbb(sq, bitboards::get_sqbb(move.dst_sq));
+                    }
+                    break;
+                default:
+                    break;
+                }
+
                 this->black_attackbb |= this->black_attackbbs[sq];
 
                 this->black_pinbb |= this->black_pins[sq].pinbb;
