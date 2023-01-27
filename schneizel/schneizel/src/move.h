@@ -23,7 +23,8 @@ namespace schneizel
     {
         bitboard_t movebb = bitboards::EmptyBB;
         bitboard_t attackbb = bitboards::EmptyBB;
-        bitboard_t king_attackbb = bitboards::EmptyBB;
+        bitboard_t king_directionbb = bitboards::EmptyBB;
+        bitboard_t no_block_king_directionbb = bitboards::EmptyBB;
     };
 
     struct MoveList
