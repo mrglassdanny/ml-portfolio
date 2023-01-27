@@ -201,9 +201,6 @@ namespace schneizel
         piece_move_list.movebb &= (this->checker_attackbb | this->checker_sqbb);
         piece_move_list.movebb &= (this->discovered_checker_attackbb | this->discovered_checker_sqbb);
 
-        bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & white_pin_filterbb);
-
         return piece_move_list;
     }
 
@@ -221,9 +218,6 @@ namespace schneizel
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
 
-        bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & white_pin_filterbb);
-
         return piece_move_list;
     }
 
@@ -240,9 +234,6 @@ namespace schneizel
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
-
-        bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & white_pin_filterbb);
 
         // Pins and king attacks:
         {
@@ -293,9 +284,6 @@ namespace schneizel
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
 
-        bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & white_pin_filterbb);
-
         // Pins and king attacks:
         {
             bitboard_t king_attackbb = bitboards::get_rook_movebb(src_sq, this->piecebbs[PieceType::BlackKing]);
@@ -344,9 +332,6 @@ namespace schneizel
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
-
-        bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & white_pin_filterbb);
 
         // Pins and king attacks:
         {
@@ -441,9 +426,6 @@ namespace schneizel
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->whitebb;
 
-        bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & white_pin_filterbb);
-
         if ((this->checker_sqbb == bitboards::EmptyBB && this->discovered_checker_sqbb == bitboards::EmptyBB) &&
             this->castle_rights.white_left && bitboards::get_sqval(this->piecebbs[PieceType::WhiteRook], 0) == 1)
         {
@@ -505,9 +487,6 @@ namespace schneizel
         piece_move_list.movebb &= (this->checker_attackbb | this->checker_sqbb);
         piece_move_list.movebb &= (this->discovered_checker_attackbb | this->discovered_checker_sqbb);
 
-        bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & black_pin_filterbb);
-
         return piece_move_list;
     }
 
@@ -525,9 +504,6 @@ namespace schneizel
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
 
-        bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & black_pin_filterbb);
-
         return piece_move_list;
     }
 
@@ -544,9 +520,6 @@ namespace schneizel
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
-
-        bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & black_pin_filterbb);
 
         // Pins and king attacks:
         {
@@ -597,9 +570,6 @@ namespace schneizel
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
 
-        bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & black_pin_filterbb);
-
         // Pins and king attacks:
         {
             bitboard_t king_attackbb = bitboards::get_rook_movebb(src_sq, this->piecebbs[PieceType::WhiteKing]);
@@ -648,9 +618,6 @@ namespace schneizel
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
-
-        bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & black_pin_filterbb);
 
         // Pins and king attacks:
         {
@@ -744,9 +711,6 @@ namespace schneizel
 
         piece_move_list.attackbb = piece_move_list.movebb;
         piece_move_list.movebb &= ~this->blackbb;
-
-        bitboard_t black_pin_filterbb = this->get_black_pin_filterbb(bitboards::get_sqbb(src_sq));
-        piece_move_list.gives_checkbb = piece_move_list.movebb & ~(piece_move_list.movebb & black_pin_filterbb);
 
         if ((this->checker_sqbb == bitboards::EmptyBB && this->discovered_checker_sqbb == bitboards::EmptyBB) &&
             this->castle_rights.black_left && bitboards::get_sqval(this->piecebbs[PieceType::BlackRook], 56) == 1)
@@ -916,18 +880,10 @@ namespace schneizel
                         while (piece_move_list.movebb != bitboards::EmptyBB)
                         {
                             square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
-                            bitboard_t dst_sqbb = bitboards::get_sqbb(dst_sq);
-                            bool gives_check = false;
-
-                            if ((dst_sqbb & piece_move_list.gives_checkbb) != bitboards::EmptyBB)
-                            {
-                                gives_check = true;
-                            }
-
-                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::WhiteKnight, gives_check);
-                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::WhiteBishop, gives_check);
-                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::WhiteRook, gives_check);
-                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::WhiteQueen, gives_check);
+                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::WhiteKnight);
+                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::WhiteBishop);
+                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::WhiteRook);
+                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::WhiteQueen);
                         }
                     }
                     else
@@ -935,16 +891,7 @@ namespace schneizel
                         while (piece_move_list.movebb != bitboards::EmptyBB)
                         {
                             square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
-                            bitboard_t dst_sqbb = bitboards::get_sqbb(dst_sq);
-
-                            bool gives_check = false;
-
-                            if ((dst_sqbb & piece_move_list.gives_checkbb) != bitboards::EmptyBB)
-                            {
-                                gives_check = true;
-                            }
-
-                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, gives_check);
+                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq);
                         }
                     }
 
@@ -966,16 +913,7 @@ namespace schneizel
                     while (piece_move_list.movebb != bitboards::EmptyBB)
                     {
                         square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
-                        bitboard_t dst_sqbb = bitboards::get_sqbb(dst_sq);
-
-                        bool gives_check = false;
-
-                        if ((dst_sqbb & piece_move_list.gives_checkbb) != bitboards::EmptyBB)
-                        {
-                            gives_check = true;
-                        }
-
-                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, gives_check);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq);
                     }
 
                     this->white_attackbbs[src_sq] = piece_move_list.attackbb;
@@ -996,16 +934,7 @@ namespace schneizel
                     while (piece_move_list.movebb != bitboards::EmptyBB)
                     {
                         square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
-                        bitboard_t dst_sqbb = bitboards::get_sqbb(dst_sq);
-
-                        bool gives_check = false;
-
-                        if ((dst_sqbb & piece_move_list.gives_checkbb) != bitboards::EmptyBB)
-                        {
-                            gives_check = true;
-                        }
-
-                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, gives_check);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq);
                     }
 
                     this->white_attackbbs[src_sq] = piece_move_list.attackbb;
@@ -1026,16 +955,7 @@ namespace schneizel
                     while (piece_move_list.movebb != bitboards::EmptyBB)
                     {
                         square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
-                        bitboard_t dst_sqbb = bitboards::get_sqbb(dst_sq);
-
-                        bool gives_check = false;
-
-                        if ((dst_sqbb & piece_move_list.gives_checkbb) != bitboards::EmptyBB)
-                        {
-                            gives_check = true;
-                        }
-
-                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, gives_check);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq);
                     }
 
                     this->white_attackbbs[src_sq] = piece_move_list.attackbb;
@@ -1056,16 +976,7 @@ namespace schneizel
                     while (piece_move_list.movebb != bitboards::EmptyBB)
                     {
                         square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
-                        bitboard_t dst_sqbb = bitboards::get_sqbb(dst_sq);
-
-                        bool gives_check = false;
-
-                        if ((dst_sqbb & piece_move_list.gives_checkbb) != bitboards::EmptyBB)
-                        {
-                            gives_check = true;
-                        }
-
-                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, gives_check);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq);
                     }
 
                     this->white_attackbbs[src_sq] = piece_move_list.attackbb;
@@ -1086,16 +997,7 @@ namespace schneizel
                     while (piece_move_list.movebb != bitboards::EmptyBB)
                     {
                         square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
-                        bitboard_t dst_sqbb = bitboards::get_sqbb(dst_sq);
-
-                        bool gives_check = false;
-
-                        if ((dst_sqbb & piece_move_list.gives_checkbb) != bitboards::EmptyBB)
-                        {
-                            gives_check = true;
-                        }
-
-                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, gives_check);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq);
                     }
 
                     this->white_attackbbs[src_sq] = piece_move_list.attackbb;
@@ -1128,18 +1030,10 @@ namespace schneizel
                         while (piece_move_list.movebb != bitboards::EmptyBB)
                         {
                             square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
-                            bitboard_t dst_sqbb = bitboards::get_sqbb(dst_sq);
-                            bool gives_check = false;
-
-                            if ((dst_sqbb & piece_move_list.gives_checkbb) != bitboards::EmptyBB)
-                            {
-                                gives_check = true;
-                            }
-
-                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::BlackKnight, gives_check);
-                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::BlackBishop, gives_check);
-                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::BlackRook, gives_check);
-                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::BlackQueen, gives_check);
+                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::BlackKnight);
+                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::BlackBishop);
+                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::BlackRook);
+                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, PieceType::BlackQueen);
                         }
                     }
                     else
@@ -1147,16 +1041,7 @@ namespace schneizel
                         while (piece_move_list.movebb != bitboards::EmptyBB)
                         {
                             square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
-                            bitboard_t dst_sqbb = bitboards::get_sqbb(dst_sq);
-
-                            bool gives_check = false;
-
-                            if ((dst_sqbb & piece_move_list.gives_checkbb) != bitboards::EmptyBB)
-                            {
-                                gives_check = true;
-                            }
-
-                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, gives_check);
+                            move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq);
                         }
                     }
 
@@ -1178,16 +1063,7 @@ namespace schneizel
                     while (piece_move_list.movebb != bitboards::EmptyBB)
                     {
                         square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
-                        bitboard_t dst_sqbb = bitboards::get_sqbb(dst_sq);
-
-                        bool gives_check = false;
-
-                        if ((dst_sqbb & piece_move_list.gives_checkbb) != bitboards::EmptyBB)
-                        {
-                            gives_check = true;
-                        }
-
-                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, gives_check);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq);
                     }
 
                     this->black_attackbbs[src_sq] = piece_move_list.attackbb;
@@ -1208,16 +1084,7 @@ namespace schneizel
                     while (piece_move_list.movebb != bitboards::EmptyBB)
                     {
                         square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
-                        bitboard_t dst_sqbb = bitboards::get_sqbb(dst_sq);
-
-                        bool gives_check = false;
-
-                        if ((dst_sqbb & piece_move_list.gives_checkbb) != bitboards::EmptyBB)
-                        {
-                            gives_check = true;
-                        }
-
-                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, gives_check);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq);
                     }
 
                     this->black_attackbbs[src_sq] = piece_move_list.attackbb;
@@ -1238,16 +1105,7 @@ namespace schneizel
                     while (piece_move_list.movebb != bitboards::EmptyBB)
                     {
                         square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
-                        bitboard_t dst_sqbb = bitboards::get_sqbb(dst_sq);
-
-                        bool gives_check = false;
-
-                        if ((dst_sqbb & piece_move_list.gives_checkbb) != bitboards::EmptyBB)
-                        {
-                            gives_check = true;
-                        }
-
-                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, gives_check);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq);
                     }
 
                     this->black_attackbbs[src_sq] = piece_move_list.attackbb;
@@ -1268,16 +1126,7 @@ namespace schneizel
                     while (piece_move_list.movebb != bitboards::EmptyBB)
                     {
                         square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
-                        bitboard_t dst_sqbb = bitboards::get_sqbb(dst_sq);
-
-                        bool gives_check = false;
-
-                        if ((dst_sqbb & piece_move_list.gives_checkbb) != bitboards::EmptyBB)
-                        {
-                            gives_check = true;
-                        }
-
-                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, gives_check);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq);
                     }
 
                     this->black_attackbbs[src_sq] = piece_move_list.attackbb;
@@ -1298,16 +1147,7 @@ namespace schneizel
                     while (piece_move_list.movebb != bitboards::EmptyBB)
                     {
                         square_t dst_sq = bitboards::pop_lsb(piece_move_list.movebb);
-                        bitboard_t dst_sqbb = bitboards::get_sqbb(dst_sq);
-
-                        bool gives_check = false;
-
-                        if ((dst_sqbb & piece_move_list.gives_checkbb) != bitboards::EmptyBB)
-                        {
-                            gives_check = true;
-                        }
-
-                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq, gives_check);
+                        move_list.moves[move_list.move_cnt++] = Move(piecetyp, src_sq, dst_sq);
                     }
 
                     this->black_attackbbs[src_sq] = piece_move_list.attackbb;
