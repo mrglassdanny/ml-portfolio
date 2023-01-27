@@ -27,24 +27,13 @@ int main(int argc, char **argv)
 		{
 			auto move_list = pos.get_move_list();
 
-			bool move_set = false;
-			for (int m = 0; m < move_list.move_cnt; m++)
-			{
-				move = move_list.moves[m];
-				if (move.gives_check)
-				{
-					move_set = true;
-					break;
-				}
-			}
-
-			if (!move_set)
-				move = move_list.moves[rand() % move_list.move_cnt];
-
+			move = move_list.moves[rand() % move_list.move_cnt];
+				
 			if (pos.is_in_check(pos.white_turn))
 			{
 				printf("CHECK\n");
 				pos.pretty_print(nullptr);
+				printf("%d\n", j);
 			}
 
 			pos.make_move(move);

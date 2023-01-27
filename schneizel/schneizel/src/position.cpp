@@ -489,7 +489,6 @@ namespace schneizel
             pawn_movebb_2 = bitboards::EmptyBB;
         }
 
-
         bitboard_t white_pin_filterbb = this->get_white_pin_filterbb(piecebb);
 
         piece_move_list.attackbb = east_pawn_attackbb | west_pawn_attackbb;
@@ -838,6 +837,52 @@ namespace schneizel
         }
 
         return pin_filterbb;
+    }
+
+    Pin *Position::get_white_discovered_check_pin(bitboard_t piecebb)
+    {
+        Pin *pin = nullptr;
+
+        if ((piecebb & this->white_pinbb) != bitboards::EmptyBB)
+        {
+            for (int i = 0; i < this->white_pins_trimmed_cnt; i++)
+            {
+                if ((this->white_pins_trimmed[i]->king_directionbb & piecebb) != bitboards::EmptyBB)
+                {
+                    // Recent move will have invalidated pin. Need to make sure is real discovered check (pinner + king = 2).
+                    if (bitboards::popcount(this->white_pins_trimmed[i]->king_directionbb & this->allbb) == 2)
+                    {
+                        pin = this->white_pins_trimmed[i];
+                        break;
+                    }
+                }
+            }
+        }
+
+        return pin;
+    }
+
+    Pin *Position::get_black_discovered_check_pin(bitboard_t piecebb)
+    {
+        Pin *pin = nullptr;
+
+        if ((piecebb & this->black_pinbb) != bitboards::EmptyBB)
+        {
+            for (int i = 0; i < this->black_pins_trimmed_cnt; i++)
+            {
+                if ((this->black_pins_trimmed[i]->king_directionbb & piecebb) != bitboards::EmptyBB)
+                {
+                    // Recent move will have invalidated pin. Need to make sure is real discovered check (pinner + king = 2).
+                    if (bitboards::popcount(this->black_pins_trimmed[i]->king_directionbb & this->allbb) == 2)
+                    {
+                        pin = this->black_pins_trimmed[i];
+                        break;
+                    }
+                }
+            }
+        }
+
+        return pin;
     }
 
     MoveList Position::get_move_list()
@@ -1453,24 +1498,11 @@ namespace schneizel
 
         this->pieces[move.src_sq] = PieceType::None;
 
-        // Discovered check:
-        if (move.gives_check)
+        // Need to invalidate any moved pinners:
         {
-            if (this->white_turn)
-            {
-                this->discovered_checker_attackbb = this->white_pins[move.src_sq].king_directionbb;
-                this->discovered_checker_sqbb = bitboards::get_sqbb(this->white_pins[move.src_sq].pinner_sq);
-            }
-            else
-            {
-                this->discovered_checker_attackbb = this->black_pins[move.src_sq].king_directionbb;
-                this->discovered_checker_sqbb = bitboards::get_sqbb(this->black_pins[move.src_sq].pinner_sq);
-            }
+            memset(&this->white_pins[move.src_sq], 0, sizeof(Pin));
+            memset(&this->black_pins[move.src_sq], 0, sizeof(Pin));
         }
-
-        // Need to invalid any moved pinners.
-        memset(&this->white_pins[move.src_sq], 0, sizeof(Pin));
-        memset(&this->black_pins[move.src_sq], 0, sizeof(Pin));
 
         if (this->white_turn)
         {
@@ -1541,9 +1573,10 @@ namespace schneizel
             break;
         }
 
-        // Update all attacks and see if checking king:
+        // Attacks, pins, checks:
         if (this->white_turn)
         {
+            // Update attacks and pins:
             for (square_t sq = 0; sq < SquareCnt; sq++)
             {
                 this->white_attackbb |= this->white_attackbbs[sq];
@@ -1555,6 +1588,7 @@ namespace schneizel
                 }
             }
 
+            // See if moved piece is now checking opponent king:
             if ((moved_piece_move_list.attackbb & this->piecebbs[PieceType::BlackKing]) != bitboards::EmptyBB)
             {
                 // If pawn or knight, there is no blocking opportunity. The only way to resolve the check is to take the piece or move the king.
@@ -1571,9 +1605,21 @@ namespace schneizel
                     break;
                 }
             }
+
+            // Discovered check:
+            {
+                Pin *white_discovered_check_pin = this->get_white_discovered_check_pin(bitboards::get_sqbb(move.src_sq));
+                if (white_discovered_check_pin != nullptr &&
+                    (bitboards::get_sqbb(move.dst_sq) & white_discovered_check_pin->king_directionbb) == bitboards::EmptyBB)
+                {
+                    this->discovered_checker_attackbb = white_discovered_check_pin->king_directionbb;
+                    this->discovered_checker_sqbb = bitboards::get_sqbb(white_discovered_check_pin->pinner_sq);
+                }
+            }
         }
         else
         {
+            // Update attacks and pins:
             for (square_t sq = 0; sq < SquareCnt; sq++)
             {
                 this->black_attackbb |= this->black_attackbbs[sq];
@@ -1585,6 +1631,7 @@ namespace schneizel
                 }
             }
 
+            // See if moved piece is now checking opponent king:
             if ((moved_piece_move_list.attackbb & this->piecebbs[PieceType::WhiteKing]) != bitboards::EmptyBB)
             {
                 // If pawn or knight, there is no blocking opportunity. The only way to resolve the check is to take the piece or move the king.
@@ -1599,6 +1646,17 @@ namespace schneizel
                     this->checker_sqbb = bitboards::get_sqbb(move.dst_sq);
                     this->checker_attackbb = moved_piece_move_list.king_attackbb | this->checker_sqbb;
                     break;
+                }
+            }
+
+            // Discovered check:
+            {
+                Pin *black_discovered_check_pin = this->get_black_discovered_check_pin(bitboards::get_sqbb(move.src_sq));
+                if (black_discovered_check_pin != nullptr &&
+                    (bitboards::get_sqbb(move.dst_sq) & black_discovered_check_pin->king_directionbb) == bitboards::EmptyBB)
+                {
+                    this->discovered_checker_attackbb = black_discovered_check_pin->king_directionbb;
+                    this->discovered_checker_sqbb = bitboards::get_sqbb(black_discovered_check_pin->pinner_sq);
                 }
             }
         }
