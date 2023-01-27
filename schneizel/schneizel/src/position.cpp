@@ -277,6 +277,7 @@ namespace schneizel
                 {
                     this->white_pins[src_sq].pinbb = pinbb;
                     this->white_pins[src_sq].king_directionbb = piece_move_list.king_directionbb;
+                    this->white_pins[src_sq].no_block_king_directionbb = piece_move_list.no_block_king_directionbb;
                     this->white_pins[src_sq].pinner_sq = src_sq;
                 }
             }
@@ -322,6 +323,7 @@ namespace schneizel
                 {
                     this->white_pins[src_sq].pinbb = pinbb;
                     this->white_pins[src_sq].king_directionbb = piece_move_list.king_directionbb;
+                    this->white_pins[src_sq].no_block_king_directionbb = piece_move_list.no_block_king_directionbb;
                     this->white_pins[src_sq].pinner_sq = src_sq;
                 }
             }
@@ -371,6 +373,7 @@ namespace schneizel
                     {
                         this->white_pins[src_sq].pinbb = pinbb;
                         this->white_pins[src_sq].king_directionbb = piece_move_list.king_directionbb;
+                        this->white_pins[src_sq].no_block_king_directionbb = piece_move_list.no_block_king_directionbb;
                         this->white_pins[src_sq].pinner_sq = src_sq;
                     }
                 }
@@ -402,6 +405,7 @@ namespace schneizel
                     {
                         this->white_pins[src_sq].pinbb = pinbb;
                         this->white_pins[src_sq].king_directionbb = piece_move_list.king_directionbb;
+                        this->white_pins[src_sq].no_block_king_directionbb = piece_move_list.no_block_king_directionbb;
                         this->white_pins[src_sq].pinner_sq = src_sq;
                     }
                 }
@@ -549,6 +553,7 @@ namespace schneizel
                 {
                     this->black_pins[src_sq].pinbb = pinbb;
                     this->black_pins[src_sq].king_directionbb = piece_move_list.king_directionbb;
+                    this->black_pins[src_sq].no_block_king_directionbb = piece_move_list.no_block_king_directionbb;
                     this->black_pins[src_sq].pinner_sq = src_sq;
                 }
             }
@@ -594,6 +599,7 @@ namespace schneizel
                 {
                     this->black_pins[src_sq].pinbb = pinbb;
                     this->black_pins[src_sq].king_directionbb = piece_move_list.king_directionbb;
+                    this->black_pins[src_sq].no_block_king_directionbb = piece_move_list.no_block_king_directionbb;
                     this->black_pins[src_sq].pinner_sq = src_sq;
                 }
             }
@@ -643,6 +649,7 @@ namespace schneizel
                     {
                         this->black_pins[src_sq].pinbb = pinbb;
                         this->black_pins[src_sq].king_directionbb = piece_move_list.king_directionbb;
+                        this->black_pins[src_sq].no_block_king_directionbb = piece_move_list.no_block_king_directionbb;
                         this->black_pins[src_sq].pinner_sq = src_sq;
                     }
                 }
@@ -674,6 +681,7 @@ namespace schneizel
                     {
                         this->black_pins[src_sq].pinbb = pinbb;
                         this->black_pins[src_sq].king_directionbb = piece_move_list.king_directionbb;
+                        this->black_pins[src_sq].no_block_king_directionbb = piece_move_list.no_block_king_directionbb;
                         this->black_pins[src_sq].pinner_sq = src_sq;
                     }
                 }
@@ -1566,7 +1574,7 @@ namespace schneizel
                     break;
                 default:
                     this->checker_sqbb = bitboards::get_sqbb(move.dst_sq);
-                    this->checker_attackbb = moved_piece_move_list.king_directionbb | this->checker_sqbb;
+                    this->checker_attackbb = moved_piece_move_list.king_directionbb;
 
                     // Since we know piece checks king, we need to append attack bitboards with no block king direction.
                     /*
@@ -1586,8 +1594,17 @@ namespace schneizel
                 if (white_discovered_check_pin != nullptr &&
                     (bitboards::get_sqbb(move.dst_sq) & white_discovered_check_pin->king_directionbb) == bitboards::EmptyBB)
                 {
-                    this->discovered_checker_attackbb = white_discovered_check_pin->king_directionbb;
                     this->discovered_checker_sqbb = bitboards::get_sqbb(white_discovered_check_pin->pinner_sq);
+                    this->discovered_checker_attackbb = white_discovered_check_pin->king_directionbb;
+
+                    // Since we know piece checks king, we need to append attack bitboards with no block king direction.
+                    /*
+                    Example:    - bishop checks king (Northwest)
+                                - bishop attack stops at king (blocker)
+                                - king thinks moving further Northwest is valid since bishop attack does not go past king
+                    */
+                    this->white_attackbbs[white_discovered_check_pin->pinner_sq] |= (white_discovered_check_pin->no_block_king_directionbb & ~bitboards::get_sqbb(white_discovered_check_pin->pinner_sq));
+                    this->white_attackbb |= this->white_attackbbs[white_discovered_check_pin->pinner_sq];
                 }
             }
         }
@@ -1656,7 +1673,7 @@ namespace schneizel
                     break;
                 default:
                     this->checker_sqbb = bitboards::get_sqbb(move.dst_sq);
-                    this->checker_attackbb = moved_piece_move_list.king_directionbb | this->checker_sqbb;
+                    this->checker_attackbb = moved_piece_move_list.king_directionbb;
 
                     // Since we know piece checks king, we need to append attack bitboards with no block king direction.
                     /*
@@ -1676,8 +1693,17 @@ namespace schneizel
                 if (black_discovered_check_pin != nullptr &&
                     (bitboards::get_sqbb(move.dst_sq) & black_discovered_check_pin->king_directionbb) == bitboards::EmptyBB)
                 {
-                    this->discovered_checker_attackbb = black_discovered_check_pin->king_directionbb;
                     this->discovered_checker_sqbb = bitboards::get_sqbb(black_discovered_check_pin->pinner_sq);
+                    this->discovered_checker_attackbb = black_discovered_check_pin->king_directionbb;
+
+                    // Since we know piece checks king, we need to append attack bitboards with no block king direction.
+                    /*
+                    Example:    - bishop checks king (Northwest)
+                                - bishop attack stops at king (blocker)
+                                - king thinks moving further Northwest is valid since bishop attack does not go past king
+                    */
+                    this->black_attackbbs[black_discovered_check_pin->pinner_sq] |= (black_discovered_check_pin->no_block_king_directionbb & ~bitboards::get_sqbb(black_discovered_check_pin->pinner_sq));
+                    this->black_attackbb |= this->black_attackbbs[black_discovered_check_pin->pinner_sq];
                 }
             }
         }

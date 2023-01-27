@@ -23,6 +23,7 @@ namespace schneizel
     {
         bitboard_t pinbb;
         bitboard_t king_directionbb;
+        bitboard_t no_block_king_directionbb;
         square_t pinner_sq;
     };
 
