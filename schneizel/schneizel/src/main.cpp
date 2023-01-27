@@ -12,45 +12,43 @@ int main(int argc, char **argv)
 
 	auto sw = new StopWatch();
 
-	int epochs = 50000;
-	int moves = 50;
+	int game_cnt = 50000;
+	int move_cnt = 50;
 
 	sw->start();
-	for (int j = 0; j < epochs; j++)
+	for (int game_num = 0; game_num < game_cnt; game_num++)
 	{
 		Position pos;
 		pos.init();
 
 		Move move;
 
-		for (int i = 0; i < moves; i++)
+		for (int move_num = 0; move_num < move_cnt; move_num++)
 		{
 
 			auto move_list = pos.get_move_list();
 			if (move_list.move_cnt == 0)
 			{
 				printf("CHECKMATE\n");
-				pos.pretty_print(nullptr);
-				printf("%d\n", j);
+				pos.pretty_print(&move);
+				printf("Game: %d\n", game_num);
 				break;
 			}
-
-			move = move_list.moves[rand() % move_list.move_cnt];
 
 			if (pos.is_in_check(pos.white_turn))
 			{
 				printf("CHECK\n");
-				pos.pretty_print(nullptr);
-				printf("%d\n", j);
+				pos.pretty_print(&move);
+				printf("Game: %d\tLegal moves: %d\n", game_num, move_list.move_cnt);
 			}
 
+			move = move_list.moves[rand() % move_list.move_cnt];
 			pos.make_move(move);
-			pos.pretty_print(&move);
 		}
 	}
 	sw->stop();
 	sw->print_elapsed_seconds();
-	printf("Moves: %d\n", epochs * moves);
+	printf("Moves: %d\n", game_cnt * move_cnt);
 
 	delete sw;
 
