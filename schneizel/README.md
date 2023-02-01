@@ -6,4 +6,4 @@ The core chess engine is essentially a copy-paste of [Stockfish]. Necessary [lic
 ![schneizel-image](img.jpg)
 
 [Stockfish]: https://github.com/official-stockfish/Stockfish
-[license]: https://github.com/mrglassdanny/ml-portfolio/schneizel/stockfish-license.txt
+[license]: https://github.com/mrglassdanny/ml-portfolio/blob/main/schneizel/stockfish-license.txt
