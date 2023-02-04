@@ -125,6 +125,7 @@
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\material.cpp" />
     <ClCompile Include="src\misc.cpp" />
+    <ClCompile Include="src\model.cpp" />
     <ClCompile Include="src\movegen.cpp" />
     <ClCompile Include="src\movepick.cpp" />
     <ClCompile Include="src\nnue\evaluate_nnue.cpp" />
@@ -133,6 +134,7 @@
     <ClCompile Include="src\position.cpp" />
     <ClCompile Include="src\psqt.cpp" />
     <ClCompile Include="src\search.cpp" />
+    <ClCompile Include="src\selfplay.cpp" />
     <ClCompile Include="src\syzygy\tbprobe.cpp" />
     <ClCompile Include="src\thread.cpp" />
     <ClCompile Include="src\timeman.cpp" />
@@ -149,6 +151,7 @@
     <ClInclude Include="src\incbin\incbin.h" />
     <ClInclude Include="src\material.h" />
     <ClInclude Include="src\misc.h" />
+    <ClInclude Include="src\model.h" />
     <ClInclude Include="src\movegen.h" />
     <ClInclude Include="src\movepick.h" />
     <ClInclude Include="src\nnue\evaluate_nnue.h" />
@@ -165,6 +168,7 @@
     <ClInclude Include="src\position.h" />
     <ClInclude Include="src\psqt.h" />
     <ClInclude Include="src\search.h" />
+    <ClInclude Include="src\selfplay.h" />
     <ClInclude Include="src\syzygy\tbprobe.h" />
     <ClInclude Include="src\thread.h" />
     <ClInclude Include="src\thread_win32_osx.h" />

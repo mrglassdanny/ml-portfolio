@@ -175,6 +175,9 @@ public:
   void put_piece(Piece pc, Square s);
   void remove_piece(Square s);
 
+  // Used by schneizel
+  int material_eval() const;
+
 private:
   // Initialization helpers (used while setting up a position)
   void set_castling_right(Color c, Square rfrom);

@@ -28,11 +28,14 @@
 #include "tt.h"
 #include "uci.h"
 
+#include "selfplay.h"
+#include "model.h"
+
 using namespace Stockfish;
+using namespace schneizel;
 
-int main(int argc, char* argv[]) {
-
-  std::cout << engine_info() << std::endl;
+int main(int argc, char *argv[])
+{
 
   CommandLine::init(argc, argv);
   UCI::init(Options);
@@ -44,9 +47,8 @@ int main(int argc, char* argv[]) {
   Endgames::init();
   Threads.set(size_t(Options["Threads"]));
   Search::clear(); // After threads are up
-  Eval::NNUE::init();
 
-  UCI::loop(argc, argv);
+  Selfplay::loop();
 
   Threads.set(0);
   return 0;

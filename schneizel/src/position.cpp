@@ -1351,4 +1351,57 @@ bool Position::pos_is_ok() const {
   return true;
 }
 
+/// Position::material_eval() returns simple material evaluation
+int Position::material_eval() const
+{
+    int eval = 0;
+        for (int i = 0; i < SQUARE_NB; i++)
+        {
+            float val = 0;
+            switch (board[i])
+            {
+            case Piece::W_PAWN:
+                val = 1;
+                break;
+            case Piece::W_KNIGHT:
+                val = 3;
+                break;
+            case Piece::W_BISHOP:
+                val = 3;
+                break;
+            case Piece::W_ROOK:
+                val = 5;
+                break;
+            case Piece::W_QUEEN:
+                val = 9;
+                break;
+            case Piece::W_KING:
+                val = 10;
+                break;
+            case Piece::B_PAWN:
+                val = -1;
+                break;
+            case Piece::B_KNIGHT:
+                val = -3;
+                break;
+            case Piece::B_BISHOP:
+                val = -3;
+                break;
+            case Piece::B_ROOK:
+                val = -5;
+                break;
+            case Piece::B_QUEEN:
+                val = -9;
+                break;
+            case Piece::B_KING:
+                val = -10;
+                break;
+            default:
+                break;
+            }
+            eval += val;
+        }
+        return eval;
+}
+
 } // namespace Stockfish
