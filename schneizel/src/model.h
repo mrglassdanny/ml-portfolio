@@ -27,6 +27,8 @@ namespace schneizel
             Layer(int fan_in, int fan_out, bool activation);
             ~Layer();
 
+            Layer *copy();
+
             int inputs();
             int outputs();
 
@@ -55,6 +57,8 @@ namespace schneizel
         public:
             Model(float learning_rate);
             ~Model();
+
+            Model *copy();
 
             void add_layer(Layer *layer);
 

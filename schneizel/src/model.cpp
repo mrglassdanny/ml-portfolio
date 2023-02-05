@@ -40,6 +40,20 @@ namespace schneizel
             free(this->db);
         }
 
+        Layer *Layer::copy()
+        {
+            auto dst_lyr = new Layer(this->fan_in, this->fan_out, this->activation);
+
+            memcpy(dst_lyr->n, this->n, sizeof(float) * this->fan_in);
+            memcpy(dst_lyr->dn, this->dn, sizeof(float) * this->fan_in);
+            memcpy(dst_lyr->w, this->w, sizeof(float) * (this->fan_in * this->fan_out));
+            memcpy(dst_lyr->dw, this->dw, sizeof(float) * (this->fan_in * this->fan_out));
+            memcpy(dst_lyr->b, this->b, sizeof(float) * this->fan_out);
+            memcpy(dst_lyr->db, this->db, sizeof(float) * this->fan_out);
+
+            return dst_lyr;
+        }
+
         int Layer::inputs()
         {
             return this->fan_in;
@@ -152,6 +166,18 @@ namespace schneizel
             {
                 delete lyr;
             }
+        }
+
+        Model *Model::copy()
+        {
+            auto dst_model = new Model(this->learning_rate);
+
+            for (auto lyr : this->layers)
+            {
+                dst_model->add_layer(lyr->copy());
+            }
+
+            return dst_model;
         }
 
         void Model::add_layer(Layer *lyr)
@@ -318,7 +344,7 @@ namespace schneizel
 
         void init(const char *params_path, int thread_cnt)
         {
-            auto model = new Model(0.001f);
+            auto model = new Model(0.01f);
             model->add_layer(new Layer(64, 128, true));
             model->add_layer(new Layer(128, 128, true));
             model->add_layer(new Layer(128, 16, true));
@@ -329,17 +355,17 @@ namespace schneizel
             {
             }
 
-            // TODO
             for (int i = 0; i < thread_cnt; i++)
             {
-                models.push_back(model);
+                models.push_back(model->copy());
             }
+
+            delete model;
         }
 
         Model *get_model(int thread_id)
         {
             return models[thread_id];
         }
-
     }
 }
