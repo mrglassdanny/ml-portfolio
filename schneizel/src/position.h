@@ -176,6 +176,7 @@ public:
   void remove_piece(Square s);
 
   // Used by schneizel
+  void get_material(float *out) const;
   int material_eval() const;
 
 private:

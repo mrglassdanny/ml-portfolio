@@ -10,7 +10,10 @@
 #include "tt.h"
 #include "uci.h"
 
-namespace Selfplay
+namespace schneizel
 {
-    void loop();
+    namespace selfplay
+    {
+        void loop();
+    }
 }

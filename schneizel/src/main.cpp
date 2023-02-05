@@ -18,6 +18,8 @@
 
 #include <iostream>
 
+#include <conio.h>
+
 #include "bitboard.h"
 #include "endgame.h"
 #include "position.h"
@@ -32,7 +34,6 @@
 #include "model.h"
 
 using namespace Stockfish;
-using namespace schneizel;
 
 int main(int argc, char *argv[])
 {
@@ -45,10 +46,14 @@ int main(int argc, char *argv[])
   Position::init();
   Bitbases::init();
   Endgames::init();
-  Threads.set(size_t(Options["Threads"]));
-  Search::clear(); // After threads are up
+  // TODO: walm machine has 8 cores
+  Threads.set(size_t(1));
+  Search::clear();
 
-  Selfplay::loop();
+  schneizel::model::init(nullptr, 1);
+  schneizel::selfplay::loop();
+
+  _getch();
 
   Threads.set(0);
   return 0;

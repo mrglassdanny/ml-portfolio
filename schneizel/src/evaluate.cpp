@@ -37,6 +37,8 @@
 #include "uci.h"
 #include "incbin/incbin.h"
 
+#include "model.h"
+
 
 // Macro to embed the default efficiently updatable neural network (NNUE) file
 // data in the engine binary (using incbin.h, by Dale Weiler).
@@ -1058,7 +1060,25 @@ Value Eval::evaluate(const Position& pos, int* complexity) {
   // PSQ advantage is decisive and several pieces remain. (~3 Elo)
   bool useClassical = !useNNUE || (pos.count<ALL_PIECES>() > 7 && abs(psq) > 1781);
 
-  if (useClassical)
+  // Use schneizel if classical and if we are color (use classical/NNUE if other color).
+  bool useSchneizel = useClassical && pos.side_to_move() == Color::BLACK;
+
+  if (useSchneizel)
+  {
+    // Thread id will line up with model index.
+    auto model = schneizel::model::get_model(pos.this_thread()->id());
+
+    float x[SQUARE_NB];
+    pos.get_material(x);
+
+    float p = model->forward(x);
+
+    // Side to move point of view
+    p = (pos.side_to_move() == WHITE ? p : -p);
+    v = Value((int)(p * 100));
+    // v = Evaluation<NO_TRACE>(pos).value();
+  }
+  else if (useClassical)
       v = Evaluation<NO_TRACE>(pos).value();
   else
   {

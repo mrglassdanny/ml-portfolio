@@ -1351,57 +1351,107 @@ bool Position::pos_is_ok() const {
   return true;
 }
 
+/// Position::get_material() fills out array with piece material values
+void Position::get_material(float *out) const
+{
+  for (int i = 0; i < SQUARE_NB; i++)
+  {
+      switch (board[i])
+      {
+      case Piece::W_PAWN:
+          out[i] = 1.0f;
+          break;
+      case Piece::W_KNIGHT:
+          out[i] = 3.0f;
+          break;
+      case Piece::W_BISHOP:
+          out[i] = 3.0f;
+          break;
+      case Piece::W_ROOK:
+          out[i] = 5.0f;
+          break;
+      case Piece::W_QUEEN:
+          out[i] = 9.0f;
+          break;
+      case Piece::W_KING:
+          out[i] = 10.0f;
+          break;
+      case Piece::B_PAWN:
+          out[i] = -1.0f;
+          break;
+      case Piece::B_KNIGHT:
+          out[i] = -3.0f;
+          break;
+      case Piece::B_BISHOP:
+          out[i] = -3.0f;
+          break;
+      case Piece::B_ROOK:
+          out[i] = -5.0f;
+          break;
+      case Piece::B_QUEEN:
+          out[i] = -9.0f;
+          break;
+      case Piece::B_KING:
+          out[i] = -10.0f;
+          break;
+      default:
+          out[i] = 0.0f;
+          break;
+      }
+  }
+}
+
 /// Position::material_eval() returns simple material evaluation
 int Position::material_eval() const
 {
-    int eval = 0;
-        for (int i = 0; i < SQUARE_NB; i++)
-        {
-            float val = 0;
-            switch (board[i])
-            {
-            case Piece::W_PAWN:
-                val = 1;
-                break;
-            case Piece::W_KNIGHT:
-                val = 3;
-                break;
-            case Piece::W_BISHOP:
-                val = 3;
-                break;
-            case Piece::W_ROOK:
-                val = 5;
-                break;
-            case Piece::W_QUEEN:
-                val = 9;
-                break;
-            case Piece::W_KING:
-                val = 10;
-                break;
-            case Piece::B_PAWN:
-                val = -1;
-                break;
-            case Piece::B_KNIGHT:
-                val = -3;
-                break;
-            case Piece::B_BISHOP:
-                val = -3;
-                break;
-            case Piece::B_ROOK:
-                val = -5;
-                break;
-            case Piece::B_QUEEN:
-                val = -9;
-                break;
-            case Piece::B_KING:
-                val = -10;
-                break;
-            default:
-                break;
-            }
-            eval += val;
-        }
-        return eval;
+  int eval = 0;
+  for (int i = 0; i < SQUARE_NB; i++)
+  {
+      int val = 0;
+      switch (board[i])
+      {
+      case Piece::W_PAWN:
+          val = 1;
+          break;
+      case Piece::W_KNIGHT:
+          val = 3;
+          break;
+      case Piece::W_BISHOP:
+          val = 3;
+          break;
+      case Piece::W_ROOK:
+          val = 5;
+          break;
+      case Piece::W_QUEEN:
+          val = 9;
+          break;
+      case Piece::W_KING:
+          val = 10;
+          break;
+      case Piece::B_PAWN:
+          val = -1;
+          break;
+      case Piece::B_KNIGHT:
+          val = -3;
+          break;
+      case Piece::B_BISHOP:
+          val = -3;
+          break;
+      case Piece::B_ROOK:
+          val = -5;
+          break;
+      case Piece::B_QUEEN:
+          val = -9;
+          break;
+      case Piece::B_KING:
+          val = -10;
+          break;
+      default:
+          break;
+      }
+      eval += val;
+  }
+  return eval;
 }
 
 } // namespace Stockfish
