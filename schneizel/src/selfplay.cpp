@@ -27,7 +27,7 @@ namespace schneizel
             }
         }
 
-        void play_game(int depth)
+        void play_game(int white_depth, int black_depth)
         {
             Position pos;
             StateListPtr states(new std::deque<StateInfo>(1));
@@ -46,18 +46,20 @@ namespace schneizel
                     limits.startTime = now();
                     if (pos.side_to_move() == Color::WHITE)
                     {
-                        limits.depth = 2;
+                        limits.depth = white_depth;
+                        Eval::setUseSchneizel(true);
                     }
                     else
                     {
-                        limits.depth = depth;
+                        limits.depth = black_depth;
+                        Eval::setUseSchneizel(true);
                     }
                 }
 
                 MoveList<LEGAL> move_list(pos);
                 if (move_list.size() == 0)
                 {
-                    if (pos.checkers() != 0ULL)
+                    if (pos.checkers())
                     {
                         printf("\n ====================== CHECKMATE ======================\n");
                     }
@@ -79,6 +81,8 @@ namespace schneizel
                 auto best_thread = Threads.get_best_thread();
                 auto best_move = best_thread->rootMoves[0].pv[0];
                 auto best_move_str = UCI::move(best_move, false);
+                printf("SIDE TO MOVE: %s\n", pos.side_to_move() == Color::WHITE ? "WHITE" : "BLACK");
+                printf("BEST MOVE: %s\n", best_move_str.c_str());
 
                 states = StateListPtr(new std::deque<StateInfo>(1));
                 pos.set(pos.fen(), false, &states->back(), Threads.main());
@@ -95,10 +99,6 @@ namespace schneizel
                 {
                     printf("\n ====================== CHECK ======================\n");
                 }
-                else
-                {
-                    printf("STOCKFISH: %d\n", Eval::evaluate(pos));
-                }
 
                 std::cout << pos;
 
@@ -110,7 +110,8 @@ namespace schneizel
 
         void loop()
         {
-            play_game(10);
+            srand(NULL);
+            play_game(5, 5);
         }
 
     }

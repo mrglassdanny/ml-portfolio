@@ -65,6 +65,16 @@ namespace Eval {
   bool useNNUE;
   string currentEvalFileName = "None";
 
+  bool _useSchneizel = false;
+  bool getUseSchneizel()
+  {
+    return _useSchneizel;
+  }
+  void setUseSchneizel(bool useSchneizel)
+  {
+    _useSchneizel = useSchneizel;
+  }
+
   /// NNUE::init() tries to load a NNUE network at startup time, or when the engine
   /// receives a UCI command "setoption name EvalFile value nn-[a-z0-9]{12}.nnue"
   /// The name of the NNUE network is always retrieved from the EvalFile option.
@@ -1060,10 +1070,7 @@ Value Eval::evaluate(const Position& pos, int* complexity) {
   // PSQ advantage is decisive and several pieces remain. (~3 Elo)
   bool useClassical = !useNNUE || (pos.count<ALL_PIECES>() > 7 && abs(psq) > 1781);
 
-  // Use schneizel if classical and if we are color (use classical/NNUE if other color).
-  bool useSchneizel = useClassical && pos.side_to_move() == Color::BLACK;
-
-  if (useSchneizel)
+  if (Eval::getUseSchneizel())
   {
     // Thread id will line up with model index.
     auto model = schneizel::model::get_model(pos.this_thread()->id());
