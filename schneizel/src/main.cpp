@@ -37,6 +37,7 @@ using namespace Stockfish;
 
 int main(int argc, char *argv[])
 {
+  int thread_cnt = 8;
 
   CommandLine::init(argc, argv);
   UCI::init(Options);
@@ -46,13 +47,11 @@ int main(int argc, char *argv[])
   Position::init();
   Bitbases::init();
   Endgames::init();
-  // TODO: walm machine has 8 cores
-  Threads.set(size_t(1));
+  Threads.set(size_t(thread_cnt));
   Search::clear();
 
-  schneizel::model::init(nullptr, 1);
+  schneizel::model::init(nullptr, thread_cnt);
   schneizel::selfplay::loop();
-
   _getch();
 
   Threads.set(0);

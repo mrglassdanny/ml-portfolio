@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ctime>
+
 #include "bitboard.h"
 #include "endgame.h"
 #include "position.h"

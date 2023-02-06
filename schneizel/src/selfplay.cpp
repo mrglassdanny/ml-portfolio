@@ -47,7 +47,7 @@ namespace schneizel
                     if (pos.side_to_move() == Color::WHITE)
                     {
                         limits.depth = white_depth;
-                        Eval::setUseSchneizel(true);
+                        Eval::setUseSchneizel(false);
                     }
                     else
                     {
@@ -110,8 +110,8 @@ namespace schneizel
 
         void loop()
         {
-            srand(NULL);
-            play_game(5, 5);
+            srand(time(NULL));
+            play_game(10, 10);
         }
 
     }
