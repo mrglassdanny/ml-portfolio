@@ -350,7 +350,7 @@ namespace schneizel
             model->add_layer(new Layer(64, 128, true));
             model->add_layer(new Layer(128, 128, true));
             model->add_layer(new Layer(128, 16, true));
-            model->add_layer(new Layer(16, 1, false));
+            model->add_layer(new Layer(16, 1, true));
 
             // TODO
             if (params_path != nullptr)
@@ -498,7 +498,6 @@ namespace schneizel
                 {
                     // White:
                     {
-
                         MoveList<LEGAL> move_list(pos);
                         if (move_list.size() == 0)
                         {
@@ -518,6 +517,12 @@ namespace schneizel
                         std::string move_str;
                         std::cin >> move_str;
                         auto move = UCI::to_move(pos, move_str);
+                        while(!is_ok(move))
+                        {
+                            std::cout << "Invalid move!\n";
+                            std::cin >> move_str;
+                            move = UCI::to_move(pos, move_str);
+                        }
 
                         states = StateListPtr(new std::deque<StateInfo>(1));
                         pos.set(pos.fen(), false, &states->back(), Threads.main());
@@ -538,7 +543,7 @@ namespace schneizel
                         {
                             limits.startTime = now();
                             limits.depth = opponent_depth;
-                            Eval::setUseSchneizel(true);
+                            Eval::setUseSchneizel(false);
                         }
 
                         MoveList<LEGAL> move_list(pos);
@@ -585,7 +590,6 @@ namespace schneizel
                 }
                 else
                 {
-
                     // White:
                     {
                         Search::LimitsType limits;
@@ -658,6 +662,12 @@ namespace schneizel
                         std::string move_str;
                         std::cin >> move_str;
                         auto move = UCI::to_move(pos, move_str);
+                        while(!is_ok(move))
+                        {
+                            std::cout << "Invalid move!\n";
+                            std::cin >> move_str;
+                            move = UCI::to_move(pos, move_str);
+                        }
 
                         states = StateListPtr(new std::deque<StateInfo>(1));
                         pos.set(pos.fen(), false, &states->back(), Threads.main());
@@ -682,6 +692,5 @@ namespace schneizel
             srand(time(NULL));
             play_game(true, 10);
         }
-
     }
 }
