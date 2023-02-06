@@ -37,7 +37,7 @@
 #include "uci.h"
 #include "incbin/incbin.h"
 
-#include "model.h"
+#include "schneizel.h"
 
 
 // Macro to embed the default efficiently updatable neural network (NNUE) file

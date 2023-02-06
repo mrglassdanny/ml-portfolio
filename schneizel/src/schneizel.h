@@ -1,10 +1,17 @@
 #pragma once
 
-#include <stdlib.h>
-#include <string.h>
-
-#include <vector>
+#include <ctime>
 #include <random>
+
+#include "bitboard.h"
+#include "endgame.h"
+#include "position.h"
+#include "psqt.h"
+#include "search.h"
+#include "syzygy/tbprobe.h"
+#include "thread.h"
+#include "tt.h"
+#include "uci.h"
 
 namespace schneizel
 {
@@ -70,8 +77,17 @@ namespace schneizel
             void grad_check();
         };
 
-        void init(const char* params_path, int thread_cnt);
+        void init(const char *params_path, int thread_cnt);
         Model *get_model(int thread_id);
     }
 
+    namespace selfplay
+    {
+        void loop();
+    }
+
+    namespace play
+    {
+        void loop();
+    }
 }

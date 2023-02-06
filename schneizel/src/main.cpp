@@ -30,8 +30,7 @@
 #include "tt.h"
 #include "uci.h"
 
-#include "selfplay.h"
-#include "model.h"
+#include "schneizel.h"
 
 using namespace Stockfish;
 
@@ -51,7 +50,8 @@ int main(int argc, char *argv[])
   Search::clear();
 
   schneizel::model::init(nullptr, thread_cnt);
-  schneizel::selfplay::loop();
+  // schneizel::selfplay::loop();
+  schneizel::play::loop();
   _getch();
 
   Threads.set(0);

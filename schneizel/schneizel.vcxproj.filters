@@ -84,10 +84,7 @@
     <ClCompile Include="src\syzygy\tbprobe.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\selfplay.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\model.cpp">
+    <ClCompile Include="src\schneizel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -185,10 +182,7 @@
     <ClInclude Include="src\syzygy\tbprobe.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\selfplay.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\model.h">
+    <ClInclude Include="src\schneizel.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
