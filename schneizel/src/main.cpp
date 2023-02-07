@@ -49,9 +49,9 @@ int main(int argc, char *argv[])
   Threads.set(size_t(thread_cnt));
   Search::clear();
 
-  schneizel::model::init(nullptr, thread_cnt);
-  // schneizel::selfplay::loop();
-  schneizel::play::loop();
+   schneizel::model::init(nullptr, thread_cnt);
+   // schneizel::selfplay::loop();
+   schneizel::play::loop();
   _getch();
 
   Threads.set(0);
