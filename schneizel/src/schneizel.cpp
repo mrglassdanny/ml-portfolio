@@ -342,11 +342,12 @@ namespace schneizel
             free(x);
         }
 
-        std::vector<Model *> models;
+        Model *model;
+        std::vector<Model *> model_copies;
 
         void init(const char *params_path, int thread_cnt)
         {
-            auto model = new Model(0.01f);
+            model = new Model(0.01f);
             model->add_layer(new Layer(64, 128, true));
             model->add_layer(new Layer(128, 128, true));
             model->add_layer(new Layer(128, 16, true));
@@ -359,15 +360,13 @@ namespace schneizel
 
             for (int i = 0; i < thread_cnt; i++)
             {
-                models.push_back(model->copy());
+                model_copies.push_back(model->copy());
             }
-
-            delete model;
         }
 
-        Model *get_model(int thread_id)
+        Model *get_model_copy(int thread_id)
         {
-            return models[thread_id];
+            return model_copies[thread_id];
         }
     }
 
@@ -385,13 +384,21 @@ namespace schneizel
             Position pos;
             StateListPtr states(new std::deque<StateInfo>(1));
 
-            for (auto p : postgame_positions)
+            float x[SQUARE_NB];
+
+            for (int i = postgame_positions.size() - 1; i >= 0; i--)
             {
+                auto p = postgame_positions[i];
                 states = StateListPtr(new std::deque<StateInfo>(1));
                 pos.set(p.fen, false, &states->back(), Threads.main());
-                printf("\n\nEval: %d\tDelta: %d\n\n", p.eval, p.delta);
+                printf("eval: %d\tdelta: %d\n", p.eval, p.delta);
                 std::cout << pos;
             }
+
+            // pos.schneizel_get_material(x);
+            // float p = model::model->forward(x);
+            // model::model->backward(p, -1.0f);
+            // model::model->step();
         }
 
         void play_game(bool schneizel_as_white, int white_depth, int black_depth)
@@ -461,7 +468,7 @@ namespace schneizel
                 pos.set(pos.fen(), false, &states->back(), Threads.main());
                 states->emplace_back();
                 pos.do_move(best_move, states->back());
-                int eval = pos.material_eval();
+                int eval = pos.schneizel_material_eval();
                 delta = eval - prev_eval;
                 prev_eval = eval;
                 postgame_positions.push_back(PostGamePosition{pos.fen(), eval, delta});
@@ -484,7 +491,12 @@ namespace schneizel
         void loop()
         {
             srand(time(NULL));
-            play_game(true, 10, 10);
+            while (true)
+            {
+                play_game(true, 10, 10);
+                std::cout << "Game complete...";
+                _getch();
+            }
         }
 
     }
@@ -534,7 +546,7 @@ namespace schneizel
                         pos.set(pos.fen(), false, &states->back(), Threads.main());
                         states->emplace_back();
                         pos.do_move(move, states->back());
-                        printf("MATERIAL: %d\n", pos.material_eval());
+                        printf("MATERIAL: %d\n", pos.schneizel_material_eval());
 
                         if (pos.checkers())
                         {
@@ -585,7 +597,7 @@ namespace schneizel
                         states->emplace_back();
                         pos.do_move(best_move, states->back());
 
-                        printf("MATERIAL: %d\n", pos.material_eval());
+                        printf("MATERIAL: %d\n", pos.schneizel_material_eval());
 
                         if (pos.checkers())
                         {
@@ -638,7 +650,7 @@ namespace schneizel
                         states->emplace_back();
                         pos.do_move(best_move, states->back());
 
-                        printf("MATERIAL: %d\n", pos.material_eval());
+                        printf("MATERIAL: %d\n", pos.schneizel_material_eval());
 
                         if (pos.checkers())
                         {
@@ -679,7 +691,7 @@ namespace schneizel
                         pos.set(pos.fen(), false, &states->back(), Threads.main());
                         states->emplace_back();
                         pos.do_move(move, states->back());
-                        printf("MATERIAL: %d\n", pos.material_eval());
+                        printf("MATERIAL: %d\n", pos.schneizel_material_eval());
 
                         if (pos.checkers())
                         {

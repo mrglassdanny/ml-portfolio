@@ -3,6 +3,8 @@
 #include <ctime>
 #include <random>
 
+#include <conio.h>
+
 #include "bitboard.h"
 #include "endgame.h"
 #include "position.h"
@@ -78,7 +80,7 @@ namespace schneizel
         };
 
         void init(const char *params_path, int thread_cnt);
-        Model *get_model(int thread_id);
+        Model *get_model_copy(int thread_id);
     }
 
     namespace selfplay

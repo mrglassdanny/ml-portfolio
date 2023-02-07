@@ -1351,8 +1351,8 @@ bool Position::pos_is_ok() const {
   return true;
 }
 
-/// Position::get_material() fills out array with piece material values
-void Position::get_material(float *out) const
+/// Position::schneizel_get_material() fills out array with piece material values
+void Position::schneizel_get_material(float *out) const
 {
   for (int i = 0; i < SQUARE_NB; i++)
   {
@@ -1401,8 +1401,8 @@ void Position::get_material(float *out) const
   }
 }
 
-/// Position::material_eval() returns simple material evaluation
-int Position::material_eval() const
+/// Position::schneizel_material_eval() returns simple material evaluation
+int Position::schneizel_material_eval() const
 {
   int eval = 0;
   for (int i = 0; i < SQUARE_NB; i++)

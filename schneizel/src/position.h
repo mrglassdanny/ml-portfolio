@@ -176,8 +176,8 @@ public:
   void remove_piece(Square s);
 
   // Used by schneizel
-  void get_material(float *out) const;
-  int material_eval() const;
+  void schneizel_get_material(float *out) const;
+  int schneizel_material_eval() const;
 
 private:
   // Initialization helpers (used while setting up a position)
