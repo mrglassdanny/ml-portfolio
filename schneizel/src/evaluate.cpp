@@ -1073,7 +1073,7 @@ Value Eval::evaluate(const Position& pos, int* complexity) {
   if (Eval::getUseSchneizel())
   {
     complexity = nullptr;
-    
+
     // Thread id will line up with model index.
     auto model = schneizel::model::get_model(pos.this_thread()->id());
 
@@ -1084,8 +1084,8 @@ Value Eval::evaluate(const Position& pos, int* complexity) {
 
     // Side to move point of view
     p = (pos.side_to_move() == WHITE ? p : -p);
-    v = Value((int)(p * 100));
-    
+    v = Value((int)(p * 10000));
+    v = Value(0);
     return v;
   }
   else if (useClassical)

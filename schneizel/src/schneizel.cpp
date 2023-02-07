@@ -517,7 +517,7 @@ namespace schneizel
                         std::string move_str;
                         std::cin >> move_str;
                         auto move = UCI::to_move(pos, move_str);
-                        while(!is_ok(move))
+                        while (!is_ok(move))
                         {
                             std::cout << "Invalid move!\n";
                             std::cin >> move_str;
@@ -543,7 +543,7 @@ namespace schneizel
                         {
                             limits.startTime = now();
                             limits.depth = opponent_depth;
-                            Eval::setUseSchneizel(false);
+                            Eval::setUseSchneizel(true);
                         }
 
                         MoveList<LEGAL> move_list(pos);
@@ -596,7 +596,7 @@ namespace schneizel
                         {
                             limits.startTime = now();
                             limits.depth = opponent_depth;
-                            Eval::setUseSchneizel(false);
+                            Eval::setUseSchneizel(true);
                         }
 
                         MoveList<LEGAL> move_list(pos);
@@ -662,7 +662,7 @@ namespace schneizel
                         std::string move_str;
                         std::cin >> move_str;
                         auto move = UCI::to_move(pos, move_str);
-                        while(!is_ok(move))
+                        while (!is_ok(move))
                         {
                             std::cout << "Invalid move!\n";
                             std::cin >> move_str;
@@ -682,8 +682,6 @@ namespace schneizel
                     }
                     std::cout << pos;
                 }
-
-                
             }
         }
 

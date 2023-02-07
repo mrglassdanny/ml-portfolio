@@ -1359,40 +1359,40 @@ void Position::get_material(float *out) const
       switch (board[i])
       {
       case Piece::W_PAWN:
-          out[i] = 1.0f;
+          out[i] = 0.1f;
           break;
       case Piece::W_KNIGHT:
-          out[i] = 3.0f;
+          out[i] = 0.3f;
           break;
       case Piece::W_BISHOP:
-          out[i] = 3.0f;
+          out[i] = 0.33f;
           break;
       case Piece::W_ROOK:
-          out[i] = 5.0f;
+          out[i] = 0.5f;
           break;
       case Piece::W_QUEEN:
-          out[i] = 9.0f;
+          out[i] = 0.9f;
           break;
       case Piece::W_KING:
-          out[i] = 10.0f;
+          out[i] = 1.0f;
           break;
       case Piece::B_PAWN:
-          out[i] = -1.0f;
+          out[i] = -0.1f;
           break;
       case Piece::B_KNIGHT:
-          out[i] = -3.0f;
+          out[i] = -0.3f;
           break;
       case Piece::B_BISHOP:
-          out[i] = -3.0f;
+          out[i] = -0.33f;
           break;
       case Piece::B_ROOK:
-          out[i] = -5.0f;
+          out[i] = -0.5f;
           break;
       case Piece::B_QUEEN:
-          out[i] = -9.0f;
+          out[i] = -0.9f;
           break;
       case Piece::B_KING:
-          out[i] = -10.0f;
+          out[i] = -1.0f;
           break;
       default:
           out[i] = 0.0f;
