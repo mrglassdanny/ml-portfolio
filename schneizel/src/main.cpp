@@ -50,8 +50,8 @@ int main(int argc, char *argv[])
   Search::clear();
 
    schneizel::model::init(nullptr, thread_cnt);
-   // schneizel::selfplay::loop();
-   schneizel::play::loop();
+   schneizel::selfplay::loop();
+   // schneizel::play::loop();
   _getch();
 
   Threads.set(0);

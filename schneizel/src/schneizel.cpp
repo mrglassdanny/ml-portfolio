@@ -394,7 +394,7 @@ namespace schneizel
             }
         }
 
-        void play_game(int white_depth, int black_depth)
+        void play_game(bool schneizel_as_white, int white_depth, int black_depth)
         {
             Position pos;
             StateListPtr states(new std::deque<StateInfo>(1));
@@ -414,12 +414,18 @@ namespace schneizel
                     if (pos.side_to_move() == Color::WHITE)
                     {
                         limits.depth = white_depth;
-                        Eval::setUseSchneizel(false);
+                        if (schneizel_as_white)
+                            Eval::setUseSchneizel(true);
+                        else
+                            Eval::setUseSchneizel(false);
                     }
                     else
                     {
                         limits.depth = black_depth;
-                        Eval::setUseSchneizel(true);
+                        if (schneizel_as_white)
+                            Eval::setUseSchneizel(false);
+                        else
+                            Eval::setUseSchneizel(true);
                     }
                 }
 
@@ -478,7 +484,7 @@ namespace schneizel
         void loop()
         {
             srand(time(NULL));
-            play_game(10, 10);
+            play_game(true, 10, 10);
         }
 
     }
