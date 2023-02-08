@@ -347,11 +347,12 @@ namespace schneizel
 
         void init(const char *params_path, int thread_cnt)
         {
-            model = new Model(0.01f);
-            model->add_layer(new Layer(64, 128, true));
-            model->add_layer(new Layer(128, 128, true));
-            model->add_layer(new Layer(128, 16, true));
-            model->add_layer(new Layer(16, 1, true));
+            model = new Model(0.1f);
+            model->add_layer(new Layer(64, 256, true));
+            model->add_layer(new Layer(256, 256, true));
+            model->add_layer(new Layer(256, 128, true));
+            model->add_layer(new Layer(128, 32, true));
+            model->add_layer(new Layer(32, 1, true));
 
             // TODO
             if (params_path != nullptr)
@@ -379,30 +380,84 @@ namespace schneizel
             int delta = 0;
         };
 
-        void analyze_game(std::vector<PostGamePosition> postgame_positions)
+        void train_naive(std::vector<PostGamePosition> postgame_positions, bool schneizel_as_white, int outcome_lbl)
+        {
+            if (outcome_lbl == 1 || outcome_lbl == 0)
+            {
+                int aldjsfkdjsfa = 0;
+            }
+
+            Position pos;
+            StateListPtr states(new std::deque<StateInfo>(1));
+
+            float x[SQUARE_NB];
+
+            int move_cnt = postgame_positions.size();
+
+            for (int i = 0; i < move_cnt; i++)
+            {
+                auto pgpos = postgame_positions[i];
+                states = StateListPtr(new std::deque<StateInfo>(1));
+                pos.set(pgpos.fen, false, &states->back(), Threads.main());
+
+                pos.schneizel_get_material(x);
+                float p = model::model->forward(x);
+                model::model->backward(p, (float)outcome_lbl);
+                model::model->step();
+            }
+        }
+
+        void analyze_game(std::vector<PostGamePosition> postgame_positions, bool schneizel_as_white, int outcome_lbl)
         {
             Position pos;
             StateListPtr states(new std::deque<StateInfo>(1));
 
             float x[SQUARE_NB];
 
-            for (int i = postgame_positions.size() - 1; i >= 0; i--)
+            int move_cnt = postgame_positions.size();
+
+            for (int i = 0; i < move_cnt; i++)
             {
-                auto p = postgame_positions[i];
+                auto pgpos = postgame_positions[i];
+
+                if (pgpos.delta < 0)
+                {
+                    if (schneizel_as_white)
+                    {
+                        bool trade = false;
+                        for (int j = i + 1; j < i + 3 && j < move_cnt; j++)
+                        {
+                            auto p2 = postgame_positions[j];
+                            if (-p2.delta == pgpos.delta)
+                            {
+                                trade = true;
+                                break;
+                            }
+                        }
+
+                        if (!trade)
+                        {
+                        }
+                    }
+                    else
+                    {
+                    }
+                }
+                else
+                {
+                }
+
                 states = StateListPtr(new std::deque<StateInfo>(1));
-                pos.set(p.fen, false, &states->back(), Threads.main());
-                printf("eval: %d\tdelta: %d\n", p.eval, p.delta);
+                pos.set(pgpos.fen, false, &states->back(), Threads.main());
+                printf("eval: %d\tdelta: %d\n", pgpos.eval, pgpos.delta);
                 std::cout << pos;
             }
-
-            // pos.schneizel_get_material(x);
-            // float p = model::model->forward(x);
-            // model::model->backward(p, -1.0f);
-            // model::model->step();
         }
 
         void play_game(bool schneizel_as_white, int white_depth, int black_depth)
         {
+            int outcome_lbl = 0;
+
             Position pos;
             StateListPtr states(new std::deque<StateInfo>(1));
             pos.set("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
@@ -415,6 +470,12 @@ namespace schneizel
             int move_cnt = 0;
             while (true)
             {
+                if (move_cnt > 200)
+                {
+                    outcome_lbl = 0;
+                    break;
+                }
+
                 Search::LimitsType limits;
                 {
                     limits.startTime = now();
@@ -442,10 +503,15 @@ namespace schneizel
                     if (pos.checkers())
                     {
                         printf("\n ====================== CHECKMATE ======================\n");
+                        if (pos.side_to_move() == Color::WHITE)
+                            outcome_lbl = -1;
+                        else
+                            outcome_lbl = 1;
                     }
                     else
                     {
                         printf("\n ====================== STALEMATE ======================\n");
+                        outcome_lbl = 0;
                     }
 
                     break;
@@ -459,7 +525,7 @@ namespace schneizel
                 Threads.start_thinking(pos, states, limits, false);
                 Threads.main()->wait_for_search_finished();
                 auto best_thread = Threads.get_best_thread();
-                auto best_move = best_thread->rootMoves[0].pv[0];
+                Move best_move = best_thread->rootMoves[0].pv[0];
                 auto best_move_str = UCI::move(best_move, false);
                 printf("SIDE TO MOVE: %s\n", pos.side_to_move() == Color::WHITE ? "WHITE" : "BLACK");
                 printf("BEST MOVE: %s\n", best_move_str.c_str());
@@ -485,17 +551,22 @@ namespace schneizel
                 move_cnt++;
             }
 
-            analyze_game(postgame_positions);
+            train_naive(postgame_positions, schneizel_as_white, outcome_lbl);
         }
 
         void loop()
         {
             srand(time(NULL));
+            int game_cnt = 0;
             while (true)
             {
-                play_game(true, 10, 10);
-                std::cout << "Game complete...";
-                _getch();
+                system("cls");
+                play_game(true, 6, 6);
+                game_cnt++;
+                printf("Game %d complete...", game_cnt);
+                if (_kbhit())
+                    if (_getch() == 'q')
+                        break;
             }
         }
 
