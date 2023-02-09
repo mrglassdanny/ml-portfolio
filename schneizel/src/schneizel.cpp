@@ -423,15 +423,6 @@ namespace schneizel
                 return;
             }
 
-            if (schneizel_as_white && outcome_lbl == 1)
-            {
-                int asldkfjsadlkj = 0;
-            }
-            else if (!schneizel_as_white && outcome_lbl == -1)
-            {
-                int asldkfjsadlkj = 0;
-            }
-
             Position pos;
             StateListPtr states(new std::deque<StateInfo>(1));
 
