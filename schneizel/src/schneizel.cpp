@@ -42,16 +42,16 @@ namespace schneizel
             free(this->db);
         }
 
-        void Layer::save(FILE *f)
+        void Layer::save(FILE *params_file)
         {
-            fwrite(this->w, sizeof(float), this->fan_in * this->fan_out, f);
-            fwrite(this->b, sizeof(float), this->fan_out, f);
+            fwrite(this->w, sizeof(float), this->fan_in * this->fan_out, params_file);
+            fwrite(this->b, sizeof(float), this->fan_out, params_file);
         }
 
-        void Layer::load(FILE *f)
+        void Layer::load(FILE *params_file)
         {
-            fread(this->w, sizeof(float), this->fan_in * this->fan_out, f);
-            fread(this->b, sizeof(float), this->fan_out, f);
+            fread(this->w, sizeof(float), this->fan_in * this->fan_out, params_file);
+            fread(this->b, sizeof(float), this->fan_out, params_file);
         }
 
         Layer *Layer::copy()
@@ -184,26 +184,26 @@ namespace schneizel
 
         void Model::save(const char *path)
         {
-            FILE *f = fopen(path, "wb");
+            FILE *params_file = fopen(path, "wb");
 
             for (auto lyr : this->layers)
             {
-                lyr->save(f);
+                lyr->save(params_file);
             }
 
-            fclose(f);
+            fclose(params_file);
         }
 
         void Model::load(const char *path)
         {
-            FILE *f = fopen(path, "rb");
+            FILE *params_file = fopen(path, "rb");
 
             for (auto lyr : this->layers)
             {
-                lyr->load(f);
+                lyr->load(params_file);
             }
 
-            fclose(f);
+            fclose(params_file);
         }
 
         Model *Model::copy()
@@ -557,6 +557,8 @@ namespace schneizel
             }
 
             model::model->save("temp/model.nn");
+
+            _getch();
         }
 
     }
