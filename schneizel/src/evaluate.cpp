@@ -1077,7 +1077,7 @@ Value Eval::evaluate(const Position& pos, int* complexity) {
     // Thread id will line up with model index.
     auto model = schneizel::model::get_model_copy(pos.this_thread()->id());
 
-    float x[SQUARE_NB];
+    float x[SQUARE_NB + 1];
     pos.schneizel_get_material(x);
 
     float p = model->forward(x);

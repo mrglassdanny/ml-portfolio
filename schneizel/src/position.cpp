@@ -1399,6 +1399,15 @@ void Position::schneizel_get_material(float *out) const
           break;
       }
   }
+
+  if (this->side_to_move() == Color::WHITE)
+  {
+      out[SQUARE_NB] = 1.0f;
+  }
+  else
+  {
+      out[SQUARE_NB] = -1.0f;
+  }
 }
 
 /// Position::schneizel_material_eval() returns simple material evaluation

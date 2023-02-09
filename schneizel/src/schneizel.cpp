@@ -42,6 +42,18 @@ namespace schneizel
             free(this->db);
         }
 
+        void Layer::save(FILE *f)
+        {
+            fwrite(this->w, sizeof(float), this->fan_in * this->fan_out, f);
+            fwrite(this->b, sizeof(float), this->fan_out, f);
+        }
+
+        void Layer::load(FILE *f)
+        {
+            fread(this->w, sizeof(float), this->fan_in * this->fan_out, f);
+            fread(this->b, sizeof(float), this->fan_out, f);
+        }
+
         Layer *Layer::copy()
         {
             auto dst_lyr = new Layer(this->fan_in, this->fan_out, this->activation);
@@ -54,7 +66,7 @@ namespace schneizel
             memcpy(dst_lyr->db, this->db, sizeof(float) * this->fan_out);
 
             return dst_lyr;
-        }
+        }    
 
         int Layer::inputs()
         {
@@ -168,6 +180,30 @@ namespace schneizel
             {
                 delete lyr;
             }
+        }
+
+        void Model::save(const char *path)
+        {
+            FILE *f = fopen(path, "wb");
+
+            for (auto lyr : this->layers)
+            {
+                lyr->save(f);
+            }
+
+            fclose(f);
+        }
+
+        void Model::load(const char *path)
+        {
+            FILE *f = fopen(path, "rb");
+
+            for (auto lyr : this->layers)
+            {
+                lyr->load(f);
+            }
+
+            fclose(f);
         }
 
         Model *Model::copy()
@@ -347,8 +383,8 @@ namespace schneizel
 
         void init(const char *params_path, int thread_cnt)
         {
-            model = new Model(0.1f);
-            model->add_layer(new Layer(64, 256, true));
+            model = new Model(0.01f);
+            model->add_layer(new Layer(65, 256, true));
             model->add_layer(new Layer(256, 256, true));
             model->add_layer(new Layer(256, 128, true));
             model->add_layer(new Layer(128, 32, true));
@@ -382,75 +418,39 @@ namespace schneizel
 
         void train_naive(std::vector<PostGamePosition> postgame_positions, bool schneizel_as_white, int outcome_lbl)
         {
-            if (outcome_lbl == 1 || outcome_lbl == 0)
+            if (outcome_lbl == 0)
             {
-                int aldjsfkdjsfa = 0;
+                return;
+            }
+
+            if (schneizel_as_white && outcome_lbl == 1)
+            {
+                int asldkfjsadlkj = 0;
+            }
+            else if (!schneizel_as_white && outcome_lbl == -1)
+            {
+                int asldkfjsadlkj = 0;
             }
 
             Position pos;
             StateListPtr states(new std::deque<StateInfo>(1));
 
-            float x[SQUARE_NB];
+            float x[SQUARE_NB + 1];
 
             int move_cnt = postgame_positions.size();
 
             for (int i = 0; i < move_cnt; i++)
             {
-                auto pgpos = postgame_positions[i];
+                auto pg_pos = postgame_positions[i];
                 states = StateListPtr(new std::deque<StateInfo>(1));
-                pos.set(pgpos.fen, false, &states->back(), Threads.main());
+                pos.set(pg_pos.fen, false, &states->back(), Threads.main());
 
+                float y = (float)outcome_lbl;
                 pos.schneizel_get_material(x);
                 float p = model::model->forward(x);
-                model::model->backward(p, (float)outcome_lbl);
+                printf("Loss: %f\tP: %f\tY: %f\n", model::model->loss(p, y), p, y);
+                model::model->backward(p, y);
                 model::model->step();
-            }
-        }
-
-        void analyze_game(std::vector<PostGamePosition> postgame_positions, bool schneizel_as_white, int outcome_lbl)
-        {
-            Position pos;
-            StateListPtr states(new std::deque<StateInfo>(1));
-
-            float x[SQUARE_NB];
-
-            int move_cnt = postgame_positions.size();
-
-            for (int i = 0; i < move_cnt; i++)
-            {
-                auto pgpos = postgame_positions[i];
-
-                if (pgpos.delta < 0)
-                {
-                    if (schneizel_as_white)
-                    {
-                        bool trade = false;
-                        for (int j = i + 1; j < i + 3 && j < move_cnt; j++)
-                        {
-                            auto p2 = postgame_positions[j];
-                            if (-p2.delta == pgpos.delta)
-                            {
-                                trade = true;
-                                break;
-                            }
-                        }
-
-                        if (!trade)
-                        {
-                        }
-                    }
-                    else
-                    {
-                    }
-                }
-                else
-                {
-                }
-
-                states = StateListPtr(new std::deque<StateInfo>(1));
-                pos.set(pgpos.fen, false, &states->back(), Threads.main());
-                printf("eval: %d\tdelta: %d\n", pgpos.eval, pgpos.delta);
-                std::cout << pos;
             }
         }
 
@@ -502,7 +502,6 @@ namespace schneizel
                 {
                     if (pos.checkers())
                     {
-                        printf("\n ====================== CHECKMATE ======================\n");
                         if (pos.side_to_move() == Color::WHITE)
                             outcome_lbl = -1;
                         else
@@ -510,7 +509,6 @@ namespace schneizel
                     }
                     else
                     {
-                        printf("\n ====================== STALEMATE ======================\n");
                         outcome_lbl = 0;
                     }
 
@@ -526,9 +524,6 @@ namespace schneizel
                 Threads.main()->wait_for_search_finished();
                 auto best_thread = Threads.get_best_thread();
                 Move best_move = best_thread->rootMoves[0].pv[0];
-                auto best_move_str = UCI::move(best_move, false);
-                printf("SIDE TO MOVE: %s\n", pos.side_to_move() == Color::WHITE ? "WHITE" : "BLACK");
-                printf("BEST MOVE: %s\n", best_move_str.c_str());
 
                 states = StateListPtr(new std::deque<StateInfo>(1));
                 pos.set(pos.fen(), false, &states->back(), Threads.main());
@@ -538,15 +533,6 @@ namespace schneizel
                 delta = eval - prev_eval;
                 prev_eval = eval;
                 postgame_positions.push_back(PostGamePosition{pos.fen(), eval, delta});
-
-                printf("MATERIAL: %d\n", eval);
-
-                if (pos.checkers())
-                {
-                    printf("\n ====================== CHECK ======================\n");
-                }
-
-                std::cout << pos;
 
                 move_cnt++;
             }
@@ -561,13 +547,16 @@ namespace schneizel
             while (true)
             {
                 system("cls");
-                play_game(true, 6, 6);
+                bool white = game_cnt % 2 == 0;
+                play_game(white, 6, 6);
                 game_cnt++;
                 printf("Game %d complete...", game_cnt);
                 if (_kbhit())
                     if (_getch() == 'q')
                         break;
             }
+
+            model::model->save("temp/model.nn");
         }
 
     }
