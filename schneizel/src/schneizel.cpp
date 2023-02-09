@@ -66,7 +66,7 @@ namespace schneizel
             memcpy(dst_lyr->db, this->db, sizeof(float) * this->fan_out);
 
             return dst_lyr;
-        }    
+        }
 
         int Layer::inputs()
         {
@@ -454,8 +454,10 @@ namespace schneizel
             }
         }
 
-        void play_game(bool schneizel_as_white, int white_depth, int black_depth)
+        bool play_game(bool schneizel_as_white, int white_depth, int black_depth)
         {
+            bool schneizel_won = false;
+
             int outcome_lbl = 0;
 
             Position pos;
@@ -503,9 +505,17 @@ namespace schneizel
                     if (pos.checkers())
                     {
                         if (pos.side_to_move() == Color::WHITE)
+                        {
                             outcome_lbl = -1;
+                            if (!schneizel_as_white)
+                                schneizel_won = true;
+                        }
                         else
+                        {
                             outcome_lbl = 1;
+                            if (schneizel_as_white)
+                                schneizel_won = true;
+                        }
                     }
                     else
                     {
@@ -538,26 +548,49 @@ namespace schneizel
             }
 
             train_naive(postgame_positions, schneizel_as_white, outcome_lbl);
+
+            return schneizel_won;
         }
 
         void loop()
         {
             srand(time(NULL));
+
             int game_cnt = 0;
+            int schneizel_win_cnt = 0;
+
             while (true)
             {
                 system("cls");
                 bool white = game_cnt % 2 == 0;
-                play_game(white, 6, 6);
+                bool schneizel_won = play_game(white, 6, 6);
+                if (schneizel_won)
+                    schneizel_win_cnt++;
                 game_cnt++;
-                printf("Game %d complete...", game_cnt);
+
+                if (game_cnt >= 100)
+                {
+                    FILE *schneizel_record_file = fopen("temp/record.txt", "a");
+                    fprintf(schneizel_record_file, "Schneizel record: %d/%d\n", schneizel_win_cnt, game_cnt);
+                    fclose(schneizel_record_file);
+
+                    game_cnt = 0;
+                    schneizel_win_cnt = 0;
+                }
+
                 if (_kbhit())
                     if (_getch() == 'q')
+                    {
+                        FILE *schneizel_record_file = fopen("temp/record.txt", "a");
+                        fprintf(schneizel_record_file, "Schneizel record: %d/%d\n", schneizel_win_cnt, game_cnt);
+                        fclose(schneizel_record_file);
                         break;
+                    }
             }
 
             model::model->save("temp/model.nn");
 
+            printf("\nPress any button...\n");
             _getch();
         }
 
