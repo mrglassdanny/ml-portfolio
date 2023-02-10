@@ -36,8 +36,8 @@ namespace schneizel
             Layer(int fan_in, int fan_out, bool activation);
             ~Layer();
 
-            void save(FILE *f);
-            void load(FILE *f);
+            void save(FILE *params_file);
+            void load(FILE *params_file);
 
             Layer *copy();
 
@@ -70,8 +70,8 @@ namespace schneizel
             Model(float learning_rate);
             ~Model();
 
-            void save(const char *path);
-            void load(const char *path);
+            void save(const char *params_path);
+            void load(const char *params_path);
 
             Model *copy();
 

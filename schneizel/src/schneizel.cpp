@@ -182,9 +182,9 @@ namespace schneizel
             }
         }
 
-        void Model::save(const char *path)
+        void Model::save(const char *params_path)
         {
-            FILE *params_file = fopen(path, "wb");
+            FILE *params_file = fopen(params_path, "wb");
 
             for (auto lyr : this->layers)
             {
@@ -194,9 +194,9 @@ namespace schneizel
             fclose(params_file);
         }
 
-        void Model::load(const char *path)
+        void Model::load(const char *params_path)
         {
-            FILE *params_file = fopen(path, "rb");
+            FILE *params_file = fopen(params_path, "rb");
 
             for (auto lyr : this->layers)
             {
@@ -384,15 +384,15 @@ namespace schneizel
         void init(const char *params_path, int thread_cnt)
         {
             model = new Model(0.01f);
-            model->add_layer(new Layer(65, 256, true));
-            model->add_layer(new Layer(256, 256, true));
-            model->add_layer(new Layer(256, 128, true));
-            model->add_layer(new Layer(128, 32, true));
-            model->add_layer(new Layer(32, 1, true));
+            model->add_layer(new Layer(65, 128, true));
+            model->add_layer(new Layer(128, 128, true));
+            model->add_layer(new Layer(128, 64, true));
+            model->add_layer(new Layer(64, 16, true));
+            model->add_layer(new Layer(16, 1, false));
 
-            // TODO
             if (params_path != nullptr)
             {
+                model->load(params_path);
             }
 
             for (int i = 0; i < thread_cnt; i++)
