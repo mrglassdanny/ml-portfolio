@@ -132,6 +132,7 @@
     <ClCompile Include="src\pawns.cpp" />
     <ClCompile Include="src\position.cpp" />
     <ClCompile Include="src\psqt.cpp" />
+    <ClCompile Include="src\schneizel.cpp" />
     <ClCompile Include="src\search.cpp" />
     <ClCompile Include="src\syzygy\tbprobe.cpp" />
     <ClCompile Include="src\thread.cpp" />
@@ -164,6 +165,7 @@
     <ClInclude Include="src\pawns.h" />
     <ClInclude Include="src\position.h" />
     <ClInclude Include="src\psqt.h" />
+    <ClInclude Include="src\schneizel.h" />
     <ClInclude Include="src\search.h" />
     <ClInclude Include="src\syzygy\tbprobe.h" />
     <ClInclude Include="src\thread.h" />

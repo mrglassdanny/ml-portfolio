@@ -37,6 +37,8 @@
 #include "uci.h"
 #include "incbin/incbin.h"
 
+#include "schneizel.h"
+
 
 // Macro to embed the default efficiently updatable neural network (NNUE) file
 // data in the engine binary (using incbin.h, by Dale Weiler).
@@ -62,6 +64,16 @@ namespace Eval {
 
   bool useNNUE;
   string currentEvalFileName = "None";
+
+  bool _useSchneizel = false;
+  bool getUseSchneizel()
+  {
+    return _useSchneizel;
+  }
+  void setUseSchneizel(bool useSchneizel)
+  {
+    _useSchneizel = useSchneizel;
+  }
 
   /// NNUE::init() tries to load a NNUE network at startup time, or when the engine
   /// receives a UCI command "setoption name EvalFile value nn-[a-z0-9]{12}.nnue"
@@ -1058,7 +1070,24 @@ Value Eval::evaluate(const Position& pos, int* complexity) {
   // PSQ advantage is decisive and several pieces remain. (~3 Elo)
   bool useClassical = !useNNUE || (pos.count<ALL_PIECES>() > 7 && abs(psq) > 1781);
 
-  if (useClassical)
+  if (Eval::getUseSchneizel())
+  {
+    complexity = nullptr;
+
+    // Thread id will line up with model index.
+    auto model = schneizel::model::get_model_copy(pos.this_thread()->id());
+
+    float x[SQUARE_NB + 1];
+    pos.schneizel_get_material(x);
+
+    float p = model->forward(x);
+
+    // Side to move point of view
+    p = (pos.side_to_move() == WHITE ? p : -p);
+    v = Value((int)(p * 10000));
+    return v;
+  }
+  else if (useClassical)
       v = Evaluation<NO_TRACE>(pos).value();
   else
   {

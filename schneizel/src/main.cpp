@@ -18,6 +18,8 @@
 
 #include <iostream>
 
+#include <conio.h>
+
 #include "bitboard.h"
 #include "endgame.h"
 #include "position.h"
@@ -28,11 +30,13 @@
 #include "tt.h"
 #include "uci.h"
 
+#include "schneizel.h"
+
 using namespace Stockfish;
 
-int main(int argc, char* argv[]) {
-
-  std::cout << engine_info() << std::endl;
+int main(int argc, char *argv[])
+{
+  int thread_cnt = 8;
 
   CommandLine::init(argc, argv);
   UCI::init(Options);
@@ -42,11 +46,13 @@ int main(int argc, char* argv[]) {
   Position::init();
   Bitbases::init();
   Endgames::init();
-  Threads.set(size_t(Options["Threads"]));
-  Search::clear(); // After threads are up
-  Eval::NNUE::init();
+  Threads.set(size_t(thread_cnt));
+  Search::clear();
 
-  UCI::loop(argc, argv);
+   schneizel::model::init(nullptr, thread_cnt);
+   schneizel::selfplay::loop();
+   // schneizel::play::loop();
+  _getch();
 
   Threads.set(0);
   return 0;
