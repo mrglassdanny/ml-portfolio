@@ -383,12 +383,12 @@ namespace schneizel
 
         void init(const char *params_path, int thread_cnt)
         {
-            model = new Model(0.01f);
-            model->add_layer(new Layer(65, 128, true));
-            model->add_layer(new Layer(128, 128, true));
-            model->add_layer(new Layer(128, 64, true));
+            model = new Model(0.001f);
+            model->add_layer(new Layer(65, 512, true));
+            model->add_layer(new Layer(512, 256, true));
+            model->add_layer(new Layer(256, 64, true));
             model->add_layer(new Layer(64, 16, true));
-            model->add_layer(new Layer(16, 1, false));
+            model->add_layer(new Layer(16, 1, true));
 
             if (params_path != nullptr)
             {

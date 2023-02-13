@@ -36,7 +36,7 @@ using namespace Stockfish;
 
 int main(int argc, char *argv[])
 {
-  int thread_cnt = 8;
+  int thread_cnt = 6;
 
   CommandLine::init(argc, argv);
   UCI::init(Options);
@@ -49,9 +49,9 @@ int main(int argc, char *argv[])
   Threads.set(size_t(thread_cnt));
   Search::clear();
 
-   schneizel::model::init(nullptr, thread_cnt);
-   schneizel::selfplay::loop();
-   // schneizel::play::loop();
+  schneizel::model::init(nullptr, thread_cnt);
+  schneizel::selfplay::loop();
+  // schneizel::play::loop();
   _getch();
 
   Threads.set(0);
