@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ctime>
+#include <algorithm>
 #include <random>
 
 #include <conio.h>
@@ -78,9 +79,9 @@ namespace schneizel
             void add_layer(Layer *layer);
 
             float forward(float *x);
-            void backward(float p, float y);
-            void step();
             float loss(float p, float y);
+            void backward(float p, float y);
+            void step(int batch_size);
 
             void grad_check();
         };
