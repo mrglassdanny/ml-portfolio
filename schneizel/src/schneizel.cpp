@@ -266,9 +266,9 @@ namespace schneizel
                 {
                     for (int j = 0; j < lyr->inputs(); j++)
                     {
-                        lyr->weights()[i * lyr->inputs() + j] -= (this->learning_rate * lyr->weight_grads()[i * lyr->inputs() + j]);
+                        lyr->weights()[i * lyr->inputs() + j] -= (this->learning_rate * lyr->weight_grads()[i * lyr->inputs() + j]) / (batch_size * 1.0f);
                     }
-                    lyr->biases()[i] -= (this->learning_rate * lyr->bias_grads()[i]);
+                    lyr->biases()[i] -= (this->learning_rate * lyr->bias_grads()[i]) / (batch_size * 1.0f);
                 }
 
                 lyr->zero_grad();
@@ -383,7 +383,7 @@ namespace schneizel
 
         void init(const char *params_path, int thread_cnt)
         {
-            model = new Model(0.001f);
+            model = new Model(0.01f);
             model->add_layer(new Layer(65, 512, true));
             model->add_layer(new Layer(512, 256, true));
             model->add_layer(new Layer(256, 64, true));

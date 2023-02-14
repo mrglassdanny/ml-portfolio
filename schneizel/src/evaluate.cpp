@@ -1084,7 +1084,7 @@ Value Eval::evaluate(const Position& pos, int* complexity) {
 
     // Side to move point of view
     p = (pos.side_to_move() == WHITE ? p : -p);
-    v = Value((int)(p * 10000));
+    v = Value((int)(p * 1000));
     return v;
   }
   else if (useClassical)
