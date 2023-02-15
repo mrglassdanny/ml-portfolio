@@ -441,9 +441,16 @@ namespace schneizel
             model::model->step(move_cnt);
         }
 
-        int play(int schneizel_depth, int stockfish_depth)
+        struct Outcome
         {
             int schneizel_win_cnt = 0;
+            int stockfish_win_cnt = 0;
+            int draw_cnt = 0;
+        };
+
+        Outcome play(int schneizel_depth, int stockfish_depth)
+        {
+            Outcome outcome;
 
             int outcome_lbl = 0;
 
@@ -509,18 +516,23 @@ namespace schneizel
                             {
                                 outcome_lbl = -1;
                                 if (!schneizel_as_white)
-                                    schneizel_win_cnt++;
+                                    outcome.schneizel_win_cnt++;
+                                else
+                                    outcome.stockfish_win_cnt++;
                             }
                             else
                             {
                                 outcome_lbl = 1;
                                 if (schneizel_as_white)
-                                    schneizel_win_cnt++;
+                                    outcome.schneizel_win_cnt++;
+                                else
+                                    outcome.stockfish_win_cnt++;
                             }
                         }
                         else
                         {
                             outcome_lbl = 0;
+                            outcome.draw_cnt++;
                         }
 
                         break;
@@ -610,18 +622,23 @@ namespace schneizel
                             {
                                 outcome_lbl = -1;
                                 if (!schneizel_as_white)
-                                    schneizel_win_cnt++;
+                                    outcome.schneizel_win_cnt++;
+                                else
+                                    outcome.stockfish_win_cnt++;
                             }
                             else
                             {
                                 outcome_lbl = 1;
                                 if (schneizel_as_white)
-                                    schneizel_win_cnt++;
+                                    outcome.schneizel_win_cnt++;
+                                else
+                                    outcome.stockfish_win_cnt++;
                             }
                         }
                         else
                         {
                             outcome_lbl = 0;
+                            outcome.draw_cnt++;
                         }
 
                         break;
@@ -663,39 +680,51 @@ namespace schneizel
 
             train(postgame_positions);
 
-            return schneizel_win_cnt;
+            return outcome;
         }
 
         void loop()
         {
             srand(time(NULL));
 
+            Outcome tot_outcome;
             int game_cnt = 0;
-            int schneizel_win_cnt = 0;
+
+            int stockfish_depth = 3;
 
             while (true)
             {
                 system("cls");
-                bool white = game_cnt % 2 == 0;
-                schneizel_win_cnt += play(6, 6);
-                game_cnt++;
-
-                if (game_cnt >= 100)
+                Outcome outcome = play(7, stockfish_depth);
                 {
-                    FILE *schneizel_record_file = fopen("temp/record.txt", "a");
-                    fprintf(schneizel_record_file, "Schneizel record: %d/%d\n", schneizel_win_cnt, game_cnt);
-                    fclose(schneizel_record_file);
+                    tot_outcome.schneizel_win_cnt += outcome.schneizel_win_cnt;
+                    tot_outcome.stockfish_win_cnt += outcome.stockfish_win_cnt;
+                    tot_outcome.draw_cnt += outcome.draw_cnt;
+                    game_cnt = (tot_outcome.schneizel_win_cnt + tot_outcome.stockfish_win_cnt + tot_outcome.draw_cnt);
+                }
 
-                    game_cnt = 0;
-                    schneizel_win_cnt = 0;
+                if (game_cnt == 10)
+                {
+                    float schneizel_win_pct = ((tot_outcome.schneizel_win_cnt * 1.0f) / (game_cnt * 1.0f)) * 100.0f;
+
+                    FILE *log_file = fopen("temp/train.log", "a");
+                    fprintf(log_file, "record: %d-%d-%d (%f%%)\n", tot_outcome.schneizel_win_cnt, tot_outcome.stockfish_win_cnt,
+                            tot_outcome.draw_cnt, schneizel_win_pct);
+
+                    if (schneizel_win_pct >= 70.0f)
+                    {
+                        stockfish_depth++;
+                        fprintf(log_file, "stockfish depth: %d\n", stockfish_depth);
+                    }
+
+                    fclose(log_file);
+
+                    memset(&tot_outcome, 0, sizeof(tot_outcome));
                 }
 
                 if (_kbhit())
                     if (_getch() == 'q')
                     {
-                        FILE *schneizel_record_file = fopen("temp/record.txt", "a");
-                        fprintf(schneizel_record_file, "Schneizel record: %d/%d\n", schneizel_win_cnt, game_cnt);
-                        fclose(schneizel_record_file);
                         break;
                     }
             }
