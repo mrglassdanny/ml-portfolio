@@ -470,7 +470,7 @@ namespace schneizel
                 int move_cnt = 0;
                 while (true)
                 {
-                    if (move_cnt > 200)
+                    if (move_cnt > 120)
                     {
                         outcome_lbl = 0;
                         break;
@@ -703,7 +703,7 @@ namespace schneizel
                     game_cnt = (tot_outcome.schneizel_win_cnt + tot_outcome.stockfish_win_cnt + tot_outcome.draw_cnt);
                 }
 
-                if (game_cnt == 10)
+                if (game_cnt >= 5)
                 {
                     float schneizel_win_pct = ((tot_outcome.schneizel_win_cnt * 1.0f) / (game_cnt * 1.0f)) * 100.0f;
 
@@ -711,7 +711,7 @@ namespace schneizel
                     fprintf(log_file, "record: %d-%d-%d (%f%%)\n", tot_outcome.schneizel_win_cnt, tot_outcome.stockfish_win_cnt,
                             tot_outcome.draw_cnt, schneizel_win_pct);
 
-                    if (schneizel_win_pct >= 70.0f)
+                    if (schneizel_win_pct >= 60.0f)
                     {
                         stockfish_depth++;
                         fprintf(log_file, "stockfish depth: %d\n", stockfish_depth);
