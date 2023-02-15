@@ -928,17 +928,24 @@ void Tensor::copy(Tensor *src)
 
 void Tensor::reshape(Shape shape)
 {
-    this->shape_ = shape;
-
-    if (this->cuda_)
+    if (this->shape_.dims_size() == shape.dims_size())
     {
-        cudaFree(this->data_);
-        cudaMalloc(&this->data_, this->size());
+        this->shape_ = shape;
     }
     else
     {
-        free(this->data_);
-        this->data_ = (float *)malloc(this->size());
+        this->shape_ = shape;
+
+        if (this->cuda_)
+        {
+            cudaFree(this->data_);
+            cudaMalloc(&this->data_, this->size());
+        }
+        else
+        {
+            free(this->data_);
+            this->data_ = (float *)malloc(this->size());
+        }
     }
 }
 
