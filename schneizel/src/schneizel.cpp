@@ -383,12 +383,12 @@ namespace schneizel
 
         void init(const char *params_path, int thread_cnt)
         {
-            model = new Model(0.01f);
+            model = new Model(0.001f);
             model->add_layer(new Layer(65, 512, true));
-            model->add_layer(new Layer(512, 256, true));
-            model->add_layer(new Layer(256, 64, true));
-            model->add_layer(new Layer(64, 16, true));
-            model->add_layer(new Layer(16, 1, true));
+            model->add_layer(new Layer(512, 512, true));
+            model->add_layer(new Layer(512, 128, true));
+            model->add_layer(new Layer(128, 32, true));
+            model->add_layer(new Layer(32, 1, true));
 
             if (params_path != nullptr)
             {
@@ -470,9 +470,11 @@ namespace schneizel
                 int move_cnt = 0;
                 while (true)
                 {
-                    if (move_cnt > 120)
+                    // Automatic draw after 150 moves.
+                    if (move_cnt > 150)
                     {
                         outcome_lbl = 0;
+                        outcome.draw_cnt++;
                         break;
                     }
 
@@ -576,9 +578,11 @@ namespace schneizel
                 int move_cnt = 0;
                 while (true)
                 {
-                    if (move_cnt > 200)
+                    // Automatic draw after 150 moves.
+                    if (move_cnt > 150)
                     {
                         outcome_lbl = 0;
+                        outcome.draw_cnt++;
                         break;
                     }
 
@@ -695,7 +699,7 @@ namespace schneizel
             while (true)
             {
                 system("cls");
-                Outcome outcome = play(7, stockfish_depth);
+                Outcome outcome = play(6, stockfish_depth);
                 {
                     tot_outcome.schneizel_win_cnt += outcome.schneizel_win_cnt;
                     tot_outcome.stockfish_win_cnt += outcome.stockfish_win_cnt;
