@@ -1398,6 +1398,8 @@ void Position::schneizel_get_material(float *out) const
           out[i] = 0.0f;
           break;
       }
+
+      out[i] /= 10.0f;
   }
 
   if (this->side_to_move() == Color::WHITE)

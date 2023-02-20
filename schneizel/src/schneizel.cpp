@@ -437,8 +437,8 @@ namespace schneizel
                 float p = model::model->forward(x);
                 printf("Loss: %f\tP: %f\tY: %f\n", model::model->loss(p, y), p, y);
                 model::model->backward(p, y);
+                model::model->step(1);
             }
-            model::model->step(move_cnt);
         }
 
         struct Outcome
@@ -694,12 +694,12 @@ namespace schneizel
             Outcome tot_outcome;
             int game_cnt = 0;
 
-            int stockfish_depth = 3;
+            int stockfish_depth = 5;
 
             while (true)
             {
                 system("cls");
-                Outcome outcome = play(6, stockfish_depth);
+                Outcome outcome = play(5, stockfish_depth);
                 {
                     tot_outcome.schneizel_win_cnt += outcome.schneizel_win_cnt;
                     tot_outcome.stockfish_win_cnt += outcome.stockfish_win_cnt;
@@ -707,7 +707,7 @@ namespace schneizel
                     game_cnt = (tot_outcome.schneizel_win_cnt + tot_outcome.stockfish_win_cnt + tot_outcome.draw_cnt);
                 }
 
-                if (game_cnt >= 5)
+                if (game_cnt >= 6)
                 {
                     float schneizel_win_pct = ((tot_outcome.schneizel_win_cnt * 1.0f) / (game_cnt * 1.0f)) * 100.0f;
 
