@@ -1072,20 +1072,25 @@ Value Eval::evaluate(const Position& pos, int* complexity) {
 
   if (Eval::getUseSchneizel())
   {
-    complexity = nullptr;
+    int schneizelComplexity = complexity ? *complexity : 0;
+    int scale = 1076 + 96 * pos.non_pawn_material() / 5120;
 
-    // Thread id will line up with model index.
-    auto model = schneizel::model::get_model_copy(pos.this_thread()->id());
+    Color stm = pos.side_to_move();
+    Value optimism = pos.this_thread()->optimism[stm];
 
-    float x[SQUARE_NB + 1];
-    pos.schneizel_get_material(x);
+    Value schneizelEval;
+    {
+        auto model = schneizel::model::get_model_copy(pos.this_thread()->id());
+        float x[SQUARE_NB + 1];
+        pos.schneizel_get_material(x);
+        float p = model->forward(x);
+        p = (stm == WHITE ? p : -p);
+        p *= 1000.0f;
+        schneizelEval = Value((int)p);
+    }
 
-    float p = model->forward(x);
-
-    // Side to move point of view
-    p = (pos.side_to_move() == WHITE ? p : -p);
-    v = Value((int)(p * 1000));
-    return v;
+    optimism = optimism * (272 + schneizelComplexity) / 256;
+    v = (schneizelEval * scale + optimism * (scale - 748)) / 1024;
   }
   else if (useClassical)
       v = Evaluation<NO_TRACE>(pos).value();
