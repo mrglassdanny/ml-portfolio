@@ -383,7 +383,7 @@ namespace schneizel
 
         void init(const char *params_path, int thread_cnt)
         {
-            model = new Model(0.001f);
+            model = new Model(0.0001f);
             model->add_layer(new Layer(65, 512, true));
             model->add_layer(new Layer(512, 512, true));
             model->add_layer(new Layer(512, 128, true));
@@ -412,8 +412,6 @@ namespace schneizel
         struct PostGamePosition
         {
             std::string fen;
-            int eval = 0;
-            int delta = 0;
             int outcome_lbl = 0;
         };
 
@@ -446,7 +444,116 @@ namespace schneizel
             int schneizel_win_cnt = 0;
             int stockfish_win_cnt = 0;
             int draw_cnt = 0;
+            float avg_loss = 0.0f;
         };
+
+        void play(std::vector<PostGamePosition> *postgame_positions, Outcome *outcome, bool schneizel_as_white, int schneizel_depth, int stockfish_depth)
+        {
+            Position pos;
+            StateListPtr states(new std::deque<StateInfo>(1));
+            pos.set("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+                    false, &states->back(), Threads.main());
+
+            int outcome_lbl = 0;
+
+            int move_cnt = 0;
+            while (true)
+            {
+                // Automatic draw after 150 moves.
+                if (move_cnt > 150)
+                {
+                    outcome_lbl = 0;
+                    outcome->draw_cnt++;
+                    break;
+                }
+
+                Search::LimitsType limits;
+                {
+                    limits.startTime = now();
+                    if (pos.side_to_move() == Color::WHITE)
+                    {
+                        if (schneizel_as_white)
+                        {
+                            Eval::setUseSchneizel(true);
+                            limits.depth = schneizel_depth;
+                        }
+                        else
+                        {
+                            Eval::setUseSchneizel(false);
+                            limits.depth = stockfish_depth;
+                        }
+                    }
+                    else
+                    {
+                        if (!schneizel_as_white)
+                        {
+                            Eval::setUseSchneizel(true);
+                            limits.depth = schneizel_depth;
+                        }
+                        else
+                        {
+                            Eval::setUseSchneizel(false);
+                            limits.depth = stockfish_depth;
+                        }
+                    }
+                }
+
+                MoveList<LEGAL> move_list(pos);
+                if (move_list.size() == 0)
+                {
+                    if (pos.checkers())
+                    {
+                        if (pos.side_to_move() == Color::WHITE)
+                        {
+                            outcome_lbl = -1;
+                            if (!schneizel_as_white)
+                                outcome->schneizel_win_cnt++;
+                            else
+                                outcome->stockfish_win_cnt++;
+                        }
+                        else
+                        {
+                            outcome_lbl = 1;
+                            if (schneizel_as_white)
+                                outcome->schneizel_win_cnt++;
+                            else
+                                outcome->stockfish_win_cnt++;
+                        }
+                    }
+                    else
+                    {
+                        outcome_lbl = 0;
+                        outcome->draw_cnt++;
+                    }
+
+                    break;
+                }
+
+                for (auto move : move_list)
+                {
+                    limits.searchmoves.push_back(move);
+                }
+
+                Threads.start_thinking(pos, states, limits, false);
+                Threads.main()->wait_for_search_finished();
+                auto best_thread = Threads.get_best_thread();
+                Move best_move = best_thread->rootMoves[0].pv[0];
+
+                states = StateListPtr(new std::deque<StateInfo>(1));
+                pos.set(pos.fen(), false, &states->back(), Threads.main());
+                states->emplace_back();
+                pos.do_move(best_move, states->back());
+                postgame_positions->push_back(PostGamePosition{pos.fen()});
+
+                move_cnt++;
+            }
+
+            for (int i = 0; i < postgame_positions->size(); i++)
+            {
+                auto pg_pos = &postgame_positions->at(i);
+                pg_pos->outcome_lbl = outcome_lbl;
+            }
+        }
 
         Outcome play(int schneizel_depth, int stockfish_depth)
         {
@@ -457,224 +564,9 @@ namespace schneizel
             std::vector<PostGamePosition> postgame_positions;
             std::vector<PostGamePosition> postgame_positions_w;
             std::vector<PostGamePosition> postgame_positions_b;
-            int delta = 0;
-            int prev_eval = 0;
 
-            bool schneizel_as_white = true;
-            {
-                Position pos;
-                StateListPtr states(new std::deque<StateInfo>(1));
-                pos.set("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                        false, &states->back(), Threads.main());
-
-                int move_cnt = 0;
-                while (true)
-                {
-                    // Automatic draw after 150 moves.
-                    if (move_cnt > 150)
-                    {
-                        outcome_lbl = 0;
-                        outcome.draw_cnt++;
-                        break;
-                    }
-
-                    Search::LimitsType limits;
-                    {
-                        limits.startTime = now();
-                        if (pos.side_to_move() == Color::WHITE)
-                        {
-                            if (schneizel_as_white)
-                            {
-                                Eval::setUseSchneizel(true);
-                                limits.depth = schneizel_depth;
-                            }
-                            else
-                            {
-                                Eval::setUseSchneizel(false);
-                                limits.depth = stockfish_depth;
-                            }
-                        }
-                        else
-                        {
-                            if (!schneizel_as_white)
-                            {
-                                Eval::setUseSchneizel(true);
-                                limits.depth = schneizel_depth;
-                            }
-                            else
-                            {
-                                Eval::setUseSchneizel(false);
-                                limits.depth = stockfish_depth;
-                            }
-                        }
-                    }
-
-                    MoveList<LEGAL> move_list(pos);
-                    if (move_list.size() == 0)
-                    {
-                        if (pos.checkers())
-                        {
-                            if (pos.side_to_move() == Color::WHITE)
-                            {
-                                outcome_lbl = -1;
-                                if (!schneizel_as_white)
-                                    outcome.schneizel_win_cnt++;
-                                else
-                                    outcome.stockfish_win_cnt++;
-                            }
-                            else
-                            {
-                                outcome_lbl = 1;
-                                if (schneizel_as_white)
-                                    outcome.schneizel_win_cnt++;
-                                else
-                                    outcome.stockfish_win_cnt++;
-                            }
-                        }
-                        else
-                        {
-                            outcome_lbl = 0;
-                            outcome.draw_cnt++;
-                        }
-
-                        break;
-                    }
-
-                    for (auto move : move_list)
-                    {
-                        limits.searchmoves.push_back(move);
-                    }
-
-                    Threads.start_thinking(pos, states, limits, false);
-                    Threads.main()->wait_for_search_finished();
-                    auto best_thread = Threads.get_best_thread();
-                    Move best_move = best_thread->rootMoves[0].pv[0];
-
-                    states = StateListPtr(new std::deque<StateInfo>(1));
-                    pos.set(pos.fen(), false, &states->back(), Threads.main());
-                    states->emplace_back();
-                    pos.do_move(best_move, states->back());
-                    int eval = pos.schneizel_material_eval();
-                    delta = eval - prev_eval;
-                    prev_eval = eval;
-                    postgame_positions_w.push_back(PostGamePosition{pos.fen(), eval, delta});
-
-                    move_cnt++;
-                }
-
-                for (auto &pg_pos : postgame_positions_w)
-                {
-                    pg_pos.outcome_lbl = outcome_lbl;
-                }
-            }
-
-            schneizel_as_white = false;
-            {
-                Position pos;
-                StateListPtr states(new std::deque<StateInfo>(1));
-                pos.set("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
-                        false, &states->back(), Threads.main());
-
-                int move_cnt = 0;
-                while (true)
-                {
-                    // Automatic draw after 150 moves.
-                    if (move_cnt > 150)
-                    {
-                        outcome_lbl = 0;
-                        outcome.draw_cnt++;
-                        break;
-                    }
-
-                    Search::LimitsType limits;
-                    {
-                        limits.startTime = now();
-                        if (pos.side_to_move() == Color::WHITE)
-                        {
-                            if (schneizel_as_white)
-                            {
-                                Eval::setUseSchneizel(true);
-                                limits.depth = schneizel_depth;
-                            }
-                            else
-                            {
-                                Eval::setUseSchneizel(false);
-                                limits.depth = stockfish_depth;
-                            }
-                        }
-                        else
-                        {
-                            if (!schneizel_as_white)
-                            {
-                                Eval::setUseSchneizel(true);
-                                limits.depth = schneizel_depth;
-                            }
-                            else
-                            {
-                                Eval::setUseSchneizel(false);
-                                limits.depth = stockfish_depth;
-                            }
-                        }
-                    }
-
-                    MoveList<LEGAL> move_list(pos);
-                    if (move_list.size() == 0)
-                    {
-                        if (pos.checkers())
-                        {
-                            if (pos.side_to_move() == Color::WHITE)
-                            {
-                                outcome_lbl = -1;
-                                if (!schneizel_as_white)
-                                    outcome.schneizel_win_cnt++;
-                                else
-                                    outcome.stockfish_win_cnt++;
-                            }
-                            else
-                            {
-                                outcome_lbl = 1;
-                                if (schneizel_as_white)
-                                    outcome.schneizel_win_cnt++;
-                                else
-                                    outcome.stockfish_win_cnt++;
-                            }
-                        }
-                        else
-                        {
-                            outcome_lbl = 0;
-                            outcome.draw_cnt++;
-                        }
-
-                        break;
-                    }
-
-                    for (auto move : move_list)
-                    {
-                        limits.searchmoves.push_back(move);
-                    }
-
-                    Threads.start_thinking(pos, states, limits, false);
-                    Threads.main()->wait_for_search_finished();
-                    auto best_thread = Threads.get_best_thread();
-                    Move best_move = best_thread->rootMoves[0].pv[0];
-
-                    states = StateListPtr(new std::deque<StateInfo>(1));
-                    pos.set(pos.fen(), false, &states->back(), Threads.main());
-                    states->emplace_back();
-                    pos.do_move(best_move, states->back());
-                    int eval = pos.schneizel_material_eval();
-                    delta = eval - prev_eval;
-                    prev_eval = eval;
-                    postgame_positions_b.push_back(PostGamePosition{pos.fen(), eval, delta});
-
-                    move_cnt++;
-                }
-
-                for (auto &pg_pos : postgame_positions_b)
-                {
-                    pg_pos.outcome_lbl = outcome_lbl;
-                }
-            }
+            play(&postgame_positions_w, &outcome, true, schneizel_depth, stockfish_depth);
+            play(&postgame_positions_b, &outcome, false, schneizel_depth, stockfish_depth);
 
             postgame_positions.insert(postgame_positions.end(), postgame_positions_w.begin(), postgame_positions_w.end());
             postgame_positions.insert(postgame_positions.end(), postgame_positions_b.begin(), postgame_positions_b.end());
@@ -694,7 +586,7 @@ namespace schneizel
             Outcome tot_outcome;
             int game_cnt = 0;
 
-            int stockfish_depth = 5;
+            int stockfish_depth = 15;
 
             while (true)
             {
@@ -704,22 +596,24 @@ namespace schneizel
                     tot_outcome.schneizel_win_cnt += outcome.schneizel_win_cnt;
                     tot_outcome.stockfish_win_cnt += outcome.stockfish_win_cnt;
                     tot_outcome.draw_cnt += outcome.draw_cnt;
+                    tot_outcome.avg_loss += outcome.avg_loss;
                     game_cnt = (tot_outcome.schneizel_win_cnt + tot_outcome.stockfish_win_cnt + tot_outcome.draw_cnt);
                 }
 
-                if (game_cnt >= 6)
+                if (game_cnt >= 10)
                 {
                     float schneizel_win_pct = ((tot_outcome.schneizel_win_cnt * 1.0f) / (game_cnt * 1.0f)) * 100.0f;
+                    float avg_loss = tot_outcome.avg_loss / game_cnt;
 
                     FILE *log_file = fopen("temp/train.log", "a");
-                    fprintf(log_file, "record: %d-%d-%d (%f%%)\n", tot_outcome.schneizel_win_cnt, tot_outcome.stockfish_win_cnt,
-                            tot_outcome.draw_cnt, schneizel_win_pct);
+                    fprintf(log_file, "record: %d-%d-%d (%f%%)\tloss: %f\n", tot_outcome.schneizel_win_cnt, tot_outcome.stockfish_win_cnt,
+                            tot_outcome.draw_cnt, schneizel_win_pct, avg_loss);
 
-                    if (schneizel_win_pct >= 60.0f)
-                    {
-                        stockfish_depth++;
-                        fprintf(log_file, "stockfish depth: %d\n", stockfish_depth);
-                    }
+                    // if (schneizel_win_pct >= 60.0f)
+                    // {
+                    //     stockfish_depth++;
+                    //     fprintf(log_file, "stockfish depth: %d\n", stockfish_depth);
+                    // }
 
                     fclose(log_file);
 
