@@ -383,7 +383,7 @@ namespace schneizel
 
         void init(const char *params_path, int thread_cnt)
         {
-            model = new Model(0.0001f);
+            model = new Model(0.00001f);
             model->add_layer(new Layer(65, 512, true));
             model->add_layer(new Layer(512, 512, true));
             model->add_layer(new Layer(512, 128, true));
@@ -415,7 +415,15 @@ namespace schneizel
             int outcome_lbl = 0;
         };
 
-        void train(std::vector<PostGamePosition> postgame_positions)
+        struct Outcome
+        {
+            int schneizel_win_cnt = 0;
+            int stockfish_win_cnt = 0;
+            int draw_cnt = 0;
+            float avg_loss = 0.0f;
+        };
+
+        void train(std::vector<PostGamePosition> postgame_positions, Outcome *outcome)
         {
             Position pos;
             StateListPtr states(new std::deque<StateInfo>(1));
@@ -424,6 +432,8 @@ namespace schneizel
 
             int move_cnt = postgame_positions.size();
 
+            Eval::setUseSchneizel(false);
+
             for (int i = 0; i < move_cnt; i++)
             {
                 auto pg_pos = postgame_positions[i];
@@ -431,21 +441,17 @@ namespace schneizel
                 pos.set(pg_pos.fen, false, &states->back(), Threads.main());
 
                 float y = (float)pg_pos.outcome_lbl;
+                Value v = Eval::evaluate(pos);
                 pos.schneizel_get_material(x);
                 float p = model::model->forward(x);
-                printf("Loss: %f\tP: %f\tY: %f\n", model::model->loss(p, y), p, y);
+                float l = model::model->loss(p, y);
+                printf("Loss: %f\tP: %f\tY: %f\n", l, p, y);
                 model::model->backward(p, y);
                 model::model->step(1);
+
+                outcome->avg_loss += l / move_cnt;
             }
         }
-
-        struct Outcome
-        {
-            int schneizel_win_cnt = 0;
-            int stockfish_win_cnt = 0;
-            int draw_cnt = 0;
-            float avg_loss = 0.0f;
-        };
 
         void play(std::vector<PostGamePosition> *postgame_positions, Outcome *outcome, bool schneizel_as_white, int schneizel_depth, int stockfish_depth)
         {
@@ -574,7 +580,7 @@ namespace schneizel
             auto rng = std::default_random_engine{};
             std::shuffle(std::begin(postgame_positions), std::end(postgame_positions), rng);
 
-            train(postgame_positions);
+            train(postgame_positions, &outcome);
 
             return outcome;
         }
@@ -586,7 +592,7 @@ namespace schneizel
             Outcome tot_outcome;
             int game_cnt = 0;
 
-            int stockfish_depth = 15;
+            int stockfish_depth = 5;
 
             while (true)
             {
@@ -840,7 +846,7 @@ namespace schneizel
         void loop()
         {
             srand(time(NULL));
-            play(true, 10);
+            play(true, 5);
         }
     }
 }
