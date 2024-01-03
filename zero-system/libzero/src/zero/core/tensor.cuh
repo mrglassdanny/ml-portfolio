@@ -68,7 +68,7 @@ namespace zero
 
 			static Tensor *zeros(bool cuda, Shape shape);
 			static Tensor *ones(bool cuda, Shape shape);
-			static Tensor *full(bool cuda, Shape shape, float val);
+			static Tensor *fill(bool cuda, Shape shape, float val);
 			static Tensor *random(bool cuda, Shape shape, float mean, float stddev);
 			static Tensor *random_ints(bool cuda, Shape shape, int upper_bound);
 
@@ -109,7 +109,7 @@ namespace zero
 			float *data();
 			void zeros();
 			void ones();
-			void full(float val);
+			void fill(float val);
 			void random(float mean, float stddev);
 			void random_ints(int upper_bound);
 		};

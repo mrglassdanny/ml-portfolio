@@ -512,11 +512,11 @@ namespace zero
             return tensor;
         }
 
-        Tensor *Tensor::full(bool cuda, Shape shape, float val)
+        Tensor *Tensor::fill(bool cuda, Shape shape, float val)
         {
             Tensor *tensor = new Tensor(cuda, shape);
 
-            tensor->full(val);
+            tensor->fill(val);
 
             return tensor;
         }
@@ -1219,7 +1219,7 @@ namespace zero
             }
         }
 
-        void Tensor::full(float val)
+        void Tensor::fill(float val)
         {
             if (this->cuda_)
             {
