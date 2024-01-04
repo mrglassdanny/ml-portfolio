@@ -6,20 +6,118 @@
 #include <vector>
 #include <random>
 
+class Node
+{
+public:
+	float v;
+	float dv;
+	Node* left;
+	Node* right;
+
+	Node(float v)
+	{
+		this->v = v;
+		this->dv = 0.0f;
+		this->left = nullptr;
+		this->right = nullptr;
+	}
+
+	Node(float v, float dv)
+	{
+		this->v = v;
+		this->dv = dv;
+		this->left = nullptr;
+		this->right = nullptr;
+	}
+
+	Node(float v, Node* left)
+	{
+		this->v = v;
+		this->dv = 0.0f;
+		this->left = left;
+		this->right = nullptr;
+	}
+
+	Node(float v, Node *left, Node *right)
+	{
+		this->v = v;
+		this->dv = 0.0f;
+		this->left = left;
+		this->right = right;
+	}
+
+	void derive(float p_dv)
+	{
+		this->dv += p_dv;
+		if (this->left)
+		{
+			this->left->derive(p_dv * this->dv);
+		}
+		if (this->right)
+		{
+			this->right->derive(p_dv * this->dv);
+		}
+	}
+
+	void backprop()
+	{
+		this->derive(1.0f);
+	}
+
+	Node operator+(const Node &other)
+	{
+		auto node = new Node(this->v + other.v, new Node(this->v, 1.0f), new Node(other.v, 1.0f));
+		return node;
+	}
+
+	Node operator*(const Node& other)
+	{
+		auto node = new Node(this->v * other.v);
+		node.dv = this->dv * other.v + other.dv * this->v;
+		return node;
+	}
+
+	Node operator-()
+	{
+		return Node(-1.0f) * *this;
+	}
+
+	Node operator-(Node& other)
+	{
+		return *this * (-other);
+	}
+
+	Node operator^(const float pwr)
+	{
+		auto node = Node(pow(this->v, pwr));
+		node.dv = pwr * pow(this->v, pwr - 1);
+		return node;
+	}
+
+	Node sigmoid()
+	{
+		auto node = Node((1.0f / (1.0f + exp(-(this->v)))), (this->v * (1.0f - this->v)));
+		return node;
+	}
+
+	void print()
+	{
+		printf("(%f, %f)[%d]", this->v, this->dv, this->parents.size());
+	}
+};
 
 class Tensor
 {
-private:
-	std::vector<int> shape;
-	float* data;
-	std::string fn;
 
 public:
+
+	std::vector<int> shape;
+	Node* data;
 
 	Tensor(std::vector<int> shape)
 	{
 		this->shape = shape;
-		this->data = (float*)malloc(sizeof(float) * this->size());
+		this->data = (Node*)malloc(sizeof(Node) * this->size());
 		this->zeros();
 		this->fn = "N/A";
 	}
@@ -27,7 +125,7 @@ public:
 	Tensor(std::vector<int> shape, float val)
 	{
 		this->shape = shape;
-		this->data = (float*)malloc(sizeof(float) * this->size());
+		this->data = (Node*)malloc(sizeof(Node) * this->size());
 		this->fill(val);
 		this->fn = "N/A";
 	}
@@ -35,7 +133,7 @@ public:
 	Tensor(std::vector<int> shape, float mean, float stddev)
 	{
 		this->shape = shape;
-		this->data = (float*)malloc(sizeof(float) * this->size());
+		this->data = (Node*)malloc(sizeof(Node) * this->size());
 		this->random(mean, stddev);
 		this->fn = "N/A";
 	}
@@ -64,7 +162,8 @@ public:
 		case 1:
 			for (int i = 0; i < this->size(); i++)
 			{
-				printf("%f\t", this->data[i]);
+				this->data[i].print();
+				printf("\t");
 			}
 			break;
 		case 2:
@@ -72,7 +171,8 @@ public:
 			{
 				for (int j = 0; j < this->shape[1]; j++)
 				{
-					printf("%f\t", this->data[i]);
+					this->data[i].print();
+					printf("\t");
 				}
 				printf("\n");
 			}
@@ -80,7 +180,8 @@ public:
 		default:
 			for (int i = 0; i < this->count(); i++)
 			{
-				printf("%f\t", this->data[i]);
+				this->data[i].print();
+				printf("\t");
 			}
 			break;
 		}
@@ -108,14 +209,14 @@ public:
 
 	void zeros()
 	{
-		memset(this->data, 0, sizeof(float) * this->size());
+		this->fill(0.0f);
 	}
 
 	void fill(float val)
 	{
 		for (int i = 0; i < this->size(); i++)
 		{
-			this->data[i] = val;
+			this->data[i] = Node(val);
 		}
 	}
 
@@ -127,7 +228,8 @@ public:
 		for (int i = 0; i < this->size(); i++)
 		{
 			std::normal_distribution<float> d(mean, stddev);
-			this->data[i] = d(gen);
+			auto n = Node(d(gen));
+			this->data[i] = Node(d(gen));
 		}
 	}
 
@@ -136,9 +238,9 @@ public:
 		auto t = new Tensor({ 1 });
 		for (int i = 0; i < a->size(); i++)
 		{
-			t->data[0] += a->data[i] * b->data[i];
+			auto c = a->data[i] * b->data[i];
+			t->data[0] = t->data[0] + c;
 		}
-		t->fn = "DOT PRODUCT";
 		return t;
 	}
 
@@ -147,9 +249,8 @@ public:
 		auto t = new Tensor(a->shape);
 		for (int i = 0; i < a->size(); i++)
 		{
-			t->data[i] = (1.0f / (1.0f + exp(-(a->data[i]))));
+			t->data[i] = a->data[i].sigmoid();
 		}
-		t->fn = "SIGMOID";
 		return t;
 	}
 
@@ -160,38 +261,46 @@ public:
 		{
 			t->data[i] = (p->data[i] - y->data[i]) * (p->data[i] - y->data[i]);
 		}
-		t->fn = "MEAN SQUARED ERROR";
 		return t;
-	}
-
-	static Tensor* grad(Tensor *d)
-	{
-
 	}
 };
 
 
 int main(int argc, char **argv)
 {
-
 	auto x = new Tensor({ 5 }, 0, 1.0f);
 	auto y = new Tensor({ 1 }, 0, 1.0f);
 
 	auto w = new Tensor({ 5 }, 0, 0.01f);
 
-	x->print("x");
-	w->print("w");
-
 	auto z = Tensor::dot(x, w);
-	z->print("z");
-
 	auto h = Tensor::sigmoid(z);
-	h->print("h");
+	//auto l = Tensor::mse(h, y);
 
-	y->print("y");
+	// Gradient Check
+	{
+		for (int i = 0; i < 5; i++)
+		{
+			auto ow = w->data[i].v;
 
-	auto l = Tensor::mse(h, y);
-	l->print("l");
+			w->data[i].v = ow - 0.001f;
+			auto lz = Tensor::dot(x, w);
+			auto lh = Tensor::sigmoid(lz);
+			//auto ll = Tensor::mse(lh, y);
+
+			w->data[i].v = ow + 0.001f;
+			auto rz = Tensor::dot(x, w);
+			auto rh = Tensor::sigmoid(rz);
+			//auto rl = Tensor::mse(rh, y);
+
+			// float num_grad = (rl->data[0].v - ll->data[0].v) / (2.0f * 0.001f);
+			float num_grad = (rh->data[0].v - lh->data[0].v) / (2.0f * 0.001f);
+			printf("NUM: %f\n", num_grad);
+			printf("ANA: %f\n\n", w->data[i].dv);
+
+			w->data[i].v = ow;
+		}
+	}
 
 	return 0;
 }
