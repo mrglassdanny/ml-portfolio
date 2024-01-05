@@ -5,57 +5,71 @@
 #include <float.h>
 #include <vector>
 #include <random>
+#include <functional>
+
+
+class Var
+{
+public:
+	float v;
+	float dv;
+	std::function<void(void)> df;
+	std::vector<Var*> prev;
+	std::string op;
+
+	Var(float v)
+	{
+	}
+
+	Var(float v, std::vector<Var*> prev)
+	{
+		this->v = v;
+		this->dv = 0.0f;
+		this->prev = prev;
+		this->op = op;
+	}
+
+	Var operator+(const Var& other)
+	{
+		Var out = Var(this->v + other.v);
+
+		this->df = []() { int i = 0; };
+	}
+};
+
 
 class Node
 {
 public:
 	float v;
 	float dv;
-	Node* left;
-	Node* right;
+	std::vector<Node*> parents;
 
 	Node(float v)
 	{
 		this->v = v;
 		this->dv = 0.0f;
-		this->left = nullptr;
-		this->right = nullptr;
 	}
 
 	Node(float v, float dv)
 	{
 		this->v = v;
 		this->dv = dv;
-		this->left = nullptr;
-		this->right = nullptr;
 	}
 
-	Node(float v, Node* left)
+	Node(float v, std::vector<Node *> parents)
 	{
 		this->v = v;
 		this->dv = 0.0f;
-		this->left = left;
-		this->right = nullptr;
+		this->parents = parents;
 	}
 
-	Node(float v, Node *left, Node *right)
+	void derive(float dv)
 	{
-		this->v = v;
-		this->dv = 0.0f;
-		this->left = left;
-		this->right = right;
-	}
-
-	void derive(float p_dv)
-	{
-		this->dv += p_dv;
-		if (this->left)
+		this->dv += dv;
+		for (auto p : this->parents)
 		{
-			this->left->derive(p_dv * this->dv);
-		}
-		if (this->right)
-		{
-			this->right->derive(p_dv * this->dv);
+			p->derive(dv * this->dv);
 		}
 	}
 
@@ -64,22 +78,21 @@ public:
 		this->derive(1.0f);
 	}
 
-	Node operator+(const Node &other)
+	Node *operator+(const Node &other)
 	{
-		auto node = new Node(this->v + other.v, new Node(this->v, 1.0f), new Node(other.v, 1.0f));
+		auto node = new Node(this->v + other.v, { new Node(this->v, 1.0f), new Node(other.v, 1.0f) });
 		return node;
 	}
 
-	Node operator*(const Node& other)
+	Node *operator*(const Node& other)
 	{
-		auto node = new Node(this->v * other.v);
-		node.dv = this->dv * other.v + other.dv * this->v;
+		auto node = new Node(this->v * other.v, {new Node(this->v, other.v), new Node(other.v, this->v)});
 		return node;
 	}
 
 	Node operator-()
 	{
-		return Node(-1.0f) * *this;
+		return new Node(-1.0f) * this;
 	}
 
 	Node operator-(Node& other)
