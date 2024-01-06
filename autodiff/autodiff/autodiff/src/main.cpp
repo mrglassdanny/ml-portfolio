@@ -9,10 +9,13 @@
 #include <random>
 #include <functional>
 
+#define EPSILON 0.001f
+
 enum Oper
 {
 	None = 0,
 	Add,
+	Inc,
 	Sub,
 	Mul,
 	Div,
@@ -42,8 +45,8 @@ struct Var
 		std::set<Var*> s;
 		std::vector<Var*> vars;
 
-		std::function<void(Var* var)> trav_f
-			= [&](Var *var) {
+		std::function<void(Var* var)> trav_f = [&](Var *var) 
+		{
 			if (s.find(var) == s.end())
 			{
 				s.insert(var);
@@ -57,6 +60,7 @@ struct Var
 		};
 		trav_f(this);
 
+		std::reverse(vars.begin(), vars.end());
 		for (auto var : vars)
 		{
 			var->df();
@@ -80,6 +84,9 @@ struct Var
 		case Sigmoid:
 			printf("o\n");
 			break;
+		case Inc:
+			printf("+=\n");
+			break;
 		default:
 			printf("N/A\n");
 			break;
@@ -95,10 +102,39 @@ Var *add(Var *a, Var *b, Var *out)
 	}
 
 	out->v = a->v + b->v;
-	out->children.push_back(a);
-	out->children.push_back(b);
+	if (a != out)
+		out->children.push_back(a);
+	if (b != out)
+		out->children.push_back(b);
 	out->oper = Add;
-	out->df = [a, b, out]() { a->dv += out->dv; b->dv += out->dv; };
+	out->df = [a, b, out]() 
+	{ 
+		if (a != out)
+			a->dv += out->dv;
+		if (b != out)
+			b->dv += out->dv; 
+	};
+	return out;
+}
+
+Var* inc(Var* a, Var* out)
+{
+	if (out == nullptr)
+	{
+		out = new Var();
+	}
+
+	out->v += a->v;
+	out->children.push_back(a);
+	out->oper = Inc;
+	out->df = [a, out]()
+		{
+			for (auto child : out->children)
+			{
+				child->dv += out->dv;
+			}
+		};
+
 	return out;
 }
 
@@ -113,7 +149,11 @@ Var *mul(Var* a, Var* b, Var* out)
 	out->children.push_back(a);
 	out->children.push_back(b);
 	out->oper = Mul;
-	out->df = [a, b, out]() { a->dv += out->dv * b->v; b->dv += out->dv * a->v; };
+	out->df = [a, b, out]() 
+	{ 
+		a->dv += out->dv * b->v; 
+		b->dv += out->dv * a->v; 
+	};
 	return out;
 }
 
@@ -130,7 +170,10 @@ Var* mul(Var* a, float num, Var* out)
 	out->v = a->v * num;
 	out->children.push_back(a);
 	out->oper = Mul;
-	out->df = [a, num, out]() { a->dv += out->dv * num; };
+	out->df = [a, num, out]() 
+	{ 
+		a->dv += out->dv * num; 
+	};
 	return out;
 }
 
@@ -144,7 +187,10 @@ Var* pow(Var* a, float num, Var* out)
 	out->v = pow(a->v, num);
 	out->children.push_back(a);
 	out->oper = Pow;
-	out->df = [a, num, out]() { a->dv += out->dv * (num * pow(a->v, num - 1)); };
+	out->df = [a, num, out]() 
+	{ 
+		a->dv += out->dv * (num * pow(a->v, num - 1));
+	};
 	return out;
 }
 
@@ -158,7 +204,10 @@ Var* sig(Var *a, Var * out)
 	out->v = (1.0f / (1.0f + exp(-a->v)));
 	out->children.push_back(a);
 	out->oper = Sigmoid;
-	out->df = [a, out]() { a->dv += out->dv * (out->v * (1.0f - out->v)); };
+	out->df = [a, out]() 
+	{ 
+		a->dv += out->dv * (out->v * (1.0f - out->v)); 
+	};
 	return out;
 }
 
@@ -177,6 +226,11 @@ Var* div(Var* a, Var* b, Var* c)
 	return mul(a, pow(b, -1.0f, nullptr), c);
 }
 
+Var* mse(Var* a, Var* b, Var* out)
+{
+	auto c = sub(a, b, nullptr);
+	return pow(c, 2.0f, out);
+}
 
 class Tensor
 {
@@ -305,7 +359,24 @@ public:
 		for (int i = 0; i < a->size(); i++)
 		{
 			auto c = mul(&a->data[i], &b->data[i], nullptr);
-			add(&t->data[0], c, &t->data[0]);
+			inc(c, &t->data[0]);
+		}
+		return t;
+	}
+
+	static Tensor* vec_mat_mul(Tensor* vec, Tensor* mat)
+	{
+		int rows = mat->shape[0];
+		int cols = mat->shape[1];
+
+		auto t = new Tensor({ rows });
+		for (int i = 0; i < rows; i++)
+		{
+			for (int j = 0; j < cols; j++)
+			{
+				auto c = mul(&vec->data[j], &mat->data[i * cols + j], nullptr);
+				inc(c, &t->data[i]);
+			}
 		}
 		return t;
 	}
@@ -320,68 +391,103 @@ public:
 		return t;
 	}
 
-	/*static Tensor* mse(Tensor* p, Tensor* y)
+	static Tensor* mse_loss(Tensor* p, Tensor* y)
 	{
 		auto t = new Tensor(p->shape);
 		for (int i = 0; i < p->size(); i++)
 		{
-			t->data[i] = (p->data[i] - y->data[i]) * (p->data[i] - y->data[i]);
+			mse(&p->data[i], &y->data[i], &t->data[i]);
 		}
 		return t;
-	}*/
+	}
 };
 
 
 int main(int argc, char **argv)
 {
-	auto x = new Tensor({ 5 }, 0, 1.0f);
-	auto y = new Tensor({ 1 }, 0, 1.0f);
 
-	auto w = new Tensor({ 5 }, 0, 0.01f);
+	auto x = new Tensor({ 8 }, 0, 1.0f);
+	auto y = new Tensor({ 1 }, 1.0f);
 
-	auto z = Tensor::dot(x, w);
-	auto h = Tensor::sigmoid(z);
-	//auto l = Tensor::mse(h, y);
+	auto w1 = new Tensor({ 8, 8 }, 0, 1.0f);
+	auto w2 = new Tensor({ 8, 8 }, 0, 1.0f);
+	auto w3 = new Tensor({ 4, 4 }, 0, 1.0f);
+	auto w4 = new Tensor({ 1, 4 }, 0, 1.0f);
+	auto w5 = new Tensor({ 1 }, 0, 1.0f);
 
-	h->data[0].derive();
+	std::vector<Tensor*> weights;
+	weights.push_back(w1);
+	weights.push_back(w2);
+	weights.push_back(w3);
+	weights.push_back(w4);
+	weights.push_back(w5);
+
+	auto eval = [&]() -> Tensor*
+	{
+		auto z1 = Tensor::vec_mat_mul(x,  w1);
+		auto h1 = Tensor::sigmoid(z1);
+		auto z2 = Tensor::vec_mat_mul(h1, w2);
+		auto h2 = Tensor::sigmoid(z2);
+		auto z3 = Tensor::vec_mat_mul(h2, w3);
+		auto h3 = Tensor::sigmoid(z3);
+		auto z4 = Tensor::vec_mat_mul(h3, w4);
+		auto h4 = Tensor::sigmoid(z4);
+		auto z5 = Tensor::dot(h4, w5);
+		auto h5 = Tensor::sigmoid(z5);
+		auto loss = Tensor::mse_loss(h5, y);
+		return loss;
+	};
+
+	auto loss = eval();
+
+	loss->data[0].derive();
 
 	// Gradient Check
 	{
-		for (int i = 0; i < 5; i++)
+		float agg_ana_grad = 0.0f;
+		float agg_num_grad = 0.0f;
+		float agg_grad_diff = 0.0f;
+
+		for (auto w : weights)
 		{
-			auto ow = w->data[i].v;
+			for (int i = 0; i < w->size(); i++)
+			{
+				auto ow = w->data[i].v;
 
-			w->data[i].v = ow - 0.001f;
-			auto lz = Tensor::dot(x, w);
-			auto lh = Tensor::sigmoid(lz);
-			//auto ll = Tensor::mse(lh, y);
+				w->data[i].v = ow - EPSILON;
+				auto l_loss = eval();
 
-			w->data[i].v = ow + 0.001f;
-			auto rz = Tensor::dot(x, w);
-			auto rh = Tensor::sigmoid(rz);
-			//auto rl = Tensor::mse(rh, y);
+				w->data[i].v = ow + EPSILON;
+				auto r_loss = eval();
 
-			// float num_grad = (rl->data[0].v - ll->data[0].v) / (2.0f * 0.001f);
-			float num_grad = (rh->data[0].v - lh->data[0].v) / (2.0f * 0.001f);
-			printf("NUM: %f\n", num_grad);
-			printf("ANA: %f\n\n", w->data[i].dv);
+				float num_grad = (r_loss->data[0].v - l_loss->data[0].v) / (2.0f * EPSILON);
+				float ana_grad = w->data[i].dv;
 
-			w->data[i].v = ow;
+				printf("NUM: %f\n", num_grad);
+				printf("ANA: %f\n\n", ana_grad);
+
+				agg_ana_grad += (ana_grad * ana_grad);
+				agg_num_grad += (num_grad * num_grad);
+				agg_grad_diff += ((ana_grad - num_grad) * (ana_grad - num_grad));
+
+				w->data[i].v = ow;
+			}
+		}
+
+		if ((agg_grad_diff) == 0.0f && (agg_ana_grad + agg_num_grad) == 0.0f)
+		{
+			printf("GRADIENT CHECK RESULT: %f\n", 0.0f);
+		}
+		else
+		{
+			printf("GRADIENT CHECK RESULT: %f\n", (agg_grad_diff) / (agg_ana_grad + agg_num_grad));
+
+			if ((agg_grad_diff) / (agg_ana_grad + agg_num_grad) > EPSILON)
+			{
+				printf("MODEL GRADIENTS VALIDATION FAILED");
+			}
 		}
 	}
-
-	/*auto a = Var(2.0f);
-	auto b = Var(2.0f);
-
-	auto c = mul(&a, &b, nullptr);
-	auto d = pow(c, 2, nullptr);
-
-	d->derive();
-
-	d->print();
-	c->print();
-	b.print();
-	a.print();*/
 
 	return 0;
 }
