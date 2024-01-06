@@ -3,121 +3,180 @@
 #include <string.h>
 #include <math.h>
 #include <float.h>
+#include <iostream>
 #include <vector>
+#include <set>
 #include <random>
 #include <functional>
 
-
-class Var
+enum Oper
 {
-public:
-	float v;
-	float dv;
-	std::function<void(void)> df;
-	std::vector<Var*> prev;
-	std::string op;
+	None = 0,
+	Add,
+	Sub,
+	Mul,
+	Div,
+	Pow,
+	Sigmoid
+};
+
+struct Var
+{
+	float v = 0.0f;
+	float dv = 0.0f;
+	Oper oper = None;
+	std::vector<Var*> children;
+	std::function<void(void)> df = []() { };
+
+	Var() {}
 
 	Var(float v)
 	{
-	}
-
-	Var(float v, std::vector<Var*> prev)
-	{
 		this->v = v;
-		this->dv = 0.0f;
-		this->prev = prev;
-		this->op = op;
 	}
 
-	Var operator+(const Var& other)
+	void derive()
 	{
-		Var out = Var(this->v + other.v);
+		this->dv = 1.0f;
 
-		this->df = []() { int i = 0; };
-	}
-};
+		std::set<Var*> s;
+		std::vector<Var*> vars;
 
+		std::function<void(Var* var)> trav_f
+			= [&](Var *var) {
+			if (s.find(var) == s.end())
+			{
+				s.insert(var);
+				for (int i = 0; i < var->children.size(); i++)
+				{
+					auto child = var->children[i];
+					trav_f(child);
+				}
+				vars.push_back(var);
+			}
+		};
+		trav_f(this);
 
-class Node
-{
-public:
-	float v;
-	float dv;
-	std::vector<Node*> parents;
-
-	Node(float v)
-	{
-		this->v = v;
-		this->dv = 0.0f;
-	}
-
-	Node(float v, float dv)
-	{
-		this->v = v;
-		this->dv = dv;
-	}
-
-	Node(float v, std::vector<Node *> parents)
-	{
-		this->v = v;
-		this->dv = 0.0f;
-		this->parents = parents;
-	}
-
-	void derive(float dv)
-	{
-		this->dv += dv;
-		for (auto p : this->parents)
+		for (auto var : vars)
 		{
-			p->derive(dv * this->dv);
+			var->df();
 		}
-	}
-
-	void backprop()
-	{
-		this->derive(1.0f);
-	}
-
-	Node *operator+(const Node &other)
-	{
-		auto node = new Node(this->v + other.v, { new Node(this->v, 1.0f), new Node(other.v, 1.0f) });
-		return node;
-	}
-
-	Node *operator*(const Node& other)
-	{
-		auto node = new Node(this->v * other.v, {new Node(this->v, other.v), new Node(other.v, this->v)});
-		return node;
-	}
-
-	Node operator-()
-	{
-		return new Node(-1.0f) * this;
-	}
-
-	Node operator-(Node& other)
-	{
-		return *this * (-other);
-	}
-
-	Node operator^(const float pwr)
-	{
-		auto node = Node(pow(this->v, pwr));
-		node.dv = pwr * pow(this->v, pwr - 1);
-		return node;
-	}
-
-	Node sigmoid()
-	{
-		auto node = Node((1.0f / (1.0f + exp(-(this->v)))), (this->v * (1.0f - this->v)));
-		return node;
 	}
 
 	void print()
 	{
-		printf("(%f, %f)[%d]", this->v, this->dv, this->parents.size());
+		printf("%f (%f): ", this->v, this->dv);
+		switch (this->oper)
+		{
+		case Add:
+			printf("+\n");
+			break;
+		case Mul:
+			printf("*\n");
+			break;
+		case Pow:
+			printf("^\n");
+			break;
+		case Sigmoid:
+			printf("o\n");
+			break;
+		default:
+			printf("N/A\n");
+			break;
+		}
 	}
 };
+
+Var *add(Var *a, Var *b, Var *out)
+{
+	if (out == nullptr)
+	{
+		out = new Var();
+	}
+
+	out->v = a->v + b->v;
+	out->children.push_back(a);
+	out->children.push_back(b);
+	out->oper = Add;
+	out->df = [a, b, out]() { a->dv += out->dv; b->dv += out->dv; };
+	return out;
+}
+
+Var *mul(Var* a, Var* b, Var* out)
+{
+	if (out == nullptr)
+	{
+		out = new Var();
+	}
+
+	out->v = a->v * b->v;
+	out->children.push_back(a);
+	out->children.push_back(b);
+	out->oper = Mul;
+	out->df = [a, b, out]() { a->dv += out->dv * b->v; b->dv += out->dv * a->v; };
+	return out;
+}
+
+Var* mul(Var* a, float num, Var* out)
+{
+	if (out == nullptr)
+	{
+		out = new Var();
+	}
+
+	auto b = new Var();
+	b->v = num;
+
+	out->v = a->v * num;
+	out->children.push_back(a);
+	out->oper = Mul;
+	out->df = [a, num, out]() { a->dv += out->dv * num; };
+	return out;
+}
+
+Var* pow(Var* a, float num, Var* out)
+{
+	if (out == nullptr)
+	{
+		out = new Var();
+	}
+
+	out->v = pow(a->v, num);
+	out->children.push_back(a);
+	out->oper = Pow;
+	out->df = [a, num, out]() { a->dv += out->dv * (num * pow(a->v, num - 1)); };
+	return out;
+}
+
+Var* sig(Var *a, Var * out)
+{
+	if (out == nullptr)
+	{
+		out = new Var();
+	}
+
+	out->v = (1.0f / (1.0f + exp(-a->v)));
+	out->children.push_back(a);
+	out->oper = Sigmoid;
+	out->df = [a, out]() { a->dv += out->dv * (out->v * (1.0f - out->v)); };
+	return out;
+}
+
+Var *neg(Var *a, Var *c)
+{
+	return mul(a, -1.0f, c);
+}
+
+Var* sub(Var *a, Var *b, Var *c)
+{
+	return add(a, neg(b, nullptr), c);
+}
+
+Var* div(Var* a, Var* b, Var* c)
+{
+	return mul(a, pow(b, -1.0f, nullptr), c);
+}
+
 
 class Tensor
 {
@@ -125,35 +184,32 @@ class Tensor
 public:
 
 	std::vector<int> shape;
-	Node* data;
+	Var* data;
 
 	Tensor(std::vector<int> shape)
 	{
 		this->shape = shape;
-		this->data = (Node*)malloc(sizeof(Node) * this->size());
+		this->data = new Var[this->size()];
 		this->zeros();
-		this->fn = "N/A";
 	}
 
 	Tensor(std::vector<int> shape, float val)
 	{
 		this->shape = shape;
-		this->data = (Node*)malloc(sizeof(Node) * this->size());
+		this->data = new Var[this->size()];
 		this->fill(val);
-		this->fn = "N/A";
 	}
 
 	Tensor(std::vector<int> shape, float mean, float stddev)
 	{
 		this->shape = shape;
-		this->data = (Node*)malloc(sizeof(Node) * this->size());
+		this->data = new Var[this->size()];
 		this->random(mean, stddev);
-		this->fn = "N/A";
 	}
 
 	~Tensor()
 	{
-		free(this->data);
+		delete this->data;
 	}
 
 	void print(const char *nam)
@@ -199,9 +255,6 @@ public:
 			break;
 		}
 
-		printf("\nFUNCTION: ");
-		printf(this->fn.c_str());
-
 		printf("\n\n");
 	}
 
@@ -229,7 +282,7 @@ public:
 	{
 		for (int i = 0; i < this->size(); i++)
 		{
-			this->data[i] = Node(val);
+			this->data[i] = Var(val);
 		}
 	}
 
@@ -241,8 +294,8 @@ public:
 		for (int i = 0; i < this->size(); i++)
 		{
 			std::normal_distribution<float> d(mean, stddev);
-			auto n = Node(d(gen));
-			this->data[i] = Node(d(gen));
+			auto n = Var(d(gen));
+			this->data[i] = n;
 		}
 	}
 
@@ -251,8 +304,8 @@ public:
 		auto t = new Tensor({ 1 });
 		for (int i = 0; i < a->size(); i++)
 		{
-			auto c = a->data[i] * b->data[i];
-			t->data[0] = t->data[0] + c;
+			auto c = mul(&a->data[i], &b->data[i], nullptr);
+			add(&t->data[0], c, &t->data[0]);
 		}
 		return t;
 	}
@@ -262,12 +315,12 @@ public:
 		auto t = new Tensor(a->shape);
 		for (int i = 0; i < a->size(); i++)
 		{
-			t->data[i] = a->data[i].sigmoid();
+			sig(&a->data[i], &t->data[i]);
 		}
 		return t;
 	}
 
-	static Tensor* mse(Tensor* p, Tensor* y)
+	/*static Tensor* mse(Tensor* p, Tensor* y)
 	{
 		auto t = new Tensor(p->shape);
 		for (int i = 0; i < p->size(); i++)
@@ -275,7 +328,7 @@ public:
 			t->data[i] = (p->data[i] - y->data[i]) * (p->data[i] - y->data[i]);
 		}
 		return t;
-	}
+	}*/
 };
 
 
@@ -289,6 +342,8 @@ int main(int argc, char **argv)
 	auto z = Tensor::dot(x, w);
 	auto h = Tensor::sigmoid(z);
 	//auto l = Tensor::mse(h, y);
+
+	h->data[0].derive();
 
 	// Gradient Check
 	{
@@ -314,6 +369,19 @@ int main(int argc, char **argv)
 			w->data[i].v = ow;
 		}
 	}
+
+	/*auto a = Var(2.0f);
+	auto b = Var(2.0f);
+
+	auto c = mul(&a, &b, nullptr);
+	auto d = pow(c, 2, nullptr);
+
+	d->derive();
+
+	d->print();
+	c->print();
+	b.print();
+	a.print();*/
 
 	return 0;
 }
