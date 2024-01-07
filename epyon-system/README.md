@@ -4,7 +4,7 @@ Treize had a modified version of the deadly ZERO System installed in Epyon's coc
 ![epyon-system-image](img.png)
 
 
-In reality, the Epyon System aims to be an improvement to the [ZERO System]. In addition to more functionality around neural networks, the Epyon System utilizes Automatic Differentiation. The ZERO System is an older framework whose differentiation logic is implemented by layer instead of by operation.
+In reality, *this* Epyon System aims to be an improvement to the [ZERO System]. In addition to more functionality around neural networks, the Epyon System utilizes Automatic Differentiation. The ZERO System is an older framework whose differentiation logic is implemented by layer instead of by operation.
 
 [Disclaimer] in ZERO System applies here as well.
 
