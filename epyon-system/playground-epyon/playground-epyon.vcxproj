@@ -71,6 +71,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <Include>$(SolutionDir)libepyon\src\;%(Include)</Include>
+      <CompileOut>$(SolutionDir)$(ProjectName)\bin\$(Platform)-$(Configuration)\%(Filename)%(Extension).obj</CompileOut>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -91,6 +92,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <Include>$(SolutionDir)libepyon\src\;%(Include)</Include>
+      <CompileOut>$(SolutionDir)$(ProjectName)\bin\$(Platform)-$(Configuration)\%(Filename)%(Extension).obj</CompileOut>
     </CudaCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
