@@ -13,6 +13,11 @@
   <ItemGroup>
     <CudaCompile Include="src\main.cu" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\libepyon\libepyon.vcxproj">
+      <Project>{430d3433-d006-4a61-a581-7c059d479b61}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{AD3345FF-1472-4697-A310-E3A8F20C9F44}</ProjectGuid>
     <RootNamespace>playground_epyon</RootNamespace>
@@ -65,7 +70,7 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Include>$(SolutionDir)libzero\src\;%(Include)</Include>
+      <Include>$(SolutionDir)libepyon\src\;%(Include)</Include>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -85,7 +90,7 @@
     </Link>
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
-      <Include>$(SolutionDir)libzero\src\;%(Include)</Include>
+      <Include>$(SolutionDir)libepyon\src\;%(Include)</Include>
     </CudaCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

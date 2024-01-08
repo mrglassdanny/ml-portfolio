@@ -11,15 +11,15 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="src\core\err.cuh" />
-    <CudaCompile Include="src\core\tensor.cu" />
-    <CudaCompile Include="src\core\util.cu" />
-    <CudaCompile Include="src\main.cu" />
+    <CudaCompile Include="src\epyon\core\err.cuh" />
+    <CudaCompile Include="src\epyon\core\tensor.cu" />
+    <CudaCompile Include="src\epyon\core\util.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\core\core.cuh" />
-    <ClInclude Include="src\core\tensor.cuh" />
-    <ClInclude Include="src\core\util.cuh" />
+    <ClInclude Include="src\epyon\core\core.cuh" />
+    <ClInclude Include="src\epyon\core\tensor.cuh" />
+    <ClInclude Include="src\epyon\core\util.cuh" />
+    <ClInclude Include="src\epyon\mod.cuh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{430D3433-D006-4A61-A581-7C059D479B61}</ProjectGuid>
