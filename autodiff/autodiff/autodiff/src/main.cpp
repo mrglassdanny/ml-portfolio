@@ -15,7 +15,6 @@ enum Oper
 {
 	None = 0,
 	Add,
-	Inc,
 	Sub,
 	Mul,
 	Div,
@@ -26,10 +25,7 @@ enum Oper
 struct Var
 {
 	float v = 0.0f;
-	float dv = 0.0f;
-	Oper oper = None;
-	std::vector<Var*> children;
-	std::function<void(void)> df = []() { };
+	int i = -1;
 
 	Var() {}
 
@@ -38,207 +34,41 @@ struct Var
 		this->v = v;
 	}
 
-	void derive()
+	Var(float v, int i)
 	{
-		this->dv = 1.0f;
-
-		std::set<Var*> s;
-		std::vector<Var*> vars;
-
-		std::function<void(Var* var)> trav_f = [&](Var *var) 
-		{
-			if (s.find(var) == s.end())
-			{
-				s.insert(var);
-				for (int i = 0; i < var->children.size(); i++)
-				{
-					auto child = var->children[i];
-					trav_f(child);
-				}
-				vars.push_back(var);
-			}
-		};
-		trav_f(this);
-
-		std::reverse(vars.begin(), vars.end());
-		for (auto var : vars)
-		{
-			var->df();
-		}
+		this->v = v;
+		this->i = i;
 	}
 
 	void print()
 	{
-		printf("%f (%f): ", this->v, this->dv);
-		switch (this->oper)
-		{
-		case Add:
-			printf("+\n");
-			break;
-		case Mul:
-			printf("*\n");
-			break;
-		case Pow:
-			printf("^\n");
-			break;
-		case Sigmoid:
-			printf("o\n");
-			break;
-		case Inc:
-			printf("+=\n");
-			break;
-		default:
-			printf("N/A\n");
-			break;
-		}
+		printf("%f (%d): ", this->v, this->i);
 	}
 };
 
-Var *add(Var *a, Var *b, Var *out)
+struct Node
 {
-	if (out == nullptr)
+	Oper op;
+	int as[2];
+	float pds[2];
+
+	Node() {}
+
+	Node(Oper op, int a1, int a2, float pd1, float pd2)
 	{
-		out = new Var();
+		this->op = op;
+		this->as[0] = a1;
+		this->as[1] = a2;
+		this->pds[0] = pd1;
+		this->pds[1] = pd2;
 	}
-
-	out->v = a->v + b->v;
-	if (a != out)
-		out->children.push_back(a);
-	if (b != out)
-		out->children.push_back(b);
-	out->oper = Add;
-	out->df = [a, b, out]() 
-	{ 
-		if (a != out)
-			a->dv += out->dv;
-		if (b != out)
-			b->dv += out->dv; 
-	};
-	return out;
-}
-
-Var* inc(Var* a, Var* out)
-{
-	if (out == nullptr)
-	{
-		out = new Var();
-	}
-
-	out->v += a->v;
-	out->children.push_back(a);
-	out->oper = Inc;
-	out->df = [a, out]()
-		{
-			for (auto child : out->children)
-			{
-				child->dv += out->dv;
-			}
-		};
-
-	return out;
-}
-
-Var *mul(Var* a, Var* b, Var* out)
-{
-	if (out == nullptr)
-	{
-		out = new Var();
-	}
-
-	out->v = a->v * b->v;
-	out->children.push_back(a);
-	out->children.push_back(b);
-	out->oper = Mul;
-	out->df = [a, b, out]() 
-	{ 
-		a->dv += out->dv * b->v; 
-		b->dv += out->dv * a->v; 
-	};
-	return out;
-}
-
-Var* mul(Var* a, float num, Var* out)
-{
-	if (out == nullptr)
-	{
-		out = new Var();
-	}
-
-	auto b = new Var();
-	b->v = num;
-
-	out->v = a->v * num;
-	out->children.push_back(a);
-	out->oper = Mul;
-	out->df = [a, num, out]() 
-	{ 
-		a->dv += out->dv * num; 
-	};
-	return out;
-}
-
-Var* pow(Var* a, float num, Var* out)
-{
-	if (out == nullptr)
-	{
-		out = new Var();
-	}
-
-	out->v = pow(a->v, num);
-	out->children.push_back(a);
-	out->oper = Pow;
-	out->df = [a, num, out]() 
-	{ 
-		a->dv += out->dv * (num * pow(a->v, num - 1));
-	};
-	return out;
-}
-
-Var* sig(Var *a, Var * out)
-{
-	if (out == nullptr)
-	{
-		out = new Var();
-	}
-
-	out->v = (1.0f / (1.0f + exp(-a->v)));
-	out->children.push_back(a);
-	out->oper = Sigmoid;
-	out->df = [a, out]() 
-	{ 
-		a->dv += out->dv * (out->v * (1.0f - out->v)); 
-	};
-	return out;
-}
-
-Var *neg(Var *a, Var *c)
-{
-	return mul(a, -1.0f, c);
-}
-
-Var* sub(Var *a, Var *b, Var *c)
-{
-	return add(a, neg(b, nullptr), c);
-}
-
-Var* div(Var* a, Var* b, Var* c)
-{
-	return mul(a, pow(b, -1.0f, nullptr), c);
-}
-
-Var* mse(Var* a, Var* b, Var* out)
-{
-	auto c = sub(a, b, nullptr);
-	return pow(c, 2.0f, out);
-}
+};
 
 class Tensor
 {
-
 public:
-
 	std::vector<int> shape;
-	Var* data;
+	Var *data;
 
 	Tensor(std::vector<int> shape)
 	{
@@ -266,10 +96,8 @@ public:
 		delete this->data;
 	}
 
-	void print(const char *nam)
+	void print()
 	{
-		printf("VARIABLE: %s\n", nam);
-
 		printf("SHAPE: ");
 		for (int i = 0; i < this->count(); i++)
 		{
@@ -320,7 +148,7 @@ public:
 	int size()
 	{
 		int num = 1;
-		for (auto dim : this->shape) 
+		for (auto dim : this->shape)
 		{
 			num *= dim;
 		}
@@ -352,95 +180,179 @@ public:
 			this->data[i] = n;
 		}
 	}
+};
 
-	static Tensor* dot(Tensor* a, Tensor* b)
+class Context
+{
+public:
+	std::vector<Node> tape;
+
+	Context() {}
+
+	Var var(float v)
 	{
-		auto t = new Tensor({ 1 });
-		for (int i = 0; i < a->size(); i++)
-		{
-			auto c = mul(&a->data[i], &b->data[i], nullptr);
-			inc(c, &t->data[0]);
-		}
-		return t;
+		auto var = Var(v, this->tape.size());
+		this->tape.push_back(Node(None, var.i, var.i, 0.0f, 0.0f));
+		return var;
 	}
 
-	static Tensor* vec_mat_mul(Tensor* vec, Tensor* mat)
+	Tensor *tensor(Tensor *tensor)
 	{
-		int rows = mat->shape[0];
-		int cols = mat->shape[1];
-
-		auto t = new Tensor({ rows });
-		for (int i = 0; i < rows; i++)
+		for (int i = 0; i < tensor->size(); i++)
 		{
-			for (int j = 0; j < cols; j++)
-			{
-				auto c = mul(&vec->data[j], &mat->data[i * cols + j], nullptr);
-				inc(c, &t->data[i]);
-			}
+			int idx = this->tape.size();
+			tensor->data[i].i = idx;
+			this->tape.push_back(Node(None, idx, idx, 0.0f, 0.0f));
 		}
-		return t;
+		return tensor;
 	}
 
-	static Tensor* sigmoid(Tensor *a)
+	Var op(float v, Oper op, int a1, int a2, float pd1, float pd2)
 	{
-		auto t = new Tensor(a->shape);
-		for (int i = 0; i < a->size(); i++)
-		{
-			sig(&a->data[i], &t->data[i]);
-		}
-		return t;
+		Var c;
+		c.v = v;
+		c.i = this->tape.size();
+		this->tape.push_back(Node(op, a1, a2, pd1, pd2));
+		return c;
 	}
 
-	static Tensor* mse_loss(Tensor* p, Tensor* y)
+	Tensor *backward()
 	{
-		auto t = new Tensor(p->shape);
-		for (int i = 0; i < p->size(); i++)
+		auto grad = new Tensor({(int)this->tape.size()}, 0.0f);
+		grad->data[grad->size() - 1].v = 1.0f;
+		for (int i = this->tape.size() - 1; i >= 0; i--)
 		{
-			mse(&p->data[i], &y->data[i], &t->data[i]);
+			grad->data[this->tape[i].as[0]].v += this->tape[i].pds[0] * grad->data[i].v;
+			grad->data[this->tape[i].as[1]].v += this->tape[i].pds[1] * grad->data[i].v;
 		}
-		return t;
+		return grad;
 	}
 };
 
+Var add(Context *ctx, Var a, Var b)
+{
+	Var c = ctx->op(a.v + b.v, Add, a.i, b.i, 1.0f, 1.0f);
+	return c;
+}
+
+Var sub(Context *ctx, Var a, Var b)
+{
+	Var c = ctx->op(a.v - b.v, Sub, a.i, b.i, 1.0f, -1.0f);
+	return c;
+}
+
+Var mul(Context *ctx, Var a, Var b)
+{
+	Var c = ctx->op(a.v * b.v, Mul, a.i, b.i, b.v, a.v);
+	return c;
+}
+
+Var pow(Context *ctx, Var a, float b)
+{
+	Var c = ctx->op(pow(a.v, b), Pow, a.i, -1, b * pow(a.v, b - 1), 0.0f);
+	return c;
+}
+
+Var sig(Context *ctx, Var a)
+{
+	float v = (1.0f / (1.0f + exp(-a.v)));
+	Var c = ctx->op(v, Sigmoid, a.i, -1, (v * (1.0f - v)), 0.0f);
+	return c;
+}
+
+Var mse(Context *ctx, Var a, Var b)
+{
+	auto c = sub(ctx, a, b);
+	return pow(ctx, c, 2.0f);
+}
+
+Tensor *dot(Context *ctx, Tensor *a, Tensor *b)
+{
+	auto t = ctx->tensor(new Tensor({1}));
+	for (int i = 0; i < a->size(); i++)
+	{
+		auto c = mul(ctx, a->data[i], b->data[i]);
+		t->data[i] = add(ctx, c, t->data[i]);
+	}
+	return t;
+}
+
+Tensor *vec_mat_mul(Context *ctx, Tensor *vec, Tensor *mat)
+{
+	int rows = mat->shape[0];
+	int cols = mat->shape[1];
+
+	auto t = new Tensor({rows});
+	for (int i = 0; i < rows; i++)
+	{
+		for (int j = 0; j < cols; j++)
+		{
+			auto c = mul(ctx, vec->data[j], mat->data[i * cols + j]);
+			t->data[i] = add(ctx, c, t->data[i]);
+		}
+	}
+	return t;
+}
+
+Tensor *sigmoid(Context *ctx, Tensor *a)
+{
+	auto t = ctx->tensor(new Tensor(a->shape));
+	for (int i = 0; i < a->size(); i++)
+	{
+		t->data[i] = sig(ctx, a->data[i]);
+	}
+	return t;
+}
+
+Tensor *mse_loss(Context *ctx, Tensor *p, Tensor *y)
+{
+	auto t = ctx->tensor(new Tensor(p->shape));
+	for (int i = 0; i < p->size(); i++)
+	{
+		t->data[i] = mse(ctx, p->data[i], y->data[i]);
+	}
+	return t;
+}
 
 int main(int argc, char **argv)
 {
+	auto ctx = Context();
 
-	auto x = new Tensor({ 8 }, 0, 1.0f);
-	auto y = new Tensor({ 1 }, 1.0f);
+	auto x = ctx.tensor(new Tensor({8}, 0, 1.0f));
+	auto y = ctx.tensor(new Tensor({1}, 1.0f));
 
-	auto w1 = new Tensor({ 8, 8 }, 0, 1.0f);
-	auto w2 = new Tensor({ 8, 8 }, 0, 1.0f);
-	auto w3 = new Tensor({ 4, 4 }, 0, 1.0f);
-	auto w4 = new Tensor({ 1, 4 }, 0, 1.0f);
-	auto w5 = new Tensor({ 1 }, 0, 1.0f);
+	auto w1 = ctx.tensor(new Tensor({8, 8}, 0, 1.0f));
+	auto w2 = ctx.tensor(new Tensor({8, 8}, 0, 1.0f));
+	auto w3 = ctx.tensor(new Tensor({4, 4}, 0, 1.0f));
+	auto w4 = ctx.tensor(new Tensor({1, 4}, 0, 1.0f));
+	auto w5 = ctx.tensor(new Tensor({1}, 0, 1.0f));
 
-	std::vector<Tensor*> weights;
+	std::vector<Tensor *> weights;
 	weights.push_back(w1);
 	weights.push_back(w2);
 	weights.push_back(w3);
 	weights.push_back(w4);
 	weights.push_back(w5);
 
-	auto eval = [&]() -> Tensor*
+	auto eval = [&]() -> Tensor *
 	{
-		auto z1 = Tensor::vec_mat_mul(x,  w1);
-		auto h1 = Tensor::sigmoid(z1);
-		auto z2 = Tensor::vec_mat_mul(h1, w2);
-		auto h2 = Tensor::sigmoid(z2);
-		auto z3 = Tensor::vec_mat_mul(h2, w3);
-		auto h3 = Tensor::sigmoid(z3);
-		auto z4 = Tensor::vec_mat_mul(h3, w4);
-		auto h4 = Tensor::sigmoid(z4);
-		auto z5 = Tensor::dot(h4, w5);
-		auto h5 = Tensor::sigmoid(z5);
-		auto loss = Tensor::mse_loss(h5, y);
+		auto z1 = vec_mat_mul(&ctx, x, w1);
+		auto h1 = sigmoid(&ctx, z1);
+		auto z2 = vec_mat_mul(&ctx, h1, w2);
+		auto h2 = sigmoid(&ctx, z2);
+		auto z3 = vec_mat_mul(&ctx, h2, w3);
+		auto h3 = sigmoid(&ctx, z3);
+		auto z4 = vec_mat_mul(&ctx, h3, w4);
+		auto h4 = sigmoid(&ctx, z4);
+		auto z5 = dot(&ctx, h4, w5);
+		auto h5 = sigmoid(&ctx, z5);
+		auto loss = mse_loss(&ctx, h5, y);
 		return loss;
 	};
 
 	auto loss = eval();
 
-	loss->data[0].derive();
+	auto grad = ctx.backward();
 
 	// Gradient Check
 	{
@@ -461,7 +373,7 @@ int main(int argc, char **argv)
 				auto r_loss = eval();
 
 				float num_grad = (r_loss->data[0].v - l_loss->data[0].v) / (2.0f * EPSILON);
-				float ana_grad = w->data[i].dv;
+				float ana_grad = grad->data[w->data[i].i].v;
 
 				printf("NUM: %f\n", num_grad);
 				printf("ANA: %f\n\n", ana_grad);
