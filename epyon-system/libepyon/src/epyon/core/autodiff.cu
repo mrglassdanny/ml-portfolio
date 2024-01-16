@@ -45,103 +45,6 @@ namespace epyon
             this->iv = iv;
         }
 
-        __global__ void k_set_all(float *data, int cnt, float val)
-        {
-            int tid = blockIdx.x * blockDim.x + threadIdx.x;
-
-            if (tid < cnt)
-            {
-                data[tid] = val;
-            }
-        }
-
-        __global__ void k_pad(float *dst, float *src, int dst_row_cnt, int dst_col_cnt, int src_row_cnt, int src_col_cnt, int pad_row_cnt, int pad_col_cnt)
-        {
-            int src_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
-            int src_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
-
-            if (src_col_idx < src_col_cnt && src_row_idx < src_row_cnt)
-            {
-                dst[(src_row_idx + pad_row_cnt) * dst_col_cnt + (src_col_idx + pad_col_cnt)] = src[src_row_idx * src_col_cnt + src_col_idx];
-            }
-        }
-
-        __global__ void k_unpad(float *dst, float *src, int dst_row_cnt, int dst_col_cnt, int src_row_cnt, int src_col_cnt, int pad_row_cnt, int pad_col_cnt)
-        {
-            int dst_col_idx = blockIdx.x * blockDim.x + threadIdx.x;
-            int dst_row_idx = blockIdx.y * blockDim.y + threadIdx.y;
-
-            if (dst_col_idx < dst_col_cnt && dst_row_idx < dst_row_cnt)
-            {
-                dst[dst_row_idx * dst_col_cnt + dst_col_idx] = src[(dst_row_idx + pad_row_cnt) * src_col_cnt + (dst_col_idx + pad_col_cnt)];
-            }
-        }
-
-        __global__ void k_sum(float *data, int cnt, float *sum_val)
-        {
-            __shared__ float temp[EPYON_CORE_CUDA_THREADS_PER_BLOCK];
-            memset(temp, 0, EPYON_CORE_CUDA_THREADS_PER_BLOCK * sizeof(float));
-
-            int tid = blockIdx.x * blockDim.x + threadIdx.x;
-
-            if (tid < cnt)
-            {
-                temp[threadIdx.x] = data[tid];
-            }
-
-            __syncthreads();
-
-            if (threadIdx.x == 0)
-            {
-                float l_sum_val = 0.0f;
-
-                for (int i = 0; i < EPYON_CORE_CUDA_THREADS_PER_BLOCK; i++)
-                {
-                    l_sum_val += temp[i];
-                }
-
-                atomicAdd(sum_val, l_sum_val);
-            }
-        }
-
-        __global__ void k_variance(float *data, int cnt, float mean_val, float *variance_val)
-        {
-            __shared__ float temp[EPYON_CORE_CUDA_THREADS_PER_BLOCK];
-            memset(temp, 0, EPYON_CORE_CUDA_THREADS_PER_BLOCK * sizeof(float));
-
-            int tid = blockIdx.x * blockDim.x + threadIdx.x;
-
-            if (tid < cnt)
-            {
-                float diff = data[tid] - mean_val;
-                temp[threadIdx.x] = (diff * diff);
-            }
-
-            __syncthreads();
-
-            if (threadIdx.x == 0)
-            {
-                float l_variance_val = 0.0f;
-
-                for (int i = 0; i < EPYON_CORE_CUDA_THREADS_PER_BLOCK; i++)
-                {
-                    l_variance_val += temp[i];
-                }
-
-                atomicAdd(variance_val, l_variance_val);
-            }
-        }
-
-        __global__ void k_abs(float *data, int cnt)
-        {
-            int tid = blockIdx.x * blockDim.x + threadIdx.x;
-
-            if (tid < cnt)
-            {
-                data[tid] = abs(data[tid]);
-            }
-        }
-
         Shape::Shape()
         {
         }
@@ -298,29 +201,9 @@ namespace epyon
             return size;
         }
 
-        Tensor::Tensor(Tensor &src)
-        {
-            this->cuda = src.cuda;
-            this->shape = src.shape;
-
-            size_t size = this->size();
-
-            if (src.cuda)
-            {
-                cudaMalloc(&this->data, size);
-                cudaMemcpy(this->data, src.data, size, cudaMemcpyDeviceToDevice);
-            }
-            else
-            {
-                this->data = (float *)malloc(size);
-                memcpy(this->data, src.data, size);
-            }
-        }
-
         Tensor::Tensor(bool cuda, Shape shape)
         {
             this->cuda = cuda;
-            this->requires_grad = false;
             this->shape = shape;
 
             size_t size = this->size();
@@ -331,7 +214,7 @@ namespace epyon
             }
             else
             {
-                this->data = (float *)malloc(size);
+                this->data = (Var *)malloc(size);
             }
         }
 
@@ -345,23 +228,15 @@ namespace epyon
             {
                 free(this->data);
             }
-
-            if (this->requires_grad)
-            {
-                if (this->cuda)
-                {
-                    cudaFree(this->ivs);
-                }
-                else
-                {
-                    free(this->ivs);
-                }
-            }
         }
 
         Tensor *Tensor::from_data(Shape shape, float *data)
         {
             Tensor *tensor = new Tensor(false, shape);
+            for (int i = 0; i < tensor->count(); i++)
+            {
+                tensor->set_val(i, data[i]);
+            }
             cudaMemcpy(tensor->data, data, tensor->size(), cudaMemcpyDefault);
             return tensor;
         }
@@ -480,7 +355,7 @@ namespace epyon
 
                 for (int i = 0; i < cnt; i++)
                 {
-                    fprintf(file_ptr, "%f\n", tensor->get_val(i));
+                    fprintf(file_ptr, "%f\n", tensor->get_var(i).v);
                 }
 
                 fclose(file_ptr);
@@ -513,11 +388,11 @@ namespace epyon
                     {
                         if (j < col_cnt - 1)
                         {
-                            fprintf(file_ptr, "%f,", tensor->get_val(i * col_cnt + j));
+                            fprintf(file_ptr, "%f,", tensor->get_var(i * col_cnt + j).v);
                         }
                         else
                         {
-                            fprintf(file_ptr, "%f", tensor->get_val(i * col_cnt + j));
+                            fprintf(file_ptr, "%f", tensor->get_var(i * col_cnt + j).v);
                         }
                     }
                     fprintf(file_ptr, "\n");
@@ -588,20 +463,7 @@ namespace epyon
             return tensor;
         }
 
-        Tensor *Tensor::random_ints(bool cuda, Shape shape, int upper_bound)
-        {
-            Tensor *tensor = new Tensor(false, shape);
-            tensor->random_ints(upper_bound);
-
-            if (cuda)
-            {
-                tensor->to_cuda();
-            }
-
-            return tensor;
-        }
-
-        Tensor *Tensor::one_hot(Tensor *src, int max_val)
+        Tensor *Tensor::one_hot(Tensor *src)
         {
             int lst_dim_idx = src->num_dims() - 1;
 
@@ -617,7 +479,7 @@ namespace epyon
                 EPYON_CORE_THROW_ERROR("TENSOR ONE HOT ERROR: negative numbers not allowed");
             }
 
-            int oh_dim = ((int)max_val) + 1;
+            int oh_dim = ((int)src->max()) + 1;
 
             std::vector<int> dst_dims = src->get_shape().get_dims();
             dst_dims[lst_dim_idx] = oh_dim;
@@ -626,205 +488,19 @@ namespace epyon
 
             for (int i = 0; i < src->count(); i++)
             {
-                int val = (int)src->get_val(i);
+                int val = (int)src->get_var(i).v;
                 dst->set_val(i * oh_dim + val, 1.0f);
             }
 
             return dst;
         }
 
-        Tensor *Tensor::pad(Tensor *src, int pad_row_cnt, int pad_col_cnt)
-        {
-            if (src->num_dims() < 2)
-            {
-                EPYON_CORE_THROW_ERROR("TENSOR PAD ERROR: shape must have at least 2 dimensions");
-            }
-
-            bool orig_cuda = src->cuda;
-            src->to_cuda();
-
-            int col_dim_idx = src->num_dims() - 1;
-            int row_dim_idx = col_dim_idx - 1;
-
-            int src_row_cnt = src->get_shape()[row_dim_idx];
-            int src_col_cnt = src->get_shape()[col_dim_idx];
-
-            std::vector<int> dst_dims;
-            for (int i = 0; i < row_dim_idx; i++)
-            {
-                dst_dims.push_back(src->get_shape()[i]);
-            }
-
-            int dst_row_cnt = src_row_cnt + (pad_row_cnt * 2);
-            int dst_col_cnt = src_col_cnt + (pad_col_cnt * 2);
-
-            dst_dims.push_back(dst_row_cnt);
-            dst_dims.push_back(dst_col_cnt);
-
-            Tensor *dst = Tensor::zeros(src->cuda, Shape(dst_dims));
-
-            int grid_row_cnt = (src_row_cnt / EPYON_CORE_CUDA_THREADS_PER_BLOCK) + 1;
-            int grid_col_cnt = (src_col_cnt / EPYON_CORE_CUDA_THREADS_PER_BLOCK) + 1;
-
-            dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-            dim3 block_dims(EPYON_CORE_CUDA_THREADS_PER_BLOCK, EPYON_CORE_CUDA_THREADS_PER_BLOCK);
-
-            switch (src->num_dims())
-            {
-            case 2:
-            {
-                float *src_data = src->get_data();
-                float *dst_data = dst->get_data();
-
-                k_pad<<<grid_dims, block_dims>>>(dst_data, src_data, dst_row_cnt, dst_col_cnt, src_row_cnt, src_col_cnt,
-                                                 pad_row_cnt, pad_col_cnt);
-            }
-            break;
-            case 3:
-            {
-                for (int i = 0; i < src->get_shape()[0]; i++)
-                {
-                    float *src_data = &src->get_data()[(i * src_row_cnt * src_col_cnt)];
-                    float *dst_data = &dst->get_data()[(i * dst_row_cnt * dst_col_cnt)];
-
-                    k_pad<<<grid_dims, block_dims>>>(dst_data, src_data, dst_row_cnt, dst_col_cnt, src_row_cnt, src_col_cnt,
-                                                     pad_row_cnt, pad_col_cnt);
-                }
-            }
-            break;
-            case 4:
-            {
-                for (int i = 0; i < src->get_shape()[0]; i++)
-                {
-                    for (int j = 0; j < src->get_shape()[1]; j++)
-                    {
-                        float *src_data = &src->get_data()[(i * src->get_shape()[1] * src_row_cnt * src_col_cnt) + (j * src_row_cnt * src_col_cnt)];
-                        float *dst_data = &dst->get_data()[(i * dst->get_shape()[1] * dst_row_cnt * dst_col_cnt) + (j * dst_row_cnt * dst_col_cnt)];
-
-                        k_pad<<<grid_dims, block_dims>>>(dst_data, src_data, dst_row_cnt, dst_col_cnt, src_row_cnt, src_col_cnt,
-                                                         pad_row_cnt, pad_col_cnt);
-                    }
-                }
-            }
-            break;
-            default:
-                EPYON_CORE_THROW_ERROR("TENSOR PAD ERROR: shape must not have more than 4 dimensions");
-                break;
-            }
-
-            if (!orig_cuda)
-            {
-                src->to_cpu();
-                dst->to_cpu();
-            }
-
-            return dst;
-        }
-
-        Tensor *Tensor::unpad(Tensor *src, int pad_row_cnt, int pad_col_cnt)
-        {
-            if (src->num_dims() < 2)
-            {
-                EPYON_CORE_THROW_ERROR("TENSOR UNPAD ERROR: shape must have at least 2 dimensions");
-            }
-
-            bool orig_cuda = src->cuda;
-            src->to_cuda();
-
-            int col_dim_idx = src->num_dims() - 1;
-            int row_dim_idx = col_dim_idx - 1;
-
-            int src_row_cnt = src->get_shape()[row_dim_idx];
-            int src_col_cnt = src->get_shape()[col_dim_idx];
-
-            std::vector<int> dst_dims;
-            for (int i = 0; i < row_dim_idx; i++)
-            {
-                dst_dims.push_back(src->get_shape()[i]);
-            }
-
-            int dst_row_cnt = src_row_cnt - (pad_row_cnt * 2);
-            int dst_col_cnt = src_col_cnt - (pad_col_cnt * 2);
-
-            if (dst_row_cnt < 1)
-            {
-                EPYON_CORE_THROW_ERROR("TENSOR UNPAD ERROR: padding row count is too large");
-            }
-
-            if (dst_col_cnt < 1)
-            {
-                EPYON_CORE_THROW_ERROR("TENSOR UNPAD ERROR: padding column count is too large");
-            }
-
-            dst_dims.push_back(dst_row_cnt);
-            dst_dims.push_back(dst_col_cnt);
-
-            Tensor *dst = Tensor::zeros(src->cuda, Shape(dst_dims));
-
-            int grid_row_cnt = (dst_row_cnt / EPYON_CORE_CUDA_THREADS_PER_BLOCK) + 1;
-            int grid_col_cnt = (dst_col_cnt / EPYON_CORE_CUDA_THREADS_PER_BLOCK) + 1;
-
-            dim3 grid_dims(grid_col_cnt, grid_row_cnt);
-            dim3 block_dims(EPYON_CORE_CUDA_THREADS_PER_BLOCK, EPYON_CORE_CUDA_THREADS_PER_BLOCK);
-
-            switch (src->num_dims())
-            {
-            case 2:
-            {
-                float *src_data = src->get_data();
-                float *dst_data = dst->get_data();
-
-                k_unpad<<<grid_dims, block_dims>>>(dst_data, src_data, dst_row_cnt, dst_col_cnt, src_row_cnt, src_col_cnt,
-                                                   pad_row_cnt, pad_col_cnt);
-            }
-            break;
-            case 3:
-            {
-                for (int i = 0; i < src->get_shape()[0]; i++)
-                {
-                    float *src_data = &src->get_data()[(i * src_row_cnt * src_col_cnt)];
-                    float *dst_data = &dst->get_data()[(i * dst_row_cnt * dst_col_cnt)];
-
-                    k_unpad<<<grid_dims, block_dims>>>(dst_data, src_data, dst_row_cnt, dst_col_cnt, src_row_cnt, src_col_cnt,
-                                                       pad_row_cnt, pad_col_cnt);
-                }
-            }
-            break;
-            case 4:
-            {
-                for (int i = 0; i < src->get_shape()[0]; i++)
-                {
-                    for (int j = 0; j < src->get_shape()[1]; j++)
-                    {
-                        float *src_data = &src->get_data()[(i * src->get_shape()[1] * src_row_cnt * src_col_cnt) + (j * src_row_cnt * src_col_cnt)];
-                        float *dst_data = &dst->get_data()[(i * dst->get_shape()[1] * dst_row_cnt * dst_col_cnt) + (j * dst_row_cnt * dst_col_cnt)];
-
-                        k_unpad<<<grid_dims, block_dims>>>(dst_data, src_data, dst_row_cnt, dst_col_cnt, src_row_cnt, src_col_cnt,
-                                                           pad_row_cnt, pad_col_cnt);
-                    }
-                }
-            }
-            break;
-            default:
-                EPYON_CORE_THROW_ERROR("TENSOR UNPAD ERROR: shape must not have more than 4 dimensions");
-                break;
-            }
-
-            if (!orig_cuda)
-            {
-                src->to_cpu();
-                dst->to_cpu();
-            }
-
-            return dst;
-        }
-
-        void Tensor::print_vec(float *data, int cnt)
+        void Tensor::print_vec(Var *data, int cnt)
         {
             printf("[ ");
             for (int i = 0; i < cnt; i++)
             {
-                float val = data[i];
+                float val = data[i].v;
 
                 if (i == cnt - 1)
                 {
@@ -852,7 +528,7 @@ namespace epyon
             printf(" ]");
         }
 
-        void Tensor::print_mtx(float *data, int row_cnt, int col_cnt, const char *whitespace_str)
+        void Tensor::print_mtx(Var *data, int row_cnt, int col_cnt, const char *whitespace_str)
         {
             printf("%s[\n", whitespace_str);
             for (int i = 0; i < row_cnt; i++)
@@ -873,8 +549,6 @@ namespace epyon
 
             this->shape.print();
             printf("\n");
-
-            printf("Requires Grad: %s\n", this->requires_grad ? "True" : "False");
 
             switch (this->num_dims())
             {
@@ -956,7 +630,7 @@ namespace epyon
                 else
                 {
                     cudaFree(this->data);
-                    this->data = (float *)malloc(src->size());
+                    this->data = (Var *)malloc(src->size());
                     memcpy(this->data, src->data, src_size);
                 }
             }
@@ -973,7 +647,7 @@ namespace epyon
                     if (this->size() != src_size)
                     {
                         free(this->data);
-                        this->data = (float *)malloc(src->size());
+                        this->data = (Var *)malloc(src->size());
                     }
 
                     memcpy(this->data, src->data, src_size);
@@ -1002,7 +676,7 @@ namespace epyon
                 else
                 {
                     free(this->data);
-                    this->data = (float *)malloc(this->size());
+                    this->data = (Var *)malloc(this->size());
                 }
             }
         }
@@ -1024,7 +698,7 @@ namespace epyon
             if (this->cuda)
             {
                 size_t size = this->size();
-                float *dst = (float *)malloc(size);
+                Var *dst = (Var *)malloc(size);
                 cudaMemcpy(dst, this->data, size, cudaMemcpyDeviceToHost);
                 cudaFree(this->data);
                 this->data = dst;
@@ -1037,34 +711,12 @@ namespace epyon
             if (!this->cuda)
             {
                 size_t size = this->size();
-                float *dst;
+                Var *dst;
                 cudaMalloc(&dst, size);
                 cudaMemcpy(dst, this->data, size, cudaMemcpyHostToDevice);
                 free(this->data);
                 this->data = dst;
                 this->cuda = true;
-            }
-        }
-
-        void Tensor::require_grad(Context *ctx)
-        {
-            if (this->requires_grad)
-                return;
-
-            this->requires_grad = true;
-
-            if (this->cuda)
-            {
-                cudaMalloc(&this->ivs, sizeof(IntVar *) * this->count());
-            }
-            else
-            {
-                this->ivs = (IntVar **)malloc(sizeof(IntVar *) * this->count());
-            }
-
-            for (int i = 0; i < this->count(); i++)
-            {
-                this->ivs[i] = ctx->add_intvar(IntVar());
             }
         }
 
@@ -1085,32 +737,7 @@ namespace epyon
 
         size_t Tensor::size()
         {
-            return sizeof(float) * this->count();
-        }
-
-        float Tensor::sum()
-        {
-            float sum_val = 0;
-
-            int cnt = this->count();
-
-            if (this->cuda)
-            {
-                Tensor *temp_sum = Tensor::zeros(true, Shape(1));
-                k_sum<<<cnt / EPYON_CORE_CUDA_THREADS_PER_BLOCK + 1, EPYON_CORE_CUDA_THREADS_PER_BLOCK>>>(this->data, cnt, &temp_sum->get_data()[0]);
-
-                sum_val = temp_sum->get_val(0);
-                delete temp_sum;
-            }
-            else
-            {
-                for (int i = 0; i < cnt; i++)
-                {
-                    sum_val += this->data[i];
-                }
-            }
-
-            return sum_val;
+            return sizeof(Var) * this->count();
         }
 
         float Tensor::min()
@@ -1121,7 +748,7 @@ namespace epyon
 
             for (int i = 0; i < this->count(); i++)
             {
-                val = this->get_val(i);
+                val = this->get_var(i).v;
 
                 if (val < min_val)
                 {
@@ -1132,27 +759,6 @@ namespace epyon
             return min_val;
         }
 
-        int Tensor::min_idx()
-        {
-            float min_val = FLT_MAX;
-            int idx;
-
-            float val = 0;
-
-            for (int i = 0; i < this->count(); i++)
-            {
-                val = this->get_val(i);
-
-                if (val < min_val)
-                {
-                    min_val = val;
-                    idx = i;
-                }
-            }
-
-            return idx;
-        }
-
         float Tensor::max()
         {
             float max_val = -FLT_MAX;
@@ -1161,7 +767,7 @@ namespace epyon
 
             for (int i = 0; i < this->count(); i++)
             {
-                val = this->get_val(i);
+                val = this->get_var(i).v;
 
                 if (val > max_val)
                 {
@@ -1172,85 +778,16 @@ namespace epyon
             return max_val;
         }
 
-        int Tensor::max_idx()
+        Var Tensor::get_var(int idx)
         {
-            float max_val = -FLT_MAX;
-            int idx;
-
-            float val = 0;
-
-            for (int i = 0; i < this->count(); i++)
-            {
-                val = this->get_val(i);
-
-                if (val > max_val)
-                {
-                    max_val = val;
-                    idx = i;
-                }
-            }
-
-            return idx;
+            Var var;
+            cudaMemcpy(&var, &this->data[idx], sizeof(Var), cudaMemcpyDefault);
+            return var;
         }
 
-        float Tensor::mean()
+        void Tensor::set_var(int idx, Var var)
         {
-            return this->sum() / this->count();
-        }
-
-        float Tensor::variance()
-        {
-            float variance_val = 0.0f;
-
-            int cnt = this->count();
-            float mean_val = this->mean();
-
-            if (this->cuda)
-            {
-                Tensor *temp_variance = Tensor::zeros(true, Shape(1));
-                k_variance<<<cnt / EPYON_CORE_CUDA_THREADS_PER_BLOCK + 1, EPYON_CORE_CUDA_THREADS_PER_BLOCK>>>(this->data, cnt, mean_val, &temp_variance->get_data()[0]);
-
-                variance_val = temp_variance->get_val(0);
-                delete temp_variance;
-            }
-            else
-            {
-                for (int i = 0; i < cnt; i++)
-                {
-                    float diff = this->data[i] - mean_val;
-                    variance_val += (diff * diff);
-                }
-            }
-
-            return variance_val /= (float)cnt;
-        }
-
-        float Tensor::stddev()
-        {
-            return sqrt(this->variance());
-        }
-
-        void Tensor::abs()
-        {
-            int cnt = this->count();
-            if (this->cuda)
-            {
-                k_abs<<<cnt / EPYON_CORE_CUDA_THREADS_PER_BLOCK + 1, EPYON_CORE_CUDA_THREADS_PER_BLOCK>>>(this->data, cnt);
-            }
-            else
-            {
-                for (int i = 0; i < cnt; i++)
-                {
-                    this->data[i] = fabs(this->data[i]);
-                }
-            }
-        }
-
-        float Tensor::get_val(int idx)
-        {
-            float val;
-            cudaMemcpy(&val, &this->data[idx], sizeof(float), cudaMemcpyDefault);
-            return val;
+            cudaMemcpy(&this->data[idx], &var, sizeof(Var), cudaMemcpyDefault);
         }
 
         void Tensor::set_val(int idx, float val)
@@ -1258,52 +795,21 @@ namespace epyon
             cudaMemcpy(&this->data[idx], &val, sizeof(float), cudaMemcpyDefault);
         }
 
-        float *Tensor::get_data()
-        {
-            return this->data;
-        }
-
         void Tensor::zeros()
         {
-            size_t size = this->size();
-
-            if (this->cuda)
-            {
-                cudaMemset(this->data, 0, size);
-            }
-            else
-            {
-                memset(this->data, 0, size);
-            }
+            this->fill(0.0f);
         }
 
         void Tensor::ones()
         {
-            if (this->is_cuda())
-            {
-                k_set_all<<<(this->count() / EPYON_CORE_CUDA_THREADS_PER_BLOCK + 1), EPYON_CORE_CUDA_THREADS_PER_BLOCK>>>(this->data, this->count(), 1.0f);
-            }
-            else
-            {
-                for (int i = 0; i < this->count(); i++)
-                {
-                    this->data[i] = 1.0f;
-                }
-            }
+            this->fill(1.0f);
         }
 
         void Tensor::fill(float val)
         {
-            if (this->cuda)
+            for (int i = 0; i < this->count(); i++)
             {
-                k_set_all<<<this->count() / EPYON_CORE_CUDA_THREADS_PER_BLOCK + 1, EPYON_CORE_CUDA_THREADS_PER_BLOCK>>>(this->data, this->count(), val);
-            }
-            else
-            {
-                for (int i = 0; i < this->count(); i++)
-                {
-                    this->data[i] = val;
-                }
+                this->set_val(i, val);
             }
         }
 
@@ -1318,23 +824,7 @@ namespace epyon
             for (int i = 0; i < this->count(); i++)
             {
                 std::normal_distribution<float> d(mean, stddev);
-                this->data[i] = d(gen);
-            }
-
-            if (orig_cuda)
-            {
-                this->to_cuda();
-            }
-        }
-
-        void Tensor::random_ints(int upper_bound)
-        {
-            bool orig_cuda = this->cuda;
-            this->to_cpu();
-
-            for (int i = 0; i < this->count(); i++)
-            {
-                this->data[i] = rand() % upper_bound;
+                this->set_val(i, d(gen));
             }
 
             if (orig_cuda)
@@ -1419,6 +909,16 @@ namespace epyon
             Var var(v);
             var.iv = this->add_intvar(IntVar());
             return v;
+        }
+
+        Tensor *Context::tensor(Tensor *tensor)
+        {
+            for (int i = 0; i < tensor->count(); i++)
+            {
+                tensor->set_var(i, Var(tensor->get_var(i).v, this->add_intvar(IntVar())));
+            }
+
+            return tensor;
         }
 
         __host__ __device__ void Context::backward()

@@ -70,18 +70,15 @@ namespace epyon
             int size();
         };
 
-        class Context;
         class Tensor
         {
         private:
             bool cuda;
             Shape shape;
-            float *data;
-            bool requires_grad = false;
-            IntVar **ivs = nullptr;
+            Var *data;
 
-            static void print_vec(float *data, int cnt);
-            static void print_mtx(float *data, int row_cnt, int col_cnt, const char *whitespace_str);
+            static void print_vec(Var *data, int cnt);
+            static void print_mtx(Var *data, int row_cnt, int col_cnt, const char *whitespace_str);
 
         public:
             Tensor(Tensor &src);
@@ -97,11 +94,8 @@ namespace epyon
             static Tensor *ones(bool cuda, Shape shape);
             static Tensor *fill(bool cuda, Shape shape, float val);
             static Tensor *random(bool cuda, Shape shape, float mean, float stddev);
-            static Tensor *random_ints(bool cuda, Shape shape, int upper_bound);
 
-            static Tensor *one_hot(Tensor *src, int max_val);
-            static Tensor *pad(Tensor *src, int pad_row_cnt, int pad_col_cnt);
-            static Tensor *unpad(Tensor *src, int pad_row_cnt, int pad_col_cnt);
+            static Tensor *one_hot(Tensor *src);
 
             void print();
 
@@ -113,33 +107,22 @@ namespace epyon
             void to_cpu();
             void to_cuda();
 
-            void require_grad(Context *ctx);
-
             Shape get_shape();
             int num_dims();
             int count();
             size_t size();
 
-            float sum();
             float min();
-            int min_idx();
             float max();
-            int max_idx();
-            float mean();
-            float variance();
-            float stddev();
 
-            void abs();
-
-            float get_val(int idx);
+            Var get_var(int idx);
+            void set_var(int idx, Var var);
             void set_val(int idx, float val);
 
-            float *get_data();
             void zeros();
             void ones();
             void fill(float val);
             void random(float mean, float stddev);
-            void random_ints(int upper_bound);
         };
 
         class Context
@@ -161,6 +144,7 @@ namespace epyon
             __host__ __device__ IntVar *add_intvar(IntVar iv);
 
             __host__ __device__ Var var(float v);
+            Tensor *tensor(Tensor *tensor);
 
             __host__ __device__ void backward();
 
@@ -168,6 +152,5 @@ namespace epyon
             __host__ __device__ Var mul(Var a, Var b);
             __host__ __device__ Var exp(Var a, float b);
         };
-
     }
 }

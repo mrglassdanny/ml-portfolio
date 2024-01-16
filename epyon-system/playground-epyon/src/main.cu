@@ -17,8 +17,7 @@ int main(int argc, char **argv)
 	auto d = ctx.mul(a, c);
 	auto e = ctx.exp(d, 2.0f);
 
-	auto t = new Tensor(false, Shape({10, 10}));
-	t->random(0.0, 1.0);
+	auto t = ctx.tensor(Tensor::random(false, Shape({5, 5}), 0.0f, 1.0f));
 	t->print();
 
 	ctx.backward();
