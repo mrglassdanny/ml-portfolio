@@ -4,6 +4,6 @@
 
 #define EPYON_CORE_MOD_H 1
 
-#include "tensor.cuh"
+#include "autodiff.cuh"
 
 #endif

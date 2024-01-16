@@ -8,19 +8,20 @@ using namespace epyon::core;
 
 int main(int argc, char **argv)
 {
-	Var v;
-	v.v = 10;
-	Var x;
-	x.v = 12;
+	Context ctx(false);
 
-	Var y;
-	y.prev = (Var **)malloc(sizeof(Var *) * 2);
-	add(&v, &x, &y);
+	auto a = ctx.var(1.0f);
+	auto b = ctx.var(2.0f);
 
-	int a = 0;
-	int b = 0;
-	int c = a + b;
+	auto c = ctx.add(a, b);
+	auto d = ctx.mul(a, c);
+	auto e = ctx.exp(d, 2.0f);
 
-	printf("Hello world!");
+	auto t = new Tensor(false, Shape({10, 10}));
+	t->random(0.0, 1.0);
+	t->print();
+
+	ctx.backward();
+
 	return 0;
 }
