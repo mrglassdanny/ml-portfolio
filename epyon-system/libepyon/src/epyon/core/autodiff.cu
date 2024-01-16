@@ -4,25 +4,62 @@ namespace epyon
 {
     namespace core
     {
-        IntVar::IntVar()
+        __global__ void k_set_all(Var *data, int cnt, float val)
+        {
+            int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+            if (tid < cnt)
+            {
+                data[tid].v = val;
+            }
+        }
+
+        __global__ void k_sum(AutoDiffContext *ctx, Var *data, int cnt, Var *sum_var)
+        {
+            __shared__ Var temp[EPYON_CORE_CUDA_THREADS_PER_BLOCK];
+            memset(temp, 0, EPYON_CORE_CUDA_THREADS_PER_BLOCK * sizeof(Var));
+
+            int tid = blockIdx.x * blockDim.x + threadIdx.x;
+
+            if (tid < cnt)
+            {
+                temp[threadIdx.x] = data[tid];
+            }
+
+            __syncthreads();
+
+            if (threadIdx.x == 0)
+            {
+                Var l_sum_var(0.0f);
+
+                for (int i = 0; i < EPYON_CORE_CUDA_THREADS_PER_BLOCK; i++)
+                {
+                    l_sum_var = ctx->add(temp[i], l_sum_var);
+                }
+
+                atomicAdd(&sum_var->v, l_sum_var.v);
+            }
+        }
+
+        __host__ __device__ IntVar::IntVar()
         {
             this->pds[0] = 0.0f;
             this->pds[1] = 0.0f;
 
-            this->ps[0] = nullptr;
-            this->ps[1] = nullptr;
+            this->ps[0] = EPYON_AD_DEFAULT_TAPE_INDEX;
+            this->ps[1] = EPYON_AD_DEFAULT_TAPE_INDEX;
         }
 
-        IntVar::IntVar(float pd1, float pd2)
+        __host__ __device__ IntVar::IntVar(float pd1, float pd2)
         {
             this->pds[0] = pd1;
             this->pds[1] = pd2;
 
-            this->ps[0] = nullptr;
-            this->ps[1] = nullptr;
+            this->ps[0] = EPYON_AD_DEFAULT_TAPE_INDEX;
+            this->ps[1] = EPYON_AD_DEFAULT_TAPE_INDEX;
         }
 
-        IntVar::IntVar(float pd1, float pd2, IntVar *p1, IntVar *p2)
+        __host__ __device__ IntVar::IntVar(float pd1, float pd2, TapeIndex p1, TapeIndex p2)
         {
             this->pds[0] = pd1;
             this->pds[1] = pd2;
@@ -31,18 +68,18 @@ namespace epyon
             this->ps[1] = p2;
         }
 
-        Var::Var() {}
+        __host__ __device__ Var::Var() {}
 
-        Var::Var(float v)
+        __host__ __device__ Var::Var(float v)
         {
             this->v = v;
-            this->iv = nullptr;
+            this->i = EPYON_AD_DEFAULT_TAPE_INDEX;
         }
 
-        Var::Var(float v, IntVar *iv)
+        __host__ __device__ Var::Var(float v, TapeIndex i)
         {
             this->v = v;
-            this->iv = iv;
+            this->i = i;
         }
 
         Shape::Shape()
@@ -725,6 +762,11 @@ namespace epyon
             return this->shape;
         }
 
+        Var *Tensor::get_data()
+        {
+            return this->data;
+        }
+
         int Tensor::dims_count()
         {
             return this->shape.count();
@@ -807,9 +849,16 @@ namespace epyon
 
         void Tensor::fill(float val)
         {
-            for (int i = 0; i < this->count(); i++)
+            if (this->cuda)
             {
-                this->set_val(i, val);
+                k_set_all<<<(this->count() / EPYON_CORE_CUDA_THREADS_PER_BLOCK + 1), EPYON_CORE_CUDA_THREADS_PER_BLOCK>>>(this->data, this->count(), val);
+            }
+            else
+            {
+                for (int i = 0; i < this->count(); i++)
+                {
+                    this->set_val(i, val);
+                }
             }
         }
 
@@ -837,17 +886,10 @@ namespace epyon
         {
             this->cuda = cuda;
 
-            if (this->cuda)
-            {
-                cudaMalloc(&this->tape_blocks, sizeof(IntVar *) * EPYON_AD_TAPE_BLOCK_CNT);
-            }
-            else
-            {
-                this->tape_blocks = (IntVar **)malloc(sizeof(IntVar *) * EPYON_AD_TAPE_BLOCK_CNT);
-            }
+            this->tape = (IntVar **)malloc(sizeof(IntVar *) * EPYON_AD_TAPE_BLOCK_CNT);
 
-            this->tape_block_cur = -1;
-            this->tape_iv_cur = -1;
+            this->block_cur = -1;
+            this->elem_cur = -1;
 
             this->add_block();
         }
@@ -856,58 +898,58 @@ namespace epyon
         {
             if (this->cuda)
             {
-                for (int i = 0; i < this->tape_block_cur + 1; i++)
+                for (int i = 0; i < this->block_cur + 1; i++)
                 {
-                    cudaFree(this->tape_blocks[i]);
+                    cudaFree(this->tape[i]);
                 }
-                cudaFree(this->tape_blocks);
             }
             else
             {
-                for (int i = 0; i < this->tape_block_cur + 1; i++)
+                for (int i = 0; i < this->block_cur + 1; i++)
                 {
-                    free(this->tape_blocks[i]);
+                    free(this->tape[i]);
                 }
-                free(this->tape_blocks);
             }
+            free(this->tape);
         }
 
         __host__ __device__ void AutoDiffContext::add_block()
         {
+            this->block_cur++;
             if (this->cuda)
             {
-                cudaMalloc(&this->tape_blocks[++this->tape_block_cur], sizeof(IntVar) * EPYON_AD_TAPE_BLOCK_SIZE);
+                cudaMalloc(&this->tape[this->block_cur], sizeof(IntVar) * EPYON_AD_TAPE_BLOCK_SIZE);
             }
             else
             {
-                this->tape_blocks[++this->tape_block_cur] = (IntVar *)malloc(sizeof(IntVar) * EPYON_AD_TAPE_BLOCK_SIZE);
+                this->tape[this->block_cur] = (IntVar *)malloc(sizeof(IntVar) * EPYON_AD_TAPE_BLOCK_SIZE);
             }
 
-            this->tape_iv_cur = -1;
+            this->elem_cur = -1;
         }
 
-        __host__ __device__ IntVar *AutoDiffContext::add_intermediate_variable(IntVar iv)
+        __host__ __device__ TapeIndex AutoDiffContext::add_intermediate_variable(IntVar iv)
         {
-            if (this->tape_iv_cur != 0 && this->tape_iv_cur >= EPYON_AD_TAPE_BLOCK_SIZE)
+            if (this->elem_cur != 0 && this->elem_cur >= EPYON_AD_TAPE_BLOCK_SIZE)
             {
                 this->add_block();
             }
-
-            this->tape_blocks[this->tape_block_cur][++this->tape_iv_cur] = iv;
-            return &this->tape_blocks[this->tape_block_cur][this->tape_iv_cur];
+            this->elem_cur++;
+            cudaMemcpy(&this->tape[this->block_cur][this->elem_cur], &iv, sizeof(IntVar), cudaMemcpyDefault);
+            return {this->block_cur, this->elem_cur};
         }
 
-        __host__ __device__ Var AutoDiffContext::op(float v, float pd1, float pd2, IntVar *p1, IntVar *p2)
+        __host__ __device__ Var AutoDiffContext::op(float v, float pd1, float pd2, TapeIndex p1, TapeIndex p2)
         {
             Var var(v);
-            var.iv = this->add_intermediate_variable(IntVar(pd1, pd2, p1, p2));
+            var.i = this->add_intermediate_variable(IntVar(pd1, pd2, p1, p2));
             return var;
         }
 
         __host__ __device__ Var AutoDiffContext::var(float v)
         {
             Var var(v);
-            var.iv = this->add_intermediate_variable(IntVar());
+            var.i = this->add_intermediate_variable(IntVar());
             return v;
         }
 
@@ -921,21 +963,30 @@ namespace epyon
             return tensor;
         }
 
-        __host__ __device__ void AutoDiffContext::backward()
+        void AutoDiffContext::backward()
         {
-            this->tape_blocks[this->tape_block_cur][this->tape_iv_cur].d = 1.0f;
-
-            int tape_iv_cur = this->tape_iv_cur;
-            for (int i = this->tape_block_cur; i >= 0; i--)
+            if (this->cuda)
             {
-                for (int j = tape_iv_cur; j >= 0; j--)
+            }
+            else
+            {
+                this->tape[this->block_cur][this->elem_cur].d = 1.0f;
+
+                int elem_cur = this->elem_cur;
+                for (int i = this->block_cur; i >= 0; i--)
                 {
-                    if (this->tape_blocks[i][j].ps[0] != nullptr)
-                        this->tape_blocks[i][j].ps[0]->d += this->tape_blocks[i][j].pds[0] * this->tape_blocks[i][j].d;
-                    if (this->tape_blocks[i][j].ps[1] != nullptr)
-                        this->tape_blocks[i][j].ps[1]->d += this->tape_blocks[i][j].pds[1] * this->tape_blocks[i][j].d;
+                    for (int j = elem_cur; j >= 0; j--)
+                    {
+                        auto p1_i = this->tape[i][j].ps[0];
+                        auto p2_i = this->tape[i][j].ps[1];
+
+                        if (p1_i.block != EPYON_AD_INVALID_TAPE_BLOCK)
+                            this->tape[p1_i.block][p1_i.elem].d += this->tape[p1_i.block][p1_i.elem].pds[0] * this->tape[i][j].d;
+                        if (p2_i.block != EPYON_AD_INVALID_TAPE_BLOCK)
+                            this->tape[p2_i.block][p2_i.elem].d += this->tape[p2_i.block][p2_i.elem].pds[0] * this->tape[i][j].d;
+                    }
+                    elem_cur = EPYON_AD_TAPE_BLOCK_SIZE;
                 }
-                tape_iv_cur = EPYON_AD_TAPE_BLOCK_SIZE;
             }
         }
 
@@ -943,21 +994,42 @@ namespace epyon
         {
             return this->op(a.v + b.v,
                             1.0f, 1.0f,
-                            a.iv, b.iv);
+                            a.i, b.i);
         }
 
         __host__ __device__ Var AutoDiffContext::mul(Var a, Var b)
         {
             return this->op(a.v * b.v,
                             b.v, a.v,
-                            a.iv, b.iv);
+                            a.i, b.i);
         }
 
         __host__ __device__ Var AutoDiffContext::exp(Var a, float b)
         {
             return this->op(pow(a.v, b),
                             b * pow(a.v, b - 1), 0.0f,
-                            a.iv, nullptr);
+                            a.i, EPYON_AD_DEFAULT_TAPE_INDEX);
+        }
+
+        void AutoDiffContext::sum(Tensor *src, Tensor *dst)
+        {
+            int cnt = src->count();
+
+            if (this->cuda)
+            {
+                if (dst->dims_count() == 1)
+                {
+                    k_sum<<<cnt / EPYON_CORE_CUDA_THREADS_PER_BLOCK + 1, EPYON_CORE_CUDA_THREADS_PER_BLOCK>>>(this, src->get_data(), cnt, &dst->get_data()[0]);
+                }
+                else if (dst->dims_count() == 2)
+                {
+                    int src_offset = src->get_shape()[1];
+                    for (int i = 0; i < dst->get_shape()[0]; i++)
+                    {
+                        k_sum<<<cnt / EPYON_CORE_CUDA_THREADS_PER_BLOCK + 1, EPYON_CORE_CUDA_THREADS_PER_BLOCK>>>(this, &src->get_data()[i * src_offset], cnt, &dst->get_data()[i]);
+                    }
+                }
+            }
         }
     }
 }

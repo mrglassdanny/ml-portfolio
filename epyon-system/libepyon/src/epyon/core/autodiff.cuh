@@ -17,30 +17,42 @@
 
 #define EPYON_AD_TAPE_BLOCK_SIZE 64
 #define EPYON_AD_TAPE_BLOCK_CNT 1024
+#define EPYON_AD_INVALID_TAPE_BLOCK -1
+#define EPYON_AD_DEFAULT_TAPE_INDEX                              \
+    TapeIndex                                                    \
+    {                                                            \
+        EPYON_AD_INVALID_TAPE_BLOCK, EPYON_AD_INVALID_TAPE_BLOCK \
+    }
 
 namespace epyon
 {
     namespace core
     {
+        struct TapeIndex
+        {
+            int block = 0;
+            int elem = 0;
+        };
+
         struct IntVar
         {
-            float d = 0.0f; // Derivative of context with respect to variable
-            float pds[2];   // Partial derivatives of intermediate operation
-            IntVar *ps[2];  // Intermediate operation parents
+            float d = 0.0f;  // Derivative of context with respect to variable
+            float pds[2];    // Partial derivatives of intermediate operation
+            TapeIndex ps[2]; // Intermediate operation parents
 
-            IntVar();
-            IntVar(float pd1, float pd2);
-            IntVar(float pd1, float pd2, IntVar *p1, IntVar *p2);
+            __host__ __device__ IntVar();
+            __host__ __device__ IntVar(float pd1, float pd2);
+            __host__ __device__ IntVar(float pd1, float pd2, TapeIndex p1, TapeIndex p2);
         };
 
         struct Var
         {
             float v;
-            IntVar *iv;
+            TapeIndex i;
 
-            Var();
-            Var(float v);
-            Var(float v, IntVar *iv);
+            __host__ __device__ Var();
+            __host__ __device__ Var(float v);
+            __host__ __device__ Var(float v, TapeIndex i);
         };
 
         class Shape
@@ -108,6 +120,8 @@ namespace epyon
             void to_cuda();
 
             Shape get_shape();
+            Var *get_data();
+
             int dims_count();
             int count();
             size_t size();
@@ -129,14 +143,14 @@ namespace epyon
         {
         private:
             bool cuda;
-            IntVar **tape_blocks;
-            int tape_block_cur;
-            int tape_iv_cur;
+            IntVar **tape;
+            int block_cur;
+            int elem_cur;
 
             __host__ __device__ void add_block();
-            __host__ __device__ IntVar *add_intermediate_variable(IntVar iv);
+            __host__ __device__ TapeIndex add_intermediate_variable(IntVar iv);
 
-            __host__ __device__ Var op(float v, float pd1, float pd2, IntVar *p1, IntVar *p2);
+            __host__ __device__ Var op(float v, float pd1, float pd2, TapeIndex p1, TapeIndex p2);
 
         public:
             AutoDiffContext(bool cuda);
@@ -150,6 +164,8 @@ namespace epyon
             __host__ __device__ Var add(Var a, Var b);
             __host__ __device__ Var mul(Var a, Var b);
             __host__ __device__ Var exp(Var a, float b);
+
+            void sum(Tensor *a, Tensor *b);
         };
     }
 }
