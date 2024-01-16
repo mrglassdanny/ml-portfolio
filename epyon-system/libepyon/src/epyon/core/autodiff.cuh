@@ -108,7 +108,7 @@ namespace epyon
             void to_cuda();
 
             Shape get_shape();
-            int num_dims();
+            int dims_count();
             int count();
             size_t size();
 
@@ -125,7 +125,7 @@ namespace epyon
             void random(float mean, float stddev);
         };
 
-        class Context
+        class AutoDiffContext
         {
         private:
             bool cuda;
@@ -134,14 +134,13 @@ namespace epyon
             int tape_iv_cur;
 
             __host__ __device__ void add_block();
+            __host__ __device__ IntVar *add_intermediate_variable(IntVar iv);
 
             __host__ __device__ Var op(float v, float pd1, float pd2, IntVar *p1, IntVar *p2);
 
         public:
-            Context(bool cuda);
-            ~Context();
-
-            __host__ __device__ IntVar *add_intvar(IntVar iv);
+            AutoDiffContext(bool cuda);
+            ~AutoDiffContext();
 
             __host__ __device__ Var var(float v);
             Tensor *tensor(Tensor *tensor);

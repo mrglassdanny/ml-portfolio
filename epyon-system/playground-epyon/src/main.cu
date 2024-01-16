@@ -8,7 +8,7 @@ using namespace epyon::core;
 
 int main(int argc, char **argv)
 {
-	Context ctx(false);
+	AutoDiffContext ctx(false);
 
 	auto a = ctx.var(1.0f);
 	auto b = ctx.var(2.0f);

@@ -343,7 +343,7 @@ namespace epyon
 
         void Tensor::to_csv(const char *path, Tensor *tensor)
         {
-            int dim_cnt = tensor->num_dims();
+            int dim_cnt = tensor->dims_count();
 
             if (dim_cnt == 1)
             {
@@ -465,7 +465,7 @@ namespace epyon
 
         Tensor *Tensor::one_hot(Tensor *src)
         {
-            int lst_dim_idx = src->num_dims() - 1;
+            int lst_dim_idx = src->dims_count() - 1;
 
             if (src->get_shape()[lst_dim_idx] != 1)
             {
@@ -550,7 +550,7 @@ namespace epyon
             this->shape.print();
             printf("\n");
 
-            switch (this->num_dims())
+            switch (this->dims_count())
             {
             case 1:
             {
@@ -725,7 +725,7 @@ namespace epyon
             return this->shape;
         }
 
-        int Tensor::num_dims()
+        int Tensor::dims_count()
         {
             return this->shape.count();
         }
@@ -833,7 +833,7 @@ namespace epyon
             }
         }
 
-        Context::Context(bool cuda)
+        AutoDiffContext::AutoDiffContext(bool cuda)
         {
             this->cuda = cuda;
 
@@ -852,7 +852,7 @@ namespace epyon
             this->add_block();
         }
 
-        Context::~Context()
+        AutoDiffContext::~AutoDiffContext()
         {
             if (this->cuda)
             {
@@ -872,7 +872,7 @@ namespace epyon
             }
         }
 
-        __host__ __device__ void Context::add_block()
+        __host__ __device__ void AutoDiffContext::add_block()
         {
             if (this->cuda)
             {
@@ -886,7 +886,7 @@ namespace epyon
             this->tape_iv_cur = -1;
         }
 
-        __host__ __device__ IntVar *Context::add_intvar(IntVar iv)
+        __host__ __device__ IntVar *AutoDiffContext::add_intermediate_variable(IntVar iv)
         {
             if (this->tape_iv_cur != 0 && this->tape_iv_cur >= EPYON_AD_TAPE_BLOCK_SIZE)
             {
@@ -897,31 +897,31 @@ namespace epyon
             return &this->tape_blocks[this->tape_block_cur][this->tape_iv_cur];
         }
 
-        __host__ __device__ Var Context::op(float v, float pd1, float pd2, IntVar *p1, IntVar *p2)
+        __host__ __device__ Var AutoDiffContext::op(float v, float pd1, float pd2, IntVar *p1, IntVar *p2)
         {
             Var var(v);
-            var.iv = this->add_intvar(IntVar(pd1, pd2, p1, p2));
+            var.iv = this->add_intermediate_variable(IntVar(pd1, pd2, p1, p2));
             return var;
         }
 
-        __host__ __device__ Var Context::var(float v)
+        __host__ __device__ Var AutoDiffContext::var(float v)
         {
             Var var(v);
-            var.iv = this->add_intvar(IntVar());
+            var.iv = this->add_intermediate_variable(IntVar());
             return v;
         }
 
-        Tensor *Context::tensor(Tensor *tensor)
+        Tensor *AutoDiffContext::tensor(Tensor *tensor)
         {
             for (int i = 0; i < tensor->count(); i++)
             {
-                tensor->set_var(i, Var(tensor->get_var(i).v, this->add_intvar(IntVar())));
+                tensor->set_var(i, Var(tensor->get_var(i).v, this->add_intermediate_variable(IntVar())));
             }
 
             return tensor;
         }
 
-        __host__ __device__ void Context::backward()
+        __host__ __device__ void AutoDiffContext::backward()
         {
             this->tape_blocks[this->tape_block_cur][this->tape_iv_cur].d = 1.0f;
 
@@ -939,21 +939,21 @@ namespace epyon
             }
         }
 
-        __host__ __device__ Var Context::add(Var a, Var b)
+        __host__ __device__ Var AutoDiffContext::add(Var a, Var b)
         {
             return this->op(a.v + b.v,
                             1.0f, 1.0f,
                             a.iv, b.iv);
         }
 
-        __host__ __device__ Var Context::mul(Var a, Var b)
+        __host__ __device__ Var AutoDiffContext::mul(Var a, Var b)
         {
             return this->op(a.v * b.v,
                             b.v, a.v,
                             a.iv, b.iv);
         }
 
-        __host__ __device__ Var Context::exp(Var a, float b)
+        __host__ __device__ Var AutoDiffContext::exp(Var a, float b)
         {
             return this->op(pow(a.v, b),
                             b * pow(a.v, b - 1), 0.0f,
