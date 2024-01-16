@@ -66,8 +66,8 @@ namespace epyon
             bool operator!=(const Shape &);
 
             std::vector<int> get_dims();
-            int num_dims();
-            int dims_size();
+            int count();
+            int size();
         };
 
         class Context;
@@ -117,10 +117,9 @@ namespace epyon
 
             Shape get_shape();
             int num_dims();
-            int dims_size();
+            int count();
             size_t size();
 
-            int count();
             float sum();
             float min();
             int min_idx();

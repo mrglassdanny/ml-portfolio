@@ -223,7 +223,7 @@ namespace epyon
             char buf[64];
             memset(buf, 0, sizeof(buf));
 
-            int cnt = this->num_dims();
+            int cnt = this->count();
 
             for (int i = 0; i < cnt; i++)
             {
@@ -242,7 +242,7 @@ namespace epyon
             char buf[64];
             memset(buf, 0, sizeof(buf));
 
-            int cnt = this->num_dims();
+            int cnt = this->count();
 
             for (int i = 0; i < cnt; i++)
             {
@@ -281,16 +281,16 @@ namespace epyon
             return this->dims;
         }
 
-        int Shape::num_dims()
+        int Shape::count()
         {
             return this->dims.size();
         }
 
-        int Shape::dims_size()
+        int Shape::size()
         {
             int size = 1;
 
-            for (int i = 0; i < this->num_dims(); i++)
+            for (int i = 0; i < this->count(); i++)
             {
                 size *= this->dims[i];
             }
@@ -986,7 +986,7 @@ namespace epyon
 
         void Tensor::reshape(Shape shape)
         {
-            if (this->shape.dims_size() == shape.dims_size())
+            if (this->shape.size() == shape.size())
             {
                 this->shape = shape;
             }
@@ -1075,22 +1075,17 @@ namespace epyon
 
         int Tensor::num_dims()
         {
-            return this->shape.num_dims();
-        }
-
-        int Tensor::dims_size()
-        {
-            return this->shape.dims_size();
-        }
-
-        size_t Tensor::size()
-        {
-            return sizeof(float) * this->dims_size();
+            return this->shape.count();
         }
 
         int Tensor::count()
         {
-            return this->dims_size();
+            return this->shape.size();
+        }
+
+        size_t Tensor::size()
+        {
+            return sizeof(float) * this->count();
         }
 
         float Tensor::sum()
