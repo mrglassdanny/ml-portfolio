@@ -35,6 +35,7 @@ namespace epyon
                 for (int i = 0; i < EPYON_CORE_CUDA_THREADS_PER_BLOCK; i++)
                 {
                     l_sum_var = ctx->add(temp[i], l_sum_var);
+                    // l_sum_var = temp[i].v + l_sum_var.v;
                 }
 
                 atomicAdd(&sum_var->v, l_sum_var.v);
@@ -935,7 +936,8 @@ namespace epyon
                 this->add_block();
             }
             this->elem_cur++;
-            cudaMemcpy(&this->tape[this->block_cur][this->elem_cur], &iv, sizeof(IntVar), cudaMemcpyDefault);
+            // cudaMemcpy(&this->tape[this->block_cur][this->elem_cur], &iv, sizeof(IntVar), cudaMemcpyDefault);
+            this->tape[this->block_cur][this->elem_cur] = iv;
             return {this->block_cur, this->elem_cur};
         }
 
