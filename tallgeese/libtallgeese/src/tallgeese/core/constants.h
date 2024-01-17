@@ -1,0 +1,5 @@
+#pragma once
+
+#define TALLGEESE_CORE_INVALID_INTVAR_INDEX -1
+
+#define TALLGEESE_CORE_EPSILON 0.001f

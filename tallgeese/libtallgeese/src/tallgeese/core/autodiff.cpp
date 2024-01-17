@@ -166,9 +166,19 @@ namespace tallgeese
             printf("\n\n");
         }
 
+        std::vector<int> Tensor::get_shape()
+        {
+            return this->shape;
+        }
+
         Var *Tensor::get_data()
         {
             return this->data;
+        }
+
+        bool Tensor::has_same_shape(Tensor *other)
+        {
+            return this->shape == other->shape;
         }
 
         int Tensor::count()
@@ -224,6 +234,14 @@ namespace tallgeese
         ADContext::ADContext(bool trace)
         {
             this->trace = trace;
+        }
+
+        void ADContext::validate_shapes(Tensor *a, Tensor *b)
+        {
+            if (!a->has_same_shape(b))
+            {
+                TALLGEESE_CORE_THROW_ERROR("AUTODIFF: Shapes do not match");
+            }
         }
 
         Var ADContext::op(Operation op, float v, float pd1, float pd2, int i1, int i2)
@@ -339,6 +357,14 @@ namespace tallgeese
             return this->vars[this->vars.size() - 1];
         }
 
+        void ADContext::reset_gradients()
+        {
+            for (auto t : this->tape)
+            {
+                t.d = 0.0f;
+            }
+        }
+
         void ADContext::check_gradients()
         {
             if (!this->trace)
@@ -418,6 +444,8 @@ namespace tallgeese
 
         Var ADContext::dot(Tensor *a, Tensor *b)
         {
+            this->validate_shapes(a, b);
+
             Var d = this->var(0.0f);
             for (int i = 0; i < a->size(); i++)
             {
@@ -425,6 +453,43 @@ namespace tallgeese
                 d = this->add(c, d);
             }
             return d;
+        }
+
+        Tensor *ADContext::dot(Tensor *a, Tensor *b, Tensor *c)
+        {
+            this->validate_shapes(a, b);
+
+            switch (a->count())
+            {
+            case 1:
+                c->get_data()[0] = this->dot(a, b);
+                break;
+            case 2:
+                for (int i = 0; i < a->get_shape()[0]; i++)
+                {
+                    Var vd = this->var(0.0f);
+                    for (int j = 0; j < a->get_shape()[1]; j++)
+                    {
+                        auto vc = this->multiply(a->get_data()[i * a->get_shape()[1] + j], b->get_data()[i * a->get_shape()[1] + j]);
+                        vd = this->add(vc, vd);
+                    }
+                    c->get_data()[i] = vd;
+                }
+                break;
+            }
+
+            return c;
+        }
+
+        Tensor *ADContext::sigmoid(Tensor *a, Tensor *b)
+        {
+            this->validate_shapes(a, b);
+
+            for (int i = 0; i < a->size(); i++)
+            {
+                b->get_data()[i] = this->sigmoid(a->get_data()[i]);
+            }
+            return b;
         }
     }
 }

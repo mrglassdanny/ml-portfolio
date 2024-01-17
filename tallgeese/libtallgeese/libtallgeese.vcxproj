@@ -16,6 +16,8 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\tallgeese\core\autodiff.h" />
+    <ClInclude Include="src\tallgeese\core\constants.h" />
+    <ClInclude Include="src\tallgeese\core\err.h" />
     <ClInclude Include="src\tallgeese\core\mod.h" />
     <ClInclude Include="src\tallgeese\core\util.h" />
   </ItemGroup>

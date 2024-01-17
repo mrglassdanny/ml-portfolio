@@ -9,9 +9,8 @@
 #include <vector>
 #include <random>
 
-#define TALLGEESE_CORE_INVALID_INTVAR_INDEX -1
-
-#define TALLGEESE_CORE_EPSILON 0.001f
+#include "err.h"
+#include "constants.h"
 
 namespace tallgeese
 {
@@ -73,7 +72,10 @@ namespace tallgeese
 
             void print();
 
+            std::vector<int> get_shape();
             Var *get_data();
+
+            bool has_same_shape(Tensor *other);
 
             int count();
             int size();
@@ -97,6 +99,8 @@ namespace tallgeese
 
             Var evaluate();
 
+            void validate_shapes(Tensor *a, Tensor *b);
+
         public:
             ADContext();
             ADContext(bool trace);
@@ -109,6 +113,7 @@ namespace tallgeese
             void derive();
             float get_derivative(Var var);
 
+            void reset_gradients();
             void check_gradients();
 
             Var add(Var a, Var b);
@@ -117,6 +122,9 @@ namespace tallgeese
             Var sigmoid(Var a);
 
             Var dot(Tensor *a, Tensor *b);
+            Tensor *dot(Tensor *a, Tensor *b, Tensor *c);
+
+            Tensor *sigmoid(Tensor *a, Tensor *b);
         };
     }
 }

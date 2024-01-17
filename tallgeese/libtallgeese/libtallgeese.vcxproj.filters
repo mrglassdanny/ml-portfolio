@@ -32,5 +32,11 @@
     <ClInclude Include="src\tallgeese\core\mod.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\tallgeese\core\err.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tallgeese\core\constants.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
