@@ -8,16 +8,21 @@ int main(int argc, char **argv)
 {
 	ADContext ctx(true);
 
-	auto a = ctx.var(2.0f);
-	auto b = ctx.var(2.0f);
+	auto a = ctx.parm(2.0f);
+	auto b = ctx.parm(2.0f);
 
-	auto c = ctx.mul(a, b);
-	auto d = ctx.mul(c, a);
-	auto e = ctx.pwr(d, ctx.var(4.0f));
+	auto c = ctx.multiply(a, b);
+	auto d = ctx.multiply(c, a);
+	auto e = ctx.power(d, ctx.var(4.0f));
+
+	// auto x1 = ctx.var(Tensor::random({10}));
+	// auto w1 = ctx.parm(Tensor::random({10}));
+	// auto z1 = ctx.dot(x1, w1);
+	// auto a1 = ctx.sigmoid(z1);
 
 	ctx.derive();
 
-	ctx.check_grad();
+	ctx.check_gradients();
 
 	return 0;
 }

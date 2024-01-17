@@ -24,6 +24,11 @@ namespace tallgeese
 
         IntVar::IntVar() {}
 
+        IntVar::IntVar(Operation op)
+        {
+            this->op = op;
+        }
+
         IntVar::IntVar(Operation op, float pd1, float pd2)
         {
             this->op = op;
@@ -47,11 +52,14 @@ namespace tallgeese
             case Add:
                 printf("Add\t");
                 break;
-            case Mul:
-                printf("Mul\t");
+            case Multiply:
+                printf("Multiply\t");
                 break;
-            case Pwr:
-                printf("Pwr\t");
+            case Power:
+                printf("Power\t");
+                break;
+            case Sigmoid:
+                printf("Sigmoid\t");
                 break;
             default:
                 break;
@@ -84,6 +92,34 @@ namespace tallgeese
         Tensor::~Tensor()
         {
             delete this->data;
+        }
+
+        Tensor *Tensor::zeros(std::vector<int> shape)
+        {
+            auto t = new Tensor(shape);
+            t->zeros();
+            return t;
+        }
+
+        Tensor *Tensor::fill(std::vector<int> shape, float val)
+        {
+            auto t = new Tensor(shape);
+            t->fill(val);
+            return t;
+        }
+
+        Tensor *Tensor::random(std::vector<int> shape)
+        {
+            auto t = new Tensor(shape);
+            t->random();
+            return t;
+        }
+
+        Tensor *Tensor::random(std::vector<int> shape, float mean, float stddev)
+        {
+            auto t = new Tensor(shape);
+            t->random(mean, stddev);
+            return t;
         }
 
         void Tensor::print()
@@ -163,6 +199,11 @@ namespace tallgeese
             }
         }
 
+        void Tensor::random()
+        {
+            this->random(0.0f, 1.0f);
+        }
+
         void Tensor::random(float mean, float stddev)
         {
             std::random_device rd;
@@ -207,7 +248,7 @@ namespace tallgeese
         Var ADContext::var(float v)
         {
             Var var(v, this->tape.size());
-            this->tape.push_back(IntVar());
+            this->tape.push_back(IntVar(None));
 
             if (this->trace)
                 this->vars.push_back(var);
@@ -215,11 +256,31 @@ namespace tallgeese
             return var;
         }
 
-        Tensor *ADContext::tensor(Tensor *tensor)
+        Tensor *ADContext::var(Tensor *tensor)
         {
             for (int i = 0; i < tensor->size(); i++)
             {
                 tensor->get_data()[i] = this->var(tensor->get_data()[i].v);
+            }
+            return tensor;
+        }
+
+        Var ADContext::parm(float v)
+        {
+            Var var(v, this->tape.size());
+            this->tape.push_back(IntVar(Parameter));
+
+            if (this->trace)
+                this->vars.push_back(var);
+
+            return var;
+        }
+
+        Tensor *ADContext::parm(Tensor *tensor)
+        {
+            for (int i = 0; i < tensor->size(); i++)
+            {
+                tensor->get_data()[i] = this->parm(tensor->get_data()[i].v);
             }
             return tensor;
         }
@@ -236,7 +297,12 @@ namespace tallgeese
             }
         }
 
-        Var ADContext::eval()
+        float ADContext::get_derivative(Var var)
+        {
+            return this->tape[var.i].d;
+        }
+
+        Var ADContext::evaluate()
         {
             if (!this->trace)
             {
@@ -254,11 +320,14 @@ namespace tallgeese
                 case Add:
                     this->vars[i].v = this->add(this->vars[iv.is[0]], this->vars[iv.is[1]]).v;
                     break;
-                case Mul:
-                    this->vars[i].v = this->mul(this->vars[iv.is[0]], this->vars[iv.is[1]]).v;
+                case Multiply:
+                    this->vars[i].v = this->multiply(this->vars[iv.is[0]], this->vars[iv.is[1]]).v;
                     break;
-                case Pwr:
-                    this->vars[i].v = this->pwr(this->vars[iv.is[0]], this->vars[iv.is[1]]).v;
+                case Power:
+                    this->vars[i].v = this->power(this->vars[iv.is[0]], this->vars[iv.is[1]]).v;
+                    break;
+                case Sigmoid:
+                    this->vars[i].v = this->sigmoid(this->vars[iv.is[0]]).v;
                     break;
                 default:
                     break;
@@ -270,7 +339,7 @@ namespace tallgeese
             return this->vars[this->vars.size() - 1];
         }
 
-        void ADContext::check_grad()
+        void ADContext::check_gradients()
         {
             if (!this->trace)
             {
@@ -286,17 +355,18 @@ namespace tallgeese
 
             for (int i = 0; i < this->tape.size(); i++)
             {
-                Var o_var = this->vars[i];
-
-                this->vars[i].v = o_var.v - TALLGEESE_CORE_EPSILON;
-                Var l_var = this->eval();
-
-                this->vars[i].v = o_var.v + TALLGEESE_CORE_EPSILON;
-                Var r_var = this->eval();
-
-                float num_grad = (r_var.v - l_var.v) / (2.0f * TALLGEESE_CORE_EPSILON);
-                if (num_grad != 0.0f)
+                // Only want to look at parameters.
+                if (this->tape[i].op == Parameter)
                 {
+                    Var o_var = this->vars[i];
+
+                    this->vars[i].v = o_var.v - TALLGEESE_CORE_EPSILON;
+                    Var l_var = this->evaluate();
+
+                    this->vars[i].v = o_var.v + TALLGEESE_CORE_EPSILON;
+                    Var r_var = this->evaluate();
+
+                    float num_grad = (r_var.v - l_var.v) / (2.0f * TALLGEESE_CORE_EPSILON);
                     float ana_grad = this->tape[i].d;
 
                     printf("NUM: %f\n", num_grad);
@@ -305,9 +375,9 @@ namespace tallgeese
                     agg_ana_grad += (ana_grad * ana_grad);
                     agg_num_grad += (num_grad * num_grad);
                     agg_grad_diff += ((ana_grad - num_grad) * (ana_grad - num_grad));
-                }
 
-                this->vars = o_vars;
+                    this->vars = o_vars;
+                }
             }
 
             if ((agg_grad_diff) == 0.0f && (agg_ana_grad + agg_num_grad) == 0.0f)
@@ -325,24 +395,36 @@ namespace tallgeese
             }
         }
 
-        float ADContext::get_derivative(Var var)
-        {
-            return this->tape[var.i].d;
-        }
-
         Var ADContext::add(Var a, Var b)
         {
             return this->op(Add, a.v + b.v, 1.0f, 1.0f, a.i, b.i);
         }
 
-        Var ADContext::mul(Var a, Var b)
+        Var ADContext::multiply(Var a, Var b)
         {
-            return this->op(Mul, a.v * b.v, b.v, a.v, a.i, b.i);
+            return this->op(Multiply, a.v * b.v, b.v, a.v, a.i, b.i);
         }
 
-        Var ADContext::pwr(Var a, Var b)
+        Var ADContext::power(Var a, Var b)
         {
-            return this->op(Pwr, pow(a.v, b.v), b.v * pow(a.v, b.v - 1), pow(a.v, b.v) * log(a.v), a.i, b.i);
+            return this->op(Power, pow(a.v, b.v), b.v * pow(a.v, b.v - 1), pow(a.v, b.v) * log(a.v), a.i, b.i);
+        }
+
+        Var ADContext::sigmoid(Var a)
+        {
+            auto v = (1.0f / (1.0f + exp(-a.v)));
+            return this->op(Sigmoid, v, (v) * (1.0f - v), 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
+        }
+
+        Var ADContext::dot(Tensor *a, Tensor *b)
+        {
+            Var d = this->var(0.0f);
+            for (int i = 0; i < a->size(); i++)
+            {
+                auto c = this->multiply(a->get_data()[i], b->get_data()[i]);
+                d = this->add(c, d);
+            }
+            return d;
         }
     }
 }

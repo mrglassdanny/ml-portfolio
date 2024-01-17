@@ -20,9 +20,11 @@ namespace tallgeese
         enum Operation
         {
             None = 0,
+            Parameter,
             Add,
-            Mul,
-            Pwr
+            Multiply,
+            Power,
+            Sigmoid
         };
 
         struct Var
@@ -45,6 +47,7 @@ namespace tallgeese
             int is[2] = {TALLGEESE_CORE_INVALID_INTVAR_INDEX, TALLGEESE_CORE_INVALID_INTVAR_INDEX};
 
             IntVar();
+            IntVar(Operation op);
             IntVar(Operation op, float pd1, float pd2);
             IntVar(Operation op, float pd1, float pd2, int i1, int i2);
 
@@ -63,6 +66,11 @@ namespace tallgeese
             Tensor(std::vector<int> shape, float mean, float stddev);
             ~Tensor();
 
+            static Tensor *zeros(std::vector<int> shape);
+            static Tensor *fill(std::vector<int> shape, float val);
+            static Tensor *random(std::vector<int> shape);
+            static Tensor *random(std::vector<int> shape, float mean, float stddev);
+
             void print();
 
             Var *get_data();
@@ -72,6 +80,7 @@ namespace tallgeese
 
             void zeros();
             void fill(float val);
+            void random();
             void random(float mean, float stddev);
         };
 
@@ -86,23 +95,28 @@ namespace tallgeese
 
             Var op(Operation op, float v, float pd1, float pd2, int i1, int i2);
 
-            Var eval();
+            Var evaluate();
 
         public:
             ADContext();
             ADContext(bool trace);
 
             Var var(float v);
-            Tensor *tensor(Tensor *tensor);
+            Tensor *var(Tensor *tensor);
+            Var parm(float v);
+            Tensor *parm(Tensor *tensor);
 
             void derive();
             float get_derivative(Var var);
 
-            void check_grad();
+            void check_gradients();
 
             Var add(Var a, Var b);
-            Var mul(Var a, Var b);
-            Var pwr(Var a, Var b);
+            Var multiply(Var a, Var b);
+            Var power(Var a, Var b);
+            Var sigmoid(Var a);
+
+            Var dot(Tensor *a, Tensor *b);
         };
     }
 }
