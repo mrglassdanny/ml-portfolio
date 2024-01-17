@@ -10,6 +10,15 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\tallgeese\core\autodiff.cpp" />
+    <ClCompile Include="src\tallgeese\core\util.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\tallgeese\core\autodiff.h" />
+    <ClInclude Include="src\tallgeese\core\mod.h" />
+    <ClInclude Include="src\tallgeese\core\util.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -79,12 +88,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="src\tallgeese\test.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="src\tallgeese\test.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
