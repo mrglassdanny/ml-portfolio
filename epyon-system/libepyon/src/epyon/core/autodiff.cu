@@ -936,8 +936,8 @@ namespace epyon
                 this->add_block();
             }
             this->elem_cur++;
-            // cudaMemcpy(&this->tape[this->block_cur][this->elem_cur], &iv, sizeof(IntVar), cudaMemcpyDefault);
-            this->tape[this->block_cur][this->elem_cur] = iv;
+            cudaMemcpy(&this->tape[this->block_cur][this->elem_cur], &iv, sizeof(IntVar), cudaMemcpyDefault);
+            // this->tape[this->block_cur][this->elem_cur] = iv;
             return {this->block_cur, this->elem_cur};
         }
 
