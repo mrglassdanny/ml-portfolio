@@ -8,19 +8,23 @@ using namespace epyon::core;
 
 int main(int argc, char **argv)
 {
-	Var v;
-	v.v = 10;
-	Var x;
-	x.v = 12;
+	AutoDiffContext ctx(true);
 
-	Var y;
-	y.prev = (Var **)malloc(sizeof(Var *) * 2);
-	add(&v, &x, &y);
+	// auto a = ctx.var(1.0f);
+	// auto b = ctx.var(2.0f);
 
-	int a = 0;
-	int b = 0;
-	int c = a + b;
+	// auto c = ctx.add(a, b);
+	// auto d = ctx.mul(a, c);
+	// auto e = ctx.exp(d, 2.0f);
 
-	printf("Hello world!");
+	// ctx.backward();
+
+	auto t = ctx.tensor(Tensor::ones(true, Shape({5})));
+	auto s = ctx.tensor(Tensor::zeros(true, Shape({1})));
+
+	ctx.sum(t, s);
+
+	s->print();
+
 	return 0;
 }

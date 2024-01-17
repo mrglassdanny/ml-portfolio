@@ -67,7 +67,7 @@ namespace epyon
 		class FileUtils
 		{
 		public:
-			static long long get_file_size(const char* name);
+			static long long get_file_size(const char *name);
 		};
 	}
 }
