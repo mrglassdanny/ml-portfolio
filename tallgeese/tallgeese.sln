@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34330.188
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libtallgeese", "libtallgeese\libtallgeese.vcxproj", "{3D6DEF35-7651-4AB8-921D-8ECC717299F5}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "playground-tallgeese", "playground-tallgeese\playground-tallgeese.vcxproj", "{31D3D7A3-1243-4AB2-8F70-FFE3096ED121}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{3D6DEF35-7651-4AB8-921D-8ECC717299F5}.Debug|x64.ActiveCfg = Debug|x64
+		{3D6DEF35-7651-4AB8-921D-8ECC717299F5}.Debug|x64.Build.0 = Debug|x64
+		{3D6DEF35-7651-4AB8-921D-8ECC717299F5}.Release|x64.ActiveCfg = Release|x64
+		{3D6DEF35-7651-4AB8-921D-8ECC717299F5}.Release|x64.Build.0 = Release|x64
+		{31D3D7A3-1243-4AB2-8F70-FFE3096ED121}.Debug|x64.ActiveCfg = Debug|x64
+		{31D3D7A3-1243-4AB2-8F70-FFE3096ED121}.Debug|x64.Build.0 = Debug|x64
+		{31D3D7A3-1243-4AB2-8F70-FFE3096ED121}.Release|x64.ActiveCfg = Release|x64
+		{31D3D7A3-1243-4AB2-8F70-FFE3096ED121}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {FF567447-F6DA-4848-BED7-A28125BD186E}
+	EndGlobalSection
+EndGlobal
