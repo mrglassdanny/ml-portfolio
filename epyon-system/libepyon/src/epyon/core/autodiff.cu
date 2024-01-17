@@ -983,9 +983,9 @@ namespace epyon
                         auto p2_i = this->tape[i][j].ps[1];
 
                         if (p1_i.block != EPYON_AD_INVALID_TAPE_BLOCK)
-                            this->tape[p1_i.block][p1_i.elem].d += this->tape[p1_i.block][p1_i.elem].pds[0] * this->tape[i][j].d;
+                            this->tape[p1_i.block][p1_i.elem].d += this->tape[i][j].pds[0] * this->tape[i][j].d;
                         if (p2_i.block != EPYON_AD_INVALID_TAPE_BLOCK)
-                            this->tape[p2_i.block][p2_i.elem].d += this->tape[p2_i.block][p2_i.elem].pds[1] * this->tape[i][j].d;
+                            this->tape[p2_i.block][p2_i.elem].d += this->tape[i][j].pds[1] * this->tape[i][j].d;
                     }
                     elem_cur = EPYON_AD_TAPE_BLOCK_SIZE;
                 }
