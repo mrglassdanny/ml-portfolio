@@ -11,10 +11,20 @@
 
 #define TALLGEESE_CORE_INVALID_INTVAR_INDEX -1
 
+#define TALLGEESE_CORE_EPSILON 0.001f
+
 namespace tallgeese
 {
     namespace core
     {
+        enum Operation
+        {
+            None = 0,
+            Add,
+            Mul,
+            Pwr
+        };
+
         struct Var
         {
             float v = 0.0f;
@@ -29,13 +39,16 @@ namespace tallgeese
 
         struct IntVar
         {
+            Operation op = None;
             float d = 0.0f;
             float pds[2] = {0.0f, 0.0f};
             int is[2] = {TALLGEESE_CORE_INVALID_INTVAR_INDEX, TALLGEESE_CORE_INVALID_INTVAR_INDEX};
 
             IntVar();
-            IntVar(float pd1, float pd2);
-            IntVar(float pd1, float pd2, int i1, int i2);
+            IntVar(Operation op, float pd1, float pd2);
+            IntVar(Operation op, float pd1, float pd2, int i1, int i2);
+
+            void print();
         };
 
         class Tensor
@@ -67,10 +80,17 @@ namespace tallgeese
         private:
             std::vector<IntVar> tape;
 
-            Var op(float v, float pd1, float pd2, int i1, int i2);
+            bool trace = false;
+            std::vector<Var> vars;
+            bool replaying = false;
+
+            Var op(Operation op, float v, float pd1, float pd2, int i1, int i2);
+
+            Var eval();
 
         public:
             ADContext();
+            ADContext(bool trace);
 
             Var var(float v);
             Tensor *tensor(Tensor *tensor);
@@ -82,9 +102,7 @@ namespace tallgeese
 
             Var add(Var a, Var b);
             Var mul(Var a, Var b);
-            Var pwr(Var a, float b);
-
-            void sum(Tensor *a, Tensor *b);
+            Var pwr(Var a, Var b);
         };
     }
 }

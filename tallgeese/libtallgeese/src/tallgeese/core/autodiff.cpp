@@ -24,18 +24,40 @@ namespace tallgeese
 
         IntVar::IntVar() {}
 
-        IntVar::IntVar(float pd1, float pd2)
+        IntVar::IntVar(Operation op, float pd1, float pd2)
         {
+            this->op = op;
             this->pds[0] = pd1;
             this->pds[1] = pd2;
         }
 
-        IntVar::IntVar(float pd1, float pd2, int i1, int i2)
+        IntVar::IntVar(Operation op, float pd1, float pd2, int i1, int i2)
         {
+            this->op = op;
             this->pds[0] = pd1;
             this->pds[1] = pd2;
             this->is[0] = i1;
             this->is[1] = i2;
+        }
+
+        void IntVar::print()
+        {
+            switch (this->op)
+            {
+            case Add:
+                printf("Add\t");
+                break;
+            case Mul:
+                printf("Mul\t");
+                break;
+            case Pwr:
+                printf("Pwr\t");
+                break;
+            default:
+                break;
+            }
+
+            printf("dy/dx: %f\n", this->d);
         }
 
         Tensor::Tensor(std::vector<int> shape)
@@ -158,17 +180,38 @@ namespace tallgeese
         {
         }
 
-        Var ADContext::op(float v, float pd1, float pd2, int i1, int i2)
+        ADContext::ADContext(bool trace)
         {
-            Var var(v, this->tape.size());
-            this->tape.push_back(IntVar(pd1, pd2, i1, i2));
-            return var;
+            this->trace = trace;
+        }
+
+        Var ADContext::op(Operation op, float v, float pd1, float pd2, int i1, int i2)
+        {
+            if (!this->replaying)
+            {
+                Var var(v, this->tape.size());
+                this->tape.push_back(IntVar(op, pd1, pd2, i1, i2));
+
+                if (this->trace)
+                    this->vars.push_back(var);
+
+                return var;
+            }
+            else
+            {
+                Var var(v);
+                return var;
+            }
         }
 
         Var ADContext::var(float v)
         {
             Var var(v, this->tape.size());
             this->tape.push_back(IntVar());
+
+            if (this->trace)
+                this->vars.push_back(var);
+
             return var;
         }
 
@@ -193,6 +236,95 @@ namespace tallgeese
             }
         }
 
+        Var ADContext::eval()
+        {
+            if (!this->trace)
+            {
+                printf("AUTODIFF EVALUATION: NOT TRACING\n");
+                return Var(0.0f);
+            }
+
+            this->replaying = true;
+
+            for (int i = 0; i < this->tape.size(); i++)
+            {
+                auto iv = this->tape[i];
+                switch (iv.op)
+                {
+                case Add:
+                    this->vars[i].v = this->add(this->vars[iv.is[0]], this->vars[iv.is[1]]).v;
+                    break;
+                case Mul:
+                    this->vars[i].v = this->mul(this->vars[iv.is[0]], this->vars[iv.is[1]]).v;
+                    break;
+                case Pwr:
+                    this->vars[i].v = this->pwr(this->vars[iv.is[0]], this->vars[iv.is[1]]).v;
+                    break;
+                default:
+                    break;
+                }
+            }
+
+            this->replaying = false;
+
+            return this->vars[this->vars.size() - 1];
+        }
+
+        void ADContext::check_grad()
+        {
+            if (!this->trace)
+            {
+                printf("AUTODIFF GRADIENT CHECK: NOT TRACING\n");
+                return;
+            }
+
+            float agg_ana_grad = 0.0f;
+            float agg_num_grad = 0.0f;
+            float agg_grad_diff = 0.0f;
+
+            std::vector<Var> o_vars = this->vars;
+
+            for (int i = 0; i < this->tape.size(); i++)
+            {
+                Var o_var = this->vars[i];
+
+                this->vars[i].v = o_var.v - TALLGEESE_CORE_EPSILON;
+                Var l_var = this->eval();
+
+                this->vars[i].v = o_var.v + TALLGEESE_CORE_EPSILON;
+                Var r_var = this->eval();
+
+                float num_grad = (r_var.v - l_var.v) / (2.0f * TALLGEESE_CORE_EPSILON);
+                if (num_grad != 0.0f)
+                {
+                    float ana_grad = this->tape[i].d;
+
+                    printf("NUM: %f\n", num_grad);
+                    printf("ANA: %f\n\n", ana_grad);
+
+                    agg_ana_grad += (ana_grad * ana_grad);
+                    agg_num_grad += (num_grad * num_grad);
+                    agg_grad_diff += ((ana_grad - num_grad) * (ana_grad - num_grad));
+                }
+
+                this->vars = o_vars;
+            }
+
+            if ((agg_grad_diff) == 0.0f && (agg_ana_grad + agg_num_grad) == 0.0f)
+            {
+                printf("AUTODIFF GRADIENT CHECK RESULT: %f\n", 0.0f);
+            }
+            else
+            {
+                printf("AUTODIFF GRADIENT CHECK RESULT: %f\n", (agg_grad_diff) / (agg_ana_grad + agg_num_grad));
+
+                if ((agg_grad_diff) / (agg_ana_grad + agg_num_grad) > TALLGEESE_CORE_EPSILON)
+                {
+                    printf("AUTODIFF GRADIENT CHECK FAILED");
+                }
+            }
+        }
+
         float ADContext::get_derivative(Var var)
         {
             return this->tape[var.i].d;
@@ -200,24 +332,17 @@ namespace tallgeese
 
         Var ADContext::add(Var a, Var b)
         {
-            return this->op(a.v + b.v, 1.0f, 1.0f, a.i, b.i);
+            return this->op(Add, a.v + b.v, 1.0f, 1.0f, a.i, b.i);
         }
 
         Var ADContext::mul(Var a, Var b)
         {
-            return this->op(a.v * b.v, b.v, a.v, a.i, b.i);
+            return this->op(Mul, a.v * b.v, b.v, a.v, a.i, b.i);
         }
 
-        Var ADContext::pwr(Var a, float b)
+        Var ADContext::pwr(Var a, Var b)
         {
-            return this->op(pow(a.v, b), b * pow(a.v, b - 1), 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
-        }
-
-        void ADContext::sum(Tensor *a, Tensor *b)
-        {
-            switch (b->count())
-            {
-            }
+            return this->op(Pwr, pow(a.v, b.v), b.v * pow(a.v, b.v - 1), pow(a.v, b.v) * log(a.v), a.i, b.i);
         }
     }
 }

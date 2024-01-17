@@ -6,19 +6,18 @@ using namespace tallgeese::core;
 
 int main(int argc, char **argv)
 {
-	ADContext ctx;
+	ADContext ctx(true);
 
 	auto a = ctx.var(2.0f);
 	auto b = ctx.var(2.0f);
 
 	auto c = ctx.mul(a, b);
-	auto d = ctx.mul(c, c);
-	auto e = ctx.pwr(d, 4.0f);
-
-	e.print();
+	auto d = ctx.mul(c, a);
+	auto e = ctx.pwr(d, ctx.var(4.0f));
 
 	ctx.derive();
-	printf("\nde/da: %f\n", ctx.get_derivative(a));
+
+	ctx.check_grad();
 
 	return 0;
 }
