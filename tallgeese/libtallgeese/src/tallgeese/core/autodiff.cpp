@@ -133,7 +133,7 @@ namespace tallgeese
                     printf("%dx", this->shape[i]);
             }
 
-            printf("DATA: ");
+            printf("DATA:\n");
             switch (this->shape.size())
             {
             case 1:
@@ -482,7 +482,7 @@ namespace tallgeese
             int c_rows = a_rows;
             int c_cols = b_cols;
 
-            if (a_rows != b_cols)
+            if (a_rows != b_cols && a_cols != b_rows)
             {
                 TALLGEESE_CORE_THROW_ERROR("AUTODIFF: Incompatible matrix shapes for multiply");
             }
@@ -502,6 +502,8 @@ namespace tallgeese
                     }
                 }
             }
+
+            return c;
         }
 
         Tensor *ADContext::sigmoid(Tensor *a, Tensor *b)
