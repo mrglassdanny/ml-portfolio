@@ -55,11 +55,11 @@ namespace tallgeese
 
         class Tensor
         {
-        private:
+
+        public:
             std::vector<int> shape;
             Var *data;
 
-        public:
             Tensor(std::vector<int> shape);
             Tensor(std::vector<int> shape, float val);
             Tensor(std::vector<int> shape, float mean, float stddev);
@@ -71,9 +71,6 @@ namespace tallgeese
             static Tensor *random(std::vector<int> shape, float mean, float stddev);
 
             void print();
-
-            std::vector<int> get_shape();
-            Var *get_data();
 
             bool has_same_shape(Tensor *other);
 
@@ -99,7 +96,7 @@ namespace tallgeese
 
             Var evaluate();
 
-            void validate_shapes(Tensor *a, Tensor *b);
+            void validate_shapes_are_same(Tensor *a, Tensor *b);
 
         public:
             ADContext();
@@ -123,6 +120,8 @@ namespace tallgeese
 
             Var dot(Tensor *a, Tensor *b);
             Tensor *dot(Tensor *a, Tensor *b, Tensor *c);
+
+            Tensor *matrix_multiply(Tensor *a, Tensor *b, Tensor *c);
 
             Tensor *sigmoid(Tensor *a, Tensor *b);
         };

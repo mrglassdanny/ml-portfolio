@@ -166,16 +166,6 @@ namespace tallgeese
             printf("\n\n");
         }
 
-        std::vector<int> Tensor::get_shape()
-        {
-            return this->shape;
-        }
-
-        Var *Tensor::get_data()
-        {
-            return this->data;
-        }
-
         bool Tensor::has_same_shape(Tensor *other)
         {
             return this->shape == other->shape;
@@ -236,7 +226,7 @@ namespace tallgeese
             this->trace = trace;
         }
 
-        void ADContext::validate_shapes(Tensor *a, Tensor *b)
+        void ADContext::validate_shapes_are_same(Tensor *a, Tensor *b)
         {
             if (!a->has_same_shape(b))
             {
@@ -278,7 +268,7 @@ namespace tallgeese
         {
             for (int i = 0; i < tensor->size(); i++)
             {
-                tensor->get_data()[i] = this->var(tensor->get_data()[i].v);
+                tensor->data[i] = this->var(tensor->data[i].v);
             }
             return tensor;
         }
@@ -298,7 +288,7 @@ namespace tallgeese
         {
             for (int i = 0; i < tensor->size(); i++)
             {
-                tensor->get_data()[i] = this->parm(tensor->get_data()[i].v);
+                tensor->data[i] = this->parm(tensor->data[i].v);
             }
             return tensor;
         }
@@ -444,12 +434,12 @@ namespace tallgeese
 
         Var ADContext::dot(Tensor *a, Tensor *b)
         {
-            this->validate_shapes(a, b);
+            this->validate_shapes_are_same(a, b);
 
             Var d = this->var(0.0f);
             for (int i = 0; i < a->size(); i++)
             {
-                auto c = this->multiply(a->get_data()[i], b->get_data()[i]);
+                auto c = this->multiply(a->data[i], b->data[i]);
                 d = this->add(c, d);
             }
             return d;
@@ -457,23 +447,23 @@ namespace tallgeese
 
         Tensor *ADContext::dot(Tensor *a, Tensor *b, Tensor *c)
         {
-            this->validate_shapes(a, b);
+            this->validate_shapes_are_same(a, b);
 
             switch (a->count())
             {
             case 1:
-                c->get_data()[0] = this->dot(a, b);
+                c->data[0] = this->dot(a, b);
                 break;
             case 2:
-                for (int i = 0; i < a->get_shape()[0]; i++)
+                for (int i = 0; i < a->shape[0]; i++)
                 {
                     Var vd = this->var(0.0f);
-                    for (int j = 0; j < a->get_shape()[1]; j++)
+                    for (int j = 0; j < a->shape[1]; j++)
                     {
-                        auto vc = this->multiply(a->get_data()[i * a->get_shape()[1] + j], b->get_data()[i * a->get_shape()[1] + j]);
+                        auto vc = this->multiply(a->data[i * a->shape[1] + j], b->data[i * a->shape[1] + j]);
                         vd = this->add(vc, vd);
                     }
-                    c->get_data()[i] = vd;
+                    c->data[i] = vd;
                 }
                 break;
             }
@@ -481,13 +471,46 @@ namespace tallgeese
             return c;
         }
 
+        Tensor *ADContext::matrix_multiply(Tensor *a, Tensor *b, Tensor *c)
+        {
+            int a_rows = a->shape[0];
+            int a_cols = a->shape[1];
+
+            int b_rows = b->shape[0];
+            int b_cols = b->shape[1];
+
+            int c_rows = a_rows;
+            int c_cols = b_cols;
+
+            if (a_rows != b_cols)
+            {
+                TALLGEESE_CORE_THROW_ERROR("AUTODIFF: Incompatible matrix shapes for multiply");
+            }
+
+            if (c->shape[0] != c_rows || c->shape[1] != c_cols)
+            {
+                TALLGEESE_CORE_THROW_ERROR("AUTODIFF: Incompatible output matrix shape for multiply");
+            }
+
+            for (int c_row = 0; c_row < c_rows; c_row++)
+            {
+                for (int c_col = 0; c_col < c_cols; c_col++)
+                {
+                    for (int k = 0; k < a_cols; k++)
+                    {
+                        c->data[c_row * c_cols + c_col] = this->add(this->multiply(a->data[c_row * a_cols + k], b->data[k * b_cols + c_col]), c->data[c_row * c_cols + c_col]);
+                    }
+                }
+            }
+        }
+
         Tensor *ADContext::sigmoid(Tensor *a, Tensor *b)
         {
-            this->validate_shapes(a, b);
+            this->validate_shapes_are_same(a, b);
 
             for (int i = 0; i < a->size(); i++)
             {
-                b->get_data()[i] = this->sigmoid(a->get_data()[i]);
+                b->data[i] = this->sigmoid(a->data[i]);
             }
             return b;
         }
