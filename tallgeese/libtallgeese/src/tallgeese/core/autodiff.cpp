@@ -71,21 +71,21 @@ namespace tallgeese
         Tensor::Tensor(std::vector<int> shape)
         {
             this->shape = shape;
-            this->data = new Var[this->size()];
+            this->data = new Var[this->count()];
             this->zeros();
         }
 
         Tensor::Tensor(std::vector<int> shape, float val)
         {
             this->shape = shape;
-            this->data = new Var[this->size()];
+            this->data = new Var[this->count()];
             this->fill(val);
         }
 
         Tensor::Tensor(std::vector<int> shape, float mean, float stddev)
         {
             this->shape = shape;
-            this->data = new Var[this->size()];
+            this->data = new Var[this->count()];
             this->random(mean, stddev);
         }
 
@@ -125,19 +125,19 @@ namespace tallgeese
         void Tensor::print()
         {
             printf("SHAPE: ");
-            for (int i = 0; i < this->count(); i++)
+            for (int i = 0; i < this->dims(); i++)
             {
-                if (i == this->shape.size() - 1)
+                if (i == this->dims() - 1)
                     printf("%d\n", this->shape[i]);
                 else
                     printf("%dx", this->shape[i]);
             }
 
             printf("DATA:\n");
-            switch (this->shape.size())
+            switch (this->dims())
             {
             case 1:
-                for (int i = 0; i < this->size(); i++)
+                for (int i = 0; i < this->count(); i++)
                 {
                     this->data[i].print();
                     printf("\t");
@@ -148,7 +148,7 @@ namespace tallgeese
                 {
                     for (int j = 0; j < this->shape[1]; j++)
                     {
-                        this->data[i * this->shape[0] + j].print();
+                        this->data[i * this->shape[1] + j].print();
                         printf("\t");
                     }
                     printf("\n");
@@ -171,12 +171,12 @@ namespace tallgeese
             return this->shape == other->shape;
         }
 
-        int Tensor::count()
+        int Tensor::dims()
         {
             return this->shape.size();
         }
 
-        int Tensor::size()
+        int Tensor::count()
         {
             int num = 1;
             for (auto dim : this->shape)
@@ -186,6 +186,11 @@ namespace tallgeese
             return num;
         }
 
+        size_t Tensor::size()
+        {
+            return this->count() * sizeof(Var);
+        }
+
         void Tensor::zeros()
         {
             this->fill(0.0f);
@@ -193,7 +198,7 @@ namespace tallgeese
 
         void Tensor::fill(float val)
         {
-            for (int i = 0; i < this->size(); i++)
+            for (int i = 0; i < this->count(); i++)
             {
                 this->data[i] = Var(val);
             }
@@ -209,7 +214,7 @@ namespace tallgeese
             std::random_device rd;
             std::mt19937 gen(rd());
 
-            for (int i = 0; i < this->size(); i++)
+            for (int i = 0; i < this->count(); i++)
             {
                 std::normal_distribution<float> d(mean, stddev);
                 this->data[i].v = d(gen);
@@ -265,7 +270,7 @@ namespace tallgeese
 
         Tensor *ADContext::var(Tensor *tensor)
         {
-            for (int i = 0; i < tensor->size(); i++)
+            for (int i = 0; i < tensor->count(); i++)
             {
                 tensor->data[i] = this->var(tensor->data[i].v);
             }
@@ -285,7 +290,7 @@ namespace tallgeese
 
         Tensor *ADContext::parm(Tensor *tensor)
         {
-            for (int i = 0; i < tensor->size(); i++)
+            for (int i = 0; i < tensor->count(); i++)
             {
                 tensor->data[i] = this->parm(tensor->data[i].v);
             }
@@ -436,7 +441,7 @@ namespace tallgeese
             this->validate_shapes_are_same(a, b);
 
             Var d = this->var(0.0f);
-            for (int i = 0; i < a->size(); i++)
+            for (int i = 0; i < a->count(); i++)
             {
                 auto c = this->multiply(a->data[i], b->data[i]);
                 d = this->add(c, d);
@@ -448,7 +453,7 @@ namespace tallgeese
         {
             this->validate_shapes_are_same(a, b);
 
-            switch (a->count())
+            switch (a->dims())
             {
             case 1:
                 c->data[0] = this->dot(a, b);
@@ -521,7 +526,7 @@ namespace tallgeese
         {
             this->validate_shapes_are_same(a, b);
 
-            for (int i = 0; i < a->size(); i++)
+            for (int i = 0; i < a->count(); i++)
             {
                 b->data[i] = this->sigmoid(a->data[i]);
             }

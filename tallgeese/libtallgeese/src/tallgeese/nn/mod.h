@@ -5,5 +5,6 @@
 #define TALLGEESE_NN_MOD_H 1
 
 #include "layer/fully_connected.h"
+#include "layer/activation.h"
 
 #endif

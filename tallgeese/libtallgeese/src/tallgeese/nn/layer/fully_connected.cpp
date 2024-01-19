@@ -17,12 +17,22 @@ namespace tallgeese
             }
         }
 
+        FullyConnectedLayer::~FullyConnectedLayer()
+        {
+            delete this->w;
+            if (this->b != nullptr)
+            {
+                delete this->b;
+            }
+            delete this->z;
+        }
+
         Tensor *FullyConnectedLayer::forward(Tensor *x)
         {
             this->z = this->ctx->matrix_multiply(x, this->w, this->z);
             if (this->b != nullptr)
             {
-                for (int i = 0; i < this->b->size(); i++)
+                for (int i = 0; i < this->b->count(); i++)
                 {
                     for (int j = 0; j < this->z->shape[0]; j++)
                     {

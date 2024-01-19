@@ -74,8 +74,9 @@ namespace tallgeese
 
             bool has_same_shape(Tensor *other);
 
+            int dims();
             int count();
-            int size();
+            size_t size();
 
             void zeros();
             void fill(float val);

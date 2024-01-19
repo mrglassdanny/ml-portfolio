@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClCompile Include="src\tallgeese\core\autodiff.cpp" />
     <ClCompile Include="src\tallgeese\core\util.cpp" />
+    <ClCompile Include="src\tallgeese\nn\layer\activation.cpp" />
     <ClCompile Include="src\tallgeese\nn\layer\fully_connected.cpp" />
     <ClCompile Include="src\tallgeese\nn\layer\layer.cpp" />
   </ItemGroup>
@@ -22,6 +23,7 @@
     <ClInclude Include="src\tallgeese\core\err.h" />
     <ClInclude Include="src\tallgeese\core\mod.h" />
     <ClInclude Include="src\tallgeese\core\util.h" />
+    <ClInclude Include="src\tallgeese\nn\layer\activation.h" />
     <ClInclude Include="src\tallgeese\nn\layer\fully_connected.h" />
     <ClInclude Include="src\tallgeese\nn\layer\layer.h" />
     <ClInclude Include="src\tallgeese\nn\mod.h" />
