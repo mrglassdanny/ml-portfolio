@@ -6,7 +6,7 @@ namespace tallgeese
     {
         namespace layer
         {
-            Conv2d::Conv2d(ADContext *ctx, std::vector<int> input_shape, std::vector<int> filter_shape, bool bias)
+            Conv2d::Conv2d(ADContext *ctx, Shape input_shape, Shape filter_shape, bool bias)
                 : Layer(ctx)
             {
                 this->w = this->ctx->parm(Tensor::random(filter_shape));
@@ -100,12 +100,22 @@ namespace tallgeese
                                         }
                                     }
 
-                                    this->ctx->add(this->get_y_var(b, y_ch, y_r, y_c), this->b->data[y_ch * x_channels + x_ch]);
+                                    if (this->b != nullptr)
+                                    {
+                                        this->ctx->add(this->get_y_var(b, y_ch, y_r, y_c), this->b->data[y_ch * x_channels + x_ch]);
+                                    }
                                 }
                             }
                         }
                     }
                 }
+
+                return this->y;
+            }
+
+            Shape Conv2d::get_output_shape()
+            {
+                return this->y->shape;
             }
         }
     }

@@ -16,10 +16,11 @@ namespace tallgeese
                 Tensor *y;
 
             public:
-                Linear(ADContext *ctx, int batch_size, int inputs, int outputs, bool bias);
+                Linear(ADContext *ctx, Shape input_shape, int outputs, bool bias);
                 ~Linear();
 
                 virtual Tensor *forward(Tensor *x);
+                virtual Shape get_output_shape();
             };
         }
     }

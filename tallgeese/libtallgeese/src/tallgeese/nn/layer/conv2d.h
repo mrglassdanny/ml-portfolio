@@ -21,10 +21,11 @@ namespace tallgeese
                 void set_y_var(Var var, int b, int ch, int r, int c);
 
             public:
-                Conv2d(ADContext *ctx, std::vector<int> input_shape, std::vector<int> filter_shape, bool bias);
+                Conv2d(ADContext *ctx, Shape input_shape, Shape filter_shape, bool bias);
                 ~Conv2d();
 
                 virtual Tensor *forward(Tensor *x);
+                virtual Shape get_output_shape();
             };
         }
     }

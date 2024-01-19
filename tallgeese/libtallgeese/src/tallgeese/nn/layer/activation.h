@@ -22,10 +22,11 @@ namespace tallgeese
                 Tensor *y;
 
             public:
-                Activation(ADContext *ctx, int batch_size, int inputs, ActivationType type);
+                Activation(ADContext *ctx, Shape input_shape, ActivationType type);
                 ~Activation();
 
                 virtual Tensor *forward(Tensor *x);
+                virtual Shape get_output_shape();
             };
         }
 

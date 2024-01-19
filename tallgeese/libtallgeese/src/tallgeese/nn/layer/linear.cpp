@@ -6,12 +6,18 @@ namespace tallgeese
     {
         namespace layer
         {
-            Linear::Linear(ADContext *ctx, int batch_size, int inputs, int outputs, bool bias)
+            Linear::Linear(ADContext *ctx, Shape input_shape, int outputs, bool bias)
                 : Layer(ctx)
             {
+                int inputs = 1;
+                for (int i = 1; i < input_shape.size(); i++)
+                {
+                    inputs *= input_shape[i];
+                }
+
                 this->w = this->ctx->parm(Tensor::random({inputs, outputs}));
                 this->b = nullptr;
-                this->y = this->ctx->var(Tensor::zeros({batch_size, outputs}));
+                this->y = this->ctx->var(Tensor::zeros({input_shape[0], outputs}));
 
                 if (bias)
                 {
@@ -45,6 +51,11 @@ namespace tallgeese
                     }
                 }
                 return this->y;
+            }
+
+            Shape Linear::get_output_shape()
+            {
+                return this->y->shape;
             }
         }
     }

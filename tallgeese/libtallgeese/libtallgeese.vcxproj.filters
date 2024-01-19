@@ -21,13 +21,16 @@
     <ClCompile Include="src\tallgeese\core\util.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\tallgeese\nn\layer\fully_connected.cpp">
+    <ClCompile Include="src\tallgeese\nn\layer\linear.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\tallgeese\nn\layer\layer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\tallgeese\nn\layer\activation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\tallgeese\nn\layer\conv2d.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -47,7 +50,7 @@
     <ClInclude Include="src\tallgeese\core\constants.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\tallgeese\nn\layer\fully_connected.h">
+    <ClInclude Include="src\tallgeese\nn\layer\linear.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\tallgeese\nn\mod.h">
@@ -57,6 +60,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\tallgeese\nn\layer\activation.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\tallgeese\nn\layer\conv2d.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -19,6 +19,7 @@ namespace tallgeese
                 Layer(ADContext *ctx);
 
                 virtual Tensor *forward(Tensor *x) = 0;
+                virtual Shape get_output_shape() = 0;
             };
         }
     }

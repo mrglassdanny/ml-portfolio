@@ -68,21 +68,21 @@ namespace tallgeese
             printf("dy/dx: %f\n", this->d);
         }
 
-        Tensor::Tensor(std::vector<int> shape)
+        Tensor::Tensor(Shape shape)
         {
             this->shape = shape;
             this->data = new Var[this->count()];
             this->zeros();
         }
 
-        Tensor::Tensor(std::vector<int> shape, float val)
+        Tensor::Tensor(Shape shape, float val)
         {
             this->shape = shape;
             this->data = new Var[this->count()];
             this->fill(val);
         }
 
-        Tensor::Tensor(std::vector<int> shape, float mean, float stddev)
+        Tensor::Tensor(Shape shape, float mean, float stddev)
         {
             this->shape = shape;
             this->data = new Var[this->count()];
@@ -94,32 +94,72 @@ namespace tallgeese
             delete this->data;
         }
 
-        Tensor *Tensor::zeros(std::vector<int> shape)
+        Tensor *Tensor::zeros(Shape shape)
         {
             auto t = new Tensor(shape);
             t->zeros();
             return t;
         }
 
-        Tensor *Tensor::fill(std::vector<int> shape, float val)
+        Tensor *Tensor::fill(Shape shape, float val)
         {
             auto t = new Tensor(shape);
             t->fill(val);
             return t;
         }
 
-        Tensor *Tensor::random(std::vector<int> shape)
+        Tensor *Tensor::random(Shape shape)
         {
             auto t = new Tensor(shape);
             t->random();
             return t;
         }
 
-        Tensor *Tensor::random(std::vector<int> shape, float mean, float stddev)
+        Tensor *Tensor::random(Shape shape, float mean, float stddev)
         {
             auto t = new Tensor(shape);
             t->random(mean, stddev);
             return t;
+        }
+
+        Var Tensor::get_var(int dims, ...)
+        {
+            va_list valist;
+            va_start(valist, dims);
+
+            int idx = 0;
+            int dim = 0;
+            for (int i = 0; i < dims - 1; i++)
+            {
+                dim = va_arg(valist, int);
+                idx += dim * this->shape[i + 1];
+            }
+            dim = va_arg(valist, int);
+            idx += dim;
+
+            va_end(valist);
+
+            return this->data[idx];
+        }
+
+        void Tensor::set_var(Var var, int dims, ...)
+        {
+            va_list valist;
+            va_start(valist, dims);
+
+            int idx = 0;
+            int dim = 0;
+            for (int i = 0; i < dims - 1; i++)
+            {
+                dim = va_arg(valist, int);
+                idx += dim * this->shape[i + 1];
+            }
+            dim = va_arg(valist, int);
+            idx += dim;
+
+            va_end(valist);
+
+            this->data[idx] = var;
         }
 
         void Tensor::print()

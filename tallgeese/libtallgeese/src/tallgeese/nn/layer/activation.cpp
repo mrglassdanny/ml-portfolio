@@ -8,11 +8,11 @@ namespace tallgeese
     {
         namespace layer
         {
-            Activation::Activation(ADContext *ctx, int batch_size, int inputs, ActivationType type)
+            Activation::Activation(ADContext *ctx, Shape input_shape, ActivationType type)
                 : Layer(ctx)
             {
                 this->type = type;
-                this->y = this->ctx->var(Tensor::zeros({batch_size, inputs}));
+                this->y = this->ctx->var(Tensor::zeros(input_shape));
             }
 
             Activation::~Activation()
@@ -36,6 +36,11 @@ namespace tallgeese
                 }
 
                 return this->y;
+            }
+
+            Shape Activation::get_output_shape()
+            {
+                return this->y->shape;
             }
         }
     }

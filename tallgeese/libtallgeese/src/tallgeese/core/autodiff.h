@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <string.h>
 #include <math.h>
 #include <float.h>
@@ -16,6 +17,8 @@ namespace tallgeese
 {
     namespace core
     {
+        typedef std::vector<int> Shape;
+
         enum Operation
         {
             None = 0,
@@ -57,18 +60,21 @@ namespace tallgeese
         {
 
         public:
-            std::vector<int> shape;
+            Shape shape;
             Var *data;
 
-            Tensor(std::vector<int> shape);
-            Tensor(std::vector<int> shape, float val);
-            Tensor(std::vector<int> shape, float mean, float stddev);
+            Tensor(Shape shape);
+            Tensor(Shape shape, float val);
+            Tensor(Shape shape, float mean, float stddev);
             ~Tensor();
 
-            static Tensor *zeros(std::vector<int> shape);
-            static Tensor *fill(std::vector<int> shape, float val);
-            static Tensor *random(std::vector<int> shape);
-            static Tensor *random(std::vector<int> shape, float mean, float stddev);
+            static Tensor *zeros(Shape shape);
+            static Tensor *fill(Shape shape, float val);
+            static Tensor *random(Shape shape);
+            static Tensor *random(Shape shape, float mean, float stddev);
+
+            Var get_var(int dims, ...);
+            void set_var(Var var, int dims, ...);
 
             void print();
 
