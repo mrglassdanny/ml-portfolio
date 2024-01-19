@@ -121,7 +121,7 @@ namespace tallgeese
             Var dot(Tensor *a, Tensor *b);
             Tensor *dot(Tensor *a, Tensor *b, Tensor *c);
 
-            Tensor *matrix_multiply(Tensor *a, Tensor *b, Tensor *c);
+            Tensor *matrix_multiply(Tensor *x, Tensor *w, Tensor *y);
 
             Tensor *sigmoid(Tensor *a, Tensor *b);
         };

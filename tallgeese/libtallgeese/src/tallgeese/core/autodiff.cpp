@@ -148,7 +148,7 @@ namespace tallgeese
                 {
                     for (int j = 0; j < this->shape[1]; j++)
                     {
-                        this->data[i].print();
+                        this->data[i * this->shape[0] + j].print();
                         printf("\t");
                     }
                     printf("\n");
@@ -212,8 +212,7 @@ namespace tallgeese
             for (int i = 0; i < this->size(); i++)
             {
                 std::normal_distribution<float> d(mean, stddev);
-                auto n = Var(d(gen));
-                this->data[i] = n;
+                this->data[i].v = d(gen);
             }
         }
 
@@ -471,39 +470,51 @@ namespace tallgeese
             return c;
         }
 
-        Tensor *ADContext::matrix_multiply(Tensor *a, Tensor *b, Tensor *c)
+        Tensor *ADContext::matrix_multiply(Tensor *x, Tensor *w, Tensor *y)
         {
-            int a_rows = a->shape[0];
-            int a_cols = a->shape[1];
+            int x_rows = x->shape[0];
+            int x_cols = x->shape[1];
 
-            int b_rows = b->shape[0];
-            int b_cols = b->shape[1];
+            int w_rows = w->shape[0];
+            int w_cols = w->shape[1];
 
-            int c_rows = a_rows;
-            int c_cols = b_cols;
+            /*
+                Matrix multiplication is only valid if the number of columns of the first matrix
+                are equal to the number of rows of the second matrix; further, the resulting
+                matrix will have the number of rows of the first matrix and the number of columns of
+                the second matrix.
+            */
 
-            if (a_rows != b_cols && a_cols != b_rows)
+            int y_rows = x_rows;
+            int y_cols = w_cols;
+
+            if (x_cols != w_rows)
             {
-                TALLGEESE_CORE_THROW_ERROR("AUTODIFF: Incompatible matrix shapes for multiply");
+                TALLGEESE_CORE_THROW_ERROR("AUTODIFF: Incompatible matrix shapes for matrix multiply");
             }
 
-            if (c->shape[0] != c_rows || c->shape[1] != c_cols)
+            if (y->shape[0] != y_rows || y->shape[1] != y_cols)
             {
-                TALLGEESE_CORE_THROW_ERROR("AUTODIFF: Incompatible output matrix shape for multiply");
+                TALLGEESE_CORE_THROW_ERROR("AUTODIFF: Incompatible output matrix shape for matrix multiply");
             }
 
-            for (int c_row = 0; c_row < c_rows; c_row++)
+            for (int y_row = 0; y_row < y_rows; y_row++)
             {
-                for (int c_col = 0; c_col < c_cols; c_col++)
+                int x_row = y_row;
+                for (int y_col = 0; y_col < y_cols; y_col++)
                 {
-                    for (int k = 0; k < a_cols; k++)
+                    int w_col = y_col;
+                    for (int x_col = 0; x_col < x_cols; x_col++)
                     {
-                        c->data[c_row * c_cols + c_col] = this->add(this->multiply(a->data[c_row * a_cols + k], b->data[k * b_cols + c_col]), c->data[c_row * c_cols + c_col]);
+                        int w_row = x_col;
+                        y->data[y_row * y_cols + y_col] = this->add(
+                            this->multiply(x->data[x_row * x_cols + x_col], w->data[w_row * w_cols + w_col]),
+                            y->data[y_row * y_cols + y_col]);
                     }
                 }
             }
 
-            return c;
+            return y;
         }
 
         Tensor *ADContext::sigmoid(Tensor *a, Tensor *b)

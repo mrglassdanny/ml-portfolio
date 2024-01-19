@@ -1,8 +1,10 @@
 #include <iostream>
 
 #include "tallgeese/core/mod.h"
+#include "tallgeese/nn/mod.h"
 
 using namespace tallgeese::core;
+using namespace tallgeese::nn;
 
 int main(int argc, char **argv)
 {
@@ -12,24 +14,16 @@ int main(int argc, char **argv)
 	// input -> hidden -> output
 	// 10 -> 10 -> 1
 
-	auto x1 = ctx.var(Tensor::random({10, 10}));
-	auto w1 = ctx.parm(Tensor::random({10, 10}));
+	auto x = ctx.var(Tensor::random({10, 10}));
 
-	auto z1 = ctx.var(Tensor::zeros({10, 10}));
-	auto a1 = ctx.var(Tensor::zeros({10, 10}));
+	auto l1 = new FullyConnectedLayer(&ctx, 10, 10, 10, true);
+	auto l2 = new FullyConnectedLayer(&ctx, 10, 10, 1, true);
 
-	z1 = ctx.matrix_multiply(x1, w1, z1);
-	a1 = ctx.sigmoid(z1, a1);
+	auto z1 = l1->forward(x);
 
-	auto w2 = ctx.parm(Tensor::random({10, 1}));
+	auto z2 = l2->forward(z1);
 
-	auto z2 = ctx.var(Tensor::zeros({10, 1}));
-	auto a2 = ctx.var(Tensor::zeros({10, 1}));
-
-	z2 = ctx.matrix_multiply(a1, w2, z2);
-	a2 = ctx.sigmoid(z2, a2);
-
-	a2->print();
+	z2->print();
 
 	ctx.derive();
 
