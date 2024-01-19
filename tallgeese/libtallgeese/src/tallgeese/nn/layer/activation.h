@@ -6,24 +6,28 @@ namespace tallgeese
 {
     namespace nn
     {
-        enum ActivationType
+        namespace layer
         {
-            Sigmoid,
-            Tanh,
-            Relu
-        };
+            enum ActivationType
+            {
+                Sigmoid,
+                Tanh,
+                Relu
+            };
 
-        class ActivationLayer : public Layer
-        {
-        private:
-            ActivationType type;
-            Tensor *y;
+            class Activation : public Layer
+            {
+            private:
+                ActivationType type;
+                Tensor *y;
 
-        public:
-            ActivationLayer(ADContext *ctx, int batch_size, int inputs, ActivationType type);
-            ~ActivationLayer();
+            public:
+                Activation(ADContext *ctx, int batch_size, int inputs, ActivationType type);
+                ~Activation();
 
-            virtual Tensor *forward(Tensor *x);
-        };
+                virtual Tensor *forward(Tensor *x);
+            };
+        }
+
     }
 }

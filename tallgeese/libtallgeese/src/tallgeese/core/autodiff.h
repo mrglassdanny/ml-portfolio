@@ -108,10 +108,11 @@ namespace tallgeese
             Var parm(float v);
             Tensor *parm(Tensor *tensor);
 
+            void reset();
+
             void derive();
             float get_derivative(Var var);
 
-            void reset_gradients();
             void check_gradients();
 
             Var add(Var a, Var b);

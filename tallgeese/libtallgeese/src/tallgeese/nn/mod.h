@@ -4,7 +4,8 @@
 
 #define TALLGEESE_NN_MOD_H 1
 
-#include "layer/fully_connected.h"
+#include "layer/linear.h"
+#include "layer/conv2d.h"
 #include "layer/activation.h"
 
 #endif

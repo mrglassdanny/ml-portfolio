@@ -297,21 +297,9 @@ namespace tallgeese
             return tensor;
         }
 
-        void ADContext::derive()
+        void ADContext::reset()
         {
-            this->tape[this->tape.size() - 1].d = 1.0f;
-            for (int i = this->tape.size() - 1; i >= 0; i--)
-            {
-                if (this->tape[i].is[0] != TALLGEESE_CORE_INVALID_INTVAR_INDEX)
-                    this->tape[this->tape[i].is[0]].d += this->tape[i].d * this->tape[i].pds[0];
-                if (this->tape[i].is[1] != TALLGEESE_CORE_INVALID_INTVAR_INDEX)
-                    this->tape[this->tape[i].is[1]].d += this->tape[i].d * this->tape[i].pds[1];
-            }
-        }
-
-        float ADContext::get_derivative(Var var)
-        {
-            return this->tape[var.i].d;
+            this->tape.clear();
         }
 
         Var ADContext::evaluate()
@@ -351,12 +339,21 @@ namespace tallgeese
             return this->vars[this->vars.size() - 1];
         }
 
-        void ADContext::reset_gradients()
+        void ADContext::derive()
         {
-            for (auto t : this->tape)
+            this->tape[this->tape.size() - 1].d = 1.0f;
+            for (int i = this->tape.size() - 1; i >= 0; i--)
             {
-                t.d = 0.0f;
+                if (this->tape[i].is[0] != TALLGEESE_CORE_INVALID_INTVAR_INDEX)
+                    this->tape[this->tape[i].is[0]].d += this->tape[i].d * this->tape[i].pds[0];
+                if (this->tape[i].is[1] != TALLGEESE_CORE_INVALID_INTVAR_INDEX)
+                    this->tape[this->tape[i].is[1]].d += this->tape[i].d * this->tape[i].pds[1];
             }
+        }
+
+        float ADContext::get_derivative(Var var)
+        {
+            return this->tape[var.i].d;
         }
 
         void ADContext::check_gradients()

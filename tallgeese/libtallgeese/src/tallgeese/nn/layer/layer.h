@@ -8,15 +8,18 @@ namespace tallgeese
 {
     namespace nn
     {
-        class Layer
+        namespace layer
         {
-        protected:
-            ADContext *ctx;
+            class Layer
+            {
+            protected:
+                ADContext *ctx;
 
-        public:
-            Layer(ADContext *ctx);
+            public:
+                Layer(ADContext *ctx);
 
-            virtual Tensor *forward(Tensor *x) = 0;
-        };
+                virtual Tensor *forward(Tensor *x) = 0;
+            };
+        }
     }
 }
