@@ -543,7 +543,7 @@ namespace tallgeese
         Var ADContext::tanh(Var a)
         {
             auto v = ((exp(a.v) - exp(-a.v)) / (exp(a.v) + exp(-a.v)));
-            return this->op(OpType::Tanh, v, (v) * (1.0f - (v * v)), 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
+            return this->op(OpType::Tanh, v, (1.0f - (v * v)), 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
         }
 
         Var ADContext::relu(Var a)

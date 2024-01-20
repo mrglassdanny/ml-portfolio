@@ -20,8 +20,11 @@ namespace tallgeese
             Tensor *Softmax::forward(Tensor *x)
             {
                 this->reset();
+
                 this->y = this->ctx->var(this->y);
+
                 this->y = this->ctx->softmax(x, this->y);
+
                 return this->y;
             }
         }

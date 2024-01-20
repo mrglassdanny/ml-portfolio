@@ -14,9 +14,9 @@ int main(int argc, char **argv)
 	auto y = Tensor::random({2, 4});
 
 	model->conv2d(x->shape, {2, 1, 3, 3});
-	model->activation(ActivationType::Sigmoid);
+	model->activation(ActivationType::Tanh);
 	model->conv2d({2, 2, 3, 3});
-	model->activation(ActivationType::Sigmoid);
+	model->activation(ActivationType::Tanh);
 	model->flatten();
 	model->linear(4);
 	model->activation(ActivationType::Sigmoid);
