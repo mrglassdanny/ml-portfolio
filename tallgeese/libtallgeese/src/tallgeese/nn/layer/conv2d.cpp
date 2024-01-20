@@ -102,11 +102,6 @@ namespace tallgeese
 
                 return this->y;
             }
-
-            Shape Conv2d::get_output_shape()
-            {
-                return this->y->shape;
-            }
         }
     }
 }

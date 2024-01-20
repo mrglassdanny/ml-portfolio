@@ -34,12 +34,6 @@ namespace tallgeese
 
                 return this->y;
             }
-
-            Shape Flatten::get_output_shape()
-            {
-                return this->y->shape;
-            }
         }
-
     }
 }

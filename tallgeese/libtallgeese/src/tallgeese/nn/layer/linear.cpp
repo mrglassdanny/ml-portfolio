@@ -62,11 +62,6 @@ namespace tallgeese
 
                 return this->y;
             }
-
-            Shape Linear::get_output_shape()
-            {
-                return this->y->shape;
-            }
         }
     }
 }

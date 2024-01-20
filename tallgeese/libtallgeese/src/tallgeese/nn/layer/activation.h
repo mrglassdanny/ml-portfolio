@@ -25,7 +25,6 @@ namespace tallgeese
                 ~Activation();
 
                 virtual Tensor *forward(Tensor *x);
-                virtual Shape get_output_shape();
             };
         }
 

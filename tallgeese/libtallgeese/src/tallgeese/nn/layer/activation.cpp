@@ -43,11 +43,6 @@ namespace tallgeese
 
                 return this->y;
             }
-
-            Shape Activation::get_output_shape()
-            {
-                return this->y->shape;
-            }
         }
     }
 }

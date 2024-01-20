@@ -16,6 +16,11 @@ namespace tallgeese
             {
                 this->y->zeros();
             }
+
+            Shape Layer::get_output_shape()
+            {
+                return this->y->shape;
+            }
         }
     }
 }
