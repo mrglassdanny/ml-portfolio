@@ -115,7 +115,7 @@ namespace mnist
 	{
 		auto train_ds = get_train_dataset(batch_size);
 
-		int train_batch_cnt = train_ds.size();
+		int batch_cnt = train_ds.size();
 
 		bool quit = false;
 
@@ -123,7 +123,7 @@ namespace mnist
 
 		for (epoch = 0; epoch < epochs; epoch++)
 		{
-			for (int j = 0; j < train_batch_cnt; j++)
+			for (int j = 0; j < batch_cnt; j++)
 			{
 				auto batch = &train_ds[j];
 				auto x = batch->x;
@@ -132,13 +132,26 @@ namespace mnist
 				auto p = model->forward(x);
 				model->loss(p, y);
 				model->backward();
-				model->step(100.0f);
+				model->step();
 				model->reset();
 
 				if (j % 100 == 0)
 				{
 					system("cls");
-					printf("EPOCH: %d\tPROGRESS: %f%%\n", epoch + 1, (j + 1) * 1.0f / train_batch_cnt * 100.0f);
+					int progress = (int)((j + 1) * 1.0f / batch_cnt * 100.0f);
+					printf("TRAINING\n");
+					printf("EPOCH: %d\tPROGRESS: %d%%\n", epoch + 1, progress);
+					for (int i = 0; i < 50; i++)
+					{
+						if (i * 2 < progress)
+						{
+							printf("=");
+						}
+						else
+						{
+							printf(".");
+						}
+					}
 				}
 
 				if (_kbhit())
@@ -189,14 +202,27 @@ namespace mnist
 
 			if (j % 100 == 0)
 			{
-				p->print();
-				y->print();
+				system("cls");
+				int progress = (int)((j + 1) * 1.0f / batch_cnt * 100.0f);
+				printf("TESTING\n");
+				printf("PROGRESS: %d%%\n", progress);
+				for (int i = 0; i < 50; i++)
+				{
+					if (i < progress / 2)
+					{
+						printf("=");
+					}
+					else
+					{
+						printf(".");
+					}
+				}
 			}
 		}
 
 		test_acc_pct = (acc / (float)batch_cnt) * 100.0f;
 
-		printf("TEST LOSS: %f\tTEST ACCURACY: %f%%\n",
+		printf("\n\nTEST LOSS: %f\tTEST ACCURACY: %f%%\n",
 			   (loss / (float)batch_cnt),
 			   test_acc_pct);
 

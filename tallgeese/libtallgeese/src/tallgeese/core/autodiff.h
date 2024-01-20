@@ -133,7 +133,7 @@ namespace tallgeese
             void derive();
             float get_derivative(Var var);
 
-            void check_gradients();
+            void check_gradients(bool print_grads);
 
             Var negative(Var a);
             Var add(Var a, Var b);

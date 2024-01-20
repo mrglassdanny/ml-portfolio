@@ -7,12 +7,13 @@ namespace tallgeese
         Model::Model(LossType loss_type)
         {
             this->ctx = new ADContext();
+            this->lr = 1.0f;
         }
 
-        Model::Model(LossType loss_type, bool trace)
+        Model::Model(LossType loss_type, float learning_rate)
         {
             this->ctx = new ADContext();
-            this->ctx->set_trace(trace);
+            this->lr = learning_rate;
         }
 
         Model::~Model()
@@ -75,11 +76,11 @@ namespace tallgeese
             this->ctx->derive();
         }
 
-        void Model::step(float lr)
+        void Model::step()
         {
             for (auto parm : this->ctx->parms)
             {
-                parm->v -= lr * this->ctx->tape[parm->i].d / this->get_batch_size();
+                parm->v -= this->lr * this->ctx->tape[parm->i].d / this->get_batch_size();
             }
         }
 
@@ -88,15 +89,21 @@ namespace tallgeese
             this->ctx->reset();
         }
 
-        void Model::test(Tensor *x, Tensor *y)
+        void Model::test(Tensor *x, Tensor *y, bool print_grads)
         {
+            this->ctx->set_trace(true);
+
+            this->reset();
+
             auto p = this->forward(x);
             this->loss(p, y);
             this->backward();
 
-            this->ctx->check_gradients();
+            this->ctx->check_gradients(print_grads);
 
             this->reset();
+
+            this->ctx->set_trace(false);
         }
 
         void Model::linear(int batch_size, int inputs, int outputs, bool bias)

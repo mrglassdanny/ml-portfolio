@@ -20,12 +20,13 @@ namespace tallgeese
             ADContext *ctx;
             std::vector<Layer *> layers;
             LossType loss_type;
+            float lr;
 
             Shape get_output_shape();
 
         public:
             Model(LossType loss_type);
-            Model(LossType loss_type, bool trace);
+            Model(LossType loss_type, float learning_rate);
             ~Model();
 
             int get_batch_size();
@@ -34,10 +35,9 @@ namespace tallgeese
             Var loss(Tensor *p, Tensor *y);
             float accuracy(Tensor *p, Tensor *y, int (*acc_fn)(Tensor *p, Tensor *y, int batch_size));
             void backward();
-            void step(float lr);
+            void step();
             void reset();
-
-            void test(Tensor *x, Tensor *y);
+            void test(Tensor *x, Tensor *y, bool print_grads);
 
             void linear(int batch_size, int inputs, int outputs, bool bias);
             void linear(int batch_size, int inputs, int outputs);

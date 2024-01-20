@@ -512,7 +512,7 @@ namespace tallgeese
             return this->tape[var.i].d;
         }
 
-        void ADContext::check_gradients()
+        void ADContext::check_gradients(bool print_grads)
         {
             if (!this->trace)
             {
@@ -542,8 +542,11 @@ namespace tallgeese
                     float num_grad = (r_var.v - l_var.v) / (2.0f * TALLGEESE_CORE_EPSILON);
                     float ana_grad = this->tape[i].d;
 
-                    printf("NUM: %f\n", num_grad);
-                    printf("ANA: %f\n\n", ana_grad);
+                    if (print_grads)
+                    {
+                        printf("NUM: %f\n", num_grad);
+                        printf("ANA: %f\n\n", ana_grad);
+                    }
 
                     agg_ana_grad += (ana_grad * ana_grad);
                     agg_num_grad += (num_grad * num_grad);
