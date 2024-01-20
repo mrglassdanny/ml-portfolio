@@ -135,6 +135,12 @@ namespace mnist
 				model->step(100.0f);
 				model->reset();
 
+				if (j % 100 == 0)
+				{
+					system("cls");
+					printf("EPOCH: %d\tPROGRESS: %f%%\n", epoch + 1, (j + 1) * 1.0f / train_batch_cnt * 100.0f);
+				}
+
 				if (_kbhit())
 				{
 					if (_getch() == 'q')
@@ -180,6 +186,12 @@ namespace mnist
 			loss += model->loss(p, y).v;
 			acc += model->accuracy(p, y, Model::classification_accuracy_fn);
 			model->reset();
+
+			if (j % 100 == 0)
+			{
+				p->print();
+				y->print();
+			}
 		}
 
 		test_acc_pct = (acc / (float)batch_cnt) * 100.0f;

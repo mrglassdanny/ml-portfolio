@@ -35,7 +35,7 @@ int main(int argc, char **argv)
 	model->linear(10);
 	model->activation(ActivationType::Sigmoid);
 
-	mnist::train_mnist(model, batch_size, 3);
+	mnist::train_mnist(model, batch_size, 5);
 	mnist::test_mnist(model);
 
 	// model->test(x, y);
