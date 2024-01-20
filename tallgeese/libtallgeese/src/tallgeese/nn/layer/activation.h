@@ -24,6 +24,7 @@ namespace tallgeese
                 Activation(ADContext *ctx, Shape input_shape, ActivationType type);
                 ~Activation();
 
+                virtual void reset() override;
                 virtual Tensor *forward(Tensor *x) override;
             };
         }

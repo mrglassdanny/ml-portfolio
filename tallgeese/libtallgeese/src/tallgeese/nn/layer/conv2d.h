@@ -18,6 +18,7 @@ namespace tallgeese
                 Conv2d(ADContext *ctx, Shape input_shape, Shape filter_shape, bool bias);
                 ~Conv2d();
 
+                virtual void reset() override;
                 virtual Tensor *forward(Tensor *x) override;
             };
         }

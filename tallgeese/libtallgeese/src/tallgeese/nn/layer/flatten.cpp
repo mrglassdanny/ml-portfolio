@@ -24,11 +24,14 @@ namespace tallgeese
                 delete this->y;
             }
 
+            void Flatten::reset()
+            {
+                Layer::reset();
+            }
+
             Tensor *Flatten::forward(Tensor *x)
             {
                 this->reset();
-
-                this->y = this->ctx->var(this->y);
 
                 this->y->copy_data(x);
 

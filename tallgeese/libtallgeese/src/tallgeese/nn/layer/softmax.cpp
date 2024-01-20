@@ -17,11 +17,14 @@ namespace tallgeese
                 delete this->y;
             }
 
+            void Softmax::reset()
+            {
+                Layer::reset();
+            }
+
             Tensor *Softmax::forward(Tensor *x)
             {
                 this->reset();
-
-                this->y = this->ctx->var(this->y);
 
                 this->y = this->ctx->softmax(x, this->y);
 

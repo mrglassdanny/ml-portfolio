@@ -14,6 +14,7 @@ namespace tallgeese
                 Flatten(ADContext *ctx, Shape input_shape);
                 ~Flatten();
 
+                virtual void reset() override;
                 virtual Tensor *forward(Tensor *x) override;
             };
         }

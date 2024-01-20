@@ -14,6 +14,7 @@ namespace tallgeese
                 Softmax(ADContext *ctx, Shape input_shape);
                 ~Softmax();
 
+                virtual void reset() override;
                 virtual Tensor *forward(Tensor *x) override;
             };
         }

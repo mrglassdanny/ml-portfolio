@@ -12,14 +12,15 @@ namespace tallgeese
                 this->y = nullptr;
             }
 
-            void Layer::reset()
-            {
-                this->y->zeros();
-            }
-
             Shape Layer::get_output_shape()
             {
                 return this->y->shape;
+            }
+
+            void Layer::reset()
+            {
+                this->y->zeros();
+                this->y = this->ctx->var(this->y);
             }
         }
     }

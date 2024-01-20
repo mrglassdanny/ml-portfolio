@@ -18,6 +18,7 @@ namespace tallgeese
                 Linear(ADContext *ctx, Shape input_shape, int outputs, bool bias);
                 ~Linear();
 
+                virtual void reset() override;
                 virtual Tensor *forward(Tensor *x) override;
             };
         }

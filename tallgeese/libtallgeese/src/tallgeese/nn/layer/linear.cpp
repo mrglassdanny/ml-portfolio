@@ -35,16 +35,19 @@ namespace tallgeese
                 delete this->y;
             }
 
-            Tensor *Linear::forward(Tensor *x)
+            void Linear::reset()
             {
-                this->reset();
-
+                Layer::reset();
                 this->w = this->ctx->parm(this->w);
-                this->y = this->ctx->var(this->y);
                 if (this->b != nullptr)
                 {
                     this->b = this->ctx->parm(this->b);
                 }
+            }
+
+            Tensor *Linear::forward(Tensor *x)
+            {
+                this->reset();
 
                 this->y = this->ctx->matrix_multiply(x, this->w, this->y);
                 if (this->b != nullptr)

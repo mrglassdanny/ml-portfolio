@@ -20,11 +20,14 @@ namespace tallgeese
                 delete this->y;
             }
 
+            void Activation::reset()
+            {
+                Layer::reset();
+            }
+
             Tensor *Activation::forward(Tensor *x)
             {
                 this->reset();
-
-                this->y = this->ctx->var(this->y);
 
                 switch (this->type)
                 {

@@ -44,16 +44,19 @@ namespace tallgeese
                 delete this->y;
             }
 
-            Tensor *Conv2d::forward(Tensor *x)
+            void Conv2d::reset()
             {
-                this->reset();
-
+                Layer::reset();
                 this->w = this->ctx->parm(this->w);
-                this->y = this->ctx->var(this->y);
                 if (this->b != nullptr)
                 {
                     this->b = this->ctx->parm(this->b);
                 }
+            }
+
+            Tensor *Conv2d::forward(Tensor *x)
+            {
+                this->reset();
 
                 int batch_size = x->shape[0];
                 int x_channels = x->shape[1];

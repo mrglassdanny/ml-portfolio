@@ -16,11 +16,10 @@ namespace tallgeese
                 ADContext *ctx;
                 Tensor *y;
 
-                void reset();
-
             public:
                 Layer(ADContext *ctx);
 
+                virtual void reset();
                 virtual Tensor *forward(Tensor *x) = 0;
 
                 Shape get_output_shape();
