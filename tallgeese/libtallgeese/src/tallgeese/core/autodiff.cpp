@@ -766,14 +766,15 @@ namespace tallgeese
         {
             for (int i = 0; i < y->shape[0]; i++)
             {
+                auto sum = this->var(0.0f);
                 for (int j = 0; j < y->shape[1]; j++)
                 {
-                    auto var = this->var(0.0f);
-                    for (int k = 0; k < y->shape[1]; k++)
-                    {
-                        var = this->add(this->exponential(x->get_var(i, k)), var);
-                    }
-                    y->set_var(this->divide(x->get_var(i, j), var), i, j);
+                    sum = this->add(this->exponential(x->get_var(i, j)), sum);
+                }
+
+                for (int j = 0; j < y->shape[1]; j++)
+                {
+                    y->set_var(this->divide(this->exponential(x->get_var(i, j)), sum), i, j);
                 }
             }
             return y;
