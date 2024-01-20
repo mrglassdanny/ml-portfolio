@@ -14,6 +14,9 @@ namespace tallgeese
             {
             protected:
                 ADContext *ctx;
+                Tensor *y;
+
+                void reset();
 
             public:
                 Layer(ADContext *ctx);

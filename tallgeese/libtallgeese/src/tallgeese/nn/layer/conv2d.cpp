@@ -9,7 +9,7 @@ namespace tallgeese
             Conv2d::Conv2d(ADContext *ctx, Shape input_shape, Shape filter_shape, bool bias)
                 : Layer(ctx)
             {
-                this->w = this->ctx->parm(Tensor::random(filter_shape));
+                this->w = Tensor::random(filter_shape);
                 this->b = nullptr;
 
                 int batch_size = input_shape[0];
@@ -22,14 +22,14 @@ namespace tallgeese
                 int filter_rows = filter_shape[2];
                 int filter_cols = filter_shape[3];
 
-                this->y = this->ctx->var(Tensor::zeros({batch_size,
-                                                        filters,
-                                                        x_rows - filter_rows + 1,
-                                                        x_cols - filter_cols + 1}));
+                this->y = Tensor::zeros({batch_size,
+                                         filters,
+                                         x_rows - filter_rows + 1,
+                                         x_cols - filter_cols + 1});
 
                 if (bias)
                 {
-                    this->b = this->ctx->parm(Tensor::zeros({filters, filter_channels}));
+                    this->b = Tensor::zeros({filters, filter_channels});
                 }
             }
 
@@ -43,28 +43,17 @@ namespace tallgeese
                 delete this->y;
             }
 
-            Var Conv2d::get_x_var(Tensor *x, int b, int ch, int r, int c)
-            {
-                return x->data[(b * x->shape[1]) + (ch * x->shape[2]) + (r * x->shape[3] + c)];
-            }
-
-            Var Conv2d::get_w_var(int f, int ch, int r, int c)
-            {
-                return this->w->data[(f * this->w->shape[1]) + (ch * this->w->shape[2]) + (r * this->w->shape[3] + c)];
-            }
-
-            Var Conv2d::get_y_var(int b, int ch, int r, int c)
-            {
-                return this->y->data[(b * this->y->shape[1]) + (ch * this->y->shape[2]) + (r * this->y->shape[3] + c)];
-            }
-
-            void Conv2d::set_y_var(Var var, int b, int ch, int r, int c)
-            {
-                this->y->data[(b * this->y->shape[1]) + (ch * this->y->shape[2]) + (r * this->y->shape[3] + c)] = var;
-            }
-
             Tensor *Conv2d::forward(Tensor *x)
             {
+                this->reset();
+
+                this->w = this->ctx->parm(this->w);
+                this->y = this->ctx->var(this->y);
+                if (this->b != nullptr)
+                {
+                    this->b = this->ctx->parm(this->b);
+                }
+
                 int batch_size = x->shape[0];
                 int x_channels = x->shape[1];
                 int x_rows = x->shape[2];
@@ -78,8 +67,6 @@ namespace tallgeese
                 int y_channels = this->y->shape[1];
                 int y_rows = this->y->shape[2];
                 int y_cols = this->y->shape[3];
-
-                int i = 0;
 
                 for (int b = 0; b < batch_size; b++)
                 {
@@ -99,14 +86,13 @@ namespace tallgeese
                                                                  this->ctx->multiply(this->w->get_var(y_ch, x_ch, f_r, f_c), x->get_var(b, x_ch, y_r + f_r, y_c + f_c)),
                                                                  this->y->get_var(b, y_ch, y_r, y_c)),
                                                              b, y_ch, y_r, y_c);
-
-                                            
                                         }
                                     }
 
                                     if (this->b != nullptr)
                                     {
-                                        this->ctx->add(this->get_y_var(b, y_ch, y_r, y_c), this->b->data[y_ch * x_channels + x_ch]);
+                                        this->y->set_var(this->ctx->add(this->y->get_var(b, y_ch, y_r, y_c), this->b->get_var(y_ch, x_ch)),
+                                                         b, y_ch, y_r, y_c);
                                     }
                                 }
                             }

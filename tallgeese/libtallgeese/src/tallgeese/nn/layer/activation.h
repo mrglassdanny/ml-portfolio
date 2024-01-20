@@ -19,7 +19,6 @@ namespace tallgeese
             {
             private:
                 ActivationType type;
-                Tensor *y;
 
             public:
                 Activation(ADContext *ctx, Shape input_shape, ActivationType type);

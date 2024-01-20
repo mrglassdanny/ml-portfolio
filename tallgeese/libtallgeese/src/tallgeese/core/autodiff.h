@@ -26,7 +26,9 @@ namespace tallgeese
             Add,
             Multiply,
             Power,
-            Sigmoid
+            Sigmoid,
+            Tanh,
+            Relu
         };
 
         struct Var
@@ -128,6 +130,8 @@ namespace tallgeese
             Var multiply(Var a, Var b);
             Var power(Var a, Var b);
             Var sigmoid(Var a);
+            Var tanh(Var a);
+            Var relu(Var a);
 
             Var dot(Tensor *a, Tensor *b);
             Tensor *dot(Tensor *a, Tensor *b, Tensor *c);
@@ -135,6 +139,8 @@ namespace tallgeese
             Tensor *matrix_multiply(Tensor *x, Tensor *w, Tensor *y);
 
             Tensor *sigmoid(Tensor *a, Tensor *b);
+            Tensor *tanh(Tensor *a, Tensor *b);
+            Tensor *relu(Tensor *a, Tensor *b);
         };
     }
 }

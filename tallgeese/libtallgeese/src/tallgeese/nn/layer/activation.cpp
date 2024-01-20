@@ -12,7 +12,7 @@ namespace tallgeese
                 : Layer(ctx)
             {
                 this->type = type;
-                this->y = this->ctx->var(Tensor::zeros(input_shape));
+                this->y = Tensor::zeros(input_shape);
             }
 
             Activation::~Activation()
@@ -22,14 +22,20 @@ namespace tallgeese
 
             Tensor *Activation::forward(Tensor *x)
             {
+                this->reset();
+
+                this->y = this->ctx->var(this->y);
+
                 switch (this->type)
                 {
                 case Sigmoid:
                     this->y = this->ctx->sigmoid(x, this->y);
                     break;
                 case Tanh:
+                    this->y = this->ctx->tanh(x, this->y);
                     break;
                 case Relu:
+                    this->y = this->ctx->relu(x, this->y);
                     break;
                 default:
                     break;

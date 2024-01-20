@@ -9,6 +9,12 @@ namespace tallgeese
             Layer::Layer(ADContext *ctx)
             {
                 this->ctx = ctx;
+                this->y = nullptr;
+            }
+
+            void Layer::reset()
+            {
+                this->y->zeros();
             }
         }
     }

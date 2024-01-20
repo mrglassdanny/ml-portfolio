@@ -16,7 +16,7 @@ namespace tallgeese
                     inputs *= input_shape[i];
                 }
 
-                this->y = this->ctx->var(Tensor::zeros({input_shape[0], inputs}));
+                this->y = Tensor::zeros({input_shape[0], inputs});
             }
 
             Flatten::~Flatten()
@@ -26,7 +26,12 @@ namespace tallgeese
 
             Tensor *Flatten::forward(Tensor *x)
             {
+                this->reset();
+
+                this->y = this->ctx->var(this->y);
+
                 this->y->copy_data(x);
+
                 return this->y;
             }
 

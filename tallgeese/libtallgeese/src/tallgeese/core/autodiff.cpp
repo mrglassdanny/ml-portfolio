@@ -487,6 +487,18 @@ namespace tallgeese
             return this->op(Sigmoid, v, (v) * (1.0f - v), 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
         }
 
+        Var ADContext::tanh(Var a)
+        {
+            auto v = ((exp(a.v) - exp(-a.v)) / (exp(a.v) + exp(-a.v)));
+            return this->op(Tanh, v, (v) * (1.0f - (v * v)), 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
+        }
+
+        Var ADContext::relu(Var a)
+        {
+            auto v = a.v > 0.0f ? a.v : 0.0f;
+            return this->op(Relu, v, v > 0.0f ? 1.0f : 0.0f, 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
+        }
+
         Var ADContext::dot(Tensor *a, Tensor *b)
         {
             this->validate_shapes_are_same(a, b);
@@ -575,11 +587,27 @@ namespace tallgeese
 
         Tensor *ADContext::sigmoid(Tensor *a, Tensor *b)
         {
-            this->validate_shapes_are_same(a, b);
-
             for (int i = 0; i < a->count(); i++)
             {
                 b->data[i] = this->sigmoid(a->data[i]);
+            }
+            return b;
+        }
+
+        Tensor *ADContext::tanh(Tensor *a, Tensor *b)
+        {
+            for (int i = 0; i < a->count(); i++)
+            {
+                b->data[i] = this->tanh(a->data[i]);
+            }
+            return b;
+        }
+
+        Tensor *ADContext::relu(Tensor *a, Tensor *b)
+        {
+            for (int i = 0; i < a->count(); i++)
+            {
+                b->data[i] = this->relu(a->data[i]);
             }
             return b;
         }

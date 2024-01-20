@@ -10,9 +10,6 @@ namespace tallgeese
         {
             class Flatten : public Layer
             {
-            private:
-                Tensor *y;
-
             public:
                 Flatten(ADContext *ctx, Shape input_shape);
                 ~Flatten();

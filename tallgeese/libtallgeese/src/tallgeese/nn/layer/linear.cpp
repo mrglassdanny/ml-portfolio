@@ -15,13 +15,13 @@ namespace tallgeese
                     inputs *= input_shape[i];
                 }
 
-                this->w = this->ctx->parm(Tensor::random({inputs, outputs}));
+                this->w = Tensor::random({inputs, outputs});
                 this->b = nullptr;
-                this->y = this->ctx->var(Tensor::zeros({input_shape[0], outputs}));
+                this->y = Tensor::zeros({input_shape[0], outputs});
 
                 if (bias)
                 {
-                    this->b = this->ctx->parm(Tensor::zeros({outputs}));
+                    this->b = Tensor::zeros({outputs});
                 }
             }
 
@@ -37,6 +37,15 @@ namespace tallgeese
 
             Tensor *Linear::forward(Tensor *x)
             {
+                this->reset();
+
+                this->w = this->ctx->parm(this->w);
+                this->y = this->ctx->var(this->y);
+                if (this->b != nullptr)
+                {
+                    this->b = this->ctx->parm(this->b);
+                }
+
                 this->y = this->ctx->matrix_multiply(x, this->w, this->y);
                 if (this->b != nullptr)
                 {
@@ -50,6 +59,7 @@ namespace tallgeese
                         }
                     }
                 }
+
                 return this->y;
             }
 

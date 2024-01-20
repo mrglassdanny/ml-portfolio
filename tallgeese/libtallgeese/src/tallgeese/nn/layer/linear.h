@@ -13,7 +13,6 @@ namespace tallgeese
             private:
                 Tensor *w;
                 Tensor *b;
-                Tensor *y;
 
             public:
                 Linear(ADContext *ctx, Shape input_shape, int outputs, bool bias);
