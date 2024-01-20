@@ -73,8 +73,10 @@ namespace tallgeese
             static Tensor *random(Shape shape);
             static Tensor *random(Shape shape, float mean, float stddev);
 
-            Var get_var(int dims, ...);
-            void set_var(Var var, int dims, ...);
+            Var get_var(...);
+            void set_var(Var var, ...);
+
+            void copy_data(Tensor *other);
 
             void print();
 
@@ -107,12 +109,13 @@ namespace tallgeese
 
         public:
             ADContext();
-            ADContext(bool trace);
 
             Var var(float v);
             Tensor *var(Tensor *tensor);
             Var parm(float v);
             Tensor *parm(Tensor *tensor);
+
+            void set_trace(bool on);
 
             void reset();
 

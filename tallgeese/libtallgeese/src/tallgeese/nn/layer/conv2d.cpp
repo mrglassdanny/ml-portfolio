@@ -79,6 +79,8 @@ namespace tallgeese
                 int y_rows = this->y->shape[2];
                 int y_cols = this->y->shape[3];
 
+                int i = 0;
+
                 for (int b = 0; b < batch_size; b++)
                 {
                     for (int y_ch = 0; y_ch < y_channels; y_ch++)
@@ -93,10 +95,12 @@ namespace tallgeese
                                     {
                                         for (int f_c = 0; f_c < filter_cols; f_c++)
                                         {
-                                            this->set_y_var(this->ctx->add(
-                                                                this->ctx->multiply(this->get_w_var(y_ch, x_ch, f_r, f_c), this->get_x_var(x, b, x_ch, y_r + f_r, y_c + f_c)),
-                                                                this->get_y_var(b, y_ch, y_r, y_c)),
-                                                            b, y_ch, y_r, y_c);
+                                            this->y->set_var(this->ctx->add(
+                                                                 this->ctx->multiply(this->w->get_var(y_ch, x_ch, f_r, f_c), x->get_var(b, x_ch, y_r + f_r, y_c + f_c)),
+                                                                 this->y->get_var(b, y_ch, y_r, y_c)),
+                                                             b, y_ch, y_r, y_c);
+
+                                            
                                         }
                                     }
 

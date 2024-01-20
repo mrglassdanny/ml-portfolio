@@ -15,8 +15,10 @@
     <ClCompile Include="src\tallgeese\core\util.cpp" />
     <ClCompile Include="src\tallgeese\nn\layer\activation.cpp" />
     <ClCompile Include="src\tallgeese\nn\layer\conv2d.cpp" />
+    <ClCompile Include="src\tallgeese\nn\layer\flatten.cpp" />
     <ClCompile Include="src\tallgeese\nn\layer\linear.cpp" />
     <ClCompile Include="src\tallgeese\nn\layer\layer.cpp" />
+    <ClCompile Include="src\tallgeese\nn\model.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\tallgeese\core\autodiff.h" />
@@ -26,9 +28,11 @@
     <ClInclude Include="src\tallgeese\core\util.h" />
     <ClInclude Include="src\tallgeese\nn\layer\activation.h" />
     <ClInclude Include="src\tallgeese\nn\layer\conv2d.h" />
+    <ClInclude Include="src\tallgeese\nn\layer\flatten.h" />
     <ClInclude Include="src\tallgeese\nn\layer\linear.h" />
     <ClInclude Include="src\tallgeese\nn\layer\layer.h" />
     <ClInclude Include="src\tallgeese\nn\mod.h" />
+    <ClInclude Include="src\tallgeese\nn\model.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

@@ -122,17 +122,22 @@ namespace tallgeese
             return t;
         }
 
-        Var Tensor::get_var(int dims, ...)
+        Var Tensor::get_var(...)
         {
             va_list valist;
-            va_start(valist, dims);
+            va_start(valist, this->dims());
 
             int idx = 0;
             int dim = 0;
-            for (int i = 0; i < dims - 1; i++)
+            for (int i = 0; i < this->dims() - 1; i++)
             {
                 dim = va_arg(valist, int);
-                idx += dim * this->shape[i + 1];
+                int mult = 1;
+                for (int j = i + 1; j < this->shape.size(); j++)
+                {
+                    mult *= this->shape[j];
+                }
+                idx += dim * mult;
             }
             dim = va_arg(valist, int);
             idx += dim;
@@ -142,17 +147,22 @@ namespace tallgeese
             return this->data[idx];
         }
 
-        void Tensor::set_var(Var var, int dims, ...)
+        void Tensor::set_var(Var var, ...)
         {
             va_list valist;
-            va_start(valist, dims);
+            va_start(valist, this->dims());
 
             int idx = 0;
             int dim = 0;
-            for (int i = 0; i < dims - 1; i++)
+            for (int i = 0; i < this->dims() - 1; i++)
             {
                 dim = va_arg(valist, int);
-                idx += dim * this->shape[i + 1];
+                int mult = 1;
+                for (int j = i + 1; j < this->shape.size(); j++)
+                {
+                    mult *= this->shape[j];
+                }
+                idx += dim * mult;
             }
             dim = va_arg(valist, int);
             idx += dim;
@@ -160,6 +170,11 @@ namespace tallgeese
             va_end(valist);
 
             this->data[idx] = var;
+        }
+
+        void Tensor::copy_data(Tensor *other)
+        {
+            memcpy(this->data, other->data, this->size());
         }
 
         void Tensor::print()
@@ -261,14 +276,7 @@ namespace tallgeese
             }
         }
 
-        ADContext::ADContext()
-        {
-        }
-
-        ADContext::ADContext(bool trace)
-        {
-            this->trace = trace;
-        }
+        ADContext::ADContext() {}
 
         void ADContext::validate_shapes_are_same(Tensor *a, Tensor *b)
         {
@@ -337,9 +345,15 @@ namespace tallgeese
             return tensor;
         }
 
+        void ADContext::set_trace(bool on)
+        {
+            this->trace = on;
+        }
+
         void ADContext::reset()
         {
             this->tape.clear();
+            this->vars.clear();
         }
 
         Var ADContext::evaluate()
