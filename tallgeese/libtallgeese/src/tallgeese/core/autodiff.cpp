@@ -122,6 +122,50 @@ namespace tallgeese
             return t;
         }
 
+        Tensor *Tensor::from_data(Shape shape, float *data)
+        {
+            auto t = Tensor::zeros(shape);
+
+            for (int i = 0; i < t->count(); i++)
+            {
+                t->data[i].v = data[i];
+            }
+
+            return t;
+        }
+
+        Tensor *Tensor::one_hot(Tensor *src)
+        {
+            int lst_dim_idx = src->dims() - 1;
+
+            if (src->shape[lst_dim_idx] != 1)
+            {
+                TALLGEESE_CORE_THROW_ERROR("TENSOR ONE HOT ERROR: last dimension must be 1");
+            }
+
+            float min_val = src->min();
+
+            if (min_val < 0.0f)
+            {
+                TALLGEESE_CORE_THROW_ERROR("TENSOR ONE HOT ERROR: negative numbers not allowed");
+            }
+
+            int oh_dim = ((int)src->max()) + 1;
+
+            std::vector<int> dst_shape = src->shape;
+            dst_shape[lst_dim_idx] = oh_dim;
+
+            Tensor *dst = Tensor::zeros(dst_shape);
+
+            for (int i = 0; i < src->count(); i++)
+            {
+                int val = (int)src->data[i].v;
+                dst->data[i * oh_dim + val].v = 1.0f;
+            }
+
+            return dst;
+        }
+
         Var Tensor::get_var(...)
         {
             va_list valist;
@@ -244,6 +288,44 @@ namespace tallgeese
         size_t Tensor::size()
         {
             return this->count() * sizeof(Var);
+        }
+
+        float Tensor::min()
+        {
+            float min_val = FLT_MAX;
+
+            float val = 0;
+
+            for (int i = 0; i < this->count(); i++)
+            {
+                val = this->data[i].v;
+
+                if (val < min_val)
+                {
+                    min_val = val;
+                }
+            }
+
+            return min_val;
+        }
+
+        float Tensor::max()
+        {
+            float max_val = -FLT_MAX;
+
+            float val = 0;
+
+            for (int i = 0; i < this->count(); i++)
+            {
+                val = this->data[i].v;
+
+                if (val > max_val)
+                {
+                    max_val = val;
+                }
+            }
+
+            return max_val;
         }
 
         void Tensor::zeros()

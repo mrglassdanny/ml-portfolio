@@ -77,6 +77,8 @@ namespace tallgeese
             static Tensor *fill(Shape shape, float val);
             static Tensor *random(Shape shape);
             static Tensor *random(Shape shape, float mean, float stddev);
+            static Tensor *from_data(Shape shape, float *data);
+            static Tensor *one_hot(Tensor *src);
 
             Var get_var(...);
             void set_var(Var var, ...);
@@ -90,6 +92,9 @@ namespace tallgeese
             int dims();
             int count();
             size_t size();
+
+            float min();
+            float max();
 
             void zeros();
             void fill(float val);

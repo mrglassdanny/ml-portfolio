@@ -1,7 +1,6 @@
 #include <iostream>
 
-#include "tallgeese/core/mod.h"
-#include "tallgeese/nn/mod.h"
+#include <tallgeese/mod.h>
 
 using namespace tallgeese::core;
 using namespace tallgeese::nn;
