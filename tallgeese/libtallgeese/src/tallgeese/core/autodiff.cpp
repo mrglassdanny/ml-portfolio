@@ -686,7 +686,7 @@ namespace tallgeese
                     {
                         var = this->add(this->exponential(x->get_var(i, k)), var);
                     }
-                    this->divide(x->get_var(i, j), var);
+                    y->set_var(this->divide(x->get_var(i, j), var), i, j);
                 }
             }
             return y;

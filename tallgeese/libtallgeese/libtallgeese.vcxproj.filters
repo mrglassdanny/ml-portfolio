@@ -83,5 +83,8 @@
     <ClInclude Include="src\tallgeese\nn\layer\softmax.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\tallgeese\nn\layer\mod.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -117,6 +117,11 @@ namespace tallgeese
             this->layers.push_back(new Activation(this->ctx, this->get_output_shape(), type));
         }
 
+        void Model::softmax()
+        {
+            this->layers.push_back(new Softmax(this->ctx, this->get_output_shape()));
+        }
+
         void Model::flatten()
         {
             this->layers.push_back(new Flatten(this->ctx, this->get_output_shape()));

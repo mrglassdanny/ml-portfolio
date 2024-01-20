@@ -1,10 +1,6 @@
 #pragma once
 
-#include "layer/layer.h"
-#include "layer/linear.h"
-#include "layer/conv2d.h"
-#include "layer/activation.h"
-#include "layer/flatten.h"
+#include "layer/mod.h"
 
 namespace tallgeese
 {
@@ -49,6 +45,8 @@ namespace tallgeese
             void conv2d(Shape filter_shape);
 
             void activation(ActivationType type);
+
+            void softmax();
 
             void flatten();
         };
