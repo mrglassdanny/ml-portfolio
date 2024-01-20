@@ -9,8 +9,6 @@ namespace tallgeese
             Conv2d::Conv2d(ADContext *ctx, Shape input_shape, Shape filter_shape, bool bias)
                 : Layer(ctx)
             {
-                this->w = Tensor::random(filter_shape);
-                this->b = nullptr;
 
                 int batch_size = input_shape[0];
                 int x_channels = input_shape[1];
@@ -21,6 +19,9 @@ namespace tallgeese
                 int filter_channels = filter_shape[1];
                 int filter_rows = filter_shape[2];
                 int filter_cols = filter_shape[3];
+
+                this->w = Tensor::random(filter_shape, 0.0f, sqrt(1.0f / (x_rows * x_cols)));
+                this->b = nullptr;
 
                 this->y = Tensor::zeros({batch_size,
                                          filters,

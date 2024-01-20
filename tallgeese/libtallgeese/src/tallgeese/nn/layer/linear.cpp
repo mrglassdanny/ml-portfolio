@@ -15,7 +15,7 @@ namespace tallgeese
                     inputs *= input_shape[i];
                 }
 
-                this->w = Tensor::random({inputs, outputs});
+                this->w = Tensor::random({inputs, outputs}, 0.0f, sqrt(1.0f / inputs));
                 this->b = nullptr;
                 this->y = Tensor::zeros({input_shape[0], outputs});
 
