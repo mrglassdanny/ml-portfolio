@@ -4,12 +4,12 @@ namespace tallgeese
 {
     namespace nn
     {
-        Model::Model()
+        Model::Model(LossType loss_type)
         {
             this->ctx = new ADContext();
         }
 
-        Model::Model(bool trace)
+        Model::Model(LossType loss_type, bool trace)
         {
             this->ctx = new ADContext();
             this->ctx->set_trace(trace);
@@ -39,14 +39,32 @@ namespace tallgeese
             return y;
         }
 
+        Var Model::loss(Tensor *p, Tensor *y)
+        {
+            y = this->ctx->var(y);
+
+            switch (this->loss_type)
+            {
+            case MSE:
+                return this->ctx->mse(p, y);
+            case CrossEntropy:
+                return this->ctx->cross_entropy(p, y);
+            default:
+                break;
+            }
+
+            return Var(0.0f);
+        }
+
         void Model::backward()
         {
             this->ctx->derive();
         }
 
-        void Model::test(Tensor *x)
+        void Model::test(Tensor *x, Tensor *y)
         {
-            this->forward(x);
+            auto p = this->forward(x);
+            this->loss(p, y);
             this->backward();
 
             this->ctx->check_gradients();

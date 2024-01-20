@@ -8,18 +8,15 @@ namespace tallgeese
     {
         namespace layer
         {
-            class Conv2d : public Layer
+            class Softmax : public Layer
             {
-            private:
-                Tensor *w;
-                Tensor *b;
-
             public:
-                Conv2d(ADContext *ctx, Shape input_shape, Shape filter_shape, bool bias);
-                ~Conv2d();
+                Softmax(ADContext *ctx, Shape input_shape);
+                ~Softmax();
 
                 virtual Tensor *forward(Tensor *x) override;
             };
         }
+
     }
 }

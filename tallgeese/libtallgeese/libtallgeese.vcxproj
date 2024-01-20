@@ -18,6 +18,7 @@
     <ClCompile Include="src\tallgeese\nn\layer\flatten.cpp" />
     <ClCompile Include="src\tallgeese\nn\layer\linear.cpp" />
     <ClCompile Include="src\tallgeese\nn\layer\layer.cpp" />
+    <ClCompile Include="src\tallgeese\nn\layer\softmax.cpp" />
     <ClCompile Include="src\tallgeese\nn\model.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -31,6 +32,7 @@
     <ClInclude Include="src\tallgeese\nn\layer\flatten.h" />
     <ClInclude Include="src\tallgeese\nn\layer\linear.h" />
     <ClInclude Include="src\tallgeese\nn\layer\layer.h" />
+    <ClInclude Include="src\tallgeese\nn\layer\softmax.h" />
     <ClInclude Include="src\tallgeese\nn\mod.h" />
     <ClInclude Include="src\tallgeese\nn\model.h" />
   </ItemGroup>

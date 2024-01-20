@@ -24,19 +24,19 @@ namespace tallgeese
 
         IntVar::IntVar() {}
 
-        IntVar::IntVar(Operation op)
+        IntVar::IntVar(OpType op)
         {
             this->op = op;
         }
 
-        IntVar::IntVar(Operation op, float pd1, float pd2)
+        IntVar::IntVar(OpType op, float pd1, float pd2)
         {
             this->op = op;
             this->pds[0] = pd1;
             this->pds[1] = pd2;
         }
 
-        IntVar::IntVar(Operation op, float pd1, float pd2, int i1, int i2)
+        IntVar::IntVar(OpType op, float pd1, float pd2, int i1, int i2)
         {
             this->op = op;
             this->pds[0] = pd1;
@@ -49,17 +49,17 @@ namespace tallgeese
         {
             switch (this->op)
             {
-            case Add:
-                printf("Add\t");
+            case OpType::Add:
+                printf("Op::Add\t");
                 break;
-            case Multiply:
-                printf("Multiply\t");
+            case OpType::Multiply:
+                printf("Op::Multiply\t");
                 break;
-            case Power:
-                printf("Power\t");
+            case OpType::Power:
+                printf("Op::Power\t");
                 break;
-            case Sigmoid:
-                printf("Sigmoid\t");
+            case OpType::Sigmoid:
+                printf("Op::Sigmoid\t");
                 break;
             default:
                 break;
@@ -286,7 +286,7 @@ namespace tallgeese
             }
         }
 
-        Var ADContext::op(Operation op, float v, float pd1, float pd2, int i1, int i2)
+        Var ADContext::op(OpType op, float v, float pd1, float pd2, int i1, int i2)
         {
             if (!this->replaying)
             {
@@ -308,7 +308,7 @@ namespace tallgeese
         Var ADContext::var(float v)
         {
             Var var(v, this->tape.size());
-            this->tape.push_back(IntVar(None));
+            this->tape.push_back(IntVar(OpType::Variable));
 
             if (this->trace)
                 this->vars.push_back(var);
@@ -328,7 +328,7 @@ namespace tallgeese
         Var ADContext::parm(float v)
         {
             Var var(v, this->tape.size());
-            this->tape.push_back(IntVar(Parameter));
+            this->tape.push_back(IntVar(OpType::Parameter));
 
             if (this->trace)
                 this->vars.push_back(var);
@@ -371,17 +371,35 @@ namespace tallgeese
                 auto iv = this->tape[i];
                 switch (iv.op)
                 {
-                case Add:
+                case OpType::Add:
                     this->vars[i].v = this->add(this->vars[iv.is[0]], this->vars[iv.is[1]]).v;
                     break;
-                case Multiply:
+                case OpType::Multiply:
                     this->vars[i].v = this->multiply(this->vars[iv.is[0]], this->vars[iv.is[1]]).v;
                     break;
-                case Power:
+                case OpType::Power:
                     this->vars[i].v = this->power(this->vars[iv.is[0]], this->vars[iv.is[1]]).v;
                     break;
-                case Sigmoid:
+                case OpType::Exponential:
+                    this->vars[i].v = this->exponential(this->vars[iv.is[0]]).v;
+                    break;
+                case OpType::NaturalLog:
+                    this->vars[i].v = this->natural_log(this->vars[iv.is[0]]).v;
+                    break;
+                case OpType::Sine:
+                    this->vars[i].v = this->sine(this->vars[iv.is[0]]).v;
+                    break;
+                case OpType::Cosine:
+                    this->vars[i].v = this->cosine(this->vars[iv.is[0]]).v;
+                    break;
+                case OpType::Sigmoid:
                     this->vars[i].v = this->sigmoid(this->vars[iv.is[0]]).v;
+                    break;
+                case OpType::Tanh:
+                    this->vars[i].v = this->tanh(this->vars[iv.is[0]]).v;
+                    break;
+                case OpType::Relu:
+                    this->vars[i].v = this->relu(this->vars[iv.is[0]]).v;
                     break;
                 default:
                     break;
@@ -466,37 +484,72 @@ namespace tallgeese
             }
         }
 
+        Var ADContext::negative(Var a)
+        {
+            return this->multiply(a, this->var(-1.0f));
+        }
+
         Var ADContext::add(Var a, Var b)
         {
-            return this->op(Add, a.v + b.v, 1.0f, 1.0f, a.i, b.i);
+            return this->op(OpType::Add, a.v + b.v, 1.0f, 1.0f, a.i, b.i);
+        }
+
+        Var ADContext::subtract(Var a, Var b)
+        {
+            return this->add(a, this->negative(b));
         }
 
         Var ADContext::multiply(Var a, Var b)
         {
-            return this->op(Multiply, a.v * b.v, b.v, a.v, a.i, b.i);
+            return this->op(OpType::Multiply, a.v * b.v, b.v, a.v, a.i, b.i);
+        }
+
+        Var ADContext::divide(Var a, Var b)
+        {
+            return this->multiply(a, this->power(b, this->var(-1.0f)));
         }
 
         Var ADContext::power(Var a, Var b)
         {
-            return this->op(Power, pow(a.v, b.v), b.v * pow(a.v, b.v - 1), pow(a.v, b.v) * log(a.v), a.i, b.i);
+            return this->op(OpType::Power, pow(a.v, b.v), b.v * pow(a.v, b.v - 1), pow(a.v, b.v) * log(a.v), a.i, b.i);
+        }
+
+        Var ADContext::exponential(Var a)
+        {
+            return this->op(OpType::Exponential, exp(a.v), exp(a.v), 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
+        }
+
+        Var ADContext::natural_log(Var a)
+        {
+            return this->op(OpType::NaturalLog, log(a.v), 1 / a.v, 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
+        }
+
+        Var ADContext::sine(Var a)
+        {
+            return this->op(OpType::Sine, sin(a.v), cos(a.v), 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
+        }
+
+        Var ADContext::cosine(Var a)
+        {
+            return this->op(OpType::Cosine, cos(a.v), -sin(a.v), 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
         }
 
         Var ADContext::sigmoid(Var a)
         {
             auto v = (1.0f / (1.0f + exp(-a.v)));
-            return this->op(Sigmoid, v, (v) * (1.0f - v), 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
+            return this->op(OpType::Sigmoid, v, (v) * (1.0f - v), 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
         }
 
         Var ADContext::tanh(Var a)
         {
             auto v = ((exp(a.v) - exp(-a.v)) / (exp(a.v) + exp(-a.v)));
-            return this->op(Tanh, v, (v) * (1.0f - (v * v)), 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
+            return this->op(OpType::Tanh, v, (v) * (1.0f - (v * v)), 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
         }
 
         Var ADContext::relu(Var a)
         {
             auto v = a.v > 0.0f ? a.v : 0.0f;
-            return this->op(Relu, v, v > 0.0f ? 1.0f : 0.0f, 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
+            return this->op(OpType::Relu, v, v > 0.0f ? 1.0f : 0.0f, 0.0f, a.i, TALLGEESE_CORE_INVALID_INTVAR_INDEX);
         }
 
         Var ADContext::dot(Tensor *a, Tensor *b)
@@ -610,6 +663,43 @@ namespace tallgeese
                 b->data[i] = this->relu(a->data[i]);
             }
             return b;
+        }
+
+        Var ADContext::mse(Tensor *p, Tensor *y)
+        {
+            Var l = this->var(0.0f);
+            for (int i = 0; i < p->count(); i++)
+            {
+                l = this->add(this->power(this->subtract(p->data[i], y->data[i]), this->var(2.0f)), l);
+            }
+            return this->divide(l, this->var(p->count()));
+        }
+
+        Tensor *ADContext::softmax(Tensor *x, Tensor *y)
+        {
+            for (int i = 0; i < y->shape[0]; i++)
+            {
+                for (int j = 0; j < y->shape[1]; j++)
+                {
+                    auto var = this->var(0.0f);
+                    for (int k = 0; k < y->shape[1]; k++)
+                    {
+                        var = this->add(this->exponential(x->get_var(i, k)), var);
+                    }
+                    this->divide(x->get_var(i, j), var);
+                }
+            }
+            return y;
+        }
+
+        Var ADContext::cross_entropy(Tensor *p, Tensor *y)
+        {
+            Var l = this->var(0.0f);
+            for (int i = 0; i < p->count(); i++)
+            {
+                l = this->negative(this->multiply(y->data[i], this->natural_log(p->data[i])));
+            }
+            return this->divide(l, this->var(p->count()));
         }
     }
 }

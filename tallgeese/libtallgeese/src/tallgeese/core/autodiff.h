@@ -19,13 +19,17 @@ namespace tallgeese
     {
         typedef std::vector<int> Shape;
 
-        enum Operation
+        enum OpType
         {
-            None = 0,
+            Variable = 0,
             Parameter,
             Add,
             Multiply,
             Power,
+            Exponential,
+            NaturalLog,
+            Sine,
+            Cosine,
             Sigmoid,
             Tanh,
             Relu
@@ -45,22 +49,21 @@ namespace tallgeese
 
         struct IntVar
         {
-            Operation op = None;
+            OpType op = Variable;
             float d = 0.0f;
             float pds[2] = {0.0f, 0.0f};
             int is[2] = {TALLGEESE_CORE_INVALID_INTVAR_INDEX, TALLGEESE_CORE_INVALID_INTVAR_INDEX};
 
             IntVar();
-            IntVar(Operation op);
-            IntVar(Operation op, float pd1, float pd2);
-            IntVar(Operation op, float pd1, float pd2, int i1, int i2);
+            IntVar(OpType op);
+            IntVar(OpType op, float pd1, float pd2);
+            IntVar(OpType op, float pd1, float pd2, int i1, int i2);
 
             void print();
         };
 
         class Tensor
         {
-
         public:
             Shape shape;
             Var *data;
@@ -103,7 +106,7 @@ namespace tallgeese
             std::vector<Var> vars;
             bool replaying = false;
 
-            Var op(Operation op, float v, float pd1, float pd2, int i1, int i2);
+            Var op(OpType op, float v, float pd1, float pd2, int i1, int i2);
 
             Var evaluate();
 
@@ -126,12 +129,20 @@ namespace tallgeese
 
             void check_gradients();
 
+            Var negative(Var a);
             Var add(Var a, Var b);
+            Var subtract(Var a, Var b);
             Var multiply(Var a, Var b);
+            Var divide(Var a, Var b);
             Var power(Var a, Var b);
+            Var exponential(Var a);
+            Var natural_log(Var a);
+            Var sine(Var a);
+            Var cosine(Var a);
             Var sigmoid(Var a);
             Var tanh(Var a);
             Var relu(Var a);
+            Var mse(Var p, Var y);
 
             Var dot(Tensor *a, Tensor *b);
             Tensor *dot(Tensor *a, Tensor *b, Tensor *c);
@@ -141,6 +152,9 @@ namespace tallgeese
             Tensor *sigmoid(Tensor *a, Tensor *b);
             Tensor *tanh(Tensor *a, Tensor *b);
             Tensor *relu(Tensor *a, Tensor *b);
+            Var mse(Tensor *p, Tensor *y);
+            Tensor *softmax(Tensor *x, Tensor *y);
+            Var cross_entropy(Tensor *p, Tensor *y);
         };
     }
 }

@@ -8,9 +8,10 @@ using namespace tallgeese::nn;
 
 int main(int argc, char **argv)
 {
-	auto model = new Model(true);
+	auto model = new Model(LossType::MSE, true);
 
 	auto x = Tensor::random({2, 1, 8, 8});
+	auto y = Tensor::random({2, 1});
 
 	model->conv2d(x->shape, {2, 1, 3, 3});
 	model->activation(ActivationType::Sigmoid);
@@ -22,7 +23,7 @@ int main(int argc, char **argv)
 	model->linear(1);
 	model->activation(ActivationType::Sigmoid);
 
-	model->test(x);
+	model->test(x, y);
 
 	delete model;
 

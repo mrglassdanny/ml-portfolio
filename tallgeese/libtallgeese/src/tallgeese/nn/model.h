@@ -12,23 +12,31 @@ namespace tallgeese
     {
         using namespace layer;
 
+        enum LossType
+        {
+            MSE,
+            CrossEntropy
+        };
+
         class Model
         {
         private:
             ADContext *ctx;
             std::vector<Layer *> layers;
+            LossType loss_type;
 
             Shape get_output_shape();
 
         public:
-            Model();
-            Model(bool trace);
+            Model(LossType loss_type);
+            Model(LossType loss_type, bool trace);
             ~Model();
 
             Tensor *forward(Tensor *x);
+            Var loss(Tensor *p, Tensor *y);
             void backward();
 
-            void test(Tensor *x);
+            void test(Tensor *x, Tensor *y);
 
             void linear(int batch_size, int inputs, int outputs, bool bias);
             void linear(int batch_size, int inputs, int outputs);
