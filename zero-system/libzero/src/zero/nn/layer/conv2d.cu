@@ -120,15 +120,15 @@ namespace zero
                 this->dn_ = Tensor::zeros(true, in_shape);
                 this->activation_ = activation;
 
-                if (!this->shared_params_)
-                {
-                    this->params_ = new Parameters(filter_shape, Shape(filter_shape[0], filter_shape[1]), this->in_feature_rows(), this->in_feature_cols(), initializer);
-                }
-
                 this->stride_ = stride;
 
-                this->out_row_cnt_ = ((this->in_feature_rows() - this->filter_rows()) / this->stride_rows()) + 1;
-                this->out_col_cnt_ = ((this->in_feature_cols() - this->filter_cols()) / this->stride_cols()) + 1;
+                this->out_row_cnt_ = ((this->in_feature_rows() - filter_shape[2]) / this->stride_rows()) + 1;
+                this->out_col_cnt_ = ((this->in_feature_cols() - filter_shape[3]) / this->stride_cols()) + 1;
+
+                if (!this->shared_params_)
+                {
+                    this->params_ = new Parameters(filter_shape, Shape(filter_shape[0], filter_shape[1]), (this->in_feature_rows() * this->in_feature_cols()), (this->out_row_cnt_ * this->out_col_cnt_), initializer);
+                }
             }
 
             void Conv2d::evaluate(Tensor *out)
