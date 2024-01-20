@@ -45,7 +45,7 @@ namespace mnist
 		{
 			auto x = Tensor::from_data({batch_size, 1, img_row_cnt, img_col_cnt}, &img_flt_buf[i * batch_size * img_area]);
 			auto y = Tensor::from_data({batch_size, 1}, &lbl_flt_buf[i * batch_size]);
-			auto oh_y = Tensor::one_hot(y);
+			auto oh_y = Tensor::one_hot(y, 9);
 			delete y;
 
 			batches.push_back({x, oh_y});
@@ -99,7 +99,7 @@ namespace mnist
 		{
 			auto x = Tensor::from_data({batch_size, 1, img_row_cnt, img_col_cnt}, &img_flt_buf[i * batch_size * img_area]);
 			auto y = Tensor::from_data({batch_size, 1}, &lbl_flt_buf[i * batch_size]);
-			auto oh_y = Tensor::one_hot(y);
+			auto oh_y = Tensor::one_hot(y, 9);
 			delete y;
 
 			batches.push_back({x, oh_y});
@@ -111,7 +111,7 @@ namespace mnist
 		return batches;
 	}
 
-	void train_mnist(Model *model, int batch_size, int epochs, bool test_each_epoch)
+	void train_mnist(Model *model, int batch_size, int epochs)
 	{
 		auto train_ds = get_train_dataset(batch_size);
 
@@ -130,11 +130,10 @@ namespace mnist
 				auto y = batch->y;
 
 				auto p = model->forward(x);
-
-				model->backward(p, y);
-				model->step();
-
-				delete p;
+				model->loss(p, y);
+				model->backward();
+				model->step(100.0f);
+				model->reset();
 
 				if (_kbhit())
 				{
@@ -143,15 +142,6 @@ namespace mnist
 						quit = true;
 						break;
 					}
-				}
-			}
-
-			if (test_each_epoch)
-			{
-				float test_acc_pct = test_mnist(model, epoch, false, true);
-				if (test_acc_pct >= 99.0f)
-				{
-					model->optimizer()->scale_learning_rate(0.1f);
 				}
 			}
 
@@ -168,104 +158,40 @@ namespace mnist
 		}
 	}
 
-	float test_mnist(Model *model, int epoch, bool train, bool to_file)
+	float test_mnist(Model *model)
 	{
 		float test_acc_pct = 0.0f;
 		float train_acc_pct = 0.0f;
 
-		// TEST:
+		auto ds = get_test_dataset(model->get_batch_size());
+
+		int batch_cnt = ds.size();
+
+		float loss = 0.0f;
+		float acc = 0.0f;
+
+		for (int j = 0; j < batch_cnt; j++)
 		{
-			auto ds = get_test_dataset(model->batch_size());
+			auto batch = &ds[j];
+			auto x = batch->x;
+			auto y = batch->y;
 
-			int batch_cnt = ds.size();
-
-			float loss = 0.0f;
-			float acc = 0.0f;
-
-			for (int j = 0; j < batch_cnt; j++)
-			{
-				auto batch = &ds[j];
-				auto x = batch->x;
-				auto y = batch->y;
-
-				auto p = model->forward(x);
-				loss += model->loss(p, y);
-				acc += model->accuracy(p, y, Model::classification_accuracy_fn);
-				delete p;
-			}
-
-			test_acc_pct = (acc / (float)batch_cnt) * 100.0f;
-
-			if (to_file)
-			{
-				FILE *f = fopen("temp/test.txt", "a");
-				fprintf(f, "EPOCH: %d\tTEST LOSS: %f\tTEST ACCURACY: %f%%\n",
-						epoch,
-						(loss / (float)batch_cnt),
-						test_acc_pct);
-				fclose(f);
-			}
-			else
-			{
-				printf("EPOCH: %d\tTEST LOSS: %f\tTEST ACCURACY: %f%%\n",
-					   epoch,
-					   (loss / (float)batch_cnt),
-					   test_acc_pct);
-			}
-
-			for (auto batch : ds)
-			{
-				delete batch.x;
-				delete batch.y;
-			}
+			auto p = model->forward(x);
+			loss += model->loss(p, y).v;
+			acc += model->accuracy(p, y, Model::classification_accuracy_fn);
+			model->reset();
 		}
 
-		// TRAIN
-		if (train)
+		test_acc_pct = (acc / (float)batch_cnt) * 100.0f;
+
+		printf("TEST LOSS: %f\tTEST ACCURACY: %f%%\n",
+			   (loss / (float)batch_cnt),
+			   test_acc_pct);
+
+		for (auto batch : ds)
 		{
-			auto ds = get_train_dataset(model->batch_size());
-
-			int batch_cnt = ds.size();
-
-			float loss = 0.0f;
-			float acc = 0.0f;
-
-			for (int j = 0; j < batch_cnt; j++)
-			{
-				auto batch = &ds[j];
-				auto x = batch->x;
-				auto y = batch->y;
-
-				auto p = model->forward(x);
-				loss += model->loss(p, y);
-				acc += model->accuracy(p, y, Model::classification_accuracy_fn);
-				delete p;
-			}
-
-			train_acc_pct = (acc / (float)batch_cnt) * 100.0f;
-
-			if (to_file)
-			{
-				FILE *f = fopen("temp/test.txt", "a");
-				fprintf(f, "EPOCH: %d\tTRAIN LOSS: %f\tTRAIN ACCURACY: %f%%\n",
-						epoch,
-						(loss / (float)batch_cnt),
-						train_acc_pct);
-				fclose(f);
-			}
-			else
-			{
-				printf("EPOCH: %d\tTRAIN LOSS: %f\tTRAIN ACCURACY: %f%%\n",
-					   epoch,
-					   (loss / (float)batch_cnt),
-					   train_acc_pct);
-			}
-
-			for (auto batch : ds)
-			{
-				delete batch.x;
-				delete batch.y;
-			}
+			delete batch.x;
+			delete batch.y;
 		}
 
 		return test_acc_pct;

@@ -78,7 +78,7 @@ namespace tallgeese
             static Tensor *random(Shape shape);
             static Tensor *random(Shape shape, float mean, float stddev);
             static Tensor *from_data(Shape shape, float *data);
-            static Tensor *one_hot(Tensor *src);
+            static Tensor *one_hot(Tensor *src, int max);
 
             Var get_var(...);
             void set_var(Var var, ...);
@@ -105,8 +105,6 @@ namespace tallgeese
         class ADContext
         {
         private:
-            std::vector<IntVar> tape;
-
             bool trace = false;
             std::vector<Var> vars;
             bool replaying = false;
@@ -118,6 +116,9 @@ namespace tallgeese
             void validate_shapes_are_same(Tensor *a, Tensor *b);
 
         public:
+            std::vector<IntVar> tape;
+            std::vector<Var *> parms;
+
             ADContext();
 
             Var var(float v);

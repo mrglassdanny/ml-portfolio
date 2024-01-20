@@ -28,9 +28,14 @@ namespace tallgeese
             Model(LossType loss_type, bool trace);
             ~Model();
 
+            int get_batch_size();
+
             Tensor *forward(Tensor *x);
             Var loss(Tensor *p, Tensor *y);
+            float accuracy(Tensor *p, Tensor *y, int (*acc_fn)(Tensor *p, Tensor *y, int batch_size));
             void backward();
+            void step(float lr);
+            void reset();
 
             void test(Tensor *x, Tensor *y);
 
@@ -48,7 +53,13 @@ namespace tallgeese
 
             void softmax();
 
+            void flatten(Shape input_shape);
             void flatten();
+
+            static int regression_accuracy_fn(Tensor *p, Tensor *y, int batch_size);
+            static int regression_sigmoid_accuracy_fn(Tensor *p, Tensor *y, int batch_size);
+            static int regression_tanh_accuracy_fn(Tensor *p, Tensor *y, int batch_size);
+            static int classification_accuracy_fn(Tensor *p, Tensor *y, int batch_size);
         };
     }
 }

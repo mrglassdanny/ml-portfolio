@@ -134,7 +134,7 @@ namespace tallgeese
             return t;
         }
 
-        Tensor *Tensor::one_hot(Tensor *src)
+        Tensor *Tensor::one_hot(Tensor *src, int max)
         {
             int lst_dim_idx = src->dims() - 1;
 
@@ -150,7 +150,7 @@ namespace tallgeese
                 TALLGEESE_CORE_THROW_ERROR("TENSOR ONE HOT ERROR: negative numbers not allowed");
             }
 
-            int oh_dim = ((int)src->max()) + 1;
+            int oh_dim = ((int)max) + 1;
 
             std::vector<int> dst_shape = src->shape;
             dst_shape[lst_dim_idx] = oh_dim;
@@ -423,6 +423,7 @@ namespace tallgeese
             for (int i = 0; i < tensor->count(); i++)
             {
                 tensor->data[i] = this->parm(tensor->data[i].v);
+                this->parms.push_back(&tensor->data[i]);
             }
             return tensor;
         }
@@ -435,6 +436,7 @@ namespace tallgeese
         void ADContext::reset()
         {
             this->tape.clear();
+            this->parms.clear();
             this->vars.clear();
         }
 

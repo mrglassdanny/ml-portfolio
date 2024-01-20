@@ -27,6 +27,7 @@
     <ClInclude Include="src\tallgeese\core\err.h" />
     <ClInclude Include="src\tallgeese\core\mod.h" />
     <ClInclude Include="src\tallgeese\core\util.h" />
+    <ClInclude Include="src\tallgeese\mod.h" />
     <ClInclude Include="src\tallgeese\nn\layer\activation.h" />
     <ClInclude Include="src\tallgeese\nn\layer\conv2d.h" />
     <ClInclude Include="src\tallgeese\nn\layer\flatten.h" />
@@ -82,7 +83,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>
@@ -96,7 +97,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <Link>

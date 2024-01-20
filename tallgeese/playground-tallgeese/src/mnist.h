@@ -18,6 +18,6 @@ namespace mnist
     std::vector<Batch> get_train_dataset(int batch_size);
     std::vector<Batch> get_test_dataset(int batch_size);
 
-    void train_mnist(Model *model, int batch_size, int epochs, bool test_each_epoch);
-    float test_mnist(Model *model, int epoch, bool train, bool to_file);
+    void train_mnist(Model *model, int batch_size, int epochs);
+    float test_mnist(Model *model);
 }
