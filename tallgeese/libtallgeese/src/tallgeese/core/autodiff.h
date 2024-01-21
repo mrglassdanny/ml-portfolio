@@ -77,6 +77,7 @@ namespace tallgeese
             static Tensor *fill(Shape shape, float val);
             static Tensor *random(Shape shape);
             static Tensor *random(Shape shape, float mean, float stddev);
+            static Tensor *random_ints(Shape shape, int upper);
             static Tensor *from_data(Shape shape, float *data);
             static Tensor *one_hot(Tensor *src, int max);
 
@@ -100,6 +101,7 @@ namespace tallgeese
             void fill(float val);
             void random();
             void random(float mean, float stddev);
+            void random_ints(int upper);
         };
 
         class ADContext

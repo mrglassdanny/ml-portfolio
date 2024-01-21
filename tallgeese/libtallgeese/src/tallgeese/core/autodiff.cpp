@@ -122,6 +122,13 @@ namespace tallgeese
             return t;
         }
 
+        Tensor *Tensor::random_ints(Shape shape, int upper)
+        {
+            auto t = new Tensor(shape);
+            t->random_ints(upper);
+            return t;
+        }
+
         Tensor *Tensor::from_data(Shape shape, float *data)
         {
             auto t = Tensor::zeros(shape);
@@ -355,6 +362,14 @@ namespace tallgeese
             {
                 std::normal_distribution<float> d(mean, stddev);
                 this->data[i].v = d(gen);
+            }
+        }
+
+        void Tensor::random_ints(int upper)
+        {
+            for (int i = 0; i < this->count(); i++)
+            {
+                this->data[i].v = rand() % upper;
             }
         }
 
